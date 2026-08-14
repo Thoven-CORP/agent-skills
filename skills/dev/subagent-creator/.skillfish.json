@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "subagent-creator",
+  "owner": "full-stack-biz",
+  "repo": "claude-skills-toolkit",
+  "path": "skills/subagent-creator",
+  "branch": "main",
+  "sha": "58487854ac02edac80f80b5395796ddd4d5a14ef",
+  "source": "manual"
+}
