@@ -1,0 +1,27 @@
+{
+  "name": "notion-cfo-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "bootstrap": "tsx scripts/bootstrap-notion.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.39.0",
+    "@notionhq/client": "2.2.15"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260515.1",
+    "@types/node": "22.15.18",
+    "@vitest/coverage-v8": "3.2.1",
+    "tsx": "4.19.4",
+    "typescript": "5.8.3",
+    "vitest": "3.2.1",
+    "wrangler": "^4.92.0"
+  }
+}

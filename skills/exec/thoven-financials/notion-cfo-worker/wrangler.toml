@@ -1,0 +1,25 @@
+name = "notion-cfo-worker"
+main = "src/index.ts"
+compatibility_date = "2026-05-15"
+compatibility_flags = ["nodejs_compat"]
+
+# Monday 11:00 UTC ≈ 7:00 AM ET (handles DST automatically — ET is UTC-4 in summer, UTC-5 in winter)
+# The cron expression below schedules at 12:00 UTC year-round, which is 7am EST / 8am EDT.
+# Switch to "0 11 * * 1" if you want 7am EDT during summer time.
+[triggers]
+crons = ["0 12 * * 1"]
+
+# Vars (non-secret) — paste the IDs from the bootstrap step
+[vars]
+BUDGET_DB_ID = "a0aa84a9-332e-4361-b4d1-f0f82edd4a54"
+TRANSACTIONS_DB_ID = "1afdaaaa-63b8-489b-ac26-e63b049e8d24"
+REPORTS_DB_ID = "5308e11d-de63-49cc-a784-6f20474c786a"
+
+# Secrets are set via `wrangler secret put <NAME>` — never committed:
+#   wrangler secret put MERCURY_API_KEY
+#   wrangler secret put ANTHROPIC_API_KEY
+#   wrangler secret put NOTION_API_KEY
+
+# Workers Logs (built-in observability) — keep on for the first month
+[observability]
+enabled = true

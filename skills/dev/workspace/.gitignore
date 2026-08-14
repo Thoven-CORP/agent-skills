@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+
+# Node (skill is zero-dep today; defensive if deps are ever added)
+node_modules/
+npm-debug.log*
+yarn-error.log*
+*.tgz
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs & env
+*.log
+.env
+.env.*
+
+# Local-only overrides (never committed)
+*.local.json
+*.local.md

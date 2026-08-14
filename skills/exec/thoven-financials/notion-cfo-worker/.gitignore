@@ -1,0 +1,9 @@
+node_modules/
+dist/
+dist-cf/
+coverage/
+.env
+.env.local
+.wrangler/
+*.log
+.DS_Store
