@@ -1,0 +1,26 @@
+{
+  "skill_name": "weekly-ops",
+  "evals": [
+    {
+      "id": 0,
+      "name": "direct-invocation",
+      "prompt": "run the weekly ops report",
+      "expected_output": "Runs scripts/weekly_ops_report.rb read-only against production, writes a dated report to docs/analytics/product-team/, and reports what it found rather than dumping the whole file.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "casual-intent-no-skill-name",
+      "prompt": "whats going on this week, anyone i should be worried about",
+      "expected_output": "Recognises this as the weekly ops question without the skill being named. Leads with the alert block (Audrey Mora, 46 days) and the pending request nobody has answered, rather than reciting every section.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "week-over-week-diff",
+      "prompt": "did anyone from the nudge list actually book a lesson since last monday",
+      "expected_output": "Requires comparing two reports, not just reading one. Should notice the most recent prior report (2026-07-27) is the OLD script format and handle that honestly rather than silently comparing incompatible structures.",
+      "files": []
+    }
+  ]
+}
