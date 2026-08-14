@@ -1,7 +1,7 @@
 ---
 name: subagent-creator
 description: Creates Claude Code agent files with proper structure, triggering conditions, and system prompts. Use when building new agents, updating agent definitions, or reviewing agent configurations.
-argument-hint: [agent-name] [optional description of agent purpose]
+argument-hint: "[agent-name] [optional description of agent purpose]"
 allowed-tools: Read, Write, Glob, Grep, Bash(mkdir:*), Task
 ---
 

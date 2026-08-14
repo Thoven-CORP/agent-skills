@@ -1,6 +1,6 @@
 ---
 name: pr-seo-pr-inbox
-description: Reviews, audits, fixes, and locally merges the Thoven SEO Content Factory's scheduled seo/* article PRs. Use for the weekly SEO PR review loop — checking generated /resources articles against hard gates (page, llms.txt, sitemap, dedup), fixing SEO surface gaps, merging reviewed branches into main, or verifying the SEO factory launchd scheduler. Triggers: review SEO branches/PRs, weekly SEO review, merge generated articles, audit SEO pages, check SEO factory scheduler.
+description: "Reviews, audits, fixes, and locally merges the Thoven SEO Content Factory's scheduled seo/* article PRs. Use for the weekly SEO PR review loop — checking generated /resources articles against hard gates (page, llms.txt, sitemap, dedup), fixing SEO surface gaps, merging reviewed branches into main, or verifying the SEO factory launchd scheduler. Triggers: review SEO branches/PRs, weekly SEO review, merge generated articles, audit SEO pages, check SEO factory scheduler."
 ---
 
 # PR SEO PR Inbox

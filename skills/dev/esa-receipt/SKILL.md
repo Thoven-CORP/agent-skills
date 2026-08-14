@@ -1,6 +1,6 @@
 ---
 name: esa-receipt
-description: Generate a branded Thoven payment receipt (PDF) for an ESA / scholarship marketplace order — Utah Fits All via Odyssey or any future ESA channel. Use this whenever Andres pastes an ESA/Odyssey/scholarship order detail, mentions a new ESA payment, needs a receipt number to save in a vendor portal, or asks for a receipt for a parent/student order — even if he doesn't say "receipt" explicitly (e.g. "we got a new Utah payment", "I need to fill out the receipt field by Friday"). Works generic (family not on Thoven yet, no teacher) or enriched (pulls live enrollment: teacher, class, credits, intro call).
+description: "Generate a branded Thoven payment receipt (PDF) for an ESA / scholarship marketplace order — Utah Fits All via Odyssey or any future ESA channel. Use this whenever Andres pastes an ESA/Odyssey/scholarship order detail, mentions a new ESA payment, needs a receipt number to save in a vendor portal, or asks for a receipt for a parent/student order — even if he doesn't say \"receipt\" explicitly (e.g. \"we got a new Utah payment\", \"I need to fill out the receipt field by Friday\"). Works generic (family not on Thoven yet, no teacher) or enriched (pulls live enrollment: teacher, class, credits, intro call)."
 ---
 
 # ESA Receipt Generator
