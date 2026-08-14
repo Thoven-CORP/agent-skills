@@ -1,5 +1,5 @@
 ---
-name: Designing Thoven UI
+name: thoven-designer
 description: Designs and implements Thoven-branded UI components with consistent branding, design system compliance, and anti-pattern avoidance. Runs deduplication check, creates design specs via ui-designer agent, and implements via frontend-developer agent. Triggers on design, new page, new section, new component, scaffold, style guide, brand, UI, card, panel, modal, page, redesign.
 ---
 

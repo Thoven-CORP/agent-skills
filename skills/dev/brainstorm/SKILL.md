@@ -1,5 +1,5 @@
 ---
-name: thoven-brainstorm
+name: brainstorm
 description: Use when exploring ideas, designing new features, making architectural decisions, or starting creative work before writing code. Turns ideas into validated designs through collaborative exploration. Triggers on "brainstorm", "design", "idea", "create", "build", "add feature", "new feature", "how should we".
 ---
 

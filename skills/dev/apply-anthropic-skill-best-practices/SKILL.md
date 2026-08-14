@@ -1,4 +1,5 @@
 ---
+name: apply-anthropic-skill-best-practices
 description: Audits and improves Claude Code skills against Anthropic's official authoring standards. Use when creating complex skills, reviewing skill quality, or checking compliance with best practices.
 argument-hint: Optional skill name or path to skill being reviewed
 ---

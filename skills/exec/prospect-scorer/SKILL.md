@@ -1,5 +1,5 @@
 ---
-name: Scoring Angel Prospects
+name: prospect-scorer
 description: Scores angel investor prospects 0-10 for Thoven using the calibrated rubric derived from 36 sent outreach records. Use when scoring new CRM entries, validating batch-enrich output, or recalibrating priorities.
 ---
 
