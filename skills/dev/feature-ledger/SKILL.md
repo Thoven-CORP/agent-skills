@@ -49,7 +49,7 @@ Governing rules: the **Feature Folders** section of `CLAUDE.md`. Read it rather 
 
 1. Create the shape from `templates/`. Every file exists, even empty — an absent file reads as "not applicable" and that is how `api.md` went missing from the feature whose worst two defects were payload fields.
 2. Fill `PRD.md` and `CONTINUE_HERE.md` from what the session already knows.
-3. Seed `design/VERSIONS.md` with a row per proto, each naming a status and an **owning gate that exists**.
+3. Seed `design/VERSIONS.md` with a row per proto, each naming a status and an **owning gate that resolves to a Linear issue — a pasted `THV-` URL**, never a prose name. That turns ghost-owner rule 4 from a rule into a check, which is rule 9 (*prefer a script to a rule*) doing its job: the 2026-08-14 audit found 4 ghost owners cited 13 times, one of which — *"Parent L3"* — was named in five files as a real design gate and had never been drawn.
 4. Create the paired worktrees named for the feature.
 
 **Done when** every path in the shape resolves, and every `VERSIONS.md` row's proto path and owning gate both open.

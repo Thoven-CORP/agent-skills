@@ -12,15 +12,38 @@ the `## Log` heading. Both FE and BE sessions route here.
 
 ## Storage Target
 
-**One home:** `~/thoven/.workspace/STATE.md` → `## Log` section.
+**Two homes.** Both hold session *reasoning*, at different scopes:
+
+| Writes | Scope |
+|---|---|
+| `~/thoven/.workspace/STATE.md` → `## Log` | **cross-feature** — what this session did, where it stopped |
+| `<feature>/CONTINUE_HERE.md` | **one feature** — the thread of thought: what was tried and failed, what to be careful of |
+
+**Never write status into either.** No "Phase 4 done, Phase 5 next", no in-flight tables, no
+status tables. Linear owns that, and a second copy is the only thing that can disagree with it. A
+`CONTINUE_HERE.md` carries a `THV-` **pointer, never a copy**.
 
 Never write to:
-- Per-repo `CONTINUE_HERE.md` files
 - `MEMORY.md` or `.claude/memory/`
 - mem0 (this skill does not touch mem0)
-- Any repo-specific file
 
 The `## Map` zone of STATE.md must not be touched — only the `## Log` zone.
+
+### `CONTINUE_HERE.md` — the shape
+
+Records only. Every heading below is a record (which cannot go stale); anything that is a *state*
+(which can) belongs in Linear.
+
+```markdown
+# CONTINUE HERE — <feature>
+
+Linear: THV-42          ← a pointer, never a copy
+Branch: THV-42-slug
+
+## What I was doing
+## What I tried that didn't work     ← the field Linear does not have
+## Careful of
+```
 
 ## When to Invoke
 
@@ -168,11 +191,12 @@ Cross-repo entries include the repo prefix.
 
 ## Rules
 
-- **One home:** `~/thoven/.workspace/STATE.md` `## Log` only.
+- **Two homes:** `~/thoven/.workspace/STATE.md` `## Log` (cross-feature) and `<feature>/CONTINUE_HERE.md` (one feature). Nothing else.
+- **Records, never status:** no phase lines, no in-flight tables, in either file. `CONTINUE_HERE.md` points at `THV-<id>`; it never copies its state.
 - **Newest-first:** new entry goes directly under `## Log`, pushing older entries down.
 - **Trim to ~10:** never let the Log section grow beyond ~10 bullets.
 - **Substantive:** if the entry can't cold-start the next session, it's too vague — rewrite it.
 - **No duplicates on same day + topic:** if an entry for today's topic already exists,
   update it rather than adding a second one.
 - **Do not touch `## Map`:** the Map zone is managed by `workspace resume` only.
-- **No mem0, no MEMORY.md, no per-repo files.**
+- **No mem0, no MEMORY.md, no `.claude/memory/`.**

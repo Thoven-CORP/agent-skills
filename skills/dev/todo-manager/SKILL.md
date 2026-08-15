@@ -1,11 +1,19 @@
 ---
 name: todo-manager
-description: Manage personal and Thoven work todos. Use when user says "add todo", "check todos", "done", or mentions todo management. Personal todos in todo.md, Thoven work in Notion (managed separately). Integrates with daily-work-log for EOD workflow.
+description: Manage Andres's personal todos in the Executive Assistant vault todo.md. Use when user says "add todo", "check todos", "done", or mentions todo management. Personal scope only — engineering work belongs in Linear (workspace `thoven`, team `THV`; see ~/thoven/.workspace/SPEC-linear.md) and must never be routed here. Integrates with daily-work-log for EOD workflow.
 ---
 
 # Todo Manager
 
-Todo management with `todo.md` for personal tasks and a manually-maintained Thoven work section. Notion is the source of truth for Thoven tasks and is managed directly in Notion -- no automatic syncing.
+Todo management with `todo.md` for Andres's **personal** tasks.
+
+**Engineering work is not tracked here.** It lives in Linear — workspace `thoven`, team `THV`
+(`~/thoven/.workspace/SPEC-linear.md`). Never write an engineering item into `todo.md` and never
+route one to Notion; it is a Linear Issue or it does not exist.
+
+The manually-maintained "## Thoven Work" section holds only **non-engineering** admin (CFO,
+fundraising, marketing, partnerships), which the user manages directly in Notion -- no automatic
+syncing.
 
 ## Trigger Phrases
 
@@ -30,16 +38,20 @@ Activate this skill when user says:
 **Command**: "add todo: [task]"
 
 1. **Analyze task content** for classification:
-   - **Thoven indicators**: "fix", "implement", "build", "meeting with", "review", "deploy", "test", "debug", "refactor", "design", "spec"
+   - **Engineering indicators** (→ Linear, never here): "fix", "implement", "build", "deploy", "test", "debug", "refactor", "design", "spec"
    - **Personal indicators**: "call", "email", "buy", "remember", "pick up", "schedule", "text", "respond to"
+   - **Non-engineering Thoven admin**: "meeting with", CFO / fundraising / marketing / partnership work
 
 2. **If clear classification**:
    - Personal → Add to `todo.md` under "## Active"
-   - Thoven → Add to Notion Tasks database using `mcp__plugin_Notion_notion__notion-create-task`
+   - Engineering → **Do not add it anywhere from this skill.** Say it belongs in Linear (team `THV`)
+     and offer to open an Issue there instead. The test (`SPEC-linear.md` §7.4): *would an agent
+     claim this and open a branch?* If yes, it is a Linear Issue.
+   - Non-engineering Thoven admin → Add to Notion Tasks database using `mcp__plugin_Notion_notion__notion-create-task`
 
 3. **If uncertain**:
-   - Ask user: "Is this personal or Thoven work?"
-   - Wait for response, then add to appropriate location
+   - Ask user: "Is this personal, non-engineering Thoven admin, or engineering work?"
+   - Wait for response, then add to appropriate location — engineering always goes to Linear
 
 4. **Force classification** (user can override):
    - "add personal todo: X" → Always goes to todo.md
@@ -94,7 +106,8 @@ Use `Skill` tool with `Notion:notion-create-task` and natural language task desc
 - The "## Thoven Work" section in todo.md is **manually maintained**
 - To add Notion tasks to todo.md, the user says "add notion todo: X" (creates in Notion) and can manually add a `[Notion]` line to todo.md if they want local tracking
 - To see live Notion tasks, use "check notion tasks" (queries Notion directly, does NOT write to todo.md)
-- Notion is the source of truth for Thoven work
+- Notion is the source of truth for **non-engineering** Thoven admin only. **Linear (team `THV`) is
+  the source of truth for engineering work** — see `~/thoven/.workspace/SPEC-linear.md`
 
 ## Integration with daily-work-log
 
@@ -160,7 +173,7 @@ If `todo.md` doesn't exist, create it with this template:
 
 | Command | Action | Touches Notion? |
 |---------|--------|-----------------|
-| `add todo: [task]` | Smart add (personal vs Thoven) | Only if Thoven (creates task) |
+| `add todo: [task]` | Smart add (personal vs Thoven admin). **Engineering → Linear, added nowhere here** | Only if non-engineering Thoven admin (creates task) |
 | `add personal todo: [task]` | Force personal | No |
 | `add notion todo: [task]` | Force Notion | Yes (creates task) |
 | `check todos` | Read & display todo.md | No |
@@ -178,12 +191,13 @@ Claude: [Analyzes "call" keyword → personal]
         "Added personal todo: Call dentist to reschedule"
 ```
 
-**Example 2: Adding a Thoven todo**
+**Example 2: An engineering todo — refused, routed to Linear**
 ```
 User: "add todo: Fix Get Matched analytics bug"
-Claude: [Analyzes "fix" keyword → Thoven]
-        [Creates task in Notion using notion-create-task]
-        "Added to Notion Tasks: Fix Get Matched analytics bug"
+Claude: [Analyzes "fix" keyword → engineering]
+        [Adds nothing to todo.md and nothing to Notion]
+        "That's engineering work, so it belongs in Linear (team THV), not here.
+         Want me to open an Issue for it?"
 ```
 
 **Example 3: Checking all todos**
@@ -213,8 +227,8 @@ Claude: [Finds in todo.md "## Active"]
 **Example 5: Uncertain classification**
 ```
 User: "add todo: Review designs"
-Claude: "Is 'Review designs' personal or Thoven work?"
-User: "Thoven"
-Claude: [Creates task in Notion]
-        "Added to Notion Tasks: Review designs"
+Claude: "Is 'Review designs' personal, non-engineering Thoven admin, or engineering work?"
+User: "Engineering"
+Claude: [Adds nothing here]
+        "Then it's a Linear Issue (team THV), not a todo. Want me to open one?"
 ```
