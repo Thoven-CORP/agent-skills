@@ -18,6 +18,21 @@ Linear is the board (spec: `~/thoven/.workspace/SPEC-linear.md`). This skill is 
 *into* it, and it also owns the two things Linear is bad at: the derived cold-start **Map** and
 the appended session **Log** in `STATE.md`.
 
+## How to read this skill
+
+**Two kinds of instruction here, and they bind differently.**
+
+- **Bold rules and ⚠️ blocks are exact.** Every one of them exists because getting it wrong
+  fails *silently* — you get a confident answer that is not true. Do not paraphrase them.
+- **Everything else, including every command, is a reference implementation.** Paths, formats
+  and shell one-liners describe intent. When reality differs, adapt — you can find the newest
+  date in a file without being told its regex.
+
+Two failures on this skill's first run were both hardcoded strings, not bad judgment: a bare
+`--since` that assumed midnight, and a `## Log` anchor that assumed a blank line after the
+heading. **Assume the shape of the world will differ slightly from what is written here, and
+work it out.** Reserve exactness for the places where being wrong is invisible.
+
 ## The one rule
 
 > **Evidence leads. His words are a tiebreak.**
@@ -65,6 +80,10 @@ moved 130 commits, nothing logged in four days — say so and offer the deep rea
 
 Runs on **every** invocation, both speeds. It decides which checkouts are worth reading.
 
+**What it must determine** — for each checkout under `~/thoven`: its branch, how many commits are
+its *own* since the watermark, and how many files are dirty. Anything with either is worth
+reading. How you get those numbers is yours; below is one way that works today.
+
 ```bash
 cd ~/thoven && for d in frontend* backend* .workspace agent-skills; do
   { [ -d "$d/.git" ] || [ -f "$d/.git" ]; } || continue
@@ -84,8 +103,11 @@ second-busiest thing on the board.
 
 ### The watermark
 
-**The date of the newest `## Log` entry in `~/thoven/.workspace/STATE.md`** — they are
-newest-first, `- YYYY-MM-DD`.
+**The date of the newest `## Log` entry in `~/thoven/.workspace/STATE.md`.** Entries are
+newest-first and dated; the exact line format has drifted (some carry `**` around the date, some
+do not, and there may or may not be a blank line under the heading). **Read the date, do not
+pattern-match a template** — and if you cannot find one, say so and fall back to a wide window
+rather than a narrow guess.
 
 No second copy of state; nothing to drift or repair. If the last entry is old the window is wide,
 which is the correct failure direction — over-scanning costs two seconds, under-scanning silently
@@ -129,8 +151,10 @@ checkout will confidently route it wrong — it cannot know that Materials spans
 And eight agents proposing produces eight overlapping lists to reconcile by hand, which is the
 work being handed off.
 
-Send each agent this brief, and require exactly this shape back — the parent holds all of them
-at once, so **structured findings, no prose essays**:
+Give each agent the brief below. The parent holds all of them at once, so ask for **structured
+findings, not prose essays** — roughly this shape. Fields that do not apply are said to be absent
+rather than omitted silently, and an agent that learns something the shape has no slot for should
+say it under `ambiguous` rather than drop it.
 
 ```yaml
 checkout:   frontend-direct-upload
@@ -480,11 +504,14 @@ resolve in your worktree is **expected**, not a broken checkout.
 
 ## Reaching Linear
 
-Tools are deferred — load them first:
+Tools are deferred — load what the task needs before the first call, e.g.
 
 ```
-ToolSearch: select:list_issues,save_issue,list_issue_statuses,save_comment,list_projects,list_milestones
+ToolSearch: select:list_issues,save_issue,save_comment,list_projects,list_milestones
 ```
+
+That set covers most runs; fetch more as needed (`save_milestone`, `save_project`,
+`list_issue_statuses`) rather than assuming this line is the whole surface.
 
 If the MCP is not authorized, **stop and say so** — he runs `/mcp` in an interactive `claude`.
 Never fall back to writing the item into an archived register.
