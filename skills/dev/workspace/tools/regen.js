@@ -15,7 +15,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { parseLine } = require('./item.js');
-const { boardEligible } = require('./board.js');
 
 // Render-time theme buckets for backlog improvements. Hybrid: an item's explicit
 // `group:` field WINS (authoritative, set it on the few the heuristic gets wrong);
@@ -85,9 +84,9 @@ function regenerateMap({ storeDir, registers }) {
       const parked = PARKED_RE.test(item.text);
       const flag = parked ? '🚧 ' : '';
 
-      // NOTE: board-eligibility (tools/board.js boardEligible) MUST match this
-      // classification — improvement + P2/P3 techdebt are backlog (not on board),
-      // everything else is in-flight/queued (on board). If you change one, change both.
+      // This split used to have to agree with tools/board.js `boardEligible`, which gated
+      // the Notion sync. That layer is deleted (2026-08-15) — Linear is the board and
+      // nothing here feeds it — so the classification is now the Map's alone.
       if (type === 'techdebt') {
         const p = item.fields.P || 'other';
         if (p !== 'P0' && p !== 'P1') {

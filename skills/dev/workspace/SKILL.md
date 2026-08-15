@@ -1,433 +1,152 @@
 ---
 name: workspace
 description: >-
-  Use when the user says "add todo", "add tech debt", "add improvement",
-  "log work", "resume", "where am I", "what am I working on", "close item",
-  "audit state", "reconcile", "promote", "track in Notion", "add bug", "add prd",
-  or "sync notion". One global store (~/thoven/.workspace) for todos, tech debt,
-  improvements + a derived STATE map — and promotes/syncs items to the Notion boards.
+  Use when the user says "add todo", "add tech debt", "add improvement", "add bug",
+  "log work", "resume", "where am I", "what am I working on", "start item",
+  "close item", "audit state", or "reconcile". Captures work as a Linear issue
+  (workspace `thoven`, team `THV`) and owns the derived cold-start Map and the
+  appended session Log in ~/thoven/.workspace/STATE.md.
 ---
 
 # Workspace — Unified Work-State
 
-**Linear is the board.** Issues, ownership and status live there — see
-`~/thoven/.workspace/SPEC-linear.md`. This skill owns what Linear is bad at: the derived
-cold-start **Map** and the appended session **Log** in `STATE.md`.
+**Linear is the board.** Issues, ownership and status live there — spec at
+`~/thoven/.workspace/SPEC-linear.md`, vocabulary at `CONTEXT.md`. This skill owns the two
+things Linear is bad at: the derived cold-start **Map** and the appended session **Log** in
+`STATE.md`. Everything else it does is a thin path into Linear.
 
-The Map is derived (today from the local registers; under architecture C, exported from
-Linear), so it cannot drift the way a hand-maintained banner does. Never hand-edit it.
+The Map is derived, so it cannot drift the way a hand-maintained banner does. Never hand-edit it.
 
-> **Migration state, 2026-08-14.** The markdown registers (`TODO.md`, `TECH_DEBT.md`,
-> `FUTURE_IMPROVEMENTS.md` — 208 open items) are **frozen as an archive**. Nothing new is
-> captured there. `add-todo` / `add-techdebt` / `add-improvement` / `promote` / `add-bug` /
-> `add-prd` / `sync-notion` create a **Linear issue** instead. `log` and `resume` are unchanged
-> and remain the reason this skill exists.
+> **Migration complete, 2026-08-15.** The three markdown registers are **frozen as an
+> archive** — 208 legacy items, read-only, nothing new is ever written there. Capture creates
+> a Linear issue. The Notion layer (`promote`, `sync-notion`, `add-prd`, the `notion:` and
+> `last-synced:` fields, `references/notion.md`, `tools/sync.js`, `tools/lane.js`,
+> `tools/board.js`) is **deleted**, not deprecated. There is no sync, because Linear is the
+> store — there is no second copy to reconcile.
 
-## Store layout (global — outside both app repos)
+## Store layout
 
 `~/thoven/.workspace/` is its own git repo. FE and BE sessions share one truth.
 
-| File | Holds |
-|------|-------|
-| `STATE.md` | Derived **Map** (regenerated, never hand-edited) + appended **Log** (last ~10) |
-| `TODO.md` | Todos (`## In Progress`, `## Backlog`) |
-| `TECH_DEBT.md` | Tech-debt items (P0–P3) |
-| `FUTURE_IMPROVEMENTS.md` | Deferred improvements |
+| File | Holds | State |
+|---|---|---|
+| `STATE.md` | Derived **Map** + appended **Log** (last ~10) | **live** |
+| `TODO.md` · `TECH_DEBT.md` · `FUTURE_IMPROVEMENTS.md` | Legacy items, `td-`/`dd-`/`fi-` ids | **frozen archive — read, never write** |
 
-**Per-repo, do NOT move into the store:** `CHANGELOG.md` and `docs/*/.dev/MANIFEST.md`
-stay in each app repo — the store *reads* them, it does not own them.
+**Per-repo, do NOT move into the store:** `CHANGELOG.md` and `docs/*/.dev/MANIFEST.md` stay
+in each app repo — the store *reads* them, it does not own them.
 
-## Type registry
+## Linear, in one screen
 
-Every work item has a `type:` (authoritative) and an immutable, type-prefixed
-birth-tag ID minted at creation.
+Workspace `thoven`, team `THV`.
 
-| type | prefix | Home (local) | Notion board (`promote`/`add-*`/`sync-notion`) |
-|------|--------|--------------|-----------------|
-| `todo` | `td-` | `~/thoven/.workspace/TODO.md` | Dev Tracker → Task (via `promote`) |
-| `techdebt` | `dd-` | `~/thoven/.workspace/TECH_DEBT.md` | — (local-only) |
-| `improvement` | `fi-` | `~/thoven/.workspace/FUTURE_IMPROVEMENTS.md` | Feature Requests (via `promote`) |
-| `task` | `tk-` | promoted todo (line stays in `TODO.md`) | Dev Tracker → Task |
-| `bug` | `bg-` | local pointer in `TECH_DEBT.md` | Bug Log (born on the board via `add-bug`) |
-| `prd` | `pr-` | spec in `docs/superpowers/specs/` + `pr-` tracker in `TODO.md` | standalone page under the Hub (`add-prd`) |
+`Triage → Backlog → Todo → Speccing | In Progress → Ready → Done`
 
-IDs are **always-mint and immutable** — never reuse, never rewrite an existing
-ID. The `type:` field is authoritative; the prefix is just the birth tag.
+- **`Speccing` and `In Progress` are sibling lanes, never steps.** An issue carrying a
+  `Writes to:` line goes to `Speccing` (brainstormed with Andres, no code); one without goes
+  to `In Progress`.
+- **`In Progress` is the lock** — one issue, one agent session. Never claim one already taken.
+- **No PRs.** Finish at `Ready`. Andres merges locally, and the merge commit (`Fixes THV-<id>`)
+  moves it to `Done` by itself. **A verb in this skill never writes `Done`.**
+- **Labels:** `needs-triage`, `ready-for-agent`, `Bug`, `Improvement`, `Feature`.
+  Full mapping: `frontend/docs/agents/triage-labels.md`. **Do not invent labels** — Linear
+  rejects case-variant duplicates and cannot rename.
 
-## Item format
+### Reaching Linear
 
-An item is a markdown line + a trailing HTML comment. The checkbox is **human
-status**; the comment is the **machine layer**.
+The Linear MCP tools are deferred. Load them before the first call:
 
 ```
-- [ ] Fix X race <!-- id:td-a1b2 type:todo status:open links: git:fix/x repo:frontend last-synced: -->
+ToolSearch: select:list_issues,save_issue,list_issue_statuses,save_comment
 ```
 
-- `[ ]` → `status:open`; `[x]` → `status:done` (kept in sync).
-- `links:` — related ids (a `pr-`, a parent, etc.), space-free, comma-join if many.
-- `git:` — branch/PR the work lives on (lets `resume` ask git "is this really done?").
-- `repo:` — `frontend` | `backend` | empty.
-- `stage:` — optional board-lane **pin** (space-free, dash form: `stage:Keri-testing`,
-  `stage:Speccing`). When set it WINS over `lane.js`'s derivation (section + repo)
-  for the Notion `Status`. Only for the cases the derivation can't know (manual QA,
-  Keri testing, a cross-stack item that isn't speccing). Normally empty — the lane
-  is derived.
-- `group:` — optional theme **override** for a backlog `improvement` (e.g. `group:billing`). When set it WINS over `regen.js`'s keyword heuristic in the Map's 📚 Backlog theme counts; leave empty to let the heuristic infer. Only worth setting on the handful the heuristic mis-buckets — you don't tag the whole pile. Set it ad-hoc: `parseLine` the item → `it.fields.group='x'` → `serialize`.
-- `notion:` — the Notion page id once `promote`/`add-bug`/`add-prd` puts the item on a board; joins the two surfaces by id. Empty until promoted.
-- `last-synced:` — the 3-way sync base (a marker captured when local and Notion last agreed); empty until first sync. See [references/notion.md](references/notion.md).
-
-## STATE.md = derived Map + appended Log
-
-- **Map** — the honest "what's in flight" picture. **Regenerated** by `resume`
-  from the registers (+ manifests + git). **Open items only** — done items are
-  filtered out, so the Map (and the session context that reads it at startup)
-  stays lean. NEVER hand-edited. If it's wrong, the fix is to fix the underlying
-  item and re-run `resume`, not to edit the Map.
-- **Log** — an append-only trail of session notes ("did X, left off at Y,
-  resume via Z"), trimmed to the last ~10.
-
-## Conventions are law
-
-- Every verb that writes an item line does so via `tools/item.js` `serialize(...)`
-  — **never hand-format** a `- [ ] … <!-- … -->` line.
-- Every new ID comes from `tools/ids.js` `mint(type)` — **never** invent an ID.
-- The Map is **derived**: no verb hand-edits the `## Map` zone except `resume`,
-  which overwrites it wholesale from a fresh regen.
-- **Write-through is law**: every verb that mutates an item (capture, start,
-  close, section move) ends with its **Notion leg** when the connector is live —
-  the board is a *derived surface*, same doctrine as the Map. Headless → one
-  notice, and the divergence stays recorded in `last-synced:` for the next
-  `sync-notion` flush. A mutating verb that skips its Notion leg in an
-  interactive session is a bug, not a shortcut.
-- The board `Status` lane is **derived by `tools/lane.js`** from the item's real
-  state (done > `stage:` pin > type/section/repo) — never hardcode a lane in a
-  verb. New items land in their *real* lane (`Speccing`, `Backend dev`, …), not
-  reflexively in `Backlog`.
-
-## Common Mistakes
-
-| Mistake | Instead |
-|---|---|
-| Hand-formatting a `- [ ] … <!-- … -->` line | Always via `item.js` `serialize(...)` |
-| Inventing/reusing an ID | Always `ids.js` `mint(type)` — never reuse |
-| Hand-editing the `## Map` zone | It's derived — fix the item, re-run `resume` |
-| `close-item` on something you're unsure shipped | Use `audit`/`reconcile` (they run the done-check) |
-| Using the wrong capture verb for the item type | Match verb to `type:` (todo/techdebt/improvement) |
-| Mutating an item and skipping the Notion leg | Write-through is law — flush the single item (or note the headless skip) |
-| Hardcoding a board lane (`Status:Backlog`) in a verb | `lane.js` `laneFor(item, section)` derives it |
-| Starting work without moving the line to `## In Progress` | Use `start-item` — the kanban lane derives from the section |
-| Hand-building a `last-synced:` marker (esp. from `cardTitle`) | Always `sync.js` `markFor({item, section, date})` — the marker hashes the FULL `item.text`; a `cardTitle`-based one never matches, so the item re-syncs forever |
-| Declaring a sync done without re-running the flush | A correct stamp leaves **0** pending for that id — check, don't assume |
-
-## Helpers (`tools/`, zero-dep, `node --test`)
-
-| Helper | Exports | Used by |
-|--------|---------|---------|
-| `ids.js` | `mint(type)`, `typeOf(id)`, `PREFIXES` | every capture verb |
-| `item.js` | `parseLine(line)`, `serialize(item)` | every verb that reads/writes a line |
-| `regen.js` | `regenerateMap({storeDir, registers})` | `resume` |
-| `reconcile-manifests.js` | `findStaleManifests({repoDir})` | `resume`, `audit`, `reconcile` |
-| `lane.js` | `laneFor(item, section)` — item state → board `Status` lane | `sync.js`, every Notion write-through leg |
-| `sync.js` | `pendingSync({storeDir, registers, date})`, **`markFor({item, section, date})`** (the only way to stamp `last-synced:`), `syncMark(...)` (low-level), `cardTitle(...)` (card title only — never a marker) | `sync-notion`, `resume` (out-of-sync count), write-through legs |
+If the MCP is not authorized, **stop and say so** — tell Andres to run `/mcp` in an
+interactive `claude`. Do not fall back to writing the item into a frozen register.
 
 ## Verb index
 
-| Verb | Triggers on | One-line behavior |
-|------|-------------|-------------------|
-| `add-todo` | "add todo" | mint `td-`, append to `TODO.md` `## Backlog` + Notion write-through |
-| `add-techdebt` | "add tech debt" | mint `dd-`, append to `TECH_DEBT.md` with `P:` level; P0/P1 → Notion write-through |
-| `add-improvement` | "add improvement" | delegate to future-improvements: rich brief + tracker in global store |
-| `start-item` | "start item", "starting on", "working on \<id\>" | move line to `## In Progress` (± `stage:` pin) + flush its new lane to Notion |
-| `close-item` | "close item", "done" | find by id, flip to `[x]` / `status:done` (trust the caller) + Notion write-through |
-| `log` | "log work" | delegate to session-memory: summarize + append to STATE Log; then `sync-notion --all` flush |
-| `resume` | "resume", "where am I" | regenerate the Map (registers + manifests + git), print Map + last Log bullets |
-| `audit` | "audit state" | read-only drift report (5 classes), zero writes |
-| `reconcile` | "reconcile" | apply git-confirmed-safe fixes from `audit`; ask on judgment calls |
-| `promote` | "promote", "track in Notion" | push a local todo/improvement up to its Notion board, keep its id, stamp `notion:` |
-| `add-bug` | "add bug", "log a bug" | mint `bg-`, create a Bug Log page + local pointer + STATE |
-| `add-prd` | "add prd" | mint `pr-`, create a standalone PRD page under the Hub + STATE pointer |
-| `sync-notion` | "sync notion", "sync" | 3-way reconcile local ↔ Notion (one-sided auto, both-sided ask); per-item or `--all` |
-
-> Verb procedures follow below. Capture/close/log → see "## Verbs — capture".
-> Notion (connector-gated) → see "## Verbs — Notion".
-> Read/integrity → see "## Verbs — read & integrity".
+| Verb | Triggers on | Behavior |
+|---|---|---|
+| `capture` | "add todo", "add tech debt", "add improvement", "add bug" | create a Linear issue with the right label |
+| `start-item` | "start item", "starting on", "working on THV-\<n\>" | move to `Speccing` or `In Progress` |
+| `close-item` | "close item", "done" | move to `Ready` — **never** `Done` |
+| `log` | "log work" | delegate to session-memory: append to STATE `## Log` |
+| `resume` | "resume", "where am I" | regenerate the Map, print it + Linear's live lanes |
+| `audit` | "audit state" | read-only drift report, zero writes |
+| `reconcile` | "reconcile" | apply the fixes `audit` proves safe; ask on judgment calls |
 
 ---
 
-## Verbs — capture
+## `capture`
 
-Capture verbs are **prose-led**: the value is the light judgment (decide `repo`,
-decide `links`, decide the `P:` level), then the serialization is stapled on by
-the kept helpers. Each recipe below mints its ID via `ids.js` `mint(type)` and
-writes the line via `item.js` `serialize(...)` — **never hand-format** a
-`- [ ] … <!-- … -->` line. Run the recipe, then echo the printed id to the user.
+One verb, four trigger phrases. The old `add-todo` / `add-techdebt` / `add-improvement` /
+`add-bug` split existed because each had a different local file. They all have one home now,
+so the only thing that varies is the label.
 
-### `add-todo`
+**The judgment is the value here — the call is trivial.** Decide three things, then create:
 
-**Not for:** tech debt → `add-techdebt`; a deferred enhancement → `add-improvement`.
+1. **Kind → label.** Broken → `Bug`. Existing thing made better → `Improvement`. New
+   capability → `Feature`. Tech debt → **no kind label**; say "tech debt" in the title and
+   put the P-level in the body. There is no `tech-debt` label and you may not create one.
+2. **Agreed, or not?** Not yet discussed with Andres → status `Triage` + label
+   `needs-triage`. Already agreed and specced → status `Todo` + label `ready-for-agent`.
+   **When in doubt, `Triage`** — that is what the lane is for.
+3. **Project.** Which of the six Features it belongs to, or none. Never invent a Project.
 
-1. Determine `repo` — the repo the work *targets* (its subject), normally the
-   cwd's repo (`frontend`/`backend`); leave **empty** for cross-cutting or tooling
-   work that belongs to neither. And `links` (if invoked mid-brainstorm, the
-   active spec path; else empty).
-2. Run:
+Then call `save_issue` with `team: "THV"`, the title, a body, `state`, `labels` and
+`project`. Echo the returned `THV-<n>` and its URL.
 
-```bash
-node -e '
-const {mint}=require(process.env.HOME+"/.claude/skills/workspace/tools/ids.js");
-const {serialize}=require(process.env.HOME+"/.claude/skills/workspace/tools/item.js");
-const {insertItem}=require(process.env.HOME+"/.claude/skills/workspace/tools/register.js");
-const p=process.env.HOME+"/thoven/.workspace/TODO.md";
-const [text,repo="",links=""]=process.argv.slice(1);
-const id=mint("todo");
-const line=serialize({text,status:"open",fields:{id,type:"todo",status:"open",links,git:"",repo,"last-synced":""}});
-insertItem(p,["Backlog","In Progress"],line); console.log(id);
-' "<TODO TEXT>" "<repo>" "<links>"
+**The body carries what the old comment fields carried,** and one thing they could not:
+
+```markdown
+## Why
+<the reason, one short paragraph>
+
+## Done when
+<observable — assert the compiled CSS, the real payload, the presence of the key, the mount>
+
+## Writes to
+<path>          ← include ONLY for Speccing-lane work. Its presence decides the lane.
+
+## Decisions
+<links to decisions/*.md — a Linear issue POINTS at a decision, it never restates one>
 ```
 
-3. The Map is derived — no separate write. `resume` will surface it.
-4. **Notion leg (write-through):** connector live → push the new card now:
-   run the `sync-notion` worklist filtered to this id (it will be a single
-   `create` with the lane already derived — a todo captured mid-work can pass
-   `stage:` or be inserted under `## In Progress` so it's born in the right
-   column, not `Backlog`), then stamp `notion:` + `last-synced:` per
-   references/notion.md. Headless → say so; the next flush catches it.
-5. Echo the printed `id` (+ the Notion URL when the write-through ran).
+**Never invent a document path.** If an issue needs a `Writes to:` and you do not know it,
+ask in a comment rather than guessing.
 
-### `add-techdebt`
+## `start-item`
 
-**Not for:** an actionable next-step task → `add-todo`; a deferred enhancement → `add-improvement`.
+Marks "work on this begins now", so the lane moves when the work moves.
+Triggers implicitly too: when a session starts executing a tracked issue, run this — don't
+wait to be asked.
 
-P0 = blocking ship · P1 = important · P2 = nice-to-have · P3 = someday.
+1. **Check the lock first.** `list_issues` with `state: "In Progress"`. If the issue is
+   already there, another session owns it — **stop**, do not claim it.
+2. Read the issue. **Has a `Writes to:` line → `Speccing`. No `Writes to:` → `In Progress`.**
+3. `save_issue` with the new `state`, and `assignee: "me"`.
+4. Branch `THV-<id>-short-slug`. Linear's copy-branch button produces `andres/thv-1-slug` —
+   ignore it, our convention has no name prefix.
 
-Same shape; `mint("techdebt")`, file `TECH_DEBT.md`, plus a `P:` field
-(`P0`–`P3`). If the level wasn't given, ask for it first.
+## `close-item`
 
-```bash
-node -e '
-const {mint}=require(process.env.HOME+"/.claude/skills/workspace/tools/ids.js");
-const {serialize}=require(process.env.HOME+"/.claude/skills/workspace/tools/item.js");
-const fs=require("fs"), p=process.env.HOME+"/thoven/.workspace/TECH_DEBT.md";
-const [text,P="P2",repo="",links=""]=process.argv.slice(1);
-const id=mint("techdebt");
-const line=serialize({text,status:"open",fields:{id,type:"techdebt",status:"open",P,links,git:"",repo,"last-synced":""}});
-fs.appendFileSync(p,line+"\n"); console.log(id);
-' "<DEBT TEXT>" "<P0-P3>" "<repo>" "<links>"
-```
+**Move to `Ready`. Never `Done`.** `Ready` means the work is finished and unmerged; Andres
+merges locally and the merge commit moves it to `Done` through the GitHub integration. A verb
+that writes `Done` steals a step the human owns.
 
-**Notion leg (write-through):** P0/P1 debt is board-eligible — connector live →
-flush the single-id worklist (a `create` into the `Tech Debt` lane), stamp
-`notion:` + `last-synced:`. P2/P3 stays local-only; headless → notice.
+**Not sure it really shipped?** Don't close — run `audit`/`reconcile`, which apply the
+done-check below.
 
-### `add-improvement`
+`save_issue` with `state: "Ready"`. If anything was learned that the next person needs, put
+it in a comment before moving it.
 
-Invoke the **future-improvements** skill — it writes the rich brief to the global
-store `~/thoven/.workspace/FUTURE_IMPROVEMENTS.md` (repo-tagged) and registers
-the one-line tracker (minted via `ids.js`, serialized via `item.js`) in that same
-file. Do not append here directly.
+## `log`
 
-### `start-item`
+Invoke the **session-memory** skill — it summarizes the session, does the conditional
+clarify-first, and appends the entry to STATE `## Log` (newest-first, trimmed to ~10). Do not
+append here directly.
 
-**The missing transition.** Marks "work on this begins now" so the kanban lane
-moves *when the work moves* — not at close. Triggers implicitly too: when a
-session starts executing a tracked item (a sprint kickoff, resuming a plan),
-run this — don't wait to be asked.
-
-1. Move the line to `## In Progress` (TODO.md items; items in other registers
-   keep their file — set a `stage:` pin instead). Optionally set `stage:` when
-   the derived lane would be wrong (see Item format):
-
-```bash
-node -e '
-const {parseLine,serialize}=require(process.env.HOME+"/.claude/skills/workspace/tools/item.js");
-const {insertUnderSection}=require(process.env.HOME+"/.claude/skills/workspace/tools/register.js");
-const fs=require("fs"), [id,stage=""]=process.argv.slice(1);
-const p=process.env.HOME+"/thoven/.workspace/TODO.md";
-const lines=fs.readFileSync(p,"utf8").split("\n");
-let moved=null;
-const kept=lines.filter(l=>{const it=parseLine(l);if(it&&it.fields.id===id){if(stage)it.fields.stage=stage;moved=serialize(it);return false;}return true;});
-if(!moved){
-  // not in TODO.md — stage-pin it in place in the other registers
-  let found=false;
-  for(const f of ["TECH_DEBT.md","FUTURE_IMPROVEMENTS.md"].map(x=>process.env.HOME+"/thoven/.workspace/"+x)){
-    const ls=fs.readFileSync(f,"utf8").split("\n").map(l=>{const it=parseLine(l);if(it&&it.fields.id===id){found=true;it.fields.stage=stage||(it.fields.type==="bug"?"In-Progress":(it.fields.repo==="frontend"?"Front-end-dev":"Backend-dev"));return serialize(it);}return l;});
-    fs.writeFileSync(f,ls.join("\n"));
-  }
-  console.log(found?"stage-pinned "+id:"id not found: "+id); process.exit(0);
-}
-fs.writeFileSync(p,insertUnderSection(kept.join("\n"),["In Progress"],moved));
-console.log("started "+id+(stage?" (stage:"+stage+")":""));
-' "<id>" "<optional stage>"
-```
-
-2. **Notion leg (write-through):** connector live → flush the single-id
-   worklist (an `update` to the item's new lane — `Backend dev`, `Front end
-   dev`, `Speccing`, or the pin), refresh `last-synced:`. Headless → notice.
-3. Echo the id + the lane it moved to.
-
-### `close-item`
-
-**Not sure it's really done?** Don't close — use `audit`/`reconcile` (they apply the git+CHANGELOG done-check).
-
-Find the line whose `id:` matches across the registers, flip checkbox → `[x]`
-and `status:done` via `parseLine`→mutate→`serialize`. The line stays put —
-close-item flips status **in place**, it does NOT move the line between sections
-(a done item simply stops appearing in the Map). **Trust the caller** — no git
-check here (that is `audit`/`reconcile`). Do NOT touch `links:`.
-
-```bash
-node -e '
-const {parseLine,serialize}=require(process.env.HOME+"/.claude/skills/workspace/tools/item.js");
-const fs=require("fs"), id=process.argv[1];
-const files=["TODO.md","TECH_DEBT.md","FUTURE_IMPROVEMENTS.md"].map(f=>process.env.HOME+"/thoven/.workspace/"+f);
-let found=false;
-for(const f of files){const lines=fs.readFileSync(f,"utf8").split("\n").map(l=>{const it=parseLine(l);if(it&&it.fields.id===id){found=true;it.status="done";it.fields.status="done";return serialize(it);}return l;});fs.writeFileSync(f,lines.join("\n"));}
-console.log(found?"closed "+id:"id not found: "+id);
-' "<id>"
-```
-
-**Notion leg (write-through):** if the closed line carries a `notion:` ref, update
-its card `Status` to the terminal lane `lane.js` derives — `Published` (Dev Tracker;
-single ladder, do NOT write the deleted `Hermes Status`) or `Fixed` + today's
-`date:Fixed Date:start` (Bug Log) — then refresh `last-synced:` via `syncMark`
-(boardStatus = that lane). No `notion:` ref → the local flip is the whole job; the
-next `sync-notion` will detect the item as out-of-sync and create/update the card.
-Connector absent (headless) → skip the Notion write; the divergence persists in
-`last-synced:` and the catch-up flush handles it.
-
-### `log`
-
-Invoke the **session-memory** skill — it summarizes the session, does the
-conditional clarify-first, and appends the entry to STATE `## Log` (newest-first,
-trimmed to ~10). Do not append here directly.
-
-**Then flush:** logging work means work-state moved — end every `log` with the
-`sync-notion --all` catch-up (connector live) so the board reflects what was just
-logged. Zero pending → say "board in sync" and stop; headless → print the pending
-count as the notice.
-
----
-
-## Verbs — Notion (connector-gated)
-
-These four verbs write to the Notion boards. They require the Notion MCP
-connector live in an interactive session (design §7.3) — **NOT mem0**. All
-DB-IDs, the real board schemas, the MCP recipes, and the 3-way sync rules live
-in **[references/notion.md](references/notion.md)** (read it before any Notion
-write — schemas drift). If the connector is absent (headless run), each verb
-**skips with a notice**; the local half is unaffected. IDs still come from
-`ids.js` `mint(type)`; the local line + its `notion:` back-ref are written via
-`item.js` `serialize` — **never hand-format** either the line or the Notion props.
-
-### `promote`
-
-**Implicit promotion:** you do not need to call `promote` by hand for normal dev
-work. Any board-eligible item (see tools/board.js `boardEligible`) with no `notion:`
-ref is surfaced by `pendingSync` as a `create` action and pushed on the next
-`sync-notion`. `promote` remains available to push a single item immediately.
-
-**Not for:** capturing a *new* item (use `add-todo`/`add-improvement` first); a
-defect or PRD born tracked (use `add-bug`/`add-prd` — those start on the board).
-
-Push an existing local item *up* to its Notion board, **keeping its id** (one
-item, two surfaces):
-- a `todo` (`td-`) → a **Dev Tracker** card; `type:` flips to `task` (the line
-  stays in `TODO.md`, comment updated).
-- an `improvement` (`fi-`) → a **Feature Requests** card; `type:` stays `improvement`.
-
-1. Find the local line by id (`parseLine` across the registers).
-2. Create the board page via `notion-create-pages` with the open-status columns
-   from the type→board table in references/notion.md.
-3. Stamp the returned page id onto the local line's `notion:` + set `last-synced:`
-   (the back-ref recipe in references/notion.md) via `parseLine`→mutate→`serialize`.
-   For a `td-`→task promotion, set `type:task` in the same mutation. *(Optional:
-   if the item maps to a known sprint/PRD, also set the Dev Tracker `PRD / Sprint`
-   relation — see "Set a relation value" in references/notion.md.)*
-4. Attach a **Continuation** note to the Notion page: if the line has a `links:`
-   spec path → "resume `<path>` via `/dev`"; else a "`/brainstorming <title>`"
-   starter. (Proactive recall.)
-5. Echo the id + the Notion URL.
-
-### `add-bug`
-
-**Not for:** a deferred enhancement (`add-improvement`) or an actionable
-next-step task (`add-todo`). A bug is tracked from birth — straight to the board.
-
-1. Create the **Bug Log** page first (`Title`, `Status:Reported`, `Severity` from
-   the caller — default Medium, `Reported By` default Internal,
-   `date:Date Reported:start` = today) per references/notion.md; capture the
-   returned page id.
-2. Write the local pointer line **with `notion:` already populated** — one
-   `serialize` call (it round-trips arbitrary fields), never hand-formatted, no
-   separate stamp step. Appends to `TECH_DEBT.md` (the nearest local register for
-   defects); `resume` surfaces it.
-
-```bash
-node -e '
-const {mint}=require(process.env.HOME+"/.claude/skills/workspace/tools/ids.js");
-const {serialize}=require(process.env.HOME+"/.claude/skills/workspace/tools/item.js");
-const fs=require("fs"), p=process.env.HOME+"/thoven/.workspace/TECH_DEBT.md";
-const [text,notionId,synced,repo=""]=process.argv.slice(1);
-const id=mint("bug");
-const line=serialize({text,status:"open",fields:{id,type:"bug",status:"open",links:"",git:"",repo,notion:notionId,"last-synced":synced}});
-fs.appendFileSync(p,line+"\n"); console.log(id);
-' "<BUG TITLE>" "<notion page id>" "<sync marker>" "<repo>"
-```
-
-3. Echo the `bg-` id + the Notion URL.
-
-### `add-prd`
-
-1. Create a **standalone page under the Product Development Hub** (parent
-   `page_id`, not a data source) per references/notion.md, with the PRD title +
-   body; capture the returned page id.
-2. Register a `pr-` tracker line **with `notion:` populated** (one `serialize`
-   call, never hand-formatted) into `TODO.md` `## Backlog`, with the repo spec
-   path (if any) in `links:` — so `resume` surfaces the in-flight PRD. The
-   long-form spec file stays in `docs/superpowers/specs/`; this line is only the
-   tracker. **No Map hand-edit** — `resume` regenerates the Map from this register
-   line, like every other item.
-
-```bash
-node -e '
-const {mint}=require(process.env.HOME+"/.claude/skills/workspace/tools/ids.js");
-const {serialize}=require(process.env.HOME+"/.claude/skills/workspace/tools/item.js");
-const {insertItem}=require(process.env.HOME+"/.claude/skills/workspace/tools/register.js");
-const p=process.env.HOME+"/thoven/.workspace/TODO.md";
-const [text,notionId,synced,links="",repo=""]=process.argv.slice(1);
-const id=mint("prd");
-const line=serialize({text,status:"open",fields:{id,type:"prd",status:"open",links,git:"",repo,notion:notionId,"last-synced":synced}});
-insertItem(p,["Backlog","In Progress"],line); console.log(id);
-' "<PRD NAME>" "<notion page id>" "<sync marker>" "<spec path>" "<repo>"
-```
-
-3. Echo the `pr-` id + the Notion URL. (PRD *authoring* is out of scope — this
-   registers the canonical Notion node + the local tracker.)
-
-### `sync-notion`
-
-**`sync-notion [--all]` — the catch-up flush.** Compute the worklist with the node core:
-
-    node -e '
-    const {pendingSync}=require(process.env.HOME+"/.claude/skills/workspace/tools/sync.js");
-    const W=process.env.HOME+"/thoven/.workspace";
-    const registers=[{file:"TODO.md"},{file:"TECH_DEBT.md"},{file:"FUTURE_IMPROVEMENTS.md"}];
-    console.log(JSON.stringify(pendingSync({storeDir:W,registers,date:"<TODAY-ISO>"}),null,2));
-    '
-
-Each entry's `targetStatus` is the lane `lane.js` derived from the item's REAL
-state (done > `stage:` pin > type/section/repo) — creates land straight in their
-lane, and updates fire on ANY local change (close, section move, stage pin, title
-edit), not just done→Published. `board` routes the write: `dev-tracker` or
-`bug-log`. For each worklist entry, if the connector is live:
-  - `create` → `notion-create-pages` into the entry's board (Dev Tracker: `Feature / Item` = title, `Status` = targetStatus; Bug Log: `Title`/`Status`) per references/notion.md; capture the page id; stamp `notion:` + fresh `last-synced:` onto the local line (the back-ref recipe in references/notion.md).
-  - `update` → `notion-update-page` set `Status` = entry.targetStatus (+ `date:Fixed Date:start` when it's `Fixed`); refresh `last-synced:` with `syncMark` (boardStatus = targetStatus).
-If the connector is ABSENT: print the worklist as a notice and stop — no half-writes. The
-divergence stays recorded, so the next live run flushes it. This is the drift guarantee:
-detection is deterministic (pendingSync), the flush is best-effort-when-connected.
-
-`--all` walks every board-eligible item (this is now the default and the reconcile path);
-a bare `sync-notion <id>` filters the worklist to that id.
+There is no flush step. Linear is already current, because the verbs wrote to it directly.
 
 ---
 
@@ -437,18 +156,19 @@ a bare `sync-notion <id>` filters the worklist to that id.
 
 A unit of work is **done** only when BOTH hold:
 
-1. **Merged to `main`** — `git -C <repo> branch --merged main` lists its branch,
-   OR its commits are already on `main`.
-2. **In a published CHANGELOG version** — the feature appears under a *versioned*
-   heading (e.g. `## [2.13.0]`), NOT under `## [Unreleased]`.
+1. **Merged to `main`** — `git -C <repo> branch --merged main` lists its branch, OR its
+   commits are already on `main`.
+2. **In a published CHANGELOG version** — the feature appears under a *versioned* heading
+   (e.g. `## [2.13.0]`), NOT under `## [Unreleased]`.
 
-Anything failing either test is "claimed, not proven" — it stays as-is and goes
-on the human-review list. **Never guess** a feature shipped.
+Anything failing either test is "claimed, not proven" — it stays as-is and goes on the
+human-review list. **Never guess** a feature shipped.
 
 ### `resume` — the honest banner
 
-Regenerate the Map from scratch and print "where am I". This is the replacement
-for the lying `current_phase` banner.
+Two halves: the derived Map (legacy archive + stale manifests) and Linear's live lanes.
+
+**Half 1 — regenerate the Map:**
 
 ```bash
 node -e '
@@ -465,46 +185,42 @@ let s=fs.readFileSync(W+"/STATE.md","utf8");
 s=s.replace(/## Map\n[\s\S]*?\n## Log/,"## Map\n_regenerated by `workspace resume` — do not hand-edit_\n\n"+body+"\n\n## Log");
 fs.writeFileSync(W+"/STATE.md",s);
 const log=(s.split("## Log")[1]||"").split("\n").filter(l=>l.startsWith("- ")).slice(0,3);
-console.log("=== MAP ===\n"+body+"\n\n=== recent log ===\n"+(log.join("\n")||"_(none)_"));
-const {pendingSync}=require(process.env.HOME+"/.claude/skills/workspace/tools/sync.js");
-const pend=pendingSync({storeDir:W,registers,date:"1970-01-01"});
-console.log("\n=== notion ===\n"+(pend.length?pend.length+" item(s) out of sync with the board — run sync-notion":"board in sync"));
+console.log("=== MAP (legacy archive + manifests) ===\n"+body+"\n\n=== recent log ===\n"+(log.join("\n")||"_(none)_"));
 '
 ```
 
-If `resume` reports items out of sync and the connector is live, offer to run
-the `sync-notion` flush right away — that count is the staleness alarm.
+**Half 2 — the live lanes.** `list_issues` for team `THV` in `Speccing`, `In Progress` and
+`Ready`, and print them under `=== LINEAR ===`. **This half is the one that matters** — the
+Map's register items are a frozen archive, so a Map entry is history, not work in flight.
+Say which is which when you print them; never let the archive read as current.
 
-For each manifest line, before trusting it as "in flight", apply the
-**done ground truth** check (see *The "done" ground truth* above) — a manifest
-still showing `ship`/`validate` whose feature is merged + published is
-**stale**, and is `reconcile`'s job to fix.
+Then apply the **done ground truth** to each manifest line before trusting it as in-flight.
+A manifest still showing `ship`/`validate` whose feature is merged + published is **stale**,
+and that is `reconcile`'s job.
 
 ### `audit` — read-only drift report
 
-**Zero writes.** Report drift in severity order across these five classes:
-
-**Read-only. To APPLY fixes, run `reconcile`.**
+**Zero writes.** Report drift in severity order. **To APPLY fixes, run `reconcile`.**
 
 | Class | Detect |
-|-------|--------|
+|---|---|
 | stale-manifest | `findStaleManifests` returns it, but its feature passes the done-check |
-| phantom-active | item `status:open` in a register whose `git:` branch is merged + published |
-| orphan | item present in a register but missing its `id:` (can't be tracked) |
-| broken-link | a `links:` value points at an id that exists in no register |
-| surface-divergence | a local item's `notion:` page disagrees with its local line (status/title) and `last-synced:` shows they were never reconciled — see [references/notion.md](references/notion.md) |
+| lock-collision | two issues in `In Progress`, or one assigned to nobody |
+| wip-breach | `In Progress` + `Ready` exceeds 3 (`Speccing` is **outside** the cap) |
+| ghost-path | an issue's `Writes to:` names a path that does not resolve in its worktree |
+| orphan-decision | an issue restates a decision instead of linking one in `decisions/*.md` |
+| archive-drift | a frozen-register item is `status:open` but its `git:` branch is merged + published |
 
-Output a ranked list: `[severity] <class> — <item/manifest> — <suggested fix>`.
+Output a ranked list: `[severity] <class> — <issue/manifest> — <suggested fix>`.
 Do not change any file.
 
-### `reconcile` — apply git-confirmed-safe fixes
+### `reconcile` — apply what's provable
 
-Take `audit`'s findings. **Auto-apply** only the fixes the done-check proves safe;
-**ask the user** on every judgment call (don't drag-and-drop semantics, ambiguous
-phase, anything the rule can't prove).
+Take `audit`'s findings. **Auto-apply** only fixes the done-check proves safe; **ask** on
+every judgment call.
 
-- **stale-manifest** → set `Current Phase → shipped` ONLY when the feature is
-  merged to `main` AND in a published CHANGELOG version:
+- **stale-manifest** → set `Current Phase → shipped` ONLY when the feature is merged to
+  `main` AND in a published CHANGELOG version:
 
   ```bash
   node -e '
@@ -515,24 +231,53 @@ phase, anything the rule can't prove).
   ' "<manifest path>"
   ```
 
-- **phantom-active** → `close-item` the id.
-- **broken-link** → prune the dangling `links:` value (keep the rest).
-- **surface-divergence** → route through `sync-notion <id>` (one-sided auto,
-  both-sided ask). Never silently overwrite the board.
-- **anything unprovable** → leave untouched, list it for human review.
+- **archive-drift** → the registers are frozen. **Do not edit them.** Report it and stop.
+- **lock-collision · wip-breach · ghost-path · orphan-decision** → Andres's call, every time.
+  Report and stop. Cutting WIP is a human decision, not a cleanup.
 
 **Run `audit` first — `reconcile` consumes its findings.**
 
-To reconcile every stale manifest in one pass, run `audit` first, then apply
-the per-class fix recipe above to each finding it surfaced. Bulk cleanup is
-just repeating the single-item recipe for each finding — there is no special
-path.
-
 ---
 
-> **Notion layer.** The `notion:`/`last-synced:` fields, the
-> `promote`/`sync-notion`/`add-bug`/`add-prd` verbs, and the Notion columns in
-> the type registry are **live** — they require the Notion MCP connector in an
-> interactive session (design §7.3), **not** mem0. All DB-IDs, board schemas, MCP
-> recipes, and 3-way sync rules live in [references/notion.md](references/notion.md).
-> Local verbs work with or without the connector.
+## Reading the frozen archive
+
+Only needed when tracing a legacy `td-`/`dd-`/`fi-` id cited somewhere. An archived item is a
+markdown line plus a trailing HTML comment:
+
+```
+- [ ] Fix X race <!-- id:td-a1b2 type:todo status:open links: git:fix/x repo:frontend -->
+```
+
+Parse with `item.js` `parseLine`. `[x]` means `status:done`. `git:` is the branch it lived on,
+`repo:` is `frontend` | `backend` | empty. **Never `serialize` back into these files.**
+
+⚠️ **`TD-###` ids fork per worktree and do not resolve globally.** 59 ids (`TD-157`→`TD-215`)
+exist only on the materials branch, `TD-212` is cited as law in four `CLAUDE.md` files and
+resolves in none of them, and `TD-194` is a genuine collision — two different entries, one
+number. **A cited id that does not resolve in your worktree is expected, not a bug in your
+checkout.** Say so rather than hunting.
+
+## Helpers (`tools/`, zero-dep, `node --test`)
+
+| Helper | Exports | Used by |
+|---|---|---|
+| `item.js` | `parseLine(line)`, `serialize(item)` | reading the archive |
+| `ids.js` | `mint(type)`, `typeOf(id)`, `PREFIXES` | archive ids only — **new work gets a `THV-` id from Linear** |
+| `regen.js` | `regenerateMap({storeDir, registers})` | `resume` |
+| `reconcile-manifests.js` | `findStaleManifests({repoDir})` | `resume`, `audit`, `reconcile` |
+| `register.js` | `insertItem`, `insertUnderSection` | **unused — registers are frozen** |
+
+## Common Mistakes
+
+| Mistake | Instead |
+|---|---|
+| Writing a new item into `TODO.md` / `TECH_DEBT.md` / `FUTURE_IMPROVEMENTS.md` | They are a frozen archive. Capture creates a Linear issue |
+| `close-item` writing `Done` | `Ready`. The merge commit writes `Done` |
+| Claiming an issue already in `In Progress` | That is the lock. Check first, pick another |
+| Guessing a `Writes to:` path | Ask in a comment. An invented path is how `docs/` sprawled to 103 dirs |
+| Restating a decision in an issue body | Link it in `decisions/*.md`. A restated decision is what `E18` did |
+| Creating a label that "should" exist | Linear can't rename and rejects case-variants. Ask first |
+| Hand-editing the `## Map` zone | It's derived — fix the source, re-run `resume` |
+| Reading a Map entry as work in flight | The Map's register half is a **frozen archive**. Linear's lanes are the live half |
+| Treating an unresolvable `TD-###` as a broken checkout | The register forked per worktree. Expected |
+| Falling back to a local file when the Linear MCP is unauthorized | Stop and say so. A local write nobody reads is worse than no write |
