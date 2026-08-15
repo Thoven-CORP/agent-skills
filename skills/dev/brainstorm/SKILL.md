@@ -189,13 +189,13 @@ After user approves the design:
 
 1. **Write design doc** to `docs/plans/YYYY-MM-DD-<topic>-design.md`
 2. **Commit** the design document
-3. **Invoke `feature-plan`** to create the implementation plan
+3. **Invoke `feature-ledger`** to create the implementation plan
 
-**The ONLY implementation skill invoked after brainstorm is `feature-plan`.** The `future-improvements` skill may also be invoked in Phase 4.5 to capture deferred ideas.
+**The ONLY implementation skill invoked after brainstorm is `feature-ledger`.** The `future-improvements` skill may also be invoked in Phase 4.5 to capture deferred ideas.
 
 ## When NOT to Use
 - Bug fix or debugging — use investigate instead
-- Implementation of an already-approved design — use feature-plan
+- Implementation of an already-approved design — use feature-ledger
 - Simple code change with clear requirements — just do it
 - Verification or review — use verify
 

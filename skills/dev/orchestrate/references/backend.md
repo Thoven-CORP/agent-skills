@@ -15,7 +15,7 @@ Read the user's request and classify into ONE primary category:
 | Category | Signals | Route To |
 |----------|---------|----------|
 | **Creative/Design** | "build", "create", "add feature", "new", "design" | `brainstorm` |
-| **Planning** | "plan", "break down", "scaffold", "implement plan" | `feature-plan` |
+| **Planning** | "plan", "break down", "scaffold", "implement plan" | `feature-ledger` |
 | **Complex Execution** | "build this", "implement", multi-file changes, needs debate | `expert-team` |
 | **Investigation** | "bug", "error", "broken", "not working", "debug", "fix" | `investigate` |
 | **Verification** | "check", "verify", "review", "is this done", "test" | `verify` |
@@ -55,11 +55,11 @@ Some tasks benefit from chaining skills in sequence:
 
 | Pattern | Chain |
 |---------|-------|
-| New feature (idea → code) | `brainstorm` → `feature-plan` → `expert-team` |
-| New feature (spec exists) | `feature-plan` → `expert-team` |
+| New feature (idea → code) | `brainstorm` → `feature-ledger` → `expert-team` |
+| New feature (spec exists) | `feature-ledger` → `expert-team` |
 | Bug report | `investigate` → `verify` |
 | Feature complete | `verify` → `publish` |
-| Complex design problem | `brainstorm` (Deep mode) → `feature-plan` |
+| Complex design problem | `brainstorm` (Deep mode) → `feature-ledger` |
 
 ## Model Selection (Embedded — from SADD)
 

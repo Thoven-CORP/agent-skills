@@ -122,7 +122,7 @@ After classification, identify which existing skills AND agents the generated pr
 | Architecture | `/brainstorm` (always — design before build) | `/verify` (validate design meets requirements) | `/security-review` (if COPPA/auth/payment implications) |
 | Research | — | `/future-improvements` (to log deferred ideas found during research) | `/tech-debt` (if research reveals existing debt) |
 | Audit | `/production-data-audit` (audit real data first) | `/tech-debt` (to log findings), `/manage-todos` (to track remediation) | `/security-review` (if security audit), `/investigate` (if audit reveals bugs) |
-| PRD/Spec | `/brainstorm` (validate design before specifying) | `/feature-plan` (break spec into executable tasks) | — |
+| PRD/Spec | `/brainstorm` (validate design before specifying) | `/feature-ledger` (break spec into executable tasks) | — |
 | Testing | `/production-data-audit` (understand real data shapes) | `/verify` (confirm tests actually pass) | — |
 | Migration | `/safe-migrate` (always — pre-flight safety checks) | `/verify` (confirm migration succeeded in both envs), `/publish` (if deploying) | — |
 | Cross-Codebase Handoff | — | `/frontend-handover` (orchestrates the full handoff) | — |
