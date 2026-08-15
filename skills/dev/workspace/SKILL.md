@@ -1,269 +1,367 @@
 ---
 name: workspace
 description: >-
-  Use when the user says "add todo", "add tech debt", "add improvement", "add bug",
-  "log work", "resume", "where am I", "what am I working on", "start item",
-  "close item", "audit state", or "reconcile". Resolves each against Linear (workspace `thoven`,
-  team `THV`) and the feature ledger BEFORE writing — searching first, then updating, creating,
-  filing a decision or placing an artifact — and owns the derived cold-start Map and the appended
-  session Log in ~/thoven/.workspace/STATE.md.
+  The Linear update tool. Use whenever Andres talks about work in prose — "ok that's done",
+  "wrap up", "we should cut onboarding to two steps", "where am I", "what's next", "something's
+  off", "log this", "add a todo", "found a bug". Reads the evidence (commits, dirty files, the
+  feature ledger, CHANGELOGs, Linear itself), works out what he is trying to do, proposes the
+  writes, and on his go applies them across Linear, the STATE Log, CONTINUE_HERE and the
+  ledger. Never requires him to name a verb.
 ---
 
-# Workspace — Unified Work-State
+# Workspace
 
-**Linear is the board.** Issues, ownership and status live there — spec at
-`~/thoven/.workspace/SPEC-linear.md`, vocabulary at `CONTEXT.md`. This skill owns the two
-things Linear is bad at: the derived cold-start **Map** and the appended session **Log** in
-`STATE.md`. Everything else it does is a thin path into Linear.
+**Andres speaks in prose. This skill works out what he meant.** There is no verb to remember and
+no command to type — `/workspace` plus whatever he said is the whole interface.
 
-The Map is derived, so it cannot drift the way a hand-maintained banner does. Never hand-edit it.
+Linear is the board (spec: `~/thoven/.workspace/SPEC-linear.md`). This skill is how work gets
+*into* it, and it also owns the two things Linear is bad at: the derived cold-start **Map** and
+the appended session **Log** in `STATE.md`.
 
-> **Migration complete, 2026-08-15.** Capture resolves into Linear and the ledger. The three registers
-> are **an archive** — 208 legacy items, nothing new ever captured there, though an item Andres
-> rules dead is still closed there, because `resume` derives the Map from them.
-> The Notion layer (`promote`, `sync-notion`, `add-prd`, the `notion:` and
-> `last-synced:` fields, `references/notion.md`, `tools/sync.js`, `tools/lane.js`,
-> `tools/board.js`) is **deleted**, not deprecated. There is no sync, because Linear is the
-> store — there is no second copy to reconcile.
+## The one rule
 
-## Store layout
+> **Evidence leads. His words are a tiebreak.**
 
-`~/thoven/.workspace/` is its own git repo. FE and BE sessions share one truth.
+"Parent dashboard" routes four different ways in this codebase —
+`Parent 2.0 → The parent dashboard IS the student dashboard`, `Parent 2.0 → A parent can pull
+their child's content`, `Student 2.0 → One viewer, capabilities from the server`, and
+`Materials & Homework → Parent submission review`. A keyword match on "parent" is wrong three
+times in four. `components/parent/homework/` on `feature/materials-homework-2.0` is wrong none.
 
-| File | Holds | State |
+So route from the world, not the sentence. And **when they disagree, say so** — that is the most
+useful moment this skill has:
+
+> *"You said Parent 2.0, but you're committing to `feature/materials-homework-2.0`. Which?"*
+
+## Four intents — internal, never typed
+
+Classify what he is trying to do. He never names one; the names below exist so the **write
+permissions** differ, which is what keeps a wrong guess cheap.
+
+| He says something like | Intent | May write |
 |---|---|---|
-| `STATE.md` | Derived **Map** + appended **Log** (last ~10) | **live** |
-| `TODO.md` · `TECH_DEBT.md` · `FUTURE_IMPROVEMENTS.md` | Legacy items, `td-`/`dd-`/`fi-` ids | **archive — close, never add** |
+| "ok that's done" · "wrap up" · "logging off" | **log** | comments · status moves when proven · Log · CONTINUE_HERE. **Never opens an issue** |
+| "we should cut onboarding to two steps" · "found a bug in X" | **capture** | a decision row · an issue update · **the only intent that may create an issue** |
+| "where am I" · "what's next" · `/workspace` bare | **orient** | **nothing** |
+| "does this match reality" · "something's off" | **check** | nothing without proof |
 
-**"Close, never add" is not the same as read-only.** `resume` derives the Map from these files, so
-an item Andres rules dead has to be closed here or it reads as in-flight forever. Closing is the one
-permitted write; capture is not. The four **repo** registers (`frontend/`, `backend/` `TODO.md` and
-`TECH_DEBT.md`) are stricter — those are *do not tick*, because nothing derives from them.
+Half-log-half-decision is common — *"that's done, and we should cut onboarding to two steps."*
+**Do both.** Do not pick one and drop the other half.
 
-**Per-repo, do NOT move into the store:** `CHANGELOG.md` and `docs/*/.dev/MANIFEST.md` stay
-in each app repo — the store *reads* them, it does not own them.
-
-## Linear, in one screen
-
-Workspace `thoven`, team `THV`.
-
-`Triage → Backlog → Todo → Speccing | In Progress → Ready → Done`
-
-- **`Speccing` and `In Progress` are sibling lanes, never steps.** An issue carrying a
-  `Writes to:` line goes to `Speccing` (brainstormed with Andres, no code); one without goes
-  to `In Progress`.
-- **`In Progress` is the lock** — one issue, one agent session. Never claim one already taken.
-- **No PRs.** Finish at `Ready`. Andres merges locally, and the merge commit (`Fixes THV-<id>`)
-  moves it to `Done` by itself. **A verb in this skill never writes `Done`.**
-- **Labels:** `needs-triage`, `ready-for-agent`, `Bug`, `Improvement`, `Feature`.
-  Full mapping: `frontend/docs/agents/triage-labels.md`. **Do not invent labels** — Linear
-  rejects case-variant duplicates and cannot rename.
-
-### Reaching Linear
-
-The Linear MCP tools are deferred. Load them before the first call:
+## Two speeds
 
 ```
-ToolSearch: select:list_issues,save_issue,list_issue_statuses,save_comment
+  cheap  (~2s, no subagents)     orient · capture
+  deep   (fan out)               log · check
 ```
 
-If the MCP is not authorized, **stop and say so** — tell Andres to run `/mcp` in an
-interactive `claude`. Do not fall back to writing the item into a frozen register.
+`orient` reads a Map that is already on disk. `capture` searches three specific places. Neither
+needs the world read. **But cheap never means blind:** if the gate shows something big — `main`
+moved 130 commits, nothing logged in four days — say so and offer the deep read.
 
-## Verb index
+---
 
-| Verb | Triggers on | Behavior |
+## Step 1 — The gate (parent, ~2 seconds, no agents)
+
+Runs on **every** invocation, both speeds. It decides which checkouts are worth reading.
+
+```bash
+cd ~/thoven && for d in frontend* backend* .workspace agent-skills; do
+  { [ -d "$d/.git" ] || [ -f "$d/.git" ]; } || continue
+  b=$(git -C "$d" branch --show-current 2>/dev/null)
+  if [ "$b" = "main" ]; then own=$(git -C "$d" log --since='<WATERMARK>' --oneline 2>/dev/null | wc -l | tr -d ' ')
+  else own=$(git -C "$d" log main..HEAD --since='<WATERMARK>' --oneline 2>/dev/null | wc -l | tr -d ' '); fi
+  dirty=$(git -C "$d" status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+  { [ "$own" != "0" ] || [ "$dirty" != "0" ]; } && printf "%-24s %-34s own:%-5s dirty:%s\n" "$d" "$b" "$own" "$dirty"
+done
+```
+
+⚠️ **`main..HEAD`, never a bare `--since`.** A feature branch inherits `main`'s commits through
+shared ancestry, so `--since` alone reports dormant branches as busy. Measured 2026-08-15:
+`frontend-parent-2.0` showed **41 commits** under `--since=7d` and **0** under `main..HEAD` —
+both repos completely silent. The naive count would have made the quietest Project look like the
+second-busiest thing on the board.
+
+### The watermark
+
+**The date of the newest `## Log` entry in `~/thoven/.workspace/STATE.md`** — they are
+newest-first, `- YYYY-MM-DD`. No second copy of state; nothing to drift or repair. If the last
+entry is old, the window is wide, which is the correct failure direction — over-scanning costs
+two seconds, under-scanning silently loses work.
+
+**Two sources ignore the watermark entirely:**
+
+| Source | Why always in scope |
+|---|---|
+| **dirty files** | uncommitted work has no date. `frontend-lessonspace` has 58 dirty files and 0 commits — a date watermark would never see them |
+| **Linear's live lanes** | anything in `Speccing` / `In Progress` / `Ready` is live by definition, however old |
+
+**Flexibility:** the watermark is a default, not a fence. Prose overrides it — *"since Friday"*,
+*"everything"*, *"just materials"*. And the gate **always reports what it excluded**, so he can
+say "also look at X".
+
+---
+
+## Step 2 — Fan out (deep path only)
+
+**One read-only subagent per active checkout.** Not one per feature, not one per commit — a
+checkout *is* a branch *is* a Project, which is the routing, and it is the natural isolation
+boundary.
+
+**The fan-out never writes.** Parallel writes are the partial-update failure multiplied by eight.
+
+**Subagents return evidence. The parent does all routing and proposing.** A subagent seeing one
+checkout will confidently route it wrong — it cannot know that Materials spans
+`frontend-direct-upload` *and* `backend-gcs-migration`, or that an issue was claimed elsewhere.
+And eight agents proposing produces eight overlapping lists to reconcile by hand, which is the
+work being handed off.
+
+Send each agent this brief, and require exactly this shape back — the parent holds all of them
+at once, so **structured findings, no prose essays**:
+
+```yaml
+checkout:   frontend-direct-upload
+branch:     feature/materials-homework-2.0
+project:    Materials & Homework          # or: unattributed
+claimed:    THV-9                         # or: none
+commits:    190                           # main..HEAD since watermark
+  themes:                                 # cluster them; do not list 190 lines
+    - <one line> (<sha>, <sha>)
+dirty:      39                            # grouped by area, not enumerated
+docs:
+  STATE:    <path> — what it now claims
+  IDEAS:    <path> — unresolved threads
+  PRD:      <path> | absent
+  DESIGN:   <path> | absent
+missing:    [PRD, DESIGN]                 # roles with no doc — a ledger imbalance
+changelog:  entries added under [Unreleased]? y/n
+ambiguous:
+  - <anything it could not attribute, with why>
+```
+
+---
+
+## Step 3 — The read-list. Named, not "look around."
+
+`docs/thoven2.0/` is a symlink into `~/thoven/thoven2.0/` (its own git repo) and **resolves from
+every worktree** — verified. Always cite that form.
+
+### Tier 0 — the law. Once per session, never per feature.
+
+```
+~/thoven/CLAUDE.md                the nine rules · Feature Folders
+.workspace/SPEC-linear.md         the board · the lanes · the routing test
+.workspace/CONTEXT.md             vocabulary — every capitalised noun
+docs/thoven2.0/00_ROUTER.md       where a doc belongs. Already law; cite, never restate
+```
+
+### Tier 1 — initiative. Once per run, **in the parent.**
+
+```
+docs/thoven2.0/00_STATE.md        the board narrative
+docs/thoven2.0/ROADMAP.md         weeks · ship ladder · open decisions
+docs/thoven2.0/WORKTREES.md       which branch owns which file — two branches never own one file
+```
+
+Tier 1 lives in the parent because `WORKTREES.md`'s ownership table matters most when
+*comparing* checkouts, which no subagent can do.
+
+### Tier 2 — the feature. Each subagent, for its own checkout.
+
+**Match by role, not filename.** The six features look nothing like each other — `materials-
+homework` has 77 markdown files and its own conventions; `teacher-2.0`, `parent-2.0` and `coppa`
+have exactly two each.
+
+| Role | Typical | Also recognise |
 |---|---|---|
-| `capture` | "add todo", "add tech debt", "add improvement", "add bug" | **resolve first** — search, classify, then update / create / file a decision / place an artifact |
-| `start-item` | "start item", "starting on", "working on THV-\<n\>" | move to `Speccing` or `In Progress` |
-| `close-item` | "close item", "done" | move to `Ready` — **never** `Done` |
-| `log` | "log work" | delegate to session-memory: append to STATE `## Log` |
-| `resume` | "resume", "where am I" | regenerate the Map, print it + Linear's live lanes |
-| `audit` | "audit state" | read-only drift report, zero writes |
-| `reconcile` | "reconcile" | apply the fixes `audit` proves safe; ask on judgment calls |
+| **STATE** | `<feature>/STATE.md` | present in 9/9 — dead consistent |
+| **IDEAS** | `<feature>/IDEAS.md` | `BRAINSTORM_HANDOFF.md`, `HANDOVER-*-brainstorm.md`, `*braindump*` |
+| **PRD** | `<feature>/PRD.md` | `*requirement*` — 3 of 6 have one |
+| **DESIGN** | `<feature>/design/VERSIONS.md` | **and the REJECTED blocks inside the drawings** |
+
+**IDEAS is the pre-PRD brainstorming doc. Read it even when a PRD exists** — it holds the threads
+that are still unresolved, which is exactly what a log or a capture needs to know.
+
+**Resolution: role → depth → recency → report if ambiguous.**
+
+- **Depth.** The live doc is at the **feature root**. Anything under `reference/`, `archive/`, or
+  a dated subdirectory is history. This is what stops `reference/backend-sprint/PRD-v2-2026-07-08.md`
+  being read as current — `materials-homework` has **three** PRD candidates.
+- **Report the fork, never resolve it silently.** *"materials-homework has 3 PRD candidates; read
+  `PRD.md`, ignored 2 under `reference/`."* Picking quietly is how four docs come to claim one
+  surface.
+- **A missing role is reported, not skipped.** *"teacher-2.0: STATE + IDEAS only — no PRD, no
+  VERSIONS."* That is a ledger imbalance surfacing for free.
+
+### Tier 3 — the code side. Per checkout.
+
+```
+CHANGELOG.md                      half the done-check (the other half is merged-to-main)
+2.0_NEXT.md                       worktree root, gitignored — rebase state + roadmap position
+docs/*/.dev/MANIFEST.md           stale-manifest detection
+```
+
+---
+
+## Step 4 — Route
+
+**Branch → Project** is deterministic for four of six. Source of truth is `SPEC-linear.md` §4.6;
+this is its operational form:
+
+```
+feature/materials-homework-2.0   →  Materials & Homework      (frontend-direct-upload + backend-gcs-migration)
+feature/student-2.0              →  Student 2.0
+feature/teacher-2.0              →  Teacher 2.0
+feature/parent-2.0               →  Parent 2.0 · signup · auth
+main                             →  Design System, or unattributed — needs other evidence
+(no branch)                      →  COPPA Phase 2 / VPC — has no worktree
+```
+
+**The order. First hit wins:**
+
+1. **An issue already claimed** by him in `Speccing` / `In Progress` — decisive
+2. **The branch**
+3. **Files touched** — this is what picks the *Milestone*, and what separates the four "parent
+   dashboard" cases
+4. **The feature folder** he edited docs in
+5. **What he said** — last, and only as a tiebreak
+
+### Unattributed is a first-class bucket
+
+Measured 2026-08-15, and it is large:
+
+```
+main (frontend + backend)   203 commits   design system · docs · hotfixes. No branch by design
+.workspace + agent-skills    66 commits   tooling. No Project at all
+frontend-sweepstakes         18 commits   active, and the spec gives it NO Project
+lessonspace (FE+BE)          85 dirty     frozen, but uncommitted work is sitting there
+thovie ×4                    18 dirty     parked
+no trace at all                   —       THV-1's walkthrough; a decision said out loud
+```
+
+**Unattributed work is reported, never filed.** Say *"these three commits map to no issue"* and
+offer `capture`. Opening a card for each is how the board fills with forty orphans in a week.
+
+That last row — work that left no trace — is the one only **asking** can reach. Which is why:
+
+## Step 5 — Ask, but only where it is genuinely unclear
+
+Confident cases do not ask. Ambiguous ones ask **one** question, with the evidence attached:
+
+> *"Three commits on `feature/materials-homework-2.0` touch `components/student/homework/` — the
+> ledge sweep, or the student write flow?"*
+
+**His say-so is proof.** *"Yeah that's done"* is sufficient evidence for a `→ Ready` proposal —
+do not go verify the CHANGELOG first. The hard done-check belongs to `check`, which runs
+unprompted.
+
+## Step 6 — One proposal, one voice
+
+Never eight lists. One block, showing exactly what will be written:
+
+```
+THV-9   Materials & Homework · Student write flow
+        + comment (7 commits, 2 SHAs)
+        → Ready          because: you said done · branch exists · CHANGELOG entry added
+
+THV-4   Parent 2.0
+        + comment linking the onboarding decision
+        status unchanged
+
+decisions/product.md   NEW ROW — onboarding is two steps
+                       ⚠ parent-2.0 has no decisions/ folder → offer `feature-ledger open`
+
+STATE ## Log           entry
+CONTINUE_HERE.md       materials-homework — what was tried, what to be careful of
+
+NOT touched:  the PRD (problem statement unchanged) · VERSIONS.md (no proto superseded)
+UNATTRIBUTED: 203 commits on main · 18 on sweepstakes — no issue. `capture`?
+```
+
+Then wait. **Nothing is written before he says go.**
+
+## Step 7 — Write serially, fanned across surfaces
+
+One at a time, never in parallel. The surfaces and their owners:
+
+| Surface | Owner |
+|---|---|
+| Linear issues, comments, status | this skill, via MCP |
+| `.workspace/STATE.md` `## Log` | **session-memory** |
+| `<feature>/CONTINUE_HERE.md` | **session-memory** |
+| `decisions/*.md` · PRD · `VERSIONS.md` | **feature-ledger** |
+
+**Name every surface skipped.** *"Updated THV-4 and the Milestone; did not touch the PRD because
+the problem statement is unchanged"* is a complete write. Silence about a layer reads as "it was
+fine", and that is how `files_count` shipped.
+
+**Status rules:** comments always — append-only, cannot contradict anything. Status moves only
+with the evidence shown. **`Done` is never written by this skill**; the merge commit
+(`Fixes THV-<id>`) owns that transition.
+
+## Step 8 — Always advance
+
+> **Every run writes a Log entry and advances the watermark, even when nothing changed.**
+
+*"Read 8 checkouts, nothing to update"* is a valid entry. If entries were written only when
+something happened, a quiet week stalls the watermark and the window grows unbounded — which is
+how the Map earned its reputation for lying. The Map is derived, so every run refreshes it free.
 
 ---
 
 ## `capture` — resolve first, then write
 
-**This verb is not "create an issue."** Creating is one of four outcomes, and usually the wrong
-one. Sprawl is what happens when it is the only one — 103 feature directories across six
-conventions, and a 150-row decision list that contradicts itself.
+**Not "create an issue."** Creating is one outcome of four and usually the wrong one. Sprawl is
+what happens when it is the only one — 103 feature directories across six conventions.
 
-The input is a thought, mid-work: *"let's cut the parent onboarding flow to two steps."* That
-sentence is a **decision**, not a ticket. Filing it as a new issue loses it (nothing links to
-it), duplicates it (a Milestone already covers onboarding), and leaves the PRD saying four
-steps. Three failures from one reflex.
+*"Let's cut the parent onboarding flow to two steps"* is a **decision**, not a ticket. Filed as a
+new issue it loses it (nothing links to it), duplicates it (a Milestone already covers
+onboarding), and leaves the PRD saying four steps. Three failures from one reflex.
 
-### Step 1 — Locate
+**Search before writing — three places, not optional.** Ledger rule 3: *thirty seconds, and the
+single step whose absence caused the worst finding of the 2026-08-14 audit.*
 
-Which of the six Features? Which Milestone inside it? Ask if you cannot tell. **Never invent a
-Project or a Milestone.**
-
-### Step 2 — Search before you write. Not optional.
-
-Ledger rule 3: *thirty seconds, and the single step whose absence caused the worst finding of
-the 2026-08-14 audit.* Three places:
-
-| Where | How | Looking for |
-|---|---|---|
-| Linear | `list_issues` with `query` + `project`, and read the **Milestone descriptions** — they cite work-item ids and carry the traps | an issue or Milestone that already owns this |
-| `decisions/*.md` | grep the feature folder | a decision that already rules this, or contradicts it |
-| `design/VERSIONS.md` + `drawings/` | read the rows, **and the REJECTED blocks** | a design that already tried this and threw it out |
-
-**A REJECTED block inside a superseded drawing is the thing that caught the worst defect.** Read
-those before proposing a layout. If the search finds the thought was already rejected, say so and
-stop — that is a successful capture.
-
-### Step 3 — Classify. Four kinds, four different writes.
-
-| It is | Write it to | Linear |
-|---|---|---|
-| a **decision** — a ruling about how something should be | a row in `decisions/product.md` · `architecture.md` · `api.md` · `design.md` | **no new issue.** Comment on the affected issue linking the row |
-| a **change to tracked work** | — | `save_issue` **update** the existing issue |
-| **new work** — an agent could claim it and open a branch | — | `save_issue` **create**, with Project + Milestone + labels |
-| an **artifact** — PRD, spec, design doc | agent reads it *during* work → local feature folder · human reads it to *orient* → **Linear Document** on the Project (SPEC §6) | link it from the issue |
-
-**The test for "new work" is SPEC §7.4's:** would an agent claim this and open a branch? If no,
-it is not an issue. A dogfood observation is not an issue; the bug it turns into is.
-
-⚠️ **No Feature has a `decisions/` folder today** — verified 2026-08-15, all six are empty of it,
-and only `materials-homework` and `student-2.0` have even a `PRD.md` + `VERSIONS.md`. So a
-decision usually has **nowhere to land**. When that happens: **stop and offer
-`feature-ledger open`.** Do not invent a path, do not drop the decision into the issue body as
-prose. Prose describing a decision with no source to cite is exactly what produced `E18`.
-
-### Step 4 — Write every layer it touches
-
-The other failure mode is the partial update: the issue moves, the PRD still says the old thing.
-Before you finish, name every layer the change touches and either write it or report the gap:
-
-```
-decision row      decisions/<file>.md
-the issue         title · body · labels · Project · Milestone
-the Milestone     its description, if scope moved
-the PRD           if the problem statement changed
-the design        VERSIONS.md, if a proto is now superseded
-```
-
-**Superseded and rejected are handled differently** (ledger rule 8): a superseded decision row is
-**deleted** — a contradictory ledger is the disease. A rejected alternative is **kept**, inside
-the drawing. And an issue is never deleted — set it `Canceled` with a comment saying why, so the
-id keeps resolving.
-
-### Step 5 — Report both halves
-
-Say what you wrote **and what you deliberately did not.** "Updated THV-4 and the Milestone;
-did not touch the PRD because the problem statement is unchanged" is a complete capture. Silence
-about a layer reads as "it was fine", and that is how `files_count` shipped.
-
-### Setting the fields, when you do create
-
-- **Kind → label.** Broken → `Bug`. Existing thing improved → `Improvement`. New capability →
-  `Feature`. Tech debt → **no kind label**; say "tech debt" in the title, P-level in the body.
-  There is no `tech-debt` label and you may not create one.
-- **Agreed, or not?** Not yet discussed with Andres → `Triage` + `needs-triage`. Already agreed
-  and specced → `Todo` + `ready-for-agent`. **When in doubt, `Triage`.**
-- **Project and Milestone are both required** on anything inside Thoven 2.0. An issue with a
-  Project and no Milestone is invisible in the Shipping view — that is how work goes quiet.
-
-**The body:**
-
-```markdown
-## Why
-<the reason, one short paragraph>
-
-## Done when
-<observable — assert the compiled CSS, the real payload, the presence of the key, the mount>
-
-## Writes to
-<path>          ← include ONLY for Speccing-lane work. Its presence decides the lane.
-
-## Decisions
-<links to decisions/*.md — a Linear issue POINTS at a decision, it never restates one>
-```
-
-**Never invent a document path.** If an issue needs a `Writes to:` and you do not know it,
-ask in a comment rather than guessing.
-
-## The seam with `feature-ledger`
-
-Written after this skill was, so the boundary was never stated. It is one line:
-
-> **Linear owns *who is doing what, right now*. The ledger owns *why the design is what it is*.**
-> A Linear issue never restates a decision — it links to one.
-
-That rule matters more here than anywhere else, because a Linear description is easier to write
-than a `decisions/` row. The path of least resistance is to paraphrase the design into the ticket,
-and that is precisely what produced `E18`: prose describing a layout the proto's REJECTED block
-had already thrown out, which then passed every downstream gate because each one checked the prose.
-
-| You are about to | Reach for |
+| Where | Looking for |
 |---|---|
-| start a large feature | `feature-ledger open` — **before** creating its issues |
-| file a decision and the folder does not exist | `feature-ledger open`, then file it |
-| write a plan or a PRD | `feature-ledger reconcile` first — a plan written against an unbalanced ledger freezes the imbalance |
-| find a doc and the code disagreeing | `feature-ledger reconcile` |
-| resolve a `VERSIONS.md` owning gate | it must be a pasted `THV-` URL, never a prose name |
+| Linear — issues **and Milestone descriptions**, which cite work-item ids and carry the traps | something that already owns this |
+| the feature's `decisions/*.md` | a ruling that already covers or contradicts it |
+| `design/VERSIONS.md` **and the REJECTED blocks** | a design that already tried this and threw it out |
 
-**A feature folder and a Linear Project are one thing seen twice.** The folder holds the
-reasoning; the Project holds the state. If a Feature has one and not the other, that is the
-imbalance — say so.
+**If the search finds it was already rejected, say so and stop.** That is a successful capture.
 
-## `start-item`
+**Then classify — four kinds, four writes:**
 
-Marks "work on this begins now", so the lane moves when the work moves.
-Triggers implicitly too: when a session starts executing a tracked issue, run this — don't
-wait to be asked.
+| It is | Goes to | Linear |
+|---|---|---|
+| a **decision** | a row in `decisions/product.md` · `architecture.md` · `api.md` · `design.md` | **no new issue** — comment the link on the affected issue |
+| a **change to tracked work** | — | **update** the existing issue |
+| **new work** — an agent could claim it and open a branch | — | **create**, with Project + Milestone + labels |
+| an **artifact** — PRD, spec, design | agent reads it during work → local feature folder · human reads it to orient → **Linear Document** on the Project (SPEC §6) | link it |
 
-1. **Check the lock first.** `list_issues` with `state: "In Progress"`. If the issue is
-   already there, another session owns it — **stop**, do not claim it.
-2. Read the issue. **Has a `Writes to:` line → `Speccing`. No `Writes to:` → `In Progress`.**
-3. `save_issue` with the new `state`, and `assignee: "me"`.
-4. Branch `THV-<id>-short-slug`. Linear's copy-branch button produces `andres/thv-1-slug` —
-   ignore it, our convention has no name prefix.
+⚠️ **No Feature has a `decisions/` folder today** — verified 2026-08-15; only `materials-homework`
+and `student-2.0` have even a `PRD.md`. So a decision usually has **nowhere to land**. Stop and
+offer `feature-ledger open`. Do not invent a path, and do not drop the decision into an issue body
+as prose — prose describing a decision with no source to cite is what produced `E18`.
 
-## `close-item`
+**Fields, when creating:**
 
-**Move to `Ready`. Never `Done`.** `Ready` means the work is finished and unmerged; Andres
-merges locally and the merge commit moves it to `Done` through the GitHub integration. A verb
-that writes `Done` steals a step the human owns.
+- **Kind → label.** Broken → `Bug`. Improved → `Improvement`. New capability → `Feature`. Tech
+  debt → **no kind label**; say "tech debt" in the title, P-level in the body. There is no
+  `tech-debt` label and you may not create one.
+- **Agreed?** Not yet discussed → `Triage` + `needs-triage`. Agreed and specced → `Todo` +
+  `ready-for-agent`. **When in doubt, `Triage`.**
+- **Project and Milestone are both required** inside Thoven 2.0. A Project with no Milestone is
+  invisible in the Shipping view — that is how work goes quiet.
+- Full label mapping: `frontend/docs/agents/triage-labels.md`. **Never invent a label** — Linear
+  rejects case-variant duplicates and cannot rename.
 
-**Not sure it really shipped?** Don't close — run `audit`/`reconcile`, which apply the
-done-check below.
+**Superseded vs rejected** (ledger rule 8): a superseded decision row is **deleted** — a
+contradictory ledger is the disease. A rejected alternative is **kept**, inside the drawing. An
+issue is never deleted — `Canceled` with a comment, so the id keeps resolving.
 
-`save_issue` with `state: "Ready"`. If anything was learned that the next person needs, put
-it in a comment before moving it.
+## `orient` — where am I
 
-## `log`
-
-Invoke the **session-memory** skill — it summarizes the session, does the conditional
-clarify-first, and appends the entry to STATE `## Log` (newest-first, trimmed to ~10). Do not
-append here directly.
-
-There is no flush step. Linear is already current, because the verbs wrote to it directly.
-
----
-
-## Verbs — read & integrity
-
-### The "done" ground truth
-
-A unit of work is **done** only when BOTH hold:
-
-1. **Merged to `main`** — `git -C <repo> branch --merged main` lists its branch, OR its
-   commits are already on `main`.
-2. **In a published CHANGELOG version** — the feature appears under a *versioned* heading
-   (e.g. `## [2.13.0]`), NOT under `## [Unreleased]`.
-
-Anything failing either test is "claimed, not proven" — it stays as-is and goes on the
-human-review list. **Never guess** a feature shipped.
-
-### `resume` — the honest banner
-
-Two halves: the derived Map (legacy archive + stale manifests) and Linear's live lanes.
-
-**Half 1 — regenerate the Map:**
+Gate scan, then the Map, then Linear's live lanes. Writes nothing.
 
 ```bash
 node -e '
@@ -274,113 +372,137 @@ const registers=[{file:"TODO.md"},{file:"TECH_DEBT.md"},{file:"FUTURE_IMPROVEMEN
 const items=regenerateMap({storeDir:W,registers});
 const repos=[["frontend",process.env.HOME+"/thoven/frontend"],["backend",process.env.HOME+"/thoven/backend"]];
 let manifests=[];
-for(const [name,dir] of repos){ try{ for(const s of findStaleManifests({repoDir:dir})) manifests.push(`- manifest:${name} [${s.phase}] ${s.feature} (verify shipped via git+CHANGELOG)`);}catch(e){ console.error("resume: skipped "+name+" ("+e.code+")"); } }
+for(const [name,dir] of repos){ try{ for(const s of findStaleManifests({repoDir:dir})) manifests.push(`- manifest:${name} [${s.phase}] ${s.feature} (verify shipped via git+CHANGELOG)`);}catch(e){ console.error("orient: skipped "+name+" ("+e.code+")"); } }
 const body=[items, manifests.join("\n")].filter(Boolean).join("\n")||"_(empty)_";
 let s=fs.readFileSync(W+"/STATE.md","utf8");
-s=s.replace(/## Map\n[\s\S]*?\n## Log/,"## Map\n_regenerated by `workspace resume` — do not hand-edit_\n\n"+body+"\n\n## Log");
+s=s.replace(/## Map\n[\s\S]*?\n## Log/,"## Map\n_regenerated by `workspace` — do not hand-edit_\n\n"+body+"\n\n## Log");
 fs.writeFileSync(W+"/STATE.md",s);
 const log=(s.split("## Log")[1]||"").split("\n").filter(l=>l.startsWith("- ")).slice(0,3);
-console.log("=== MAP (legacy archive + manifests) ===\n"+body+"\n\n=== recent log ===\n"+(log.join("\n")||"_(none)_"));
+console.log("=== MAP (frozen archive + manifests) ===\n"+body+"\n\n=== recent log ===\n"+(log.join("\n")||"_(none)_"));
 '
 ```
 
-**Half 2 — the live lanes.** `list_issues` for team `THV` in `Speccing`, `In Progress` and
-`Ready`, and print them under `=== LINEAR ===`. **This half is the one that matters** — the
-Map's register items are a frozen archive, so a Map entry is history, not work in flight.
-Say which is which when you print them; never let the archive read as current.
+Then `list_issues` for `Speccing` · `In Progress` · `Ready` and print under `=== LINEAR ===`.
 
-Then apply the **done ground truth** to each manifest line before trusting it as in-flight.
-A manifest still showing `ship`/`validate` whose feature is merged + published is **stale**,
-and that is `reconcile`'s job.
+**Label the halves.** The Map's register items are a **frozen archive** — history, not work in
+flight. Linear's lanes are the live half. Letting the archive read as current is the failure the
+freeze created.
 
-### `audit` — read-only drift report
+## `check` — does the board match reality
 
-**Zero writes.** Report drift in severity order. **To APPLY fixes, run `reconcile`.**
+Deep path. **Zero writes without proof.**
+
+**The "done" ground truth.** A unit of work is done only when **both** hold: its branch is merged
+to `main` (or its commits already are), **and** the feature appears under a *versioned* CHANGELOG
+heading, not `## [Unreleased]`. Anything failing either test is "claimed, not proven".
 
 | Class | Detect |
 |---|---|
-| stale-manifest | `findStaleManifests` returns it, but its feature passes the done-check |
+| stale-manifest | `findStaleManifests` returns it, but the feature passes the done-check |
 | lock-collision | two issues in `In Progress`, or one assigned to nobody |
-| wip-breach | `In Progress` + `Ready` exceeds 3 (`Speccing` is **outside** the cap) |
+| wip-breach | `In Progress` + `Ready` over 3 (**`Speccing` is outside the cap**) |
 | ghost-path | an issue's `Writes to:` names a path that does not resolve in its worktree |
-| orphan-decision | an issue restates a decision instead of linking one in `decisions/*.md` |
-| archive-drift | a frozen-register item is `status:open` but its `git:` branch is merged + published |
+| orphan-decision | an issue restates a decision instead of linking one |
+| ledger-imbalance | a Project whose feature folder has no PRD, no VERSIONS, or two docs claiming one surface |
+| archive-drift | an archived item is `status:open` but its branch is merged + published |
 
-Output a ranked list: `[severity] <class> — <issue/manifest> — <suggested fix>`.
-Do not change any file.
+**Only stale-manifest auto-fixes**, and only when the done-check proves it:
 
-### `reconcile` — apply what's provable
+```bash
+node -e '
+const fs=require("fs"), p=process.argv[1];
+let s=fs.readFileSync(p,"utf8");
+s=s.replace(/(\|\s*\*\*Current Phase\*\*\s*\|\s*)([^|]*?)(\s*\|)/i,"$1shipped$3");
+fs.writeFileSync(p,s); console.log("shipped: "+p);
+' "<manifest path>"
+```
 
-Take `audit`'s findings. **Auto-apply** only fixes the done-check proves safe; **ask** on
-every judgment call.
-
-- **stale-manifest** → set `Current Phase → shipped` ONLY when the feature is merged to
-  `main` AND in a published CHANGELOG version:
-
-  ```bash
-  node -e '
-  const fs=require("fs"), p=process.argv[1];
-  let s=fs.readFileSync(p,"utf8");
-  s=s.replace(/(\|\s*\*\*Current Phase\*\*\s*\|\s*)([^|]*?)(\s*\|)/i,"$1shipped$3");
-  fs.writeFileSync(p,s); console.log("shipped: "+p);
-  ' "<manifest path>"
-  ```
-
-- **archive-drift** → report it and stop. Closing an archived item is **Andres’s ruling**, never an
-  inference from a merged branch. Ask; do not auto-close.
-- **lock-collision · wip-breach · ghost-path · orphan-decision** → Andres's call, every time.
-  Report and stop. Cutting WIP is a human decision, not a cleanup.
-
-**Run `audit` first — `reconcile` consumes its findings.**
+Everything else is reported and stopped. **archive-drift is never auto-closed** — closing an
+archived item is Andres's ruling, not an inference from a merged branch. Cutting WIP is his call
+too.
 
 ---
 
-## Reading the frozen archive
+## The seam with `feature-ledger`
 
-Only needed when tracing a legacy `td-`/`dd-`/`fi-` id cited somewhere. An archived item is a
-markdown line plus a trailing HTML comment:
+Written after this skill was, so the boundary was never stated. One line:
 
-```
-- [ ] Fix X race <!-- id:td-a1b2 type:todo status:open links: git:fix/x repo:frontend -->
-```
+> **Linear owns *who is doing what, right now*. The ledger owns *why the design is what it is*.**
+> A Linear issue never restates a decision — it links to one.
 
-Parse with `item.js` `parseLine`. `[x]` means `status:done`. `git:` is the branch it lived on,
-`repo:` is `frontend` | `backend` | empty. **Only ever `serialize` back to flip a `status:` to done.** Never to add a line.
+That matters most here, because a Linear description is easier to write than a `decisions/` row,
+so the path of least resistance is to paraphrase the design into the ticket. That is exactly what
+produced `E18`: prose describing a layout the proto's REJECTED block had already thrown out,
+which then passed every gate because each one checked the prose.
+
+| About to | Reach for |
+|---|---|
+| start a large feature | `feature-ledger open` — **before** its issues exist |
+| file a decision with no folder to file it in | `feature-ledger open`, then file |
+| write a plan or PRD | `feature-ledger reconcile` first — a plan on an unbalanced ledger freezes the imbalance |
+| resolve a `VERSIONS.md` owning gate | it must be a pasted `THV-` URL, never a prose name |
+
+**A feature folder and a Linear Project are one thing seen twice.** The folder holds the
+reasoning, the Project holds the state. A Feature with one and not the other *is* the imbalance —
+say so.
+
+## Store layout
+
+`~/thoven/.workspace/` is its own git repo. FE and BE sessions share one truth.
+
+| File | Holds | State |
+|---|---|---|
+| `STATE.md` | derived **Map** + appended **Log** | **live** — the Log is also the watermark |
+| `TODO.md` · `TECH_DEBT.md` · `FUTURE_IMPROVEMENTS.md` | legacy `td-`/`dd-`/`fi-` items | **archive — close, never add** |
+
+**"Close, never add" is not read-only.** `orient` derives the Map from those files, so an item
+ruled dead must be closed there or it reads as in-flight forever. Closing is the one permitted
+write. The four **repo** registers (`frontend/`, `backend/` `TODO.md` and `TECH_DEBT.md`) are
+stricter — *do not tick*, because nothing derives from them.
 
 ⚠️ **`TD-###` ids fork per worktree and do not resolve globally.** 59 ids (`TD-157`→`TD-215`)
-exist only on the materials branch, `TD-212` is cited as law in four `CLAUDE.md` files and
-resolves in none of them, and `TD-194` is a genuine collision — two different entries, one
-number. **A cited id that does not resolve in your worktree is expected, not a bug in your
-checkout.** Say so rather than hunting.
+exist only on the materials branch; `TD-212` is cited as law in four `CLAUDE.md` files and
+resolves in none; `TD-194` is a real collision — two entries, one number. A cited id that does not
+resolve in your worktree is **expected**, not a broken checkout.
 
-## Helpers (`tools/`, zero-dep, `node --test`)
+## Reaching Linear
+
+Tools are deferred — load them first:
+
+```
+ToolSearch: select:list_issues,save_issue,list_issue_statuses,save_comment,list_projects,list_milestones
+```
+
+If the MCP is not authorized, **stop and say so** — he runs `/mcp` in an interactive `claude`.
+Never fall back to writing the item into an archived register.
+
+## Helpers (`tools/`, zero-dep, `node --test tools/*.test.js`)
 
 | Helper | Exports | Used by |
 |---|---|---|
-| `item.js` | `parseLine(line)`, `serialize(item)` | reading the archive |
-| `ids.js` | `mint(type)`, `typeOf(id)`, `PREFIXES` | archive ids only — **new work gets a `THV-` id from Linear** |
-| `regen.js` | `regenerateMap({storeDir, registers})` | `resume` |
-| `reconcile-manifests.js` | `findStaleManifests({repoDir})` | `resume`, `audit`, `reconcile` |
-| `register.js` | `insertItem`, `insertUnderSection` | **unused — registers are frozen** |
+| `regen.js` | `regenerateMap({storeDir, registers})` | `orient` |
+| `reconcile-manifests.js` | `findStaleManifests({repoDir})` | `orient`, `check` |
+| `item.js` | `parseLine`, `serialize` | reading the archive; closing a dead item |
+| `ids.js` | `mint`, `typeOf`, `PREFIXES` | archive ids only — **new work gets a `THV-` id from Linear** |
+| `register.js` | `insertItem`, `insertUnderSection` | **unused — nothing is added to the archive** |
 
 ## Common Mistakes
 
 | Mistake | Instead |
 |---|---|
-| Writing a *new* item into `TODO.md` / `TECH_DEBT.md` / `FUTURE_IMPROVEMENTS.md` | Archive. Capture creates a Linear issue. Closing a dead one there is fine — adding is not |
-| `close-item` writing `Done` | `Ready`. The merge commit writes `Done` |
-| Claiming an issue already in `In Progress` | That is the lock. Check first, pick another |
-| Guessing a `Writes to:` path | Ask in a comment. An invented path is how `docs/` sprawled to 103 dirs |
-| Restating a decision in an issue body | Link it in `decisions/*.md`. A restated decision is what `E18` did |
-| Creating an issue for a thought that is a **decision** | File the decision. Comment the link on the issue it affects |
-| Creating without searching Linear, `decisions/` and the REJECTED blocks first | Step 2. It is thirty seconds and it is the step whose absence caused the worst 2026-08-14 finding |
-| Filing a decision as prose because the feature has no `decisions/` folder | Stop, offer `feature-ledger open`. None of the six Features has one yet |
-| Updating the issue and leaving the PRD, Milestone or `VERSIONS.md` stale | Step 4 — write every layer it touches, or say which you skipped and why |
-| Creating an issue with a Project but no Milestone | Invisible in the Shipping view. Both, or ask |
-| Deleting an issue | `Canceled` + a comment. The id must keep resolving |
-| Deleting a REJECTED block while tidying | Ledger rule 8 — delete **superseded** rows, keep **rejected** alternatives |
-| Creating a label that "should" exist | Linear can't rename and rejects case-variants. Ask first |
-| Hand-editing the `## Map` zone | It's derived — fix the source, re-run `resume` |
-| Reading a Map entry as work in flight | The Map's register half is a **frozen archive**. Linear's lanes are the live half |
-| Treating an unresolvable `TD-###` as a broken checkout | The register forked per worktree. Expected |
-| Falling back to a local file when the Linear MCP is unauthorized | Stop and say so. A local write nobody reads is worse than no write |
+| Asking him which verb he means | He speaks prose. Classify it yourself |
+| Routing on his words when git disagrees | Evidence leads. Surface the disagreement — it is a caught mistake, not a nuisance |
+| A bare `git log --since` on a feature branch | `main..HEAD` — inherited commits made a silent branch look like 41 commits of work |
+| Skipping dirty checkouts because the watermark is recent | Dirty is always in scope. 85 uncommitted files in lessonspace have no date |
+| Fanning out the write | Read in parallel, write serially. Parallel writes are partial updates ×8 |
+| Letting a subagent propose Linear writes | It cannot see the other seven checkouts. The parent routes |
+| Reading "around" a feature folder | Named roles: STATE · IDEAS · PRD · DESIGN. Root depth. Report forks |
+| Reading `reference/…/PRD-v2-….md` as current | Depth rule — the live doc is at the feature root |
+| Skipping a missing role silently | Report it. "No PRD, no VERSIONS" is a ledger imbalance for free |
+| Opening an issue from `log` | Only `capture` creates. Report unattributed work and offer |
+| Creating an issue for a thought that is a **decision** | File the decision, comment the link |
+| Writing `Done` | `Ready`. The merge commit owns `Done` |
+| Writing an issue and leaving the PRD, Milestone or `VERSIONS.md` stale | Name every surface touched, or say which you skipped |
+| Skipping the Log entry because nothing changed | Always write, always advance. A stalled watermark is how the Map started lying |
+| Adding to the archive registers | Capture goes to Linear. Closing a dead item there is fine; adding is not |
+| Auto-closing an archived item because its branch merged | Report it. Closing is his ruling |
