@@ -3,9 +3,10 @@ name: workspace
 description: >-
   Use when the user says "add todo", "add tech debt", "add improvement", "add bug",
   "log work", "resume", "where am I", "what am I working on", "start item",
-  "close item", "audit state", or "reconcile". Captures work as a Linear issue
-  (workspace `thoven`, team `THV`) and owns the derived cold-start Map and the
-  appended session Log in ~/thoven/.workspace/STATE.md.
+  "close item", "audit state", or "reconcile". Resolves each against Linear (workspace `thoven`,
+  team `THV`) and the feature ledger BEFORE writing — searching first, then updating, creating,
+  filing a decision or placing an artifact — and owns the derived cold-start Map and the appended
+  session Log in ~/thoven/.workspace/STATE.md.
 ---
 
 # Workspace — Unified Work-State
@@ -17,7 +18,7 @@ things Linear is bad at: the derived cold-start **Map** and the appended session
 
 The Map is derived, so it cannot drift the way a hand-maintained banner does. Never hand-edit it.
 
-> **Migration complete, 2026-08-15.** Capture creates a Linear issue. The three markdown registers
+> **Migration complete, 2026-08-15.** Capture resolves into Linear and the ledger. The three registers
 > are **an archive** — 208 legacy items, nothing new ever captured there, though an item Andres
 > rules dead is still closed there, because `resume` derives the Map from them.
 > The Notion layer (`promote`, `sync-notion`, `add-prd`, the `notion:` and
@@ -73,7 +74,7 @@ interactive `claude`. Do not fall back to writing the item into a frozen registe
 
 | Verb | Triggers on | Behavior |
 |---|---|---|
-| `capture` | "add todo", "add tech debt", "add improvement", "add bug" | create a Linear issue with the right label |
+| `capture` | "add todo", "add tech debt", "add improvement", "add bug" | **resolve first** — search, classify, then update / create / file a decision / place an artifact |
 | `start-item` | "start item", "starting on", "working on THV-\<n\>" | move to `Speccing` or `In Progress` |
 | `close-item` | "close item", "done" | move to `Ready` — **never** `Done` |
 | `log` | "log work" | delegate to session-memory: append to STATE `## Log` |
@@ -83,26 +84,90 @@ interactive `claude`. Do not fall back to writing the item into a frozen registe
 
 ---
 
-## `capture`
+## `capture` — resolve first, then write
 
-One verb, four trigger phrases. The old `add-todo` / `add-techdebt` / `add-improvement` /
-`add-bug` split existed because each had a different local file. They all have one home now,
-so the only thing that varies is the label.
+**This verb is not "create an issue."** Creating is one of four outcomes, and usually the wrong
+one. Sprawl is what happens when it is the only one — 103 feature directories across six
+conventions, and a 150-row decision list that contradicts itself.
 
-**The judgment is the value here — the call is trivial.** Decide three things, then create:
+The input is a thought, mid-work: *"let's cut the parent onboarding flow to two steps."* That
+sentence is a **decision**, not a ticket. Filing it as a new issue loses it (nothing links to
+it), duplicates it (a Milestone already covers onboarding), and leaves the PRD saying four
+steps. Three failures from one reflex.
 
-1. **Kind → label.** Broken → `Bug`. Existing thing made better → `Improvement`. New
-   capability → `Feature`. Tech debt → **no kind label**; say "tech debt" in the title and
-   put the P-level in the body. There is no `tech-debt` label and you may not create one.
-2. **Agreed, or not?** Not yet discussed with Andres → status `Triage` + label
-   `needs-triage`. Already agreed and specced → status `Todo` + label `ready-for-agent`.
-   **When in doubt, `Triage`** — that is what the lane is for.
-3. **Project.** Which of the six Features it belongs to, or none. Never invent a Project.
+### Step 1 — Locate
 
-Then call `save_issue` with `team: "THV"`, the title, a body, `state`, `labels` and
-`project`. Echo the returned `THV-<n>` and its URL.
+Which of the six Features? Which Milestone inside it? Ask if you cannot tell. **Never invent a
+Project or a Milestone.**
 
-**The body carries what the old comment fields carried,** and one thing they could not:
+### Step 2 — Search before you write. Not optional.
+
+Ledger rule 3: *thirty seconds, and the single step whose absence caused the worst finding of
+the 2026-08-14 audit.* Three places:
+
+| Where | How | Looking for |
+|---|---|---|
+| Linear | `list_issues` with `query` + `project`, and read the **Milestone descriptions** — they cite work-item ids and carry the traps | an issue or Milestone that already owns this |
+| `decisions/*.md` | grep the feature folder | a decision that already rules this, or contradicts it |
+| `design/VERSIONS.md` + `drawings/` | read the rows, **and the REJECTED blocks** | a design that already tried this and threw it out |
+
+**A REJECTED block inside a superseded drawing is the thing that caught the worst defect.** Read
+those before proposing a layout. If the search finds the thought was already rejected, say so and
+stop — that is a successful capture.
+
+### Step 3 — Classify. Four kinds, four different writes.
+
+| It is | Write it to | Linear |
+|---|---|---|
+| a **decision** — a ruling about how something should be | a row in `decisions/product.md` · `architecture.md` · `api.md` · `design.md` | **no new issue.** Comment on the affected issue linking the row |
+| a **change to tracked work** | — | `save_issue` **update** the existing issue |
+| **new work** — an agent could claim it and open a branch | — | `save_issue` **create**, with Project + Milestone + labels |
+| an **artifact** — PRD, spec, design doc | agent reads it *during* work → local feature folder · human reads it to *orient* → **Linear Document** on the Project (SPEC §6) | link it from the issue |
+
+**The test for "new work" is SPEC §7.4's:** would an agent claim this and open a branch? If no,
+it is not an issue. A dogfood observation is not an issue; the bug it turns into is.
+
+⚠️ **No Feature has a `decisions/` folder today** — verified 2026-08-15, all six are empty of it,
+and only `materials-homework` and `student-2.0` have even a `PRD.md` + `VERSIONS.md`. So a
+decision usually has **nowhere to land**. When that happens: **stop and offer
+`feature-ledger open`.** Do not invent a path, do not drop the decision into the issue body as
+prose. Prose describing a decision with no source to cite is exactly what produced `E18`.
+
+### Step 4 — Write every layer it touches
+
+The other failure mode is the partial update: the issue moves, the PRD still says the old thing.
+Before you finish, name every layer the change touches and either write it or report the gap:
+
+```
+decision row      decisions/<file>.md
+the issue         title · body · labels · Project · Milestone
+the Milestone     its description, if scope moved
+the PRD           if the problem statement changed
+the design        VERSIONS.md, if a proto is now superseded
+```
+
+**Superseded and rejected are handled differently** (ledger rule 8): a superseded decision row is
+**deleted** — a contradictory ledger is the disease. A rejected alternative is **kept**, inside
+the drawing. And an issue is never deleted — set it `Canceled` with a comment saying why, so the
+id keeps resolving.
+
+### Step 5 — Report both halves
+
+Say what you wrote **and what you deliberately did not.** "Updated THV-4 and the Milestone;
+did not touch the PRD because the problem statement is unchanged" is a complete capture. Silence
+about a layer reads as "it was fine", and that is how `files_count` shipped.
+
+### Setting the fields, when you do create
+
+- **Kind → label.** Broken → `Bug`. Existing thing improved → `Improvement`. New capability →
+  `Feature`. Tech debt → **no kind label**; say "tech debt" in the title, P-level in the body.
+  There is no `tech-debt` label and you may not create one.
+- **Agreed, or not?** Not yet discussed with Andres → `Triage` + `needs-triage`. Already agreed
+  and specced → `Todo` + `ready-for-agent`. **When in doubt, `Triage`.**
+- **Project and Milestone are both required** on anything inside Thoven 2.0. An issue with a
+  Project and no Milestone is invisible in the Shipping view — that is how work goes quiet.
+
+**The body:**
 
 ```markdown
 ## Why
@@ -120,6 +185,30 @@ Then call `save_issue` with `team: "THV"`, the title, a body, `state`, `labels` 
 
 **Never invent a document path.** If an issue needs a `Writes to:` and you do not know it,
 ask in a comment rather than guessing.
+
+## The seam with `feature-ledger`
+
+Written after this skill was, so the boundary was never stated. It is one line:
+
+> **Linear owns *who is doing what, right now*. The ledger owns *why the design is what it is*.**
+> A Linear issue never restates a decision — it links to one.
+
+That rule matters more here than anywhere else, because a Linear description is easier to write
+than a `decisions/` row. The path of least resistance is to paraphrase the design into the ticket,
+and that is precisely what produced `E18`: prose describing a layout the proto's REJECTED block
+had already thrown out, which then passed every downstream gate because each one checked the prose.
+
+| You are about to | Reach for |
+|---|---|
+| start a large feature | `feature-ledger open` — **before** creating its issues |
+| file a decision and the folder does not exist | `feature-ledger open`, then file it |
+| write a plan or a PRD | `feature-ledger reconcile` first — a plan written against an unbalanced ledger freezes the imbalance |
+| find a doc and the code disagreeing | `feature-ledger reconcile` |
+| resolve a `VERSIONS.md` owning gate | it must be a pasted `THV-` URL, never a prose name |
+
+**A feature folder and a Linear Project are one thing seen twice.** The folder holds the
+reasoning; the Project holds the state. If a Feature has one and not the other, that is the
+imbalance — say so.
 
 ## `start-item`
 
@@ -283,6 +372,13 @@ checkout.** Say so rather than hunting.
 | Claiming an issue already in `In Progress` | That is the lock. Check first, pick another |
 | Guessing a `Writes to:` path | Ask in a comment. An invented path is how `docs/` sprawled to 103 dirs |
 | Restating a decision in an issue body | Link it in `decisions/*.md`. A restated decision is what `E18` did |
+| Creating an issue for a thought that is a **decision** | File the decision. Comment the link on the issue it affects |
+| Creating without searching Linear, `decisions/` and the REJECTED blocks first | Step 2. It is thirty seconds and it is the step whose absence caused the worst 2026-08-14 finding |
+| Filing a decision as prose because the feature has no `decisions/` folder | Stop, offer `feature-ledger open`. None of the six Features has one yet |
+| Updating the issue and leaving the PRD, Milestone or `VERSIONS.md` stale | Step 4 — write every layer it touches, or say which you skipped and why |
+| Creating an issue with a Project but no Milestone | Invisible in the Shipping view. Both, or ask |
+| Deleting an issue | `Canceled` + a comment. The id must keep resolving |
+| Deleting a REJECTED block while tidying | Ledger rule 8 — delete **superseded** rows, keep **rejected** alternatives |
 | Creating a label that "should" exist | Linear can't rename and rejects case-variants. Ask first |
 | Hand-editing the `## Map` zone | It's derived — fix the source, re-run `resume` |
 | Reading a Map entry as work in flight | The Map's register half is a **frozen archive**. Linear's lanes are the live half |
