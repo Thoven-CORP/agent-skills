@@ -17,9 +17,10 @@ things Linear is bad at: the derived cold-start **Map** and the appended session
 
 The Map is derived, so it cannot drift the way a hand-maintained banner does. Never hand-edit it.
 
-> **Migration complete, 2026-08-15.** The three markdown registers are **frozen as an
-> archive** — 208 legacy items, read-only, nothing new is ever written there. Capture creates
-> a Linear issue. The Notion layer (`promote`, `sync-notion`, `add-prd`, the `notion:` and
+> **Migration complete, 2026-08-15.** Capture creates a Linear issue. The three markdown registers
+> are **an archive** — 208 legacy items, nothing new ever captured there, though an item Andres
+> rules dead is still closed there, because `resume` derives the Map from them.
+> The Notion layer (`promote`, `sync-notion`, `add-prd`, the `notion:` and
 > `last-synced:` fields, `references/notion.md`, `tools/sync.js`, `tools/lane.js`,
 > `tools/board.js`) is **deleted**, not deprecated. There is no sync, because Linear is the
 > store — there is no second copy to reconcile.
@@ -31,7 +32,12 @@ The Map is derived, so it cannot drift the way a hand-maintained banner does. Ne
 | File | Holds | State |
 |---|---|---|
 | `STATE.md` | Derived **Map** + appended **Log** (last ~10) | **live** |
-| `TODO.md` · `TECH_DEBT.md` · `FUTURE_IMPROVEMENTS.md` | Legacy items, `td-`/`dd-`/`fi-` ids | **frozen archive — read, never write** |
+| `TODO.md` · `TECH_DEBT.md` · `FUTURE_IMPROVEMENTS.md` | Legacy items, `td-`/`dd-`/`fi-` ids | **archive — close, never add** |
+
+**"Close, never add" is not the same as read-only.** `resume` derives the Map from these files, so
+an item Andres rules dead has to be closed here or it reads as in-flight forever. Closing is the one
+permitted write; capture is not. The four **repo** registers (`frontend/`, `backend/` `TODO.md` and
+`TECH_DEBT.md`) are stricter — those are *do not tick*, because nothing derives from them.
 
 **Per-repo, do NOT move into the store:** `CHANGELOG.md` and `docs/*/.dev/MANIFEST.md` stay
 in each app repo — the store *reads* them, it does not own them.
@@ -231,7 +237,8 @@ every judgment call.
   ' "<manifest path>"
   ```
 
-- **archive-drift** → the registers are frozen. **Do not edit them.** Report it and stop.
+- **archive-drift** → report it and stop. Closing an archived item is **Andres’s ruling**, never an
+  inference from a merged branch. Ask; do not auto-close.
 - **lock-collision · wip-breach · ghost-path · orphan-decision** → Andres's call, every time.
   Report and stop. Cutting WIP is a human decision, not a cleanup.
 
@@ -249,7 +256,7 @@ markdown line plus a trailing HTML comment:
 ```
 
 Parse with `item.js` `parseLine`. `[x]` means `status:done`. `git:` is the branch it lived on,
-`repo:` is `frontend` | `backend` | empty. **Never `serialize` back into these files.**
+`repo:` is `frontend` | `backend` | empty. **Only ever `serialize` back to flip a `status:` to done.** Never to add a line.
 
 ⚠️ **`TD-###` ids fork per worktree and do not resolve globally.** 59 ids (`TD-157`→`TD-215`)
 exist only on the materials branch, `TD-212` is cited as law in four `CLAUDE.md` files and
@@ -271,7 +278,7 @@ checkout.** Say so rather than hunting.
 
 | Mistake | Instead |
 |---|---|
-| Writing a new item into `TODO.md` / `TECH_DEBT.md` / `FUTURE_IMPROVEMENTS.md` | They are a frozen archive. Capture creates a Linear issue |
+| Writing a *new* item into `TODO.md` / `TECH_DEBT.md` / `FUTURE_IMPROVEMENTS.md` | Archive. Capture creates a Linear issue. Closing a dead one there is fine — adding is not |
 | `close-item` writing `Done` | `Ready`. The merge commit writes `Done` |
 | Claiming an issue already in `In Progress` | That is the lock. Check first, pick another |
 | Guessing a `Writes to:` path | Ask in a comment. An invented path is how `docs/` sprawled to 103 dirs |
