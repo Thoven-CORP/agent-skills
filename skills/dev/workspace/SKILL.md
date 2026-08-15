@@ -103,11 +103,21 @@ second-busiest thing on the board.
 
 ### The watermark
 
-**The date of the newest `## Log` entry in `~/thoven/.workspace/STATE.md`.** Entries are
-newest-first and dated; the exact line format has drifted (some carry `**` around the date, some
-do not, and there may or may not be a blank line under the heading). **Read the date, do not
-pattern-match a template** — and if you cannot find one, say so and fall back to a wide window
-rather than a narrow guess.
+**When `~/thoven/.workspace/STATE.md` last had a Log entry committed** — a timestamp, not a date:
+
+```bash
+git -C ~/thoven/.workspace log -1 --format=%aI -- STATE.md
+```
+
+⚠️ **Use git's timestamp, not the date written in the entry.** Entries are dated to the day, so a
+date-only watermark re-reads everything since midnight — on this skill's **second** run that meant
+56 commits instead of 8, re-surfacing 29 Materials commits already logged an hour earlier. Logging
+twice in one day is normal; the watermark has to be finer than a day.
+
+The date in the prose is still the human-readable record; git holds the machine-readable one.
+Entries are newest-first and their line format has drifted (some bold the date, some do not),
+which is the other reason not to parse it. **If git gives you nothing, say so and fall back to a
+wide window** rather than a narrow guess.
 
 No second copy of state; nothing to drift or repair. If the last entry is old the window is wide,
 which is the correct failure direction — over-scanning costs two seconds, under-scanning silently
