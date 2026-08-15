@@ -69,8 +69,8 @@ Runs on **every** invocation, both speeds. It decides which checkouts are worth 
 cd ~/thoven && for d in frontend* backend* .workspace agent-skills; do
   { [ -d "$d/.git" ] || [ -f "$d/.git" ]; } || continue
   b=$(git -C "$d" branch --show-current 2>/dev/null)
-  if [ "$b" = "main" ]; then own=$(git -C "$d" log --since='<WATERMARK>' --oneline 2>/dev/null | wc -l | tr -d ' ')
-  else own=$(git -C "$d" log main..HEAD --since='<WATERMARK>' --oneline 2>/dev/null | wc -l | tr -d ' '); fi
+  if [ "$b" = "main" ]; then own=$(git -C "$d" log --since='<WATERMARK>T00:00:00' --oneline 2>/dev/null | wc -l | tr -d ' ')
+  else own=$(git -C "$d" log main..HEAD --since='<WATERMARK>T00:00:00' --oneline 2>/dev/null | wc -l | tr -d ' '); fi
   dirty=$(git -C "$d" status --porcelain 2>/dev/null | wc -l | tr -d ' ')
   { [ "$own" != "0" ] || [ "$dirty" != "0" ]; } && printf "%-24s %-34s own:%-5s dirty:%s\n" "$d" "$b" "$own" "$dirty"
 done
@@ -85,9 +85,22 @@ second-busiest thing on the board.
 ### The watermark
 
 **The date of the newest `## Log` entry in `~/thoven/.workspace/STATE.md`** — they are
-newest-first, `- YYYY-MM-DD`. No second copy of state; nothing to drift or repair. If the last
-entry is old, the window is wide, which is the correct failure direction — over-scanning costs
-two seconds, under-scanning silently loses work.
+newest-first, `- YYYY-MM-DD`.
+
+No second copy of state; nothing to drift or repair. If the last entry is old the window is wide,
+which is the correct failure direction — over-scanning costs two seconds, under-scanning silently
+loses work.
+
+⚠️ **Always append `T00:00:00`.** Git parses a bare `--since=YYYY-MM-DD` as that date at the
+**current time of day**, not midnight — so at 14:58 a bare watermark silently drops everything
+committed earlier the same day, with no error and no way to notice. Caught on this skill's first
+real run, 2026-08-15: the gate reported 0 own-commits across every checkout while four repos held
+commits from 00:38 and 01:00 that morning.
+
+```
+--since=2026-08-15            →  0   ✗
+--since=2026-08-15T00:00:00   →  2   ✓
+```
 
 **Two sources ignore the watermark entirely:**
 
