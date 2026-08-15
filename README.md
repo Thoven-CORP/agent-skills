@@ -91,7 +91,7 @@ Frontend/backend still keep **lockfile** copies of Neon / GSAP where the product
 
 1. Edit or add the folder under `skills/dev/` or `skills/exec/`.
 2. Frontmatter `name:` must match the folder name.
-3. PR to `main`. After merge, everyone re-runs the install command above.
+3. Commit and push to `main` — **no PRs**. Everyone then re-runs the install command above.
 
 Do not add skills by copying them into `frontend/.claude/skills` or `backend/.claude/skills` anymore.
 
