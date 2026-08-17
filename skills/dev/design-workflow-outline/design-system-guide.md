@@ -306,9 +306,15 @@ it is ours to maintain from that moment and it inherits every standing check bel
 2026-08-16: Interior fills gaps **only where base-ui has no primitive**. Where base-ui has one —
 dialog, menu, select, popover, toggle group — base-ui wins and Interior is read for technique,
 never copied in. Its overlay and navigation categories collide with base-ui head-on, which is
-exactly what rule 4 fences React Aria for — about **11 of Interior's 54** are fenced this way.
-Reads stage to `vendor-refs/interior/`, not `components/ui/`. `press-depth` and `ripple` are
-rejected outright on brand. Triage in [`design-system/IDEAS.md`](../../../thoven/thoven2.0/design-system/IDEAS.md).
+exactly what rule 4 fences React Aria for — about **11 of Interior's 54** go this way before you
+start. Two more are refused regardless of want: `press-depth` (a competing answer to the locked
+ledge) and `ripple` (Material's gesture). Reads stage to `vendor-refs/interior/`, not
+`components/ui/`.
+
+**Search it when a want appears, don't shop it in advance.** Browse
+[interior.dev/docs](https://www.interior.dev/docs) by category — action feedback, input, async,
+notification, overlay, navigation, scroll, data, gesture, content — starting from the interaction
+that is actually losing. There is deliberately no pre-picked list of what we should take.
 
 **`BEHAVIOUR` is an open list, like this table.** Interior is its first entry, not its definition —
 a new source gets added when Andres finds one worth having, under two conditions: a licence that
