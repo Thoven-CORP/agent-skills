@@ -190,8 +190,25 @@ After the search, recommend ONE of:
 | **Reuse directly** | An existing component does exactly what's needed |
 | **Extend existing** | An existing component is 70%+ there, needs minor additions |
 | **Create new** | Nothing similar exists, or the design need is genuinely different |
+| **Take the behaviour from a library** | Nothing exists here, but the hard part is the *interaction*, not the look — see below |
 
 **Default to "create new"** when in doubt. Don't force-fit an existing component.
+
+#### Before hand-rolling an interaction
+
+"Create new" does not mean writing the state machine yourself. The full library table with
+licences and caveats lives in `design-workflow-outline/design-system-guide.md` — Magic UI, React
+Bits, Aceternity, Kokonut, Fancy, Canvas UI, Rare UI for a *look*, and **Interior**
+([interior.dev](https://www.interior.dev/) · MIT · one dependency, the `motion` this repo already
+runs) for *behaviour*.
+
+Interior is the one that survives Phase 4 intact: each component is a single file exporting a
+headless `useX()` hook that touches **zero class names**, plus a styled example you delete. So
+there is nothing to run through the transformation table — you copy the hook and put the Thoven 3D
+button, amber tokens and spring grammar on top of it yourself. Reach for it when the work is
+abandonment paths, space reserved before an async state lands, keyboard parity, or a
+`prefers-reduced-motion` route that still delivers the information. Copying it in makes it ours:
+it inherits Phase 4's design-system review like anything else here.
 
 ### GATE 1: User Approval
 

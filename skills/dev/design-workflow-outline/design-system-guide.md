@@ -266,6 +266,17 @@ there gets a generalist answer where a specialist skill exists.
 | **Fancy Components** | Typography physics, liquid hover, distorted canvas |
 | **Canvas UI** | HTML-in-Canvas WebGL — glass refraction, liquid hover, particle reveals |
 | **Rare UI** | Single rare one-offs, not a base kit. Scroll Progress, Duration Picker, Family Drawer, Proximity/Bounce Sidebar, Folder. `npx shadcn add swamimalode07/rare-ui/{name}` — verified 2026-08-07: **no LICENSE file in the repo** despite the "open-source" claim; treat as read-for-technique until that lands |
+| **Interior** | The *behaviour* of a micro-interaction, not its look. [interior.dev](https://www.interior.dev/) · [ddoemonn/interior](https://github.com/ddoemonn/interior) — verified 2026-08-16: **MIT**, React, single dependency `motion` (the framer-motion we already run in 254 files). Ten categories: action feedback, input, async, notification, overlay, navigation, scroll, data, gesture, content |
+
+**Interior is the odd one out and the split matters.** The six above hand you a *look* you then
+have to bind to tokens. Interior hands you a `useX()` headless hook that touches **zero class
+names**, plus a styled `X` you are expected to throw away — so nothing needs a colour pass, and the
+Thoven 3D button / spring grammar stays ours. Reach for it when the hard part is the *state
+machine* — every way a gesture can be abandoned, space reserved before an async state arrives,
+keyboard as a second complete implementation, `prefers-reduced-motion` where the information still
+lands and only the trip is skipped. Reach for the other six when the hard part is the *visual*.
+Copy the hook, write our own presentation. Not an install — one file into the repo, which means
+it is ours to maintain from that moment and it inherits every standing check below.
 
 Rare UI's `scroll-progress` and `folder-component` are downloaded and staged for reading at
 [`design-system/vendor-refs/rare-ui/`](../../../thoven/thoven2.0/design-system/vendor-refs/rare-ui/README.md)

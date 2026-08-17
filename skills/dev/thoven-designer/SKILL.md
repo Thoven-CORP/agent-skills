@@ -106,7 +106,12 @@ In order, and stop at the first hit:
    *zero* overlap; 7 real Tabs against 19 hand-rolled. Grepping for the pattern finds the copies;
    grepping for the import finds the real one. **Do both.**
 3. **The library tables before hand-rolling** - Magic UI, React Bits, Aceternity, Kokonut, Fancy,
-   Canvas UI, Rare UI. Full table with caveats in `design-workflow-outline/design-system-guide.md`.
+   Canvas UI, Rare UI, Interior. Full table with caveats in
+   `design-workflow-outline/design-system-guide.md`. The first seven give you a *look* that then
+   needs a token pass; **Interior** ([interior.dev](https://www.interior.dev/), MIT, dep is the
+   `motion` we already run) gives you a headless `useX()` hook that touches no class names - reach
+   for it when what is missing is the interaction's *state machine* (abandonment paths, reserved
+   space for async states, keyboard, reduced-motion) rather than its appearance.
 4. **The lexicon** - if you cannot find it, you may be searching the wrong noun.
 
 Deleted components stay deleted for a reason: `components/ui/StatusPill.tsx` was removed
