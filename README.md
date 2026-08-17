@@ -24,9 +24,37 @@ That copies skills into `~/.agents/skills/` and links them for each agent.
 
 Restart the agent (new Cursor chat / new `claude` session) so it picks them up.
 
+⚠ **Keep the `-a` flags. Do not run the bare `npx skills add … -g -y`.**
+
+Without them the installer auto-detects every agent it can find, including **PromptScript**, which
+does not support global installs at all. It then fails **once per skill** and prints a wall of red:
+
+```
+Failed to install 99
+  ✗ accessibility-check → PromptScript: PromptScript does not support global skill installation
+  ✗ api-endpoint        → PromptScript: PromptScript does not support global skill installation
+  … ×99
+```
+
+**That output is a lie about what happened.** Hit 2026-08-17: all four real targets installed
+fine and only the PromptScript link step failed. Nothing is left half-installed. Verify rather
+than re-running blind — check any skill you just changed actually landed:
+
+```bash
+grep -l "<a line you just added>" ~/.agents/skills/*/SKILL.md \
+  ~/.claude/skills/*/SKILL.md ~/.cursor/skills/*/SKILL.md \
+  ~/.codex/skills/*/SKILL.md ~/.hermes/skills/*/SKILL.md
+```
+
+Five hits means it worked, whatever the installer said.
+
 ## Update after we change skills
 
-Re-run the same install command. It overwrites the global copies with whatever is on `main`.
+Re-run the same install command — **with the `-a` flags**. It overwrites the global copies with
+whatever is on `main`.
+
+**Push first.** The installer reads `main` on GitHub, not your local checkout, so an unpushed
+commit installs nothing and reports success.
 
 Do **not** run `npx skills remove --all` — that would also wipe third-party skills (GSAP, Neon, Matt Pocock, etc.).
 
