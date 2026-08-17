@@ -278,6 +278,14 @@ lands and only the trip is skipped. Reach for the other six when the hard part i
 Copy the hook, write our own presentation. Not an install — one file into the repo, which means
 it is ours to maintain from that moment and it inherits every standing check below.
 
+**Interior is fenced, and the fence is a lock — do not restate it, read it.**
+[`design-system/STACK.md`](../../../thoven/thoven2.0/design-system/STACK.md) **rule 7**, decided
+2026-08-16: Interior fills gaps **only where base-ui has no primitive**. Where base-ui has one —
+dialog, menu, select, popover, toggle group — base-ui wins and Interior is read for technique,
+never copied in. Its overlay and navigation categories collide with base-ui head-on, which is
+exactly what rule 4 fences React Aria for. Reads stage to `vendor-refs/interior/`, not
+`components/ui/`.
+
 Rare UI's `scroll-progress` and `folder-component` are downloaded and staged for reading at
 [`design-system/vendor-refs/rare-ui/`](../../../thoven/thoven2.0/design-system/vendor-refs/rare-ui/README.md)
 in the docs repo — deliberately not in `components/ui/`, because of the licence gap above.

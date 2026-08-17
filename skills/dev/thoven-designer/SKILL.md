@@ -111,7 +111,9 @@ In order, and stop at the first hit:
    needs a token pass; **Interior** ([interior.dev](https://www.interior.dev/), MIT, dep is the
    `motion` we already run) gives you a headless `useX()` hook that touches no class names - reach
    for it when what is missing is the interaction's *state machine* (abandonment paths, reserved
-   space for async states, keyboard, reduced-motion) rather than its appearance.
+   space for async states, keyboard, reduced-motion) rather than its appearance. Fenced by
+   `design-system/STACK.md` **rule 7** - gap-filler only; wherever base-ui has the primitive,
+   base-ui wins and Interior is read for technique, never copied in.
 4. **The lexicon** - if you cannot find it, you may be searching the wrong noun.
 
 Deleted components stay deleted for a reason: `components/ui/StatusPill.tsx` was removed

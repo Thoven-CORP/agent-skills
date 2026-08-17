@@ -210,6 +210,10 @@ abandonment paths, space reserved before an async state lands, keyboard parity, 
 `prefers-reduced-motion` route that still delivers the information. Copying it in makes it ours:
 it inherits Phase 4's design-system review like anything else here.
 
+**Check the fence before you copy.** `design-system/STACK.md` **rule 7** (decided 2026-08-16):
+Interior fills gaps **only where base-ui has no primitive**. Dialog, menu, select, popover and
+toggle group are base-ui's — there, Interior is read for technique and not copied in.
+
 ### GATE 1: User Approval
 
 Present findings and recommendation. Ask: "Should I proceed with [approach], or would you prefer a different direction?"
