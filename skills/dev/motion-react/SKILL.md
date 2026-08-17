@@ -17,6 +17,11 @@ import { springs, staggers, cardHover, subtleHover, getTransition } from '@/lib/
 - **cardHover** (lift y:-6 / tap y:-2) · **subtleHover** (y:-2) — spread onto a `motion` element
 - **getTransition(springs.x)** → returns `{ duration: 0 }` under `prefers-reduced-motion`. Wrap transitions with it.
 
+**If none of them fit, do not invent a number in the component.** The route is
+`design-system/STACK.md` → **REFERENCE** (transitions.dev) → `dialkit` on the real component →
+a token module with a test → import it here like any other preset. A value that never makes that
+trip is a value the next person will guess at again.
+
 ## Imports
 Thoven imports from `framer-motion` (matching the existing components). The npm package is now `motion` (`motion/react`) — the same library, modern alias. **Match the file/area you're editing; do not mass-migrate.**
 

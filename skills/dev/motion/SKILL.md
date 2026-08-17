@@ -56,6 +56,10 @@ Full vocabulary (gates, three-lens taxonomy, emotion archetypes, easing matrix, 
 ## Always
 - **Reduced motion:** every recommendation respects `prefers-reduced-motion`. In Thoven, wrap Framer transitions in `getTransition(springs.x)` from `lib/motion-config.ts`; for GSAP use `gsap.matchMedia()` (gold-standard example: `components/landing/HomepageConductorMotion.tsx`). Drop movement, keep opacity/color.
 - **Reach for presets**, not hand-rolled springs.
+- **When no preset fits, that is not permission to invent one.** Go to `design-system/STACK.md`
+  → **REFERENCE** (transitions.dev for the whole transition, svg.guide for SVG technique,
+  melt-effect while the motion is still open), dial it on the real component in `dialkit`, and land
+  it as a token module with a test. Then it is a preset and the next person reaches for it.
 
 ## Output shape
 Answer as: **layer → preset/params → ~duration → one-line why.**
