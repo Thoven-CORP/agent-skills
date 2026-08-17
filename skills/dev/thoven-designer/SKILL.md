@@ -158,9 +158,26 @@ before using it:
 grep -c "^\s*--color-<hue>-" app/globals.css   # 0 means it is not ours
 ```
 
-**A novel Tailwind arbitrary value generates no CSS.** If the exact string appears nowhere else
-in the repo, the class lands in the HTML and no rule is emitted. Comma-separated arbitrary values
-never work. `grep -rl` the class first; if it is the only occurrence, assume it will not generate.
+**~~A novel Tailwind arbitrary value generates no CSS.~~ RETRACTED 2026-08-17 — both halves are
+false on Tailwind v4.1.9, and this entry caused the bug it warned about.** Measured against the
+compiled stylesheet: a never-before-used `pl-[37px]` emits `padding-left:37px`; a comma-separated
+`transition-[width,rotate,filter]` emits its full `transition-property`; a comma-separated
+`shadow-[…]` emits all its layers. The `transition-[a,b,c]` counter-example this file used is
+*itself* in the repo's compiled CSS, generated from a comment that asserts it cannot be.
+
+**What actually happened is the entry below.** On a running dev server all three probes showed
+**no CSS**. After a restart, all three were there and the sheet had grown 577 bytes. Whoever wrote
+this rule added a novel class, read a **stale** sheet, and generalised. It then propagated into a
+Tier 0 token module header (`frontend/lib/elevation-tokens.ts`) and its reference doc, both
+retracted at `5d833855`.
+
+**So: never conclude "no CSS" without restarting first.** That check is one command and it is the
+difference between a real silent failure and a rule that manufactures three more.
+
+Comma-separated arbitrary values *do* have one real hazard, but it is not emission: Tailwind
+rewrites every colour slot to `var(--tw-shadow-color, …)`, so a single `shadow-<colour>` utility
+repaints **every layer at once**. Anything dialled still belongs in an inline style or a token
+module — for single-source-of-truth reasons, not compilation ones.
 
 **A deleted colour token makes `bg-x` a silent no-op**, not an error. Pair any deletion with a
 repo-wide scan that has a floor on the file count - a glob matching nothing passes vacuously.

@@ -372,16 +372,28 @@ Added 2026-08-08 from the student session-notebook sprint, where **five separate
 same disguise: the class is in the markup, source review passes, and the browser renders something
 else. Every one of these cost real time, and three of them recurred *after* being written down.
 
-**1 · A novel Tailwind arbitrary value generates NO CSS.** `shadow-[0_4px_0_0_var(--color-sky-300)]`,
-`h-[560px]`, `min-h-[280px]`, `scale-[0.99]` — if the exact string appears nowhere else in the repo,
-the class lands in the HTML and no rule is emitted. `transition-property` in particular then falls
-back to its initial value `all`, which is the `transition-all` most button grammars forbid.
+**1 · ~~A novel Tailwind arbitrary value generates NO CSS.~~ RETRACTED 2026-08-17 — false on
+Tailwind v4.1.9, and it was a misdiagnosis of failure 2 below.**
 
-- **Comma-separated arbitrary values never work**: `transition-[a,b,c]` emits nothing. Use a named
-  `@utility` (this repo has `transition-press` and `transition-hue` for exactly this).
-- **Anything novel or dialled goes in an inline style**, or in a token module applied as `style` —
-  the JIT cannot drop those.
-- `grep -rl` the class first. If it is the only occurrence, assume it will not generate.
+Measured against the compiled stylesheet: a never-before-used `pl-[37px]` emits
+`padding-left:37px`; `transition-[width,rotate,filter]` emits its full `transition-property`; a
+comma-separated `shadow-[…]` emits every layer. The `transition-[a,b,c]` counter-example is
+*itself* in the repo's compiled CSS — generated from a comment in `app/globals.css` asserting it
+cannot be.
+
+**The tell:** on a running dev server all three probes showed no CSS. After a restart all three
+were present and the sheet had grown 577 bytes. This rule was born from reading a stale sheet, and
+it propagated into a Tier 0 token module header before being caught.
+
+- **Never conclude "no CSS" without restarting the dev server first.** One command, and it is the
+  difference between a real silent failure and a rule that manufactures more.
+- **Anything novel or dialled still goes in an inline style** or a token module applied as
+  `style` — for single-source-of-truth reasons, not compilation ones. A named `@utility`
+  (`transition-press`, `transition-hue`) remains the right call for a shared transition list
+  because it is *shared*, not because the arbitrary form fails.
+- One real hazard survives for `shadow-[…]`: Tailwind rewrites every colour slot to
+  `var(--tw-shadow-color, …)`, so one `shadow-<colour>` utility repaints **all layers at once**,
+  including a ring that is structure rather than depth.
 
 **2 · A long-running dev server serves a stale CSS build.** New `@theme` variables and new utility
 classes simply never appear. **`touch` does not fix it; only a restart does** — and once, only
