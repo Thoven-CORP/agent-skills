@@ -339,15 +339,27 @@ time, not later. Convert their icons to the house set in the same pass.
 
 ## Motion references
 
-Three kinds, reached at different moments.
+The lock is [`design-system/STACK.md`](../../../thoven/thoven2.0/design-system/STACK.md),
+**REFERENCE** — an open list of sources we read *values* out of. Not a stack layer: nothing there
+is a dependency and nothing is a component, because these give the presentation half and that half
+is ours. Everything they emit goes through `dialkit` and lands as a token module with a test. A
+reference cannot introduce a lock; it can only feed one.
+
+Below is *when* each is reached. What each is licensed for lives in `STACK.md`.
 
 **Deciding what a motion should be** — [joshpuckett.me/melt-effect](https://joshpuckett.me/melt-effect)
 and work like it. Read at L5, while the motion is still open. Its use is *"we would never have
 thought of that,"* not copy-paste. **Named want:** the melt effect is worth landing somewhere
 it earns its place — a peak moment, not decoration.
 
-**Picking the values** — [transitions.dev](https://transitions.dev/) for easing and duration.
-Whatever comes out becomes an enforced lock, not a number pasted into a component.
+**Picking the values** — [transitions.dev](https://transitions.dev/). Interactive demos by category
+(card resize, notifications, modals…), each with CSS and React — so it is more than an easing
+lookup, it shows the whole transition. Whatever comes out goes through `dialkit` and becomes an
+enforced lock, not a number pasted into a component.
+
+Licence verified 2026-08-16: unlimited commercial use, no attribution, full modification. **Not
+subscribed to Pro** — if the want lands on a Pro-only transition, that is a purchase decision to
+raise with Andres, not a reason to substitute something worse.
 
 **Building it** — [svg.guide](https://www.svg.guide/) for SVG micro-interactions: how, not what.
 
