@@ -112,6 +112,24 @@ In order, and stop at the first hit:
 Deleted components stay deleted for a reason: `components/ui/StatusPill.tsx` was removed
 2026-07-29 with zero call sites. Check `DESIGN.md`'s divergence rows before resurrecting a name.
 
+## Auditing a component against the system
+
+The most common use of this skill. Given a file:
+
+1. **Read the file first.** Never audit from memory.
+2. **For each concern actually present** - colour, type, icon, radius, motion, layout - look up its
+   binding source from [the map](#the-map). Not the derived doc.
+3. **Classify every finding, and keep the tiers apart:**
+   - **Hard violation** - contradicts an *enforced* lock (token module + test). The suite should
+     already be red. If it is green, the test has a gap - report that too.
+   - **Drift** - contradicts a *declared* lock (`DESIGN.md`, `docs/design/`). Real, but nothing
+     catches it automatically.
+   - **Unruled** - the system does not settle it. **This is not a violation.** Name it as needing
+     a decision rather than scoring it.
+4. **Run the silent-failure checks below.** They do not surface from reading class names.
+5. **Give `file:line` for every finding, and the source that makes it one.** A finding without a
+   citation is an opinion.
+
 ## Silent failures - check these, do not assume
 
 Each of these renders wrong while source review passes. **Verify the computed value, not the
