@@ -194,6 +194,20 @@ After the search, recommend ONE of:
 
 **Default to "create new"** when in doubt. Don't force-fit an existing component.
 
+#### Build or take — the question that decides it
+
+From `design-system/STACK.md`, and it governs the whole stack, not just this phase:
+
+> **Could a user name it?**
+
+A user points and says *"the Thoven button"*, *"the XP thing"* → **build it.** That is the product,
+and reaching for a library here quietly resizes the idea to fit the library. They cannot name it
+and would only notice it when it is *wrong* — skeleton timing, abort paths, focus return → **take
+it.** Building that is not craft, it is tax. Nobody has ever praised a skeleton for not flickering.
+
+Brand-meaningful **and** a hard state machine is the middle case, and the most common one here:
+**machine from the library, face from us.**
+
 #### Before hand-rolling an interaction
 
 "Create new" does not mean writing the state machine yourself. The full library table with

@@ -255,6 +255,29 @@ Route to the narrow skill, not the broad one.
 `impeccable` claims typography, colour, motion, and IA all at once. Routing a single concern
 there gets a generalist answer where a specialist skill exists.
 
+## Build or take — ask this first
+
+The lock is [`design-system/STACK.md`](../../../thoven/thoven2.0/design-system/STACK.md), "Build or
+take". It governs every layer of the stack, not just the tables below, and it is **not** a
+build-time calculation.
+
+> **Could a user name it?**
+
+Point and say *"the Thoven button"*, *"the XP thing"* → **build it**, it is the product. Cannot name
+it, would only notice when it is *wrong* → **take it**. Nobody has ever praised a skeleton for not
+flickering.
+
+| | |
+|---|---|
+| Invisible plumbing — skeleton timing, abort paths, focus return, dismissal | **Take it, nearly always.** Building this is not craft, it is tax |
+| Anything carrying the ledge, amber, or a spring dialled in `dialkit` | **Build.** It is the brand |
+| Something we are inventing | **Build.** No library has our idea — reaching for one resizes the idea to fit it |
+| Brand-meaningful *and* a hard state machine | **Machine from the library, face from us** |
+
+What taking buys is not hours, it is edge cases not yet hit — a hand-rolled hold-to-confirm works
+until a kid rests a thumb, drifts 3px and it fires. Counterweight, stated honestly: copy-in code
+has no upstream, so we own the bugs from the moment we paste. The purchase covers *past* bugs only.
+
 ## Reach for these before hand-rolling
 
 | Library | Good at |
@@ -283,8 +306,14 @@ it is ours to maintain from that moment and it inherits every standing check bel
 2026-08-16: Interior fills gaps **only where base-ui has no primitive**. Where base-ui has one —
 dialog, menu, select, popover, toggle group — base-ui wins and Interior is read for technique,
 never copied in. Its overlay and navigation categories collide with base-ui head-on, which is
-exactly what rule 4 fences React Aria for. Reads stage to `vendor-refs/interior/`, not
-`components/ui/`.
+exactly what rule 4 fences React Aria for — about **11 of Interior's 54** are fenced this way.
+Reads stage to `vendor-refs/interior/`, not `components/ui/`. `press-depth` and `ripple` are
+rejected outright on brand. Triage in [`design-system/IDEAS.md`](../../../thoven/thoven2.0/design-system/IDEAS.md).
+
+**`BEHAVIOUR` is an open list, like this table.** Interior is its first entry, not its definition —
+a new source gets added when Andres finds one worth having, under two conditions: a licence that
+permits it, and behaviour separable from presentation. Their spring constants never come with the
+hook; those go through `dialkit` and land as a token module.
 
 Rare UI's `scroll-progress` and `folder-component` are downloaded and staged for reading at
 [`design-system/vendor-refs/rare-ui/`](../../../thoven/thoven2.0/design-system/vendor-refs/rare-ui/README.md)

@@ -114,6 +114,13 @@ In order, and stop at the first hit:
    space for async states, keyboard, reduced-motion) rather than its appearance. Fenced by
    `design-system/STACK.md` **rule 7** - gap-filler only; wherever base-ui has the primitive,
    base-ui wins and Interior is read for technique, never copied in.
+
+**Before any of the four, ask `STACK.md`'s question: could a user name it?** Point-and-name it -
+"the Thoven button", "the XP thing" - and you **build** it, because it is the product. Cannot name
+it, would only notice when it is *wrong* (skeleton timing, abort paths, focus return) and you
+**take** it - building that is not craft, it is tax. Brand-meaningful *and* a hard state machine is
+the middle case: machine from the library, face from us. The full rule, including why "we are
+inventing this" always means build, is in `STACK.md`.
 4. **The lexicon** - if you cannot find it, you may be searching the wrong noun.
 
 Deleted components stay deleted for a reason: `components/ui/StatusPill.tsx` was removed
