@@ -243,7 +243,8 @@ Route to the narrow skill, not the broad one.
 | UX copy | `better-writing` |
 | Component polish | `better-ui` |
 | Choosing a library instead of hand-rolling | `pick-ui-library` |
-| Checking one component against `components/ui/` + the library tables + the lexicon, in or out of a sprint | `thoven-designer` |
+| Any question about what the system already says - a value, a lock, whether a component exists, whether shipped code drifts. Also checking one component against `components/ui/` + the library tables + the lexicon | `thoven-designer` |
+| Building a new surface end to end - new page, section, component, redesign | `building-thoven-ui` |
 | Building a prototype | `prototype` |
 | Naming a motion | `animation-vocabulary` |
 | Finding where motion belongs | `find-animation-opportunities` |
