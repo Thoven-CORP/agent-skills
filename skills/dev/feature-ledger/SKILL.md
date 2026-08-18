@@ -45,6 +45,31 @@ Small work skips this. A bug fix is a commit.
 
 Governing rules: the **Feature Folders** section of `CLAUDE.md`. Read it rather than restating it here.
 
+## ⛔ Before you write a decision row, apply rule 12
+
+**Could an agent deduce this by opening the prototype? If yes, it does not get a row.**
+
+Values, spacing, colour, radius and copy belong to the prototype and are enforced by its tests. A
+row that repeats them is a second source of truth, it goes stale in silence, and it is what an agent
+misreads. **Write down only what looking cannot tell you:**
+
+| write it | do not write it |
+|---|---|
+| the axis a thing is organised on | the numbers |
+| a rule — *"if a popup cannot finish it, it gets no button"* | spacing, radius, hex, type size |
+| a threshold **and why that threshold** | which variant a component uses |
+| behaviour over time, and data shape | copy, unless it was contested |
+| what was REJECTED and why | anything the running route already enforces |
+
+`reconcile` treats a row that describes a look and cites no drawing, route or token as a **finding**,
+not a row — that is `E18` by construction, and rule 2 says a decision points at its source. **For
+anything visual the prototype IS the source.**
+
+*Written 2026-08-17: one design session produced twenty rows before a line of feature code existed,
+eleven of them restating a running route in prose. Over-documentation does not prevent the failure
+it fears — Class Materials was heavily documented and still shipped wrong.*
+
+
 ## open
 
 1. Create the shape from `templates/`. Every file exists, even empty — an absent file reads as "not applicable" and that is how `api.md` went missing from the feature whose worst two defects were payload fields.
