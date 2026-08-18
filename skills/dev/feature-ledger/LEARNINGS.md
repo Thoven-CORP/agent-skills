@@ -5,6 +5,32 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-08-18 — the gate was designed on an untested assumption, and one leg of it was wrong
+
+**What happened.** The whole lifecycle design rests on *a milestone reaching 100% is the gate,
+computed by Linear.* Nobody had watched it. A throwaway Project settled three questions in ten
+minutes:
+
+| | |
+|---|---|
+| progress counts | **issues, not points.** 1 of 3 done = 33.33%, and the one closed was the 8-pointer |
+| an empty milestone reads | **0%**, never 100% |
+| a Canceled issue | **leaves the denominator.** 1 done of 2 remaining = 50% |
+
+**And one assumption was simply false.** Sub-initiatives, which the container model used for the
+audience level, are **Enterprise-only**. The API accepts `parentInitiatives` and the server
+refuses. The audience became a project **label** instead, which groups the Shipping view the same
+way and costs nothing.
+
+**What changed.** Trim now means *delete the milestone*, because an empty one is a gate that cannot
+open. Estimates are not required, since they do not move the bar; issue granularity is what makes it
+honest. Cancel is the way to drop scope after the fact. And the container model lost a level.
+
+**The lesson worth keeping:** every one of these was a sentence in a design doc that read as fact.
+Rule 11 says an estimate in a doc is a claim, not a fact. So is a mechanism.
+
+---
+
 ## 2026-08-18 — the scaffold check reads green on a folder it has never touched
 
 **What happened.** First run of the new `scaffold` check against `teacher-2.0` returned zero files.
