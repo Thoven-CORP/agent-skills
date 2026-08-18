@@ -119,10 +119,9 @@ as many shippable Issues as there are components.
 
 1. **Create the Linear Project.** One Feature, spanning frontend and backend, never one per repo.
    Set:
-   - **the audience label** (`teacher` · `student` · `parent` · `shared`). The audience is a label,
-     not a container: Linear gates sub-initiatives behind the Enterprise plan, verified 2026-08-18.
-     ⚠ Project labels can only be created in the Linear UI, so if the one you need does not exist,
-     stop and ask Andres rather than inventing a name.
+   - **the name**, `<Audience>: <Feature>` — `Teacher 2.0: Dashboard`. The audience goes in the
+     name because Linear gates sub-initiatives behind the Enterprise plan, verified 2026-08-18. A
+     Project genuinely serving two audiences is named `Shared: <Feature>`.
    - **the Initiative**, `Thoven 2.0` for 2.0 work.
    - **a link to the feature folder**, never a copy of its documents.
 
