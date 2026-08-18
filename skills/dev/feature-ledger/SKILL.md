@@ -153,9 +153,9 @@ An entry **balances** when all of these hold:
 | **owner** | any deferral names a gate, issue or row that opens |
 | **uniqueness** | one entry claims this surface, not four |
 | **coverage** | if a plan exists, every user story and architecture decision appears in its table |
-| **authority** (rule 13) | every surface the feature touches has a `DESIGN.md` row naming what to build from. No row is a finding, never a default |
+| **authority** (rule 13) | every surface the feature touches has a `DESIGN_<PROJECT>.md` row naming what to build from. No row is a finding, never a default |
 | **downstream** | a `LOCKED` decision is cited by a plan, issue or commit. A decision nothing downstream mentions is an **orphan** |
-| **scaffold** | `grep -rl "SCAFFOLD" <audience>/` returns nothing. A template still carrying its scaffold marker is not done, whatever its milestone reads |
+| **scaffold** | `grep -rl "SCAFFOLD" <audience>/` returns nothing **and `open` has scaffolded this folder**. On a folder the templates were never applied to, an empty result proves nothing and is itself the finding |
 | **milestone** | no Linear Milestone description contradicts a live decision. The decision file wins; the description is the finding |
 | **gate** | for every Milestone at 100%, each of its issues' `Writes to:` paths resolves on disk. A closed gate over a missing file is a finding |
 
