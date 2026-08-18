@@ -1,11 +1,21 @@
+<!-- SCAFFOLD — delete this line when the first real row lands -->
 # CONTINUE HERE — <feature>
 
-One screen. If it takes scrolling, it is a plan, not a resume point.
+One screen. If it takes scrolling, it is a plan, not a resume point. Records only; status lives in
+Linear.
 
-**Where we are:**
+## Done when
 
-**Next action:**
+The Linear id and branch below both resolve, and a fresh session can name its next action from this
+file alone.
 
-**Open questions for Andres:**
+Linear: THV-
+Branch: THV--slug
+
+**What I was doing:**
+
+**What I tried that didn't work:**
+
+**Careful of:**
 
 **Do not re-derive:** (things already settled that a fresh session would waste time rediscovering)

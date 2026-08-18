@@ -1,24 +1,20 @@
+<!-- SCAFFOLD — delete this line when the first real row lands -->
 # STATE — <feature>
 
-**Layer vocabulary:** `decided` → `designed` → `planned` → `built` → `shipped`.
-`built` means a commit exists. `shipped` means a user can reach it.
+The commit ledger. **Status lives in Linear**: this file records what landed, never what is claimed.
 
-## Slices
+## Done when
 
-A slice is one thing true at every layer at once: the decision says it, the backend emits
-it, the contract pins it, the frontend renders it, and it is on a screen a user reaches.
-
-| Slice | Layer | Commits | Notes |
-|---|---|---|---|
-| | | | |
+Every commit on this feature's branches appears in the ledger with what it did, and every open
+imbalance from the last reconcile has been put to Andres.
 
 ## Commit ledger
 
-Append as work lands. An empty Commits cell above with a full row here is a drift signal.
+Append as work lands.
 
-| Commit | Repo | What it did |
-|---|---|---|
-| | | |
+| Commit | Repo | Issue | What it did |
+|---|---|---|---|
+| | | THV- | |
 
 ## Imbalances
 
@@ -27,3 +23,7 @@ From the last reconcile. Plain English: what the ledger claims, what the code do
 | Entry | Ledger claims | Code does | Ruled? |
 |---|---|---|---|
 | | | | |
+
+## Log
+
+Session reasoning, append-only: why a thing was done, and where the session stopped.

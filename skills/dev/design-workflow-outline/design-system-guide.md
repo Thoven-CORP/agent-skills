@@ -53,7 +53,7 @@ Four tiers, one of which binds. Established 2026-07-28, phase 3 of the 2.0 desig
 
 ```
 Tier 0   lib/*-tokens.ts + tests    the ONLY binding layer
-Tier 1   DESIGN.md                  the hub — decisions and why
+Tier 1   DESIGN_<PROJECT>.md                  the hub — decisions and why
 Tier 2   docs/design/*.md           deep reference per part
 Tier 3   docs/design-system.html    rendered view; compiled from app/globals.css,
                                     button section generated from thovenButtonTokens
@@ -203,12 +203,12 @@ prose restatement of it.
 - Design-session exit ritual: the locked params + proto path get written into the issue **at
   lock time**, in Andres's selected values — never reconstructed later from memory.
 
-**Wireframe versioning (mandatory).** Every `wireframe/<sprint>/` carries a `VERSIONS.md`
-manifest: proto → version → status (LOCKED/MIXED/SUPERSEDED/ARCHIVE) → date → owning ticket. A
-redesign is NOT locked until it produces a NEW `-vN.html` proto **and** a manifest row flips the
-old one. A redesign that lives only in a transcript is a DRAFT — nothing downstream can read it.
-Superseded protos get a visible status banner injected at the top so opening a stale file is
-self-evident. Check the manifest before building against ANY proto.
+**Proto versioning (mandatory).** A Feature's `DESIGN_<PROJECT>.md` is the manifest, keyed by
+surface: what to build from → status (LOCKED/MIXED/SUPERSEDED/ARCHIVE) → owning gate (a `THV-`
+URL that resolves) → what was rejected. A redesign is NOT locked until it produces a NEW `-vN`
+proto in `design/drawings/` **and** its surface row flips the old one. A redesign that lives only
+in a transcript is a DRAFT — nothing downstream can read it. Superseded protos get a visible status banner injected at the top so opening a stale file is
+self-evident. Check the surface row before building against ANY proto.
 
 **Cross-ticket open questions ESCALATE — agents never self-resolve them.** When a builder hits a
 dependency it is fenced out of and raises an OPEN QUESTION, an orchestrator or judge agent must

@@ -36,6 +36,60 @@ PRD alone, that work nobody has started won't matter.
 **L2 is where someone opens the codebase.** Surfaces guessed from a PRD miss what's already built
 and invent what isn't — so the skeleton names L2 as a level to walk and leaves it empty.
 
+## Where each level lands
+
+The whole skeleton runs inside the Feature's **`Design` milestone**, and each level (or each
+track-level crossing, where tracks run separately) becomes one Issue carrying a `Writes to:` line
+with the path below. Milestones, lanes and gates: `~/thoven/.workspace/WORKFLOW.md` §3.
+
+Paths are relative to the Project folder: `thoven2.0/<audience>/projects/<project>/` for 2.0 work,
+`docs/<Surface>/` otherwise. An agent writes to the path its issue names and never invents one.
+
+| | Level | Writes to |
+|---|---|---|
+| **L1** | Flow | `PRD.md`, as `E#` story rows |
+| **L2** | Surfaces | `DESIGN_<PROJECT>.md`, one row per surface |
+| **L3** | Wireframe | `design/drawings/`. Runnable, never markdown |
+| **L4** | Key screens | `design/drawings/` and the route `app/dev/<feature>/page.tsx`. The surface's `DESIGN_<PROJECT>.md` row carries whichever path a builder builds from |
+| **L5** | Components & motion | the component and its token test, plus a `DESIGN_<PROJECT>.md` row per surface |
+| **L6** | Edge cases | `decisions/api.md` when it changes the payload, `decisions/database.md` when it changes the schema, otherwise `DESIGN_<PROJECT>.md` |
+
+An L6 finding that changes `decisions/api.md` or `decisions/database.md` is a new Issue inside the
+`Design` milestone, linked to the decision it changes. Earlier milestones stay closed.
+
+A level's gate goes ✅ when the file at its path exists and every row in it resolves.
+
+**L2's output IS the `DESIGN_<PROJECT>.md` surface table.** The verdict (reuse / extend /
+centralize-new / library / one-off, with a reason) is a column of the surface's row, so a builder
+reads one table in one place. L5 returns to the same row per surface once components and motion
+resolve.
+
+### Rule 12 — do not write down what the prototype already shows
+
+**Could an agent deduce this by opening the proto? If yes, it does not get a row.** This skill
+produces documents at every level, so it is where over-documentation starts.
+
+| write it | do not write it |
+|---|---|
+| the axis a surface is organised on | the numbers |
+| a rule: *"if a popup cannot finish it, it gets no button"* | spacing, radius, hex, type size |
+| a threshold **and why that threshold** | which variant a component uses |
+| behaviour over time, and data shape | copy, unless it was contested |
+| what was REJECTED and why | anything the running route already enforces |
+
+For anything visual **the proto IS the source**, and the row points at it. A row that describes a
+look and cites no drawing, route or token is a finding, not a row.
+
+**L4 and L5 are where this bites.** A key screen and a component state are almost entirely visual,
+so their rows are short: the surface, the path to build from, the verdict, and what was rejected.
+The screen carries everything else, and its token test holds it there.
+
+*Written after one design session produced twenty rows before a line of feature code existed,
+eleven of them restating a running route in prose.*
+
+`D#` numbers belong to `DESIGN_<PROJECT>.md` and nowhere else, so a citation resolves without
+context. `E#` belongs to `PRD.md`, `A#` to `decisions/api.md`, `DB#` to `decisions/database.md`.
+
 ## One track per stakeholder
 
 Every person who sees or acts on the feature gets a track, walked top to bottom before the next
@@ -51,9 +105,9 @@ that contract is the only thing crossing tracks mid-sprint.
 **Two files and a reference folder, beside the PRD.**
 
 **`design-reference/`** — symlinked, never copied, so it cannot drift from what it points at:
-`DESIGN.md`, `docs/design/*.md`, `design-system/lexicon/LEXICON.md`, and (once decided) the
-primitives-library ruling. Every track gets one. A sprint that quotes a colour or a component
-name from memory instead of this folder is how the five-doc citation cycle happened the first
+the repo-root `DESIGN.md`, `docs/design/*.md`, `design-system/lexicon/LEXICON.md`, and (once
+decided) the primitives-library ruling. Every track gets one. A sprint that quotes a colour or a
+component name from memory instead of this folder is how the five-doc citation cycle happened the first
 time — see `design-system-guide.md`.
 
 **The skeleton:**
@@ -68,9 +122,8 @@ time — see `design-system-guide.md`.
 only; the levels fill it as they run.
 
 ```
-## Component audit        ← L2 fills: exists / drifted / missing / verdict (reuse, extend,
-                             centralize-new, library, one-off + reason) — required per surface,
-                             the gate does not go ✅ without it
+## Component audit        ← points at the DESIGN_<PROJECT>.md surface rows L2 wrote, and names
+                             what the design system inherits from them. One table, one home
 ## Typography
 ## Colour
 ## Motion                 ← L5 fills
@@ -79,7 +132,7 @@ only; the levels fill it as they run.
 ## Drafts & prototypes    ← links, and promoted or killed
 
 ## → Update log
-Apply to DESIGN.md + docs/design/ on merge (then `npm run docs:design` to re-render the HTML view):
+Apply to the repo-root DESIGN.md + docs/design/ on merge (then `npm run docs:design` to re-render the HTML view):
 - [ ]
 ```
 
