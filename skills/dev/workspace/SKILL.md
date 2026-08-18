@@ -421,6 +421,11 @@ decision with no source to cite is what produced `E18`.
   **Milestone is the lifecycle stage**, and the kind of work names it: writing a doc lands in
   `PRD + Architecture` or `Design`, wiring code lands in `Build`, QA lands in `Review`. A Project
   with no Milestone is invisible in the Shipping view, which is how work goes quiet.
+- **If you have to create the Project**, give it the **audience label** (`teacher` · `student` ·
+  `parent` · `shared`) and the `Thoven 2.0` Initiative. The audience is a label, not a container:
+  sub-initiatives are Enterprise-only, verified 2026-08-18. ⚠ Project labels can only be created in
+  the Linear UI, so stop and ask rather than inventing a label name. **Create only the milestones
+  the Feature needs** — an empty milestone reads 0% forever and is a gate that cannot open.
 - **A `Writes to:` line if and only if the output is a document.** One literal line, one path:
   `Writes to: thoven2.0/teacher-2.0/decisions/api.md`. **That line is what routes the issue to
   `Speccing`; without it the issue goes to `In Progress`.** So a `PRD + Architecture` or `Design`

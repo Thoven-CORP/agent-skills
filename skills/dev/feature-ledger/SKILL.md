@@ -117,25 +117,39 @@ as many shippable Issues as there are components.
 
 ## open
 
-1. **Create the Linear Project and choose its milestones. That choice is the triage.** Every Feature
-   draws from `PRD + Architecture` · `Design` · `Build` · `Review` (`WORKFLOW.md` §3). Give it only
-   the stages it needs. **Trimming a milestone is a decision, and the absence is the record**: a
-   Feature with no `Design` milestone is one where design was considered and found unnecessary. Say
-   in the Project description which stage was trimmed and why.
-2. **Create the shape from `templates/`.** Every file exists, even scaffolded. An absent file reads
+1. **Create the Linear Project.** One Feature, spanning frontend and backend, never one per repo.
+   Set:
+   - **the audience label** (`teacher` · `student` · `parent` · `shared`). The audience is a label,
+     not a container: Linear gates sub-initiatives behind the Enterprise plan, verified 2026-08-18.
+     ⚠ Project labels can only be created in the Linear UI, so if the one you need does not exist,
+     stop and ask Andres rather than inventing a name.
+   - **the Initiative**, `Thoven 2.0` for 2.0 work.
+   - **a link to the feature folder**, never a copy of its documents.
+
+2. **Choose its milestones. That choice is the triage.** Every Feature draws from
+   `PRD + Architecture` · `Design` · `Build` · `Review` (`WORKFLOW.md` §3). Create only the stages it
+   needs, and **create nothing you are trimming**: an empty milestone reads 0% forever, so it is a
+   gate that cannot open and a bar that drags the Project down. Measured 2026-08-18.
+   **Trimming is a decision and the absence is the record**: a Feature with no `Design` milestone is
+   one where design was considered and found unnecessary. Say in the Project description which stage
+   was trimmed and why.
+
+   ⚠ **Do not estimate for the gate's sake.** Milestone progress counts issues, not points. What
+   makes the bar honest is issue granularity.
+3. **Create the shape from `templates/`.** Every file exists, even scaffolded. An absent file reads
    as "not applicable", which is how `api.md` went missing from the feature whose worst two defects
    were payload fields.
-3. **Fill `PRD.md` and `CONTINUE_HERE.md`** from what the session already knows, including the `E#`
+4. **Fill `PRD.md` and `CONTINUE_HERE.md`** from what the session already knows, including the `E#`
    stories that can already be named.
-4. **Seed each Project's `DESIGN_<PROJECT>.md` with a row per surface** (rule 13). Each names what to build from, a
+5. **Seed each Project's `DESIGN_<PROJECT>.md` with a row per surface** (rule 13). Each names what to build from, a
    status, and an **owning gate that resolves: a pasted `THV-` URL**, never a prose name. That turns
    ghost-owner rule 4 from a rule into a check, which is rule 9 doing its job.
-5. **Create the Project's first Speccing issues**, one per document the first milestone owes. Each
+6. **Create the Project's first Speccing issues**, one per document the first milestone owes. Each
    carries a literal `Writes to:` line naming exactly one path, and a `Done when` line checkable
    against that file. One path per issue; a folder has no done-ness.
-6. **Create the paired worktrees**, `frontend-<feature>` and `backend-<feature>`.
+7. **Create the paired worktrees**, `frontend-<feature>` and `backend-<feature>`.
 
-**Done when** every path in the shape resolves, every `DESIGN.md` row's path and owning gate open,
+**Done when** every path in the shape resolves, every `DESIGN_<PROJECT>.md` row's path and owning gate open,
 every surface the feature touches has a row, and the Linear Project shows its chosen milestones with
 at least one Speccing issue standing against the first.
 
