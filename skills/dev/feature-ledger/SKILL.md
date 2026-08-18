@@ -69,15 +69,42 @@ anything visual the prototype IS the source.**
 eleven of them restating a running route in prose. Over-documentation does not prevent the failure
 it fears — Class Materials was heavily documented and still shipped wrong.*
 
+## ⛔ Rule 13 — every SURFACE has an authority, and a surface with none is a blocker
+
+Rule 4 catches a **deferral pointing at an owner that does not exist**. This is its mirror: a
+**surface that no authority points at**. Same disease, opposite direction, and only one direction
+was ever checked.
+
+**`design/VERSIONS.md` carries a row per SURFACE, not only a row per drawing.** Each names what a
+builder must build from — a drawing, a proto route + screen, or a component and the commit it was
+canon at. **An absent row does not mean "use your judgement". It means STOP and ask.**
+
+**An authority rule states the surfaces it covers, and a citation resolves for the surface it is
+cited on.** A rule scoped wider than its pointers is the failure mode by construction.
+
+**"The built components ARE the design" is a status with a direction and an expiry**, never a
+standing truth. It holds only while the code is the newest expression of the design. Write it as
+*components are canon for `<surfaces>` as of `<commit>`; any DD dated after this supersedes it* —
+otherwise, the day the design moves ahead of the code, the rule keeps pointing backwards and freezes
+the stale build as canon.
+
+*Written 2026-08-18, from the incident this rule exists to prevent. `VERSIONS.md` said "**For
+Teacher**, the built components ARE the design… build from `L5_COMPONENTS.md` §B2 and route screen
+7" — scope "for Teacher", pointers Class Materials only. Teacher Homework sat inside the scope and
+outside the pointers, so it had no design authority at all, and "the components are the design"
+resolved to the **pre-redesign** components. Prose filled the vacuum, a centered modal shipped over
+a designed slide-over, and DD-12/12a/13 and DD-07a — locked, drawn, running in the proto — were
+never built. Every gate passed. The rule read complete, which is why nobody saw the hole.*
+
 
 ## open
 
 1. Create the shape from `templates/`. Every file exists, even empty — an absent file reads as "not applicable" and that is how `api.md` went missing from the feature whose worst two defects were payload fields.
 2. Fill `PRD.md` and `CONTINUE_HERE.md` from what the session already knows.
-3. Seed `design/VERSIONS.md` with a row per proto, each naming a status and an **owning gate that resolves to a Linear issue — a pasted `THV-` URL**, never a prose name. That turns ghost-owner rule 4 from a rule into a check, which is rule 9 (*prefer a script to a rule*) doing its job: the 2026-08-14 audit found 4 ghost owners cited 13 times, one of which — *"Parent L3"* — was named in five files as a real design gate and had never been drawn.
+3. Seed `design/VERSIONS.md` with a row per proto **and a row per surface** (rule 13 — a surface with no row is a blocker, not a default), each naming a status and an **owning gate that resolves to a Linear issue — a pasted `THV-` URL**, never a prose name. That turns ghost-owner rule 4 from a rule into a check, which is rule 9 (*prefer a script to a rule*) doing its job: the 2026-08-14 audit found 4 ghost owners cited 13 times, one of which — *"Parent L3"* — was named in five files as a real design gate and had never been drawn.
 4. Create the paired worktrees named for the feature.
 
-**Done when** every path in the shape resolves, and every `VERSIONS.md` row's proto path and owning gate both open.
+**Done when** every path in the shape resolves, every `VERSIONS.md` row's proto path and owning gate both open, and every surface the feature touches has a row.
 
 ## reconcile
 
@@ -92,10 +119,18 @@ An entry **balances** when all of these hold:
 | **owner** | any deferral names a gate, ticket or row that opens |
 | **uniqueness** | one entry claims this surface, not four |
 | **coverage** | if a plan exists, every user story and architecture decision appears in its table |
+| **authority** (rule 13) | every surface the feature touches has a `VERSIONS.md` row naming what to build from; no row = a finding, never a default |
+| **downstream** | a `LOCKED` decision is cited by a plan, issue or commit — a decision nothing downstream mentions is an **orphan** |
 
 Then:
 
 1. **Log every imbalance in plain English**, saying what the ledger claims and what the code does. *"`DD-73` says the format picker uses `ThovenTile`. `ThovenTile` has zero call sites outside `/dev`."*
+1a. **Grep the decisions for orphans, both directions.** A `LOCKED` row whose number appears in no
+   plan, issue or commit is unbuilt and unowned no matter how well it is written — *"`DD-12` is
+   ratified, drawn at `mh15-l4:883`, annotated 'L5 wires it', and cited by nothing. L5 never did."*
+   A deferral naming a **level or phase** (*"L5 wires it"*, *"the next gate"*) is a rule-4 ghost
+   owner wherever it lives — **including inside proto code comments**, which is where that one hid
+   for three weeks.
 2. **Cut superseded entries.** Delete the row; keep REJECTED blocks inside drawings, which are the record of what was tried.
 3. **Bring the ledger current** — file decisions stated this session into their file, and append this session's commits to `STATE.md`'s ledger with what each did.
 4. **Ask on every fork you find.** Competing docs for one surface, an entry whose layer you cannot verify, a deferral with no owner — surface it and let Andres rule. **Show the competing artifacts rather than summarising them**; the reason a fork exists is that prose could not distinguish them.
