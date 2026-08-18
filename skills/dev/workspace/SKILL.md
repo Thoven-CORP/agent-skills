@@ -493,6 +493,9 @@ which then passed every gate because each one checked the prose.
 reasoning, the Project holds the state. A Feature with one and not the other *is* the imbalance —
 say so.
 
+Tickets are found in Linear, with all references. Feature folders carry the hierarchy of things.
+As you implement tasks, read the tickets from Linear. Update the tickets with what shipped.
+
 ## Store layout
 
 `~/thoven/.workspace/` is its own git repo. FE and BE sessions share one truth.
