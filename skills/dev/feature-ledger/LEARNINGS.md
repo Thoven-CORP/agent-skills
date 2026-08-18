@@ -5,6 +5,58 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-08-18 — rule 13 covers surfaces, so a cross-surface RULE has no owner by construction
+
+**What happened.** The teacher-2.0 migration gave every surface a `DESIGN_<PROJECT>.md` row with an
+**Owning gate**, exactly as rule 13 asks. **D68** — *notifications are segmented by section, not by
+open loop*, the axis the entire dashboard is built on — still ended up with **no owner**.
+
+**Why.** D68 is not a surface. It is a rule spanning several, so it belongs in the template's
+*Rules that span surfaces* table — and **that table has no `Owning gate` column.** The rule was
+followed and the hole opened anyway.
+
+**Why it matters.** This is the same defect rule 13 was written for, one level up. A surface with no
+authority is a blocker you can see; a **rule** with no owner is invisible, because the table it sits
+in never had a place to look.
+
+**What changed.** `templates/DESIGN_PROJECT.md` needs an **Owning gate** column on the cross-surface
+rules table, and `reconcile`'s `authority` check needs to read both tables, not just the surface one.
+
+---
+
+## 2026-08-18 — the orphan check false-greens if the decision log counts as downstream
+
+**What happened.** First orphan run after the migration reported **0 orphans of 88**. That was
+wrong. The scan had swept in the frontend repo's `wireframe/.../DECISION_LOG.md` — which is where
+D1–D55 are **defined** — and both repos' full commit logs, which include the commits that *wrote the
+decisions*. Every decision cites itself, so everything looked owned.
+
+**Re-run against code and tests only: 2 orphans**, both benign and explainable.
+
+**Why it matters.** `downstream` means *something that implements or schedules this*. A decision's
+own source and its own doc commit are **upstream**. Counting them inverts the check into one that
+can never fail — and a check that cannot fail reads as a pass.
+
+**What changed.** Nothing in the skill's wording, which already says *"a plan, issue or commit"*.
+Recorded because the wrong scan is the easy one to write, and it returns the number you want.
+
+---
+
+## 2026-08-18 — a feature that predates the prefix split cannot be renumbered
+
+**What happened.** `teacher-2.0`'s `architecture.md` carried **D64, D66, D68, D69, D71** — minted
+while one `D` series covered design and architecture both. The shape gives architecture its own
+`ADR#` series.
+
+**Renumbering was the wrong move.** Five rows, ~15 citations across two repos, and every one of them
+would have shown up in the migration's own balance check as a **deletion**.
+
+**What changed.** They keep their numbers, new rows start at `ADR1`, and the exception is stated at
+the top of the file rather than left for a reader to notice. **Migrating a ledger into the shape is
+not licence to renumber it** — the id is the citation, and the citation is the thing being protected.
+
+---
+
 ## 2026-08-18 — the gate was designed on an untested assumption, and one leg of it was wrong
 
 **What happened.** The whole lifecycle design rests on *a milestone reaching 100% is the gate,
