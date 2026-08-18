@@ -19,8 +19,12 @@ minutes:
 
 **And one assumption was simply false.** Sub-initiatives, which the container model used for the
 audience level, are **Enterprise-only**. The API accepts `parentInitiatives` and the server
-refuses. The audience became a project **label** instead, which groups the Shipping view the same
-way and costs nothing.
+refuses.
+
+**A project label was the first fix, and it was worse.** Project labels can only be created in the
+Linear UI, so `open` would have blocked on a step no agent can perform. The audience went into the
+Project's **name** instead, as `<Audience>: <Feature>` — `Teacher 2.0: Dashboard`. No setup, visible
+on every issue card without configuring a view, and it sorts the board into audience groups.
 
 **What changed.** Trim now means *delete the milestone*, because an empty one is a gate that cannot
 open. Estimates are not required, since they do not move the bar; issue granularity is what makes it
