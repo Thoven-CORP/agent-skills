@@ -21,7 +21,7 @@ Conditional close workflow based on context classification (Standalone / Feature
 3. **Summarize:** Brief summary of what was fixed and why
 
 ### During Feature Dev
-*(bug found while building via `/dev`)*
+*(bug found while building a feature)*
 
 1. **Log pattern:** Run mandatory pattern quality gate (see below)
 2. **No separate commit:** Fix is part of the feature work, will be committed with the feature

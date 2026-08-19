@@ -32,7 +32,7 @@ Repeatable 7-phase audit functioning as a virtual Chief Compliance Officer. Inve
 
 ## When NOT to Use
 
-- To fix compliance issues (use `/dev` pipeline or targeted fixes instead)
+- To fix compliance issues (use `grill-with-docs` + `to-spec` + `feature-ledger`, or targeted fixes instead)
 - For Thovie AI compliance (handled separately in OVA branch)
 - For one-off security questions (use `/security-review` instead)
 
@@ -53,7 +53,7 @@ Every FAIL/PARTIAL finding gets classified:
 |-------|----------|--------|
 | **Targeted Fix** | Clear problem + clear fix. One file change. | Fix instruction with file:line |
 | **Needs Deeper Investigation** | Surface-level finding, root cause unclear | What to investigate + where to look |
-| **Run Through /dev Pipeline** | Real feature work needing brainstorm-plan-build-validate | Feature description for `/dev:intake` |
+| **grill-with-docs + to-spec + feature-ledger** | Real feature work needing design-spec-ledger | Feature description for `grill-with-docs` then `to-spec` then `feature-ledger` |
 | **Needs Legal Counsel** | Policy decision, regulatory interpretation, DPA negotiation | Question formatted for legal review |
 
 ## How to Use
@@ -232,7 +232,7 @@ Classify every FAIL/PARTIAL finding into a remediation route:
 
 **Needs Deeper Investigation**: Finding is surface-level or root cause unclear. Specify what to investigate, what files to trace, what questions to answer.
 
-**Run Through /dev Pipeline**: Feature-level work. Write a brief feature description ready for `/dev:intake` including: what it should do, why it's needed (regulatory requirement), acceptance criteria.
+**grill-with-docs + to-spec + feature-ledger**: Feature-level work. Write a brief feature description ready for `grill-with-docs` then `to-spec` then `feature-ledger` including: what it should do, why it's needed (regulatory requirement), acceptance criteria.
 
 **Needs Legal Counsel**: Cannot be resolved by engineering. Format as a question with full context: what the regulation requires, what Thoven currently does, what the gap is, what decision is needed.
 
@@ -319,7 +319,7 @@ RECURRING (every 2-4 weeks):
   /cco-audit              → Compliance + security audit, produces report + remediation plan
 
 WHEN IMPLEMENTING FIXES from the audit:
-  /dev pipeline            → Build the fix (for /dev-routed findings)
+  grill-with-docs → to-spec → feature-ledger  → Spec and ledger the fix (for feature-level findings)
   /aikido:scan             → Verify fix doesn't introduce new SAST vulns
   /verify                  → Confirm fix resolves the audit finding
 

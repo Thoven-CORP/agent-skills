@@ -27,7 +27,7 @@ Meta-orchestrator for feature planning. Assesses complexity, coordinates archite
 - User says "let's build X" or "implement this feature"
 - A design doc needs to be created before implementation
 
-**Don't use for:** Bug fixes (use `investigate`), single-file changes, pure research, or tasks handled by one skill alone.
+**Don't use for:** Bug fixes (use `investigate-thoven` or `diagnosing-bugs`), single-file changes, pure research, or tasks handled by one skill alone.
 
 ## What This Skill Produces (NOT Implements)
 

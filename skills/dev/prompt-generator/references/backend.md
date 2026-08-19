@@ -118,11 +118,11 @@ After classification, identify which existing skills AND agents the generated pr
 
 | Prompt Type | Pre-Work Skills | Post-Work Skills | Conditional Skills |
 |---|---|---|---|
-| Implementation | `/brainstorm` (if Heavy tier), `/production-data-audit` (if touching existing models) | `/verify` (always), `/publish` (if deploying) | `/safe-migrate` (if migration needed), `/email` (if mailer work), `/security-review` (if touches auth/payments/student data) |
-| Architecture | `/brainstorm` (always — design before build) | `/verify` (validate design meets requirements) | `/security-review` (if COPPA/auth/payment implications) |
+| Implementation | `/grill-with-docs` (if Heavy tier), `/production-data-audit` (if touching existing models) | `/verify` (always), `/publish` (if deploying) | `/safe-migrate` (if migration needed), `/email` (if mailer work), `/security-review` (if touches auth/payments/student data) |
+| Architecture | `/grill-with-docs` → `/architect` (always — design before build) | `/verify` (validate design meets requirements) | `/security-review` (if COPPA/auth/payment implications) |
 | Research | — | `/future-improvements` (to log deferred ideas found during research) | `/tech-debt` (if research reveals existing debt) |
-| Audit | `/production-data-audit` (audit real data first) | `/tech-debt` (to log findings), `/manage-todos` (to track remediation) | `/security-review` (if security audit), `/investigate` (if audit reveals bugs) |
-| PRD/Spec | `/brainstorm` (validate design before specifying) | `/feature-ledger` (break spec into executable tasks) | — |
+| Audit | `/production-data-audit` (audit real data first) | `/tech-debt` (to log findings), `/manage-todos` (to track remediation) | `/security-review` (if security audit), `/investigate-thoven` (if audit reveals bugs) |
+| PRD/Spec | `/grill-with-docs` (validate design before specifying) | `/feature-ledger` (break spec into executable tasks) | — |
 | Testing | `/production-data-audit` (understand real data shapes) | `/verify` (confirm tests actually pass) | — |
 | Migration | `/safe-migrate` (always — pre-flight safety checks) | `/verify` (confirm migration succeeded in both envs), `/publish` (if deploying) | — |
 | Cross-Codebase Handoff | — | `/frontend-handover` (orchestrates the full handoff) | — |
@@ -162,7 +162,7 @@ These agents activate when the prompt touches specific domains, regardless of ty
 #### Mapping Rules
 
 1. **Only use what exists** — all skills and agents listed above are verified to exist in `.claude/skills/` and `.claude/agents/`
-2. **Pre-work** goes at the TOP of the generated prompt: "Before implementing, invoke `/brainstorm`" or "Launch the `rails-expert` agent to analyze existing patterns"
+2. **Pre-work** goes at the TOP of the generated prompt: "Before implementing, invoke `/grill-with-docs`" or "Launch the `rails-expert` agent to analyze existing patterns"
 3. **Post-work** goes at the BOTTOM of the generated prompt: "After completing, run `/verify`" or "Use the `code-reviewer` agent to review changes"
 4. **Max 2 pre + 2 post per category** (skills and agents each) — don't overwhelm the prompt
 5. **Conditional mappings** are included only when the domain trigger applies — add as "If this touches [domain], also invoke..."
@@ -175,7 +175,7 @@ These agents activate when the prompt touches specific domains, regardless of ty
 ## Workflow Integration
 
 ### Before Starting
-- Invoke `/brainstorm` to validate design approach
+- Invoke `/grill-with-docs` to validate design approach
 - Launch `rails-expert` agent to gather existing patterns for [domain]
 
 ### After Completing

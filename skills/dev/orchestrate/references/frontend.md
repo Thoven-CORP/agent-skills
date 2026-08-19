@@ -10,7 +10,7 @@ Classifies user requests and routes to the correct skill. Domain skills take pri
 
 ## When NOT to Use
 
-- User explicitly names a skill (e.g., "/investigate", "/verify") — just use it
+- User explicitly names a skill (e.g., "/investigate-thoven", "/verify") — just use it
 - Simple question that doesn't need a workflow
 - Already mid-execution of another skill
 
@@ -31,8 +31,8 @@ If the request straddles two layers (e.g. "design a new animated card"), route t
 
 | Category | Signal Words | Route To |
 |----------|-------------|----------|
-| **Feature Development** | "build", "create", "add feature", "new page", "implement", multi-file, 3+ concerns | `/dev` |
-| **Quick Design/Ideation** | "redesign", "what if", brainstorm-only (no implementation) | `superpowers:brainstorming` |
+| **Feature Development** | "build", "create", "add feature", "new page", "implement", multi-file, 3+ concerns | `grill-with-docs` → `architect` → `to-spec` / `feature-ledger` |
+| **Quick Design/Ideation** | "redesign", "what if", brainstorm-only (no implementation) | `grill-with-docs` |
 | **Planning Only** | "plan", "break down", "scaffold", "spec" (no build needed) | `superpowers:writing-plans` |
 | **Bug/Debug** (runtime) | "bug", "broken", "not working", "crash", "throws", "500", "doesn't render", "race condition" | `investigate-thoven` |
 | **Verification** | "check", "verify", "review", "ready to commit" (NOT design craft — see Design Quality Review below) | `verify` |
@@ -75,10 +75,10 @@ For **which one to pick when several match**, see `.claude/docs/SKILL_AND_AGENT_
 
 | Pattern | Chain |
 |---------|-------|
-| New feature (full lifecycle) | `/dev` (handles INTAKE → SHIP internally) |
+| New feature (full lifecycle) | `grill-with-docs` → `architect` → `to-spec` → `feature-ledger` |
 | Bug report | `investigate-thoven` → `verify` |
 | Feature complete | `/qa --diff-aware` → `verify` → `publish` |
-| Complex design with planning | `superpowers:brainstorming` → `feature-orchestrator` |
+| Complex design with planning | `grill-with-docs` → `architect` |
 | Strategy session | `thoven-boardroom` → `product-strategy-brainstorming` |
 | New page/component | `thoven-designer` → `verify` |
 | New page/component with motion | `thoven-designer` (Phase 2 design) → `motion` (pick layer + preset) → `motion-react` or `gsap-*` (Phase 3 implementation) → `verify` |
@@ -95,7 +95,7 @@ For **which one to pick when several match**, see `.claude/docs/SKILL_AND_AGENT_
 
 | Complexity | Model | Examples |
 |-----------|-------|---------|
-| Complex reasoning, architecture, multi-file | Opus | `feature-orchestrator`, `investigate-thoven` (CRITICAL severity), `superpowers:brainstorming` (Deep) |
+| Complex reasoning, architecture, multi-file | Opus | `feature-orchestrator`, `investigate-thoven` (CRITICAL severity), `grill-with-docs` / `architect` |
 | Standard implementation, single concern | Sonnet | Most tasks, standard `verify`, component work |
 | Quick lookups, simple generation | Haiku | Quick `verify`, simple questions, formatting |
 

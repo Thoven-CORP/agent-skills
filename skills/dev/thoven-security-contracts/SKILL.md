@@ -29,7 +29,7 @@ Review contract and integration changes that affect security-sensitive frontend/
    - Flag implementation steps that should be contract-first because they can break runtime behavior across repos.
 
 5. **Issue slicing readiness**
-   - Check whether future `$to-issues` slices are vertical, independently verifiable, and clear about HITL versus AFK.
+   - Check whether future `$to-tickets` slices are vertical, independently verifiable, and clear about HITL versus AFK.
    - Flag slices that are too broad, mix unrelated risk domains, or lack acceptance criteria.
 
 ## Evidence Standard

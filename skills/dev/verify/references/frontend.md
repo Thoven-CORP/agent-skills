@@ -332,7 +332,7 @@ For Standard and Debate modes:
 ## When NOT to Use
 
 - Exploring code or researching → use Explore agent
-- Debugging a bug → use `investigate`
+- Debugging a bug → use `investigate-thoven`
 - Just reading files → use Read tool directly
 
 ## Common Mistakes

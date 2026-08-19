@@ -139,14 +139,14 @@ After classification, identify which existing skills the generated prompt should
 
 | Prompt Type | Pre-Work Skills | Post-Work Skills |
 |-------------|----------------|-----------------|
-| Implementation | `/feature-orchestrator` (if 3+ concerns), `superpowers:brainstorming` (if creative/new) | `/verify`, `/manual-qa` (if testable), `/publish` |
-| Architecture | `superpowers:brainstorming`, `/thoven-boardroom` (if strategic) | `/verify` (docs mode) |
+| Implementation | `/feature-orchestrator` (if 3+ concerns), `/grill-with-docs` (if creative/new) | `/verify`, `/qa-flow` (if testable), `/publish` |
+| Architecture | `/grill-with-docs`, `/thoven-boardroom` (if strategic) | `/verify` (docs mode) |
 | Research | `/research-orchestration` (if multi-topic) | — |
-| Debugging/Bugfix | `/investigate` | `/verify`, `/manual-qa` |
+| Debugging/Bugfix | `/investigate-thoven` | `/verify`, `/qa-flow` |
 | Audit | `/accessibility-check` (if a11y), `/mobile-audit` (if responsive) | — |
 | PRD/Spec | `/technical-spec-generator`, `/product-strategy-brainstorming` | — |
 | Testing | `superpowers:test-driven-development` | `/verify` (quick mode) |
-| Creative/Brainstorming | `superpowers:brainstorming` | — |
+| Creative/Brainstorming | `/grill-with-docs` | — |
 | Cross-Codebase Handoff | — | — |
 | Refactoring | `/simplify` | `/verify` |
 | SEO work | `/seo-resource-page` | `/verify` |
@@ -154,17 +154,17 @@ After classification, identify which existing skills the generated prompt should
 
 **Mapping Rules:**
 1. **Always check** — every prompt gets a skill scan, even Light tier
-2. **Pre-work skills** go at the top of the prompt ("Before implementing, invoke `/investigate` to confirm root cause")
-3. **Post-work skills** go at the bottom ("After completing, run `/verify` then `/manual-qa`")
+2. **Pre-work skills** go at the top of the prompt ("Before implementing, invoke `/investigate-thoven` to confirm root cause")
+3. **Post-work skills** go at the bottom ("After completing, run `/verify` then `/qa-flow`")
 4. **Don't over-stack** — max 2 pre-work + 2 post-work skills per prompt. Pick the most relevant.
 5. **Conditional skills** — use "if" language when a skill only applies sometimes ("If this touches UI, run `/accessibility-check` after")
-6. **Skill chaining** — some skills naturally chain: `/investigate` → implement fix → `/verify` → `/manual-qa` → `/publish`
+6. **Skill chaining** — some skills naturally chain: `/investigate-thoven` → implement fix → `/verify` → `/qa-flow` → `/publish`
 
 **Common Chains:**
 
 ```
-Bug workflow:     /investigate → [fix prompt] → /verify → /manual-qa → /publish
-Feature workflow: /brainstorming → /feature-orchestrator → [implement prompt] → /verify → /manual-qa → /publish
+Bug workflow:     /investigate-thoven → [fix prompt] → /verify → /qa-flow → /publish
+Feature workflow: /grill-with-docs → /architect → /to-spec → /feature-orchestrator → [implement prompt] → /verify
 Audit workflow:   /[audit skill] → [fix prompt from findings] → /verify
 Design workflow:  /thoven-designer → [implement prompt] → /accessibility-check → /mobile-audit → /verify
 ```

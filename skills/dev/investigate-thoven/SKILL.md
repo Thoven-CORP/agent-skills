@@ -149,7 +149,7 @@ Classify the debugging context:
 | Context | Indicators |
 |---------|-----------|
 | **Standalone bug fix** | User reported a bug, not part of feature work |
-| **During feature dev** | Bug found while building something via `/dev` or similar |
+| **During feature dev** | Bug found while building a feature (not a standalone ticket) |
 | **Production incident** | Something is broken in prod right now, urgency |
 
 ### Step 4: Ask Targeted Questions (If Needed)
@@ -523,7 +523,7 @@ Flag systemic issues: "This bug points to a systemic issue: [description]. The f
 2. **Commit:** Stage and commit the fix with descriptive message
 3. **Summarize:** Brief summary of what was fixed and why
 
-#### During Feature Dev (bug found while building via `/dev`)
+#### During Feature Dev (bug found while building a feature)
 
 1. **Log pattern:** Run mandatory pattern quality gate (see below)
 2. **No separate commit:** Fix is part of the feature work, will be committed with the feature

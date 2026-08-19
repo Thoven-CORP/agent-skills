@@ -14,10 +14,10 @@ Read the user's request and classify into ONE primary category:
 
 | Category | Signals | Route To |
 |----------|---------|----------|
-| **Creative/Design** | "build", "create", "add feature", "new", "design" | `brainstorm` |
+| **Creative/Design** | "build", "create", "add feature", "new", "design" | `grill-with-docs` (in a repo) |
 | **Planning** | "plan", "break down", "scaffold", "implement plan" | `feature-ledger` |
 | **Complex Execution** | "build this", "implement", multi-file changes, needs debate | `expert-team` |
-| **Investigation** | "bug", "error", "broken", "not working", "debug", "fix" | `investigate` |
+| **Investigation** | "bug", "error", "broken", "not working", "debug", "fix" | `investigate-thoven` (Thoven runtime); `diagnosing-bugs` (generic hard bugs) |
 | **Verification** | "check", "verify", "review", "is this done", "test" | `verify` |
 | **Session Mgmt** | "where was I", "continue", "resume", "end session" | `resume-session` |
 | **Domain-Specific** | Email work, migrations, security, user deletion, deploy | Domain skill (see below) |
@@ -55,11 +55,11 @@ Some tasks benefit from chaining skills in sequence:
 
 | Pattern | Chain |
 |---------|-------|
-| New feature (idea → code) | `brainstorm` → `feature-ledger` → `expert-team` |
+| New feature (idea → code) | `grill-with-docs` → `architect` → `feature-ledger` → `expert-team` |
 | New feature (spec exists) | `feature-ledger` → `expert-team` |
-| Bug report | `investigate` → `verify` |
+| Bug report | `investigate-thoven` → `verify` |
 | Feature complete | `verify` → `publish` |
-| Complex design problem | `brainstorm` (Deep mode) → `feature-ledger` |
+| Complex design problem | `grill-with-docs` → `architect` → `feature-ledger` |
 
 ## Model Selection (Embedded — from SADD)
 
@@ -76,13 +76,13 @@ Is task COMPLEX (architecture, design, novel problem, critical decision)?
 ```
 
 ## When NOT to Use
-- User explicitly names a skill ("run /investigate") — just invoke it directly
+- User explicitly names a skill ("run /investigate-thoven") — just invoke it directly
 - Task is a simple question or clarification — no routing needed
 - Already mid-workflow in another skill — don't re-route
 
 ## Common Mistakes
 - Recommending multiple skills when one is clearly best — pick ONE
-- Routing to brainstorm for simple bug fixes — use investigate instead
+- Routing to grill-with-docs for simple bug fixes — use `investigate-thoven` instead
 - Suggesting expert-team for tasks a single agent can handle
 - Re-routing mid-workflow instead of continuing the current skill
 
@@ -91,5 +91,5 @@ Is task COMPLEX (architecture, design, novel problem, critical decision)?
 - **ONE recommendation** — Don't list 3 options. Pick the best one.
 - **Explain briefly** — One sentence on why this skill fits.
 - **Offer chain if applicable** — But don't force multi-step workflows for simple tasks.
-- **Domain skills take priority** — If it's clearly email work, route to `email`, not `brainstorm`.
+- **Domain skills take priority** — If it's clearly email work, route to `email`, not `grill-with-docs`.
 - **When in doubt, ask** — If classification is genuinely ambiguous, ask ONE clarifying question.

@@ -107,7 +107,7 @@ no design authority at all, and four locked, drawn, running decisions were never
 ## Rule 14: spec once at the milestone, ship many at the issue
 
 **A Project holding several components is specced as ONE unit, because its layout is one decision.**
-`/to-issues` then emits one vertical Issue per component, and each ships as it finishes.
+`/to-tickets` then emits one vertical Issue per component, and each ships as it finishes.
 
 **Keep a multi-component Project whole.** Splitting it into several Projects forces a separate
 speccing pass over a shared layout, and two passes over one layout produce two layouts.
@@ -195,7 +195,7 @@ Andres.
 
 ## When another skill calls this
 
-`/writing-plans`, `/to-prd` and `/handoff` reconcile first. A plan written against an unbalanced
+`/writing-plans`, `/to-spec` and `/handoff` reconcile first. A plan written against an unbalanced
 ledger inherits the imbalance and freezes it. Report imbalances to the calling skill before it
 writes.
 
