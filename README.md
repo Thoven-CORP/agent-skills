@@ -1,6 +1,6 @@
 # Thoven agent skills
 
-Private repo of **Thoven-custom** agent skills. Install once globally; they then work in Cursor, Claude Code, Codex, and Hermes in every repo — frontend, backend, and everything else.
+Private repo of **Thoven-custom** agent skills. Install once globally; they then work in Cursor, Claude Code, and Codex in every repo — frontend, backend, and everything else.
 
 This is the source of truth. Skills no longer live inside `frontend` / `backend`.
 
@@ -16,7 +16,7 @@ Anyone at Thoven who uses an AI coding agent on our repos. You need:
 
 ```bash
 npx skills add Thoven-CORP/agent-skills -g -y \
-  -a claude-code -a codex -a cursor -a hermes-agent \
+  -a claude-code -a cursor -a codex \
   --skill '*'
 ```
 
@@ -93,14 +93,22 @@ If detection is ambiguous, the skill asks once.
 | `/manual-qa` | `/qa-flow` |
 | `/email` (mailers) | `/thoven-email-system` |
 | `docs-freshness` | `doc-freshness` |
+| `/to-prd` | `/to-spec` |
+| `/to-issues` | `/to-tickets` |
+| `/brainstorm` | `/grill-with-docs` then `/architect` |
+| `/investigate` (generic) | `/investigate-thoven` |
+| `/dev` (GSD conductor) | retired — `/writing-plans` + `/to-tickets`. `app/dev/` proto routes stay |
 
 `email-writing` is unchanged — that is outbound email in Andres's voice, not Rails mailers.
+
+Retired bodies live in [`archive/`](./archive/README.md) as `SKILL.md.archived`. The installer only discovers a file named `SKILL.md`, so `npx skills add --skill '*'` and `npx skills update` cannot install or refresh them. Do not put a `SKILL.md` back under `skills/dev/brainstorm`, `skills/dev/investigate`, or `skills/dev/dev` — `scripts/assert-retired-skills-not-installable.sh` fails if a merge does that.
 
 ## Layout
 
 ```
 skills/dev/    engineering + personal-dev workflows
 skills/exec/   executive assistant, outreach, CFO, fundraising
+archive/       retired skills — SKILL.md.archived only, never installable
 ```
 
 Each skill is `skills/<bucket>/<name>/SKILL.md` plus optional `references/`, `scripts/`, `templates/`.

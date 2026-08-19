@@ -1,0 +1,218 @@
+---
+name: brainstorm
+description: ARCHIVED. Do not install. Speccing is /grill-with-docs then /architect.
+---
+
+> **ARCHIVED 2026-08-19.** Not a live skill. `npx skills add/update` must not install this. Live path: `/grill-with-docs` → `/architect`. This file is named `SKILL.md.archived` so the installer cannot discover it.
+
+# Brainstorm — Idea to Validated Design
+
+<HARD-GATE>
+Do NOT write any code, invoke any implementation skill, scaffold any project, or take any implementation action until you have presented a design and the user has approved it. This applies to EVERY idea regardless of perceived simplicity.
+</HARD-GATE>
+
+## Overview
+
+Collaborative design exploration with three intensity modes. Every project goes through this — "simple" projects are where unexamined assumptions waste the most work.
+
+**Core Principle:** "No implementation before design approval. No exceptions."
+
+## Modes
+
+| Mode | When | Depth | Time |
+|------|------|-------|------|
+| **Quick** | Small changes, clear scope | 2-3 questions, lightweight design | 5-10 min |
+| **Standard** | Most features (DEFAULT) | Full exploration, approach comparison | 15-30 min |
+| **Deep** | Genuinely hard problems, architecture | Tree of Thoughts multi-agent exploration | 30-60 min |
+
+**Mode Selection:** If the user doesn't specify, default to Standard. Use Deep only when:
+- Multiple valid architectures exist with non-obvious trade-offs
+- The problem is genuinely novel (not just unfamiliar)
+- Failure cost is high (payment flows, auth, data integrity)
+
+## Process (All Modes)
+
+### Phase 1: Explore Context
+
+Before asking ANY questions:
+1. Check relevant files (models, services, controllers in the affected area)
+2. Read recent commits for related work
+3. Check docs/ for existing plans or specs
+4. Understand current architecture in the affected area
+
+### Phase 2: Clarifying Questions
+
+**One question at a time. Multiple choice when possible.**
+
+Focus on understanding:
+- **Purpose** — What problem does this solve?
+- **Constraints** — What can't change? What must stay?
+- **Success criteria** — How do we know it works?
+- **Users** — Who uses this? (parent, teacher, student, admin)
+
+**Quick mode:** 2-3 questions max, then propose.
+**Standard mode:** As many as needed, but ONE per message.
+**Deep mode:** Same as standard for initial context.
+
+### Phase 3: Propose Approaches
+
+**All modes:** Present 2-3 approaches with trade-offs and your recommendation.
+
+```markdown
+## Approaches
+
+### A: [Name] (Recommended)
+- **How:** [2-3 sentences]
+- **Pros:** [bullet list]
+- **Cons:** [bullet list]
+- **Effort:** [Low/Medium/High]
+
+### B: [Name]
+- **How:** [2-3 sentences]
+- **Pros:** [bullet list]
+- **Cons:** [bullet list]
+- **Effort:** [Low/Medium/High]
+
+**Recommendation:** Approach A because [one sentence reasoning].
+```
+
+**YAGNI Check:** Before presenting, remove any approach that adds features not explicitly requested.
+
+### Phase 4: Design (Mode-Dependent)
+
+#### Quick Mode
+Present a brief design (3-5 paragraphs covering what changes, where, and key decisions). Get approval. Done.
+
+#### Standard Mode
+Present design in sections, asking "Does this look right?" after each:
+
+1. **Architecture** — What components change, how they connect
+2. **Data Model** — Tables, columns, constraints
+3. **API Design** — Endpoints, request/response shapes
+4. **Business Logic** — Rules, state machines, workflows
+5. **Edge Cases** — What could go wrong
+6. **Analytics** — How we measure success (REQUIRED per STANDARD_FEATURE_DEVELOPMENT_PROCEDURE.md)
+
+Scale each section to its complexity — a few sentences if straightforward, 200-300 words if nuanced.
+
+#### Deep Mode — Tree of Thoughts Exploration
+
+For genuinely hard problems, use multi-agent exploration:
+
+**Step 1: Generate proposals (6 per agent, 3 agents = 18 candidates)**
+
+Dispatch 3 parallel Explore agents, each generating 6 brief solution proposals:
+```
+Task tool (x3, parallel):
+  subagent_type: "Explore"
+  model: "opus"
+  prompt: "Generate 6 distinct solution proposals for: [problem].
+           Each proposal: name, 2-sentence description, probability of success (0-1).
+           Maximize diversity — do not duplicate approaches across proposals.
+           Think independently — do not try to guess what others would propose."
+```
+
+**Step 2: Prune to top candidates**
+
+Review all 18 proposals. Apply ranked choice voting:
+- Score each proposal on: Feasibility (40%), Simplicity (30%), Robustness (30%)
+- Select top 3 candidates for expansion
+
+**Step 3: Expand top 3 into full solutions**
+
+Dispatch 3 parallel agents, one per candidate:
+```
+Task tool (x3, parallel):
+  subagent_type: "general-purpose"
+  model: "opus"
+  prompt: "Develop proposal [X] into a complete solution for: [problem].
+           Include: architecture, data model, API design, edge cases, trade-offs.
+           Be thorough — this will be evaluated by independent judges."
+```
+
+**Step 4: Evaluate with domain-specific judges**
+
+Dispatch 3 specialist judge agents, each evaluating from their domain expertise:
+```
+Task tool (x3, parallel):
+
+  Judge 1 — Business Viability:
+  subagent_type: "product-manager"
+  model: "opus"
+  prompt: "Evaluate these 3 solutions for [problem] from a product perspective.
+           Focus on: business viability, user impact, RICE score (Reach, Impact,
+           Confidence, Effort), alignment with product goals, and ROI.
+           Score each 1-5 on: Correctness, Completeness, Simplicity, Maintainability.
+           Default score is 2. Justify any score above 3.
+           Rank all 3 with reasoning."
+
+  Judge 2 — Technical Feasibility:
+  subagent_type: "architecture-reviewer"
+  model: "opus"
+  prompt: "Evaluate these 3 solutions for [problem] from an architecture perspective.
+           Focus on: technical feasibility, scalability, system complexity, performance
+           implications, maintainability, and fit with existing architecture.
+           Score each 1-5 on: Correctness, Completeness, Simplicity, Maintainability.
+           Default score is 2. Justify any score above 3.
+           Rank all 3 with reasoning."
+
+  Judge 3 — Security & Compliance:
+  subagent_type: "security-engineer"
+  model: "opus"
+  prompt: "Evaluate these 3 solutions for [problem] from a security perspective.
+           Focus on: security risks, COPPA compliance, data safety, authentication/
+           authorization concerns, attack surface, and regulatory implications.
+           Score each 1-5 on: Correctness, Completeness, Simplicity, Maintainability.
+           Default score is 2. Justify any score above 3.
+           Rank all 3 with reasoning."
+```
+
+**Step 5: Adaptive synthesis**
+
+Based on judge scores:
+- **Unanimous winner** (one solution scores >4 from all judges): Select and polish
+- **All below 3.0**: Redesign — problem needs reframing, go back to Phase 2
+- **Split decision**: Synthesize best elements from top 2 solutions
+
+Present the winning design to user for approval.
+
+### Phase 4.5: Capture Deferred Ideas
+
+Before transitioning, review the session for ideas that were discussed but deferred:
+- Approaches rejected as "too complex for now"
+- Edge cases identified but out of scope
+- Enhancements mentioned but not in current requirements
+
+**For each deferred idea:** Invoke `future-improvements` to log it to `FUTURE_IMPROVEMENTS.md` with full context from the brainstorm session. Don't lose good ideas just because they're not in scope right now.
+
+### Phase 5: Document and Transition
+
+After user approves the design:
+
+1. **Write design doc** to `docs/plans/YYYY-MM-DD-<topic>-design.md`
+2. **Commit** the design document
+3. **Invoke `feature-ledger`** to create the implementation plan
+
+**The ONLY implementation skill invoked after brainstorm is `feature-ledger`.** The `future-improvements` skill may also be invoked in Phase 4.5 to capture deferred ideas.
+
+## When NOT to Use
+- Bug fix or debugging — use investigate instead
+- Implementation of an already-approved design — use feature-ledger
+- Simple code change with clear requirements — just do it
+- Verification or review — use verify
+
+## Common Mistakes
+- Forcing Deep mode on simple changes that need Quick mode
+- Skipping codebase exploration (Phase 1) and asking questions without context
+- Asking multiple questions at once instead of one at a time
+- Jumping to implementation before user approves the design
+- Over-engineering: proposing 3 approaches when the obvious one is fine
+
+## Rules
+
+- **One question at a time** — Don't overwhelm with multiple questions
+- **Multiple choice preferred** — Easier to answer than open-ended
+- **YAGNI ruthlessly** — Remove unnecessary features from all designs
+- **Explore alternatives** — ALWAYS propose 2-3 approaches before settling
+- **Hard gate is absolute** — No code until design approved, no exceptions
+- **Scale to complexity** — Don't force Deep mode on simple changes
