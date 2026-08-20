@@ -78,8 +78,19 @@ description carrying decision summaries was already a violation of it**, and goi
 exactly what the policy predicts.
 
 So the finding is not *"add a check."* It is *"the rule was right and the description broke it."*
-A description carrying only state, blockers, owners and a link **cannot go stale about decisions,
-because it makes no claims about them** — and it needs no check to stay honest.
+
+**But the line is finer than 'no decisions in Linear', which was this entry's first overcorrection.**
+Andres, drawing it: *"it's fine to keep that. We can state the discussion. We just don't need two
+copies."*
+
+| In a Linear description | |
+|---|---|
+| The discussion — what was argued, what it cost, why the shape is what it is | ✅ **Keep.** Linear is where that conversation happens, and it is not duplicated anywhere |
+| State, blockers, owners, what is gating what | ✅ **Keep.** This is Linear's actual job |
+| **An enumerated registry of decision rows** — `D89` says X, `D90` says Y, the payload table | ❌ **That is the second copy.** It restates the ledger row for row, and it is the half that went stale twice |
+
+**The test: does this paragraph exist anywhere else?** Discussion does not — it is Linear's own.
+A decision row does, and the ledger's version is the one that gets updated. Point at it instead.
 
 ## 2026-08-18 — rule 13 covers surfaces, so a cross-surface RULE has no owner by construction
 
