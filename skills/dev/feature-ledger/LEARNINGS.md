@@ -36,10 +36,27 @@ drift, and that is a grep rather than a judgement.
 It also names the tell that fires earliest: **a renamed surface.** `Your Studio` → `Business
 Overview` was visible in one word, before any id needed checking.
 
-⚠ **Still not a script.** This is a documented check an agent performs, like every other row in the
-table except `stale-manifest`. A real implementation would need Linear read access from
-`tools/`, which nothing here has yet. **Worth building** — the id-status cross-reference is
-mechanical and the failure has now recurred once.
+⚠ **Still not a script, and mostly cannot become one.** Corrected 2026-08-20, same day, after
+Andres pushed back on the claim below it — which said the id-status cross-reference was *"mechanical
+and worth building"*. **It is not.** Statuses live in prose cells rather than a fixed column, so even
+that parse is not clean, and the general form — *does this paragraph describe the current design?* —
+is semantic and no check reaches it.
+
+**Of the four things that went stale, one is a real check, one is a grep, one is a smell, one is
+impossible:**
+
+| What fired | Mechanical? |
+|---|---|
+| Project `Backlog` while its issue is `In Progress` | ✅ **Not prose at all.** Two enum fields |
+| `Your Studio` after `D102` renamed it | ✅ Grep the description against the lexicon's retired-words table |
+| Cited `D83`–`D87` as the ruled set while `D88`–`D104` existed | ⚠️ **Heuristic only.** The ledger's max `D#` far exceeds the description's max cited `D#`. Flags, never proves |
+| *"4 of 6 states have no export"* | ❌ No. Verifying it means knowing which files map to which states |
+
+**The better fix is subtraction, not detection.** The description goes stale because it *summarizes
+decisions at all*, which makes it a second source of truth — the same disease `D103` was just cured
+of. A description carrying only state, blockers, owners and a link to the ledger **cannot go stale
+about decisions, because it makes no claims about them.** The cost is that it stops being readable
+on its own. **That is a workspace-wide call for Andres, not a fix this file may adopt.**
 
 ## 2026-08-18 — rule 13 covers surfaces, so a cross-surface RULE has no owner by construction
 
