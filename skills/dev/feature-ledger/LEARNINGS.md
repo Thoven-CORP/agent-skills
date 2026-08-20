@@ -52,11 +52,34 @@ impossible:**
 | Cited `D83`–`D87` as the ruled set while `D88`–`D104` existed | ⚠️ **Heuristic only.** The ledger's max `D#` far exceeds the description's max cited `D#`. Flags, never proves |
 | *"4 of 6 states have no export"* | ❌ No. Verifying it means knowing which files map to which states |
 
-**The better fix is subtraction, not detection.** The description goes stale because it *summarizes
-decisions at all*, which makes it a second source of truth — the same disease `D103` was just cured
-of. A description carrying only state, blockers, owners and a link to the ledger **cannot go stale
-about decisions, because it makes no claims about them.** The cost is that it stops being readable
-on its own. **That is a workspace-wide call for Andres, not a fix this file may adopt.**
+## ⛔ RULED 2026-08-20: the check is NOT built, and not because it is hard
+
+Andres, when this entry proposed one: *"it creates a test that does not allow me to be dynamic.
+We're still in design mode. I don't want to create a test I then have to change, or that gives me
+failures."*
+
+**That is the reason, and it generalises past this check.** A check freezes whatever it encodes, and
+**design mode is defined by things still moving.** A drift check over a Feature mid-design does not
+catch mistakes — it reports every decision as a failure until the docs are rewritten to match, which
+is work created by the check rather than found by it. The repo already learned this on a different
+surface: *frozen tests amplify whatever they encode, and a frozen wrong contract makes every later
+gate defend the wrong thing harder.*
+
+**The corollary: a check is cheap AFTER a design closes and expensive during.** If this is ever
+built, it is gated on the Feature's `Design` milestone being done — never before.
+
+## And the second copy is the real fault
+
+Andres: *"we intentionally don't want to port another copy to Linear."*
+
+**The policy already existed** — this skill's own rule says documents live in the repo and Linear
+links to them, because a second copy is the drift the rule exists to prevent. **The Project
+description carrying decision summaries was already a violation of it**, and going stale twice is
+exactly what the policy predicts.
+
+So the finding is not *"add a check."* It is *"the rule was right and the description broke it."*
+A description carrying only state, blockers, owners and a link **cannot go stale about decisions,
+because it makes no claims about them** — and it needs no check to stay honest.
 
 ## 2026-08-18 — rule 13 covers surfaces, so a cross-surface RULE has no owner by construction
 
