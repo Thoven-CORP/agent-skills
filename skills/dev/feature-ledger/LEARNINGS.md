@@ -5,6 +5,42 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-08-20 — a Linear description went stale twice on one Project, and the check only covered half of it
+
+**What happened.** `Teacher 2.0: Dashboard`'s **Project description** described a design that had
+been dead for weeks — twice, five days apart.
+
+On 2026-08-19 it still specified the open-loop notification model with a counter plus a route, after
+`D68` moved to a section axis, `D70` made the panel the largest element showing everything at once,
+and `D84` changed hue from age to category. That was caught and rewritten.
+
+On 2026-08-20 it had gone stale **again**: it listed `D83`–`D87` as the ruled set while `D88`–`D104`
+existed, claimed *"4 of 6 notification states have no export"* when two had landed, and still called
+a component `Your Studio` after `D102` renamed it `Business Overview`. Three Milestone descriptions
+were stale in the same pass, and the Project sat in `Backlog` while its own issue was `In Progress`.
+
+**Why.** Two reasons, and the second is the one that matters.
+
+The `milestone` row covered **Milestone** descriptions and said nothing about the **Project**
+description, which is the container people actually read first.
+
+And it gave no method. *"No description contradicts a live decision"* is a whole-file comparison a
+tired reader performs by eye and skips, which is rule 9's exact failure — a rule that gets skipped
+by whoever is tired. Both misses happened during a reconcile that was otherwise thorough.
+
+**What changed.** The row is now `container`, covers Project **and** Milestone descriptions, and
+carries a mechanical detection: **pull every `D#`/`A#`/`ADR#`/`E#` the description cites and check
+each id's status in the ledger.** A cited id that is `SUPERSEDED`, `PARTLY SUPERSEDED` or absent is
+drift, and that is a grep rather than a judgement.
+
+It also names the tell that fires earliest: **a renamed surface.** `Your Studio` → `Business
+Overview` was visible in one word, before any id needed checking.
+
+⚠ **Still not a script.** This is a documented check an agent performs, like every other row in the
+table except `stale-manifest`. A real implementation would need Linear read access from
+`tools/`, which nothing here has yet. **Worth building** — the id-status cross-reference is
+mechanical and the failure has now recurred once.
+
 ## 2026-08-18 — rule 13 covers surfaces, so a cross-surface RULE has no owner by construction
 
 **What happened.** The teacher-2.0 migration gave every surface a `DESIGN_<PROJECT>.md` row with an

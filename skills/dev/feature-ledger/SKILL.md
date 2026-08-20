@@ -169,7 +169,7 @@ An entry **balances** when all of these hold:
 | **authority** (rule 13) | every surface the feature touches has a `DESIGN_<PROJECT>.md` row naming what to build from. No row is a finding, never a default |
 | **downstream** | a `LOCKED` decision is cited by a plan, issue or commit. A decision nothing downstream mentions is an **orphan** |
 | **scaffold** | `grep -rl "SCAFFOLD" <audience>/` returns nothing **and `open` has scaffolded this folder**. On a folder the templates were never applied to, an empty result proves nothing and is itself the finding |
-| **milestone** | no Linear Milestone description contradicts a live decision. The decision file wins; the description is the finding |
+| **container** | **no Linear PROJECT or Milestone description contradicts a live decision.** The decision file wins; the description is the finding. **Detect it, do not eyeball it:** pull every `D#`/`A#`/`ADR#`/`E#` cited in the Project description and each Milestone description, and check each id's status in the ledger. A cited id that is `SUPERSEDED`, `PARTLY SUPERSEDED`, or absent is drift. Also compare the *names* a description uses against the ledger's current ones — a renamed surface is the tell that fires first |
 | **gate** | for every Milestone at 100%, each of its issues' `Writes to:` paths resolves on disk. A closed gate over a missing file is a finding |
 
 Then:
