@@ -13,3 +13,7 @@ description: Classifies an ambiguous request and routes to the correct skill. De
    - Backend → `references/backend.md`
    - Frontend → `references/frontend.md`
 3. Follow that workflow exactly. Do not load the other file.
+
+**Structural questions route to the graph, not to a skill.** "Who calls X", "what breaks if I
+change Y", "how does A reach B" are answered by `graphify query|path|explain` in the detected
+repo before any skill is picked — grep cannot trace a relationship.

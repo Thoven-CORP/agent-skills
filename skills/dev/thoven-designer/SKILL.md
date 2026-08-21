@@ -105,6 +105,8 @@ In order, and stop at the first hit:
    7 real `Dialog`/`ResponsiveDialog` against **95** hand-rolled `fixed inset-0` modals, with
    *zero* overlap; 7 real Tabs against 19 hand-rolled. Grepping for the pattern finds the copies;
    grepping for the import finds the real one. **Do both.**
+   Before grepping for component copies or imports at all, `graphify query` the component node —
+   missing-import edges surface hand-rolls that grep cannot see.
 3. **The library tables before hand-rolling** - Magic UI, React Bits, Aceternity, Kokonut, Fancy,
    Canvas UI, Rare UI, Interior. Full table with caveats in
    `design-workflow-outline/design-system-guide.md`. The first seven give you a *look* that then

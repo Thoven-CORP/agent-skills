@@ -98,6 +98,7 @@ If detection is ambiguous, the skill asks once.
 | `/brainstorm` | `/grill-with-docs` then `/architect` |
 | `/investigate` (generic) | `/investigate-thoven` |
 | `/dev` (GSD conductor) | retired — `/writing-plans` + `/to-tickets`. `app/dev/` proto routes stay |
+| `codebase-memory` (`codebase-memory-mcp`) | `/graphify` + the `graphify` CLI (2026-08-21) |
 
 `email-writing` is unchanged — that is outbound email in Andres's voice, not Rails mailers.
 

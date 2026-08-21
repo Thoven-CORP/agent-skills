@@ -253,6 +253,10 @@ Proceed to Phase 3.
 
 **Goal:** Launch the mandatory agents determined by classification. No optional specialists — the roster is a lookup table.
 
+**Map the blast radius first.** Before any agent greps, run `graphify query "what calls <symptom symbol>"`
+and `graphify path <entry> <suspect>` to get the real call chain, and hand that map to the agents in
+their prompt. Agents that start from grep re-derive the topology badly and miss indirect callers.
+
 ### Enforcement: YOU MUST LAUNCH THE EXACT AGENTS
 
 **This phase is MANDATORY. You are NOT allowed to:**
