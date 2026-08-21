@@ -9,6 +9,7 @@ must_not_exist=(
   "skills/dev/brainstorm/SKILL.md"
   "skills/dev/investigate/SKILL.md"
   "skills/dev/dev/SKILL.md"
+  "skills/dev/codebase-memory/SKILL.md"
 )
 
 echo "assert-retired-skills-not-installable"

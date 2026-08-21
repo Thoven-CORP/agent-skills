@@ -102,7 +102,7 @@ If detection is ambiguous, the skill asks once.
 
 `email-writing` is unchanged — that is outbound email in Andres's voice, not Rails mailers.
 
-Retired bodies live in [`archive/`](./archive/README.md) as `SKILL.md.archived`. The installer only discovers a file named `SKILL.md`, so `npx skills add --skill '*'` and `npx skills update` cannot install or refresh them. Do not put a `SKILL.md` back under `skills/dev/brainstorm`, `skills/dev/investigate`, or `skills/dev/dev` — `scripts/assert-retired-skills-not-installable.sh` fails if a merge does that.
+Retired bodies live in [`archive/`](./archive/README.md) as `SKILL.md.archived`. The installer only discovers a file named `SKILL.md`, so `npx skills add --skill '*'` and `npx skills update` cannot install or refresh them. Do not put a `SKILL.md` back under `skills/dev/brainstorm`, `skills/dev/investigate`, `skills/dev/dev`, or `skills/dev/codebase-memory` — `scripts/assert-retired-skills-not-installable.sh` fails if a merge does that.
 
 ## Layout
 
