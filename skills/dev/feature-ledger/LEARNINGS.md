@@ -5,6 +5,72 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-08-22 — the ledger retired decisions but never retired artifacts, so every session rediscovered the truth
+
+**What happened.** Across the Teacher 2.0 dashboard sprint, the same failure fired at least four
+times: an agent asked to change one component read the wrong prototype, rebuilt from it, and undid
+finalised work. On 2026-08-22 Andres had sent the previous night's mockup to his co-founder; the next
+morning the same route rendered differently, because the session had reconstructed the surface from a
+superseded proto.
+
+His diagnosis, verbatim, and it names this skill:
+
+> *"I have told you multiple fucking times you need to delete prototypes post-implementation. **That
+> is what feature ledger is supposed to fucking do. You should only have one source of truth.**
+> You're hinting at the shell, you're hinting at whatever, and that's why you're getting confused
+> because you're never taking what we're working on and putting it onto a source of truth. You're
+> constantly re-auditing and having to rediscover what is the truth."*
+
+And on the same day, the second half of it:
+
+> *"The shell is locked, everything is locked. You need to make the component fit into that spot.
+> **You don't build and change the shit around it.**"*
+
+**Why.** Two holes, and neither was visible from inside the existing rules.
+
+**Rule 8 retires *decisions*, not *artifacts*.** "Delete superseded decisions; keep rejected
+alternatives" governs rows in a markdown file. Nothing governed the proto route, the wireframe or the
+variant sheet, so those accumulated on disk with no marking. Rule 13 even anticipated the move —
+*"components are canon for `<surfaces>` as of `<commit>`"* — but only as a **status to write**, never
+as a **procedure that fires at ship time**. So the status was available and nobody was told when to
+apply it. That is rule 9's failure mode exactly: a rule with no moment attached gets skipped.
+
+**And nothing bounded a build's blast radius.** Rule 5 forbids a plan *narrowing* a design in prose.
+There was no mirror forbidding a build *widening* itself into the surfaces around the one it was
+given. Four separate instances in one sprint: a business-analytics proto that "redesigned the full
+landing page"; an Upcoming Lessons card that "completely morphed the shape of everything"; a sliding
+pill broken twice by work that "should have been untouched"; the mockup regression above.
+
+**What changed.**
+
+- **Rule 15** makes retirement a three-part ledger operation in one commit — repoint the row at
+  `<component>@<commit>`, extract the REJECTED block, retire the artifact, record it in the row —
+  plus two prohibitions: never delete a proto no row retired, never build from one a row did.
+- ⚠ **Retirement is per SURFACE, not per file**, added on the same day after a review pass caught the
+  first draft. One proto route hosts several surfaces at different stages: on 2026-08-22
+  `app/dev/teacher-dashboard/` held a locked shell, one component that had just shipped, and two
+  still being designed. "Delete the proto when the component ships" would have destroyed the design
+  surface for the other two. On a shared route, retiring a surface means **the route mounts the real
+  component instead of its own copy** — one implementation seen twice — and the route is deleted only
+  when its last surface ships. Standalone artifacts are still simply deleted.
+- **Rule 16** locks everything around the named surface. The component is fitted into its slot; the
+  slot is never resized to fit the component. The check is `git diff --stat`, not an intention.
+- `reconcile` gained a **`singleton`** row (exactly one live artifact per surface) and a **step 4**
+  that runs the retirement as part of the reconcile rather than as a later tidy-up.
+
+⚠ **The counter-signal is why deletion is recorded and not reflexive.** The same sprint also produced
+*"wait what why was the fucking wireframe deleted bro what"*. An agent tidying protos it was never
+asked about destroys a source just as effectively as a stale one confuses. Rule 15 is symmetric on
+purpose: deletion requires a row that retired it, and a retired row forbids reading the file.
+
+**Not yet mechanical.** "Two live artifacts claim this surface" is greppable in the easy case — a
+`DESIGN_<PROJECT>.md` row naming a component while its proto path still resolves is two `test -e`
+calls. The hard case, an *undeclared* proto for a surface, is not: nothing ties an arbitrary file
+under `drawings/` or `app/dev/` to a surface name. Per the 2026-08-20 ruling below, no test is being
+written for this while the Feature is still in Design.
+
+---
+
 ## 2026-08-20 — a Linear description went stale twice on one Project, and the check only covered half of it
 
 **What happened.** `Teacher 2.0: Dashboard`'s **Project description** described a design that had

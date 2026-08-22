@@ -24,6 +24,10 @@ Two consequences, and both are load-bearing:
 - "Does this shipped code violate the system?"
 - Before hand-rolling anything, and before quoting a design value in a spec or review.
 
+**Always:** the surface you were named is the only one in scope. Fitting a component into its slot
+is the work; resizing the shell, the grid or the neighbouring cards around it is a new decision that
+needs Andres. `feature-ledger` **rule 16** is the rule; this is the reminder at the moment it bites.
+
 **Not for:** building a new surface end to end (`building-thoven-ui`) · polishing something
 already built (`better-ui`, `impeccable`) · a single narrow concern where a specialist exists
 (see [Route out](#route-out)).
@@ -56,6 +60,7 @@ deep reference only for intent and rationale.
 | Motion, springs, reduced motion | `lib/motion-config.ts` | `docs/design/motion.md` |
 | Layout, viewport, spacing | *(no token module)* | `docs/design/layout.md` |
 | What a thing is **called** | *(no token module)* | `design-system/lexicon/LEXICON.md` in `thoven2.0` - LIVING, not frozen |
+| Which of the system's values applies to **this** surface | the Feature's `DESIGN_<PROJECT>.md` `D#` rows and `decisions/` | [The feature's own decisions](#the-features-own-decisions-bind-on-its-own-surfaces) |
 | Does a component exist? | `components/ui/` (primitives only) | [Does it already exist](#does-it-already-exist) |
 
 **Anything not in this table:** find its binding layer before answering.
@@ -64,16 +69,44 @@ deep reference only for intent and rationale.
 ls lib/*-tokens.ts && ls lib/*.test.ts __tests__/*.test.ts
 ```
 
+## The feature's own decisions bind on its own surfaces
+
+**The tiers say how strongly a value binds. They do not say *where*.** A Feature's ledger — its
+`DESIGN_<PROJECT>.md` `D#` rows and its `decisions/` files — resolves which of the system's values
+applies to which surface, and on that Feature's surfaces it is **binding**. This skill's map is
+repo-wide; a question about a surface inside a Feature is not answered until the Feature's ledger has
+been read.
+
+**The ledger assigns. The system supplies. Neither substitutes for the other:**
+
+- A `D#` may rule *"every schedule-oriented surface on this dashboard uses the rose hue"* or *"the
+  library nav group is indigo"*. That is an assignment, it is real, and answering the surface's colour
+  question without it is wrong however well you cited `PALETTE`.
+- A `D#` may **not** mint a value the system does not have. A hue outside `PALETTE` silently paints
+  stock Tailwind whether or not a row asked for it — see [Silent failures](#silent-failures---check-these-do-not-assume).
+  A row demanding one is a defect in the row, and it is reported, not obeyed.
+
+**Read it before answering, before designing, and before generating variations.** A fan-out that
+produces eight design options without reading the Feature's `D#` rows produces eight options that all
+miss the same assignment, which costs the whole round rather than one option.
+
+⚠ **A ruling made this session is not in the ledger yet.** Anything Andres settled minutes ago —
+*"we literally just said library indigo"* — binds immediately and is greppable nowhere. Before
+answering from files alone, check what this session has already ruled, and hand it to `workspace`
+`capture` so the next session can find it.
+
 ## Answering a design-system question
 
 1. **Read the binding source first.** A Tier 2 doc alone is never a sufficient answer - it is
    derived, and this repo has a demonstrated history of prose the code ignores at scale.
-2. **Check both lock tiers** (below) before saying anything can change.
-3. **Say which tier the answer came from.** "Tier 0, enforced by `__tests__/palette.test.ts`" and
+2. **Read the Feature's ledger if the question is about a surface inside one.** Its `D#` rows say
+   which of the system's values this surface uses. The repo-wide answer is not the surface's answer.
+3. **Check both lock tiers** (below) before saying anything can change.
+4. **Say which tier the answer came from.** "Tier 0, enforced by `__tests__/palette.test.ts`" and
    "Tier 2 prose, no test" are different levels of confidence and the asker needs to know which.
-4. **If Tier 0 and Tier 2 disagree, the doc is the bug** - report it as a defect, don't silently
+5. **If Tier 0 and Tier 2 disagree, the doc is the bug** - report it as a defect, don't silently
    pick one.
-5. **If nothing binds it, say so.** An unlocked value is a decision that needs Andres and a
+6. **If nothing binds it, say so.** An unlocked value is a decision that needs Andres and a
    decision log, not a confident answer. Do not invent the ruling.
 
 ## Locks
@@ -190,6 +223,25 @@ Compare the stylesheet's byte length across edits.
 **`document.styleSheets` gives false negatives.** Fetch the stylesheet href and search the text,
 in its escaped form.
 
+## Reviewing in a browser
+
+Design review happens on Andres's screen, not on a synthetic one, and the browser is **his**, not a
+scratch surface. Every rule here is one he has asked for repeatedly.
+
+- **Review at his viewport.** The teacher shell was fitted so nothing important falls below the fold
+  on his real window. A screenshot at 1440 says nothing about what he sees at 2880. Ask the size, or
+  use the one the Feature's ledger records; do not pick one.
+- **Put the browser back.** If you resize, zoom or navigate his window, restore it before handing
+  control back. He cannot review a surface through a viewport you left somewhere else, and *"stop
+  changing the viewports on my browser and then not putting it back"* is the complaint verbatim.
+- **Name the route and the viewport when you hand over a URL.** `/dev/x` at 1440×900 and `/dev/x` at
+  2880×1400 are different reviews. An unlabelled link is how a stale proto gets reviewed as if it were
+  the current one.
+- **Never hand over a retired route.** A path a `DESIGN_<PROJECT>.md` row has retired
+  (`feature-ledger` rule 15) is deleted, not demoed. If it still resolves, that is a finding.
+- **Resizable, not fixed.** Check the surface while the window changes size, not only at two
+  captured widths. Reflow bugs live between the breakpoints you screenshotted.
+
 ## Standing checks
 
 Invariants. Anything violating one is drift, whether or not a test catches it.
@@ -199,7 +251,11 @@ Invariants. Anything violating one is drift, whether or not a test catches it.
 - **No raw colours.** `bg-blue-600`, hand-rolled shadows and hex literals route through tokens.
 - **Focus rings are `:focus-visible` only** - never on mouse click.
 - **Every component covers loading, empty, error and disabled** before it is called done.
-- **Values found by feel go through `dialkit`** and land as a token module with a test.
+- **Values found by feel go through `dialkit`** and land as a token module with a test — **at
+  Build, not during Design.** Ruled 2026-08-20: *"it creates a test that does not allow me to be
+  dynamic. We're still in design mode. I don't want to create a test I then have to change, or
+  that gives me failures."* While a surface is still being designed the value lives in the proto
+  and the `D#` row; the token module and its test are what **ship** it.
 
 ## Route out
 
@@ -232,3 +288,9 @@ Route to the narrow skill, not the broad one.
 | Asserting a `className` in a test | Assert the compiled CSS / computed style |
 | Ruling on an unlocked value yourself | That is Andres's call plus a decision log |
 | Restating a value into a spec | Point at the source. Restatement is how the 21 contradictions happened |
+| Answering a surface question from the repo-wide system only | Read the Feature's `D#` rows. The system supplies; the ledger assigns |
+| Generating N design variations before reading the Feature's ledger | All N miss the same assignment. One read, or one wasted round |
+| Ignoring a ruling made minutes ago because it is in no file | It binds now. Answer with it, then hand it to `workspace` `capture` |
+| Writing a token test for a value still in Design | The proto and the `D#` row hold it until Build. Ruled 2026-08-20 |
+| Leaving his browser at a viewport you set | Restore it. He reviews through that window |
+| Reviewing at a viewport you chose | His. The shell was fitted to it |

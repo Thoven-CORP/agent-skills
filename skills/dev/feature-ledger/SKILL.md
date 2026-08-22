@@ -115,6 +115,76 @@ speccing pass over a shared layout, and two passes over one layout produce two l
 The seam is the milestone, not the Project: `Design` resolves the layout once, `Build` cuts it into
 as many shippable Issues as there are components.
 
+## Rule 15: one live artifact per surface, and the proto retires when its component ships
+
+Rule 13 gives every surface an authority. This is what happens when that authority **moves**: on the
+day the component ships, the proto that specified it stops being the source and becomes a second one.
+
+**Nothing retires an artifact by ageing.** A proto at `app/dev/<feature>/` outlives its own
+implementation by default, so one surface accumulates a wireframe, a variant sheet, a `-v2` route and
+a shipped component — all readable, none marked. An agent asked to change that surface reads whichever
+it finds first, rebuilds from it, and ships a regression against work that was already finalised.
+
+**Retirement is a ledger operation in three parts, all in the same commit:**
+
+1. **Repoint the row.** The surface's `DESIGN_<PROJECT>.md` row now names the **component and the
+   commit it was canon at** — rule 13's expiring form — instead of the proto.
+2. **Delete the proto**: the route, the wireframe, the variant sheet. Extract its REJECTED block into
+   the row first. Rule 8 keeps rejected alternatives; the row is where they now live.
+3. **Record it in the row**: `<path> deleted <date>, superseded by <component>@<commit>`. The next
+   agent to meet that path in an old plan then learns it is gone, rather than that the checkout is
+   broken.
+
+**Retirement is per SURFACE, not per file, and this is the part that is easy to get lethally wrong.**
+One proto route usually hosts several surfaces at different stages — a shell that is locked, one
+component that shipped last night, two still being designed. Deleting the route when the *first*
+component ships destroys the design surface for the others.
+
+So on a shared route, retiring a surface means **the route mounts the real component instead of its
+own copy of it**. That is what actually ends the drift: there is now one implementation, seen in two
+places, and a change to it is visible in both. **The route itself is deleted only when its last
+surface has shipped**, and that deletion gets its own row.
+
+A standalone artifact — a variant sheet, a one-off wireframe, a `-v2` exploration — has one surface,
+so it is simply deleted.
+
+**Two prohibitions, and these are the ones that get broken:**
+
+- **Never delete a proto no row has retired.** Tidying is not retirement, and a drawing deleted with
+  nothing ruling it dead is the same lost source as a stale one.
+- **Never build from a proto a row has retired.** If the row names a component, the component is what
+  you read. A retired path surviving in a plan, a handoff or a `/tmp` scratchpad does not revive it.
+
+*Written 2026-08-22, verbatim: "you need to delete prototypes post-implementation. That is what
+feature ledger is supposed to do. You should only have one source of truth… you're never taking what
+we're working on and putting it onto a source of truth. You're constantly re-auditing and having to
+rediscover what is the truth." The same sprint also produced "why was the wireframe deleted" — which
+is why deletion is a recorded operation and never a reflex.*
+
+## Rule 16: the named surface is the whole scope. Everything around it is locked
+
+An issue names **one** surface. **Every other surface on that screen is LOCKED for the duration** —
+whether or not a row says so, and whether or not it looks wrong.
+
+**The component is fitted into its slot. The slot is never resized to fit the component.** A designed
+component that genuinely does not fit is a **finding to raise**, not a licence to change the shell,
+the grid, the gaps or the neighbouring cards. Fitting is the work. Rule 5 already says altering part
+of a designed surface is a numbered decision needing Andres, never a sentence inside a build.
+
+**Reaching a file is not owning it.** The component's own file is in scope. The shell it mounts into,
+its sibling cards, the shared tokens and the routes around it are not — even when the change is one
+line and obviously an improvement. Log it; do not bundle it.
+
+**The check is a diff, not an intention.** Before reporting a surface done, read `git diff --stat` and
+confirm every path in it is the named surface or a path the issue names. Anything else is a finding or
+an unasked-for change, and you say which.
+
+*Written 2026-08-22 from four instances in one sprint: a business-analytics proto that "redesigned the
+full landing page"; an Upcoming Lessons card that "completely morphed the shape of everything"; a
+sliding pill broken twice by work that "should have been untouched"; and, at the end, "The shell is
+locked, everything is locked. You need to make the component fit into that spot. You don't build and
+change the shit around it."*
+
 ## open
 
 1. **Create the Linear Project.** One Feature, spanning frontend and backend, never one per repo.
@@ -167,6 +237,7 @@ An entry **balances** when all of these hold:
 | **uniqueness** | one entry claims this surface, not four |
 | **coverage** | if a plan exists, every user story and architecture decision appears in its table |
 | **authority** (rule 13) | every surface the feature touches has a `DESIGN_<PROJECT>.md` row naming what to build from. No row is a finding, never a default |
+| **singleton** (rule 15) | exactly **one** live artifact claims this surface. A proto still on disk for a surface whose row names a component is a finding; so is a row still naming a proto whose component has shipped. Two live artifacts is the state that makes an agent rediscover the truth every session |
 | **downstream** | a `LOCKED` decision is cited by a plan, issue or commit. A decision nothing downstream mentions is an **orphan** |
 | **scaffold** | `grep -rl "SCAFFOLD" <audience>/` returns nothing **and `open` has scaffolded this folder**. On a folder the templates were never applied to, an empty result proves nothing and is itself the finding |
 | **container** | **no Linear PROJECT or Milestone description contradicts a live decision.** The decision file wins; the description is the finding. **Detect it, do not eyeball it:** pull every `D#`/`A#`/`ADR#`/`E#` cited in the Project description and each Milestone description, and check each id's status in the ledger. A cited id that is `SUPERSEDED`, `PARTLY SUPERSEDED`, or absent is drift. Also compare the *names* a description uses against the ledger's current ones — a renamed surface is the tell that fires first |
@@ -183,15 +254,21 @@ Then:
    **including inside proto code comments**, which is where one hid for three weeks.
 3. **Cut superseded entries.** Delete the row; keep REJECTED blocks inside drawings, which are the
    record of what was tried.
-4. **Bring the ledger current.** File decisions stated this session into their own file under that
+4. **Retire what shipped** (rule 15). For every surface whose component now has a mount a user
+   reaches: repoint the row at `<component>@<commit>`, extract the proto's REJECTED block into the
+   row, and retire the artifact — **delete** a standalone one, or make a shared proto route **mount
+   the real component** if other surfaces on it are still in flight. Note it in the row either way.
+   **Do this as part of the reconcile, not as a later tidy-up** — a retirement deferred is a second
+   source of truth left running.
+5. **Bring the ledger current.** File decisions stated this session into their own file under that
    file's prefix, and append this session's commits to `STATE.md` with what each did.
-5. **Ask on every fork you find.** Competing docs for one surface, an entry whose layer you cannot
+6. **Ask on every fork you find.** Competing docs for one surface, an entry whose layer you cannot
    verify, a deferral with no owner: surface it and let Andres rule. **Show the competing artifacts
    rather than summarising them.** The reason a fork exists is that prose could not distinguish them.
 
 **Done when** every entry is either balanced or listed under Imbalances, `grep -rl "SCAFFOLD"` comes
 back empty or every remaining marker is named as a finding, and every fork found has been put to
-Andres.
+Andres. **And every surface resolves to exactly one live artifact.**
 
 ## When another skill calls this
 

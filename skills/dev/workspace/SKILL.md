@@ -6,7 +6,9 @@ description: >-
   off", "log this", "add a todo", "found a bug". Reads the evidence (commits, dirty files, the
   feature ledger, CHANGELOGs, Linear itself), works out what he is trying to do, proposes the
   writes, and on his go applies them across Linear, the STATE Log, CONTINUE_HERE and the
-  ledger. Never requires him to name a verb.
+  ledger. Never requires him to name a verb. ALSO reach for this the moment he rules on something
+  mid-session — "let's make it the accordion", "library indigo", "max 5" — because a ruling that
+  reaches no file dies at the next compaction.
 ---
 
 # Workspace
@@ -57,7 +59,7 @@ permissions** differ, which is what keeps a wrong guess cheap.
 | He says something like | Intent | May write |
 |---|---|---|
 | "ok that's done" · "wrap up" · "logging off" | **log** | comments · status moves when proven · Log · CONTINUE_HERE. **Never opens an issue** |
-| "we should cut onboarding to two steps" · "found a bug in X" | **capture** | a decision row · an issue update · **the only intent that may create an issue** |
+| "we should cut onboarding to two steps" · "found a bug in X" · **any ruling he just made** | **capture** | a decision row · an issue update · **the only intent that may create an issue** |
 | "where am I" · "what's next" · `/workspace` bare | **orient** | **nothing** |
 | "does this match reality" · "something's off" | **check** | nothing without proof |
 
@@ -442,6 +444,35 @@ decision with no source to cite is what produced `E18`.
   P-level in the body. `Improvement` and `Feature` exist from an earlier import: leave them, do
   not apply them. **Take a label from that list rather than inventing one.**
 
+### The fast lane: a ruling made mid-session
+
+**The most common capture is not a request. It is a sentence he said while doing something else** —
+*"we should just make it max 5"*, *"library indigo"*, *"remember we talked about making it the
+accordion instead"*. Each of those is a resolved choice with an owner and a source, which is a
+decision by definition.
+
+**These are the ones that get lost**, and losing them is expensive in a specific way: the next session
+does not merely forget, it **re-decides**, often the other way, and then rebuilds against its own
+answer. His words for it: *"We design things, and then when I ask you to implement things, you
+completely ignore the prior implementation… you just completely forget."*
+
+**So capture at the moment, not at the wrap-up.** A ruling filed an hour later competes with a
+compaction; a ruling filed now costs one row.
+
+Run the short form. **Skip the gate and the fan-out** — neither tells you anything about a sentence
+just spoken:
+
+1. **Search the three places anyway** (Linear, `decisions/`, `DESIGN_<PROJECT>.md` + REJECTED). Thirty
+   seconds, and it is the step that catches *"that excalidraw got superseded with another design
+   idea"* — a ruling that reverses an earlier one must **delete** the row it supersedes, not sit
+   beside it. Two live rows for one choice is ledger rule 8's disease.
+2. **File one row**, under the prefix its kind names, in the Feature's folder.
+3. **Say the id back in one line.** `D107: library nav group is indigo` — so he can correct it now,
+   while he still remembers what he meant.
+
+**Do not batch these into the end-of-session log.** `log` may not create rows for rulings it finds;
+by then the evidence is a transcript nobody will re-read.
+
 **Superseded vs rejected** (ledger rule 8): a superseded decision row is **deleted**, because a
 contradictory ledger is the disease. A rejected alternative is **kept**, inside the drawing. An
 issue is never deleted; `Canceled` with a comment keeps the id resolving.
@@ -492,6 +523,7 @@ heading rather than `## [Unreleased]`. Anything failing either test is "claimed,
 | orphan-decision | an issue restates a decision instead of linking one |
 | milestone-drift | an issue whose work is code sitting in `PRD + Architecture` or `Design`, or a spec issue with no `Writes to:` line |
 | ledger-imbalance | a Project whose feature folder has no `PRD.md`, no `DESIGN_<PROJECT>.md`, or two docs claiming one surface |
+| live-proto | a surface whose component has shipped while its proto path still resolves, or a `DESIGN_<PROJECT>.md` row still naming a proto whose component is mounted. Report it; **`feature-ledger` rule 15 owns the retirement**, this skill never deletes an artifact |
 | archive-drift | an archived item is `status:open` but its branch is merged + published |
 
 **Only stale-manifest auto-fixes**, and only when the done-check proves it:
@@ -527,6 +559,7 @@ which then passed every gate because each one checked the prose.
 | file a decision with no folder to file it in | `feature-ledger open`, then file |
 | write a plan or PRD | `feature-ledger reconcile` first, because a plan on an unbalanced ledger freezes the imbalance |
 | resolve a `DESIGN_<PROJECT>.md` owning gate | it must be a pasted `THV-` URL, never a prose name |
+| move an issue to `Ready` whose output was a designed surface | `feature-ledger` rule 15 first: the proto retires in the same breath as the ship, or the next session builds from it |
 
 **A feature folder and a Linear Project are one thing seen twice.** The folder holds the
 reasoning, the Project holds the state. A Feature with one and not the other *is* the imbalance,
@@ -599,6 +632,9 @@ If the MCP is not authorized, **stop and say so**, since he runs `/mcp` in an in
 | Uploading a PRD or spec into Linear | It lives in the repo. Linear links to it |
 | Opening an issue from `log` | Only `capture` creates. Report unattributed work and offer |
 | Creating an issue for a thought that is a **decision** | File the decision, comment the link |
+| Waiting for the wrap-up to file a ruling he made an hour ago | Capture at the moment. A compaction beats you to it |
+| Filing a reversal beside the row it reverses | Delete the superseded row. Two live rows for one choice is rule 8's disease |
+| Deleting a proto because `check` found it live | Report it. `feature-ledger` rule 15 owns retirement, and deletion needs a row |
 | Writing `Done` | `Ready`. The merge commit owns `Done` |
 | Writing an issue and leaving the PRD or `DESIGN_<PROJECT>.md` stale | Name every surface touched, or say which you skipped |
 | Skipping the Log entry because nothing changed | Always write, always advance. A stalled watermark is how the Map started lying |

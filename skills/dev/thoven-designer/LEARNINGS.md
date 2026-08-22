@@ -5,6 +5,48 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-08-22 — the map was repo-wide, so every answer missed the Feature's own assignments
+
+**What happened.** Three failures in the Teacher 2.0 dashboard sprint, all the same shape.
+
+A swarm produced 5–10 design variations for one component. Andres: *"None of these follow the design
+system **or** the fact that on the dashboard everything schedule oriented is using the rose hue."*
+Every variation had to be thrown away, not because a value was wrong against `PALETTE`, but because
+none knew which of `PALETTE`'s hues that surface had been assigned. Separately: *"bro we literally
+just said library indigo"* — a ruling minutes old, in no file. And: *"we have 18 different fonts going
+on here"*, because no row said which ramp step each content role in that card takes.
+
+**Why.** The map answers *"what does the design system say?"* — repo-wide, Tiers 0–3. It had **no row
+for the Feature's own `D#` decisions**, which is where nav-group hue, per-surface assignment and
+Fredoka-as-emphasis actually live. So a correct, well-cited answer could still be the wrong answer for
+that surface, and the skill had no way to notice. The tiers describe how strongly a value binds; they
+say nothing about *where* it binds.
+
+**What changed.**
+
+- A new section, **the feature's own decisions bind on its own surfaces**, plus a map row and a step 2
+  in the answering procedure. The formula: **the ledger assigns, the system supplies.** A `D#` picks
+  which of the system's values a surface uses; it may not mint one the system lacks, and a row
+  demanding a hue outside `PALETTE` is a defect in the row.
+- An explicit ⚠ for the session-scoped ruling. It binds now, it is greppable nowhere, and it goes to
+  `workspace` `capture` so the next session can find it.
+- A **Reviewing in a browser** section, from *"stop making prototypes and then changing the viewports
+  on my fucking browser and then not putting it back"* and, in the same sprint's own handoff, *"nobody
+  has looked at this in a resizable browser window. Andres asked roughly eight times."*
+- The `dialkit` standing check is now **phase-qualified**: token module plus test at **Build**, not
+  during Design. That was already ruled on 2026-08-20 (*"I don't want to create a test I then have to
+  change"*) and this skill carried the unqualified form.
+- A pointer to `feature-ledger` **rule 16**, because the scope creep it forbids happens most often
+  while prototyping: *"you literally redesigned the full landing page. We were prototyping literally
+  just the business analytics component."*
+
+**Deliberately not done.** No typography *role table* was added — "which ramp step for which content
+role" is a real gap, but writing it here would put values in a file that states none, and it is a `D#`
+decision for the Feature that owns the surface. The Montserrat pairing question Andres opened on
+2026-08-22 is unresolved and belongs to a design decision, not to this index.
+
+---
+
 ## 2026-08-16 — Split. The skill was two jobs, and described only one
 
 **What happened.** Andres: *"that's not what the skill should be doing… we changed it to be the
