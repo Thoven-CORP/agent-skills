@@ -1,9 +1,30 @@
 ---
 name: feature-ledger
-description: Open and reconcile a feature's ledger. Use when starting a large feature, when a decision or user story is stated mid-session, before writing an implementation plan or PRD, at a handoff, or when asked which of several docs is live. Other skills reach this before they write a plan.
+description: >-
+  Open and reconcile a feature's ledger. Use when starting a large feature, when
+  writing the ledger, when a decision or user story is stated mid-session, before
+  a plan or PRD, at a handoff, or when asked which doc is live. First action is
+  the session gate — do not file a row while the issue is Todo. Other skills
+  reach this before they write.
 ---
 
 # Feature Ledger
+
+## Session gate
+
+Name the `THV-` issue. Fetch it. Run:
+
+```bash
+node ~/.agents/skills/workspace/tools/session-preflight.js <<'JSON'
+{ "identifier": "THV-63", "state": "Todo", "assignee": null, "milestone": null, "writesTo": "…", "writesToExists": true }
+JSON
+```
+
+Exit 1 → `workspace` `start`. Re-run.
+**Do not file a row, do not open `open` or `reconcile`, while it is red.**
+
+`open` of a brand-new Feature has no issue yet — create the Project and its first Speccing
+issues, then run the script on each one. They must come back green.
 
 A large feature keeps a **ledger**: one folder where every decision is an entry, every entry points at its evidence, and the whole thing must **balance**. Every user story reaches a layer, every deferral names an owner that exists, every "built" has a commit.
 
@@ -187,6 +208,10 @@ change the shit around it."*
 
 ## open
 
+Session gate first — except a brand-new Feature has no issue yet. After step 6, run the script
+on every issue just created. Red means the Speccing issue is missing `Writes to:`, a milestone,
+or an assignee.
+
 1. **Create the Linear Project.** One Feature, spanning frontend and backend, never one per repo.
    Set:
    - **the name**, `<Audience>: <Feature>` — `Teacher 2.0: Dashboard`. The audience goes in the
@@ -224,6 +249,8 @@ at least one Speccing issue standing against the first.
 
 ## reconcile
 
+Session gate first — the heading at the top of this file. Red is a stop, not an Imbalances row.
+
 Run over the whole ledger. Read the decision files and `STATE.md`, then check each entry against the
 code and against Linear.
 
@@ -242,6 +269,7 @@ An entry **balances** when all of these hold:
 | **scaffold** | `grep -rl "SCAFFOLD" <audience>/` returns nothing **and `open` has scaffolded this folder**. On a folder the templates were never applied to, an empty result proves nothing and is itself the finding |
 | **container** | **no Linear PROJECT or Milestone description contradicts a live decision.** The decision file wins; the description is the finding. **Detect it, do not eyeball it:** pull every `D#`/`A#`/`ADR#`/`E#` cited in the Project description and each Milestone description, and check each id's status in the ledger. A cited id that is `SUPERSEDED`, `PARTLY SUPERSEDED`, or absent is drift. Also compare the *names* a description uses against the ledger's current ones — a renamed surface is the tell that fires first |
 | **gate** | for every Milestone at 100%, each of its issues' `Writes to:` paths resolves on disk. A closed gate over a missing file is a finding |
+| **session** | the issue this session writes against is claimed, assigned, has a lifecycle milestone, and its `Writes to:` resolves. **Red is a stop, not an Imbalances row.** Run `workspace/tools/session-preflight.js` |
 
 Then:
 
@@ -272,9 +300,10 @@ Andres. **And every surface resolves to exactly one live artifact.**
 
 ## When another skill calls this
 
-`/writing-plans`, `/to-spec` and `/handoff` reconcile first. A plan written against an unbalanced
-ledger inherits the imbalance and freezes it. Report imbalances to the calling skill before it
-writes.
+`/grill-with-docs`, `/writing-plans`, `/to-spec` and `/handoff` reconcile first. A plan written
+against an unbalanced ledger inherits the imbalance and freezes it. A grill started against a
+Todo issue inherits the board. Report imbalances to the calling skill before it writes. A red
+session-preflight is not an imbalance — it is a stop.
 
 ## Templates
 

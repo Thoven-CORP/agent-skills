@@ -1,25 +1,45 @@
 ---
 name: workspace
 description: >-
-  The Linear update tool. Use whenever Andres talks about work in prose: "ok that's done",
-  "wrap up", "we should cut onboarding to two steps", "where am I", "what's next", "something's
-  off", "log this", "add a todo", "found a bug". Reads the evidence (commits, dirty files, the
-  feature ledger, CHANGELOGs, Linear itself), works out what he is trying to do, proposes the
-  writes, and on his go applies them across Linear, the STATE Log, CONTINUE_HERE and the
-  ledger. Never requires him to name a verb. ALSO reach for this the moment he rules on something
-  mid-session — "let's make it the accordion", "library indigo", "max 5" — because a ruling that
-  reaches no file dies at the next compaction.
+  The Linear update tool AND the session gate. Use at session start on any THV- issue —
+  grill, speccing, "write the ledger", "evoke feature-ledger" — not only at wrap-up.
+  Also whenever Andres talks about work in prose: "ok that's done", "wrap up",
+  "we should cut onboarding to two steps", "where am I", "what's next", "something's
+  off", "log this", "add a todo", "found a bug", or rules mid-session
+  ("let's make it the accordion", "library indigo", "max 5"). Reads evidence, proposes
+  writes, applies them on his go. A session that writes while the issue is still Todo
+  is the failure this skill exists to stop.
 ---
 
 # Workspace
 
+## Session gate
+
+Name the `THV-` issue. Fetch it. Run:
+
+```bash
+node ~/.agents/skills/workspace/tools/session-preflight.js <<'JSON'
+{ "identifier": "THV-63", "state": "Todo", "assignee": null, "milestone": null, "writesTo": "…", "writesToExists": true }
+JSON
+```
+
+Exit 1 → **start**: claim `Speccing` (has `Writes to:`) or `In Progress` (does not), take the
+issue, attach the lifecycle milestone, comment which tool you are. Re-run.
+**Do not log, capture, grill, or write a ledger row while it is red.**
+
+`writesTo` is the literal path on the `Writes to:` line, or empty. `writesToExists` is whether
+that path opens in the worktree. The script is the criterion. A comment that the issue is Todo
+is not the criterion.
+
+`orient` and a bare `/workspace` skip this — they write nothing.
+
 **Andres speaks in prose. This skill works out what he meant.** There is no verb to remember and
 no command to type; `/workspace` plus whatever he said is the whole interface.
 
-**`~/thoven/.workspace/WORKFLOW.md` is the law.** Containers, states, the lifecycle, the feature
-folder and the label set all live there. **This skill points at it and never restates it.** What
-this skill owns is getting work *into* Linear, plus the two things Linear is bad at: the derived
-cold-start **Map** and the appended session **Log** in `STATE.md`.
+**`~/thoven/.workspace/WORKFLOW.md` is the law** for definitions (what a Feature, Milestone, Issue
+is). **The session gate is not a definition. It is a step, and it lives here.** Pointing at the
+law and listing Linear drift as a finding is how THV-63 was grilled while still Todo. What this
+skill owns: getting work *into* Linear, the session gate, the derived **Map**, and the **Log**.
 
 ## How to read this skill
 
@@ -58,6 +78,7 @@ permissions** differ, which is what keeps a wrong guess cheap.
 
 | He says something like | Intent | May write |
 |---|---|---|
+| "grill THV-63" · "write the ledger" · "evoke feature-ledger" · opening a `Writes to:` issue | **start** | claim · milestone · assignee · a tool comment. **Stops the session if the gate is red.** |
 | "ok that's done" · "wrap up" · "logging off" | **log** | comments · status moves when proven · Log · CONTINUE_HERE. **Never opens an issue** |
 | "we should cut onboarding to two steps" · "found a bug in X" · **any ruling he just made** | **capture** | a decision row · an issue update · **the only intent that may create an issue** |
 | "where am I" · "what's next" · `/workspace` bare | **orient** | **nothing** |
@@ -69,17 +90,17 @@ steps."* **Do both.** Do not pick one and drop the other half.
 ## Two speeds
 
 ```
-  cheap  (~2s, no subagents)     orient · capture
+  cheap  (~2s, no subagents)     start · orient · capture
   deep   (fan out)               log · check
 ```
 
 `orient` reads a Map that is already on disk. `capture` searches three specific places. Neither
-needs the world read. **But cheap never means blind:** if the gate shows something big, such as
-`main` moving 130 commits with nothing logged in four days, say so and offer the deep read.
+needs the world read. **But cheap never means blind:** if the checkout scan shows something big,
+such as `main` moving 130 commits with nothing logged in four days, say so and offer the deep read.
 
 ---
 
-## Step 1 · The gate (parent, ~2 seconds, no agents)
+## Step 1 · Checkout scan (parent, ~2 seconds, no agents)
 
 Runs on **every** invocation, both speeds. It decides which checkouts are worth reading.
 
@@ -617,6 +638,7 @@ If the MCP is not authorized, **stop and say so**, since he runs `/mcp` in an in
 
 | Mistake | Instead |
 |---|---|
+| Starting a grill or ledger write while the issue is Todo | Run `start`. The script is the gate. Listing "no milestone" under Imbalances is the 2026-08-18 failure repeating |
 | Asking him which verb he means | He speaks prose. Classify it yourself |
 | Routing on his words when git disagrees | Evidence leads. Surface the disagreement; it is a caught mistake, not a nuisance |
 | A bare `git log --since` on a feature branch | `main..HEAD`. Inherited commits made a silent branch look like 41 commits of work |

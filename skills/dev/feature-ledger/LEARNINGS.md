@@ -5,6 +5,23 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-08-23 — reconcile listed Linear drift and then wrote the docs anyway
+
+**What happened.** Cursor invoked this skill, wrote `00-onboarding` (`D152`–`D165`, `E6`–`E11`,
+`A7`–`A8`), and logged THV-63's Todo / no-milestone / "nothing decided" title as imbalances.
+The issue was claimed at wrap-up, not at start. Codex had already seen the same Linear state
+and grilled through Q19.
+
+**Why.** The 2026-08-18 change added `container` / `milestone` / `gate` checks that **report**
+Linear drift to workspace. A listed finding is not a halt. "When another skill calls this"
+named `/writing-plans`, `/to-spec`, `/handoff` — not `/grill-with-docs`, which is the skill
+that actually starts a spec. Rule 9: report ≠ script.
+
+**What changed.** Reconcile's first action is `session-preflight.js`. Red stops. Callers now
+include `/grill-with-docs`. A red preflight is not an Imbalances row.
+
+---
+
 ## 2026-08-22 — the ledger retired decisions but never retired artifacts, so every session rediscovered the truth
 
 **What happened.** Across the Teacher 2.0 dashboard sprint, the same failure fired at least four

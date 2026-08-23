@@ -5,6 +5,32 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-08-23 — Linear drift was a finding, so the session started anyway
+
+**What happened.** Codex opened THV-63, a Linear subagent reported *"Todo issue, no milestones"*,
+and then asked Q1. Cursor wrote `DESIGN_ONBOARDING.md` / `PRD.md` / `api.md` on a still-Todo,
+unassigned issue with no milestone. The board was corrected at wrap-up, after Andres said
+"commit and follow the workflow." Same shape as 2026-08-18 (Teacher 2.0 Linear went stale because
+sessions reached `feature-ledger` and never this skill) and 2026-08-20 (four issues had no
+Milestone and were routed after the grill).
+
+**Why.** The 2026-08-18 fix made Linear drift a **reconcile finding**. Findings get listed.
+Work continues. `grill-with-docs` is two lines (`Call grilling and domain-modeling`) and never
+calls this skill. This skill's trigger list was wrap-up and mid-session rulings, not session
+start. "Point at WORKFLOW.md and never restate it" hid the claim / `Writes to:` / milestone
+steps from the skills that actually run. Rule 9: a rule with no script gets skipped.
+
+**What changed.**
+
+- A **`start` intent** and a **session gate**: `tools/session-preflight.js`. Exit 1 stops the
+  session. Green is the completion criterion.
+- Frontmatter now triggers on grill / speccing / "write the ledger" / "evoke feature-ledger",
+  not only wrap-up.
+- `feature-ledger` reconcile treats a red preflight as a **stop**, not an Imbalances row.
+- `grill-with-docs` is no longer a two-line stub: gate first, then grill, then file.
+
+---
+
 ## 2026-08-22 — `capture` was built for a request, and most rulings are not requests
 
 **What happened.** Through the Teacher 2.0 dashboard sprint, rulings Andres made in passing kept
