@@ -23,7 +23,7 @@ JSON
 Exit 1 → `workspace` `start`. Re-run.
 **Do not file a row, do not open `open` or `reconcile`, while it is red.**
 
-`open` of a brand-new Feature has no issue yet — create the Project and its first Speccing
+`open` of a brand-new Feature has no issue yet — create the Project and its first fat card,
 issues, then run the script on each one. They must come back green.
 
 A large feature keeps a **ledger**: one folder where every decision is an entry, every entry points at its evidence, and the whole thing must **balance**. Every user story reaches a layer, every deferral names an owner that exists, every "built" has a commit.
@@ -209,7 +209,7 @@ change the shit around it."*
 ## open
 
 Session gate first — except a brand-new Feature has no issue yet. After step 6, run the script
-on every issue just created. Red means the Speccing issue is missing `Writes to:`, a milestone,
+on every issue just created. Red means the fat card is missing `Writes to:`, a milestone,
 or an assignee.
 
 1. **Create the Linear Project.** One Feature, spanning frontend and backend, never one per repo.
@@ -238,14 +238,14 @@ or an assignee.
 5. **Seed each Project's `DESIGN_<PROJECT>.md` with a row per surface** (rule 13). Each names what to build from, a
    status, and an **owning gate that resolves: a pasted `THV-` URL**, never a prose name. That turns
    ghost-owner rule 4 from a rule into a check, which is rule 9 doing its job.
-6. **Create the Project's first Speccing issues**, one per document the first milestone owes. Each
-   carries a literal `Writes to:` line naming exactly one path, and a `Done when` line checkable
-   against that file. One path per issue; a folder has no done-ness.
+6. **Create the Project's first fat card**, one issue for the first milestone. It
+   carries a literal `Writes to:` line naming the primary document, and a `Done when` line
+   checkable against that file. Checklists for sibling docs live in that file.
 7. **Create the paired worktrees**, `frontend-<feature>` and `backend-<feature>`.
 
 **Done when** every path in the shape resolves, every `DESIGN_<PROJECT>.md` row's path and owning gate open,
 every surface the feature touches has a row, and the Linear Project shows its chosen milestones with
-at least one Speccing issue standing against the first.
+at least one fat card standing against the first.
 
 ## reconcile
 

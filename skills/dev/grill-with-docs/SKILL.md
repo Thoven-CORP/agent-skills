@@ -1,9 +1,8 @@
 ---
 name: grill-with-docs
 description: >-
-  Grill a plan or design against the repo, then file the rulings. Use when speccing,
-  when an issue has a Writes to: line, or when Andres says grill. First action is the
-  session gate. Do not ask Q1 while the issue is Todo.
+  Grill a plan or design against the repo. Use when an issue has a Writes to: line, or when Andres says grill. First action is the
+  session gate. Green session gate, then hand off to grilling.
 ---
 
 # Grill with docs
@@ -18,14 +17,8 @@ node ~/.agents/skills/workspace/tools/session-preflight.js <<'JSON'
 JSON
 ```
 
-Exit 1 → `workspace` `start` (claim Speccing, milestone, assignee, tool comment). Re-run.
-**Do not ask Q1 while it is red.**
-
-## Then
-
-1. Call `grilling` and `domain-modeling`.
-2. Each ruling, same turn: `workspace` `capture` (fast lane) into the file its prefix names.
-3. Frontier empty → `feature-ledger` reconcile, file remaining rows, stop.
+Exit 1 → `workspace` `start` (claim In Progress, milestone, assignee, tool comment). Re-run.
+When the gate is green, invoke the `grilling` skill.
 
 Shipped product code is out of scope. Protos and `app/dev/` routes are in. The issue's
 `Writes to:` path is the only document this session must finish.

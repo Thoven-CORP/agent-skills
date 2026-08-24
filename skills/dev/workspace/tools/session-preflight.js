@@ -5,7 +5,7 @@
 // exit 0 = may proceed; exit 1 = claim / milestone / Writes to: first.
 
 const LANE = {
-  WITH_WRITES_TO: new Set(['Speccing', 'Ready']),
+  WITH_WRITES_TO: new Set(['In Progress', 'Ready']),
   WITHOUT_WRITES_TO: new Set(['In Progress', 'Ready']),
 };
 
@@ -34,13 +34,11 @@ function preflight(issue) {
 
   if (hasWritesTo) {
     if (state && !LANE.WITH_WRITES_TO.has(state) && !unclaimed.has(state)) {
-      failures.push(`lane: ${id} has Writes to: and is ${state}. Speccing is the lane.`);
+      failures.push(`lane: ${id} has Writes to: and is ${state}. In Progress is the lane.`);
     }
     if (issue.writesToExists === false) {
       failures.push(`ghost-path: Writes to: ${issue.writesTo} does not resolve.`);
     }
-  } else if (state === 'Speccing') {
-    failures.push(`lane: ${id} is Speccing with no Writes to: line.`);
   } else if (state && !LANE.WITHOUT_WRITES_TO.has(state) && !unclaimed.has(state)) {
     failures.push(`lane: ${id} has no Writes to: and is ${state}. In Progress is the lane.`);
   }

@@ -14,7 +14,7 @@ const thv63AsFound = {
 
 const thv63Claimed = {
   identifier: 'THV-63',
-  state: 'Speccing',
+  state: 'In Progress',
   assignee: 'Cursor',
   milestone: 'Design',
   writesTo: 'thoven2.0/teacher-2.0/projects/00-onboarding/DESIGN_ONBOARDING.md',
@@ -29,7 +29,7 @@ test('THV-63 as found is red on unclaimed, assignee, and milestone', () => {
   assert.ok(r.failures.some((f) => f.startsWith('milestone:')));
 });
 
-test('claimed Speccing issue with a resolving Writes to: is green', () => {
+test('claimed In Progress issue with a resolving Writes to: is green', () => {
   const r = preflight(thv63Claimed);
   assert.equal(r.ok, true);
   assert.deepEqual(r.failures, []);
@@ -46,7 +46,7 @@ test('ghost Writes to: is red even when claimed', () => {
   assert.ok(r.failures.some((f) => f.startsWith('ghost-path:')));
 });
 
-test('Speccing with no Writes to: is red', () => {
+test('retired Speccing lane with no Writes to: is red', () => {
   const r = preflight({
     identifier: 'THV-1',
     state: 'Speccing',

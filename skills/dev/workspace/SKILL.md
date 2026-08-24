@@ -23,7 +23,7 @@ node ~/.agents/skills/workspace/tools/session-preflight.js <<'JSON'
 JSON
 ```
 
-Exit 1 → **start**: claim `Speccing` (has `Writes to:`) or `In Progress` (does not), take the
+Exit 1 → **start**: claim `In Progress`, take the
 issue, attach the lifecycle milestone, comment which tool you are. Re-run.
 **Do not log, capture, grill, or write a ledger row while it is red.**
 
@@ -80,7 +80,7 @@ permissions** differ, which is what keeps a wrong guess cheap.
 |---|---|---|
 | "grill THV-63" · "write the ledger" · "evoke feature-ledger" · opening a `Writes to:` issue | **start** | claim · milestone · assignee · a tool comment. **Stops the session if the session gate is red.** |
 | "ok that's done" · "wrap up" · "logging off" | **log** | comments · status moves when proven · Log · CONTINUE_HERE. **Never opens an issue** |
-| "we should cut onboarding to two steps" · "found a bug in X" · **any ruling he just made** | **capture** | a decision row · an issue update · **the only intent that may create an issue** |
+| "we should cut onboarding to two steps" · "found a bug in X" · **any ruling he just made** | **capture** | a decision row · an issue update · **the only intent that may propose an issue, and only after go** |
 | "where am I" · "what's next" · `/workspace` bare | **orient** | **nothing** |
 | "does this match reality" · "something's off" | **check** | nothing without proof |
 
@@ -168,7 +168,7 @@ committed earlier the same day, with no error and no way to notice.
 | Source | Why always in scope |
 |---|---|
 | **dirty files** | uncommitted work has no date. `frontend-lessonspace` has 58 dirty files and 0 commits, which a date watermark would never see |
-| **Linear's live lanes** | anything in `Speccing` / `In Progress` / `Ready` is live by definition, however old |
+| **Linear's live lanes** | anything in `In Progress` / `Ready` is live by definition, however old |
 
 **Flexibility:** the watermark is a default, not a fence. Prose overrides it: *"since Friday"*,
 *"everything"*, *"just materials"*. And the checkout scan **always reports what it excluded**, so he can
@@ -295,7 +295,7 @@ main                             →  Design System, or unattributed. Needs othe
 
 **The order. First hit wins:**
 
-1. **An issue already claimed** by him in `Speccing` / `In Progress`, which is decisive
+1. **An issue already claimed** by him in `In Progress`, which is decisive
 2. **The branch**
 3. **Files touched**, which separates the four "parent dashboard" cases
 4. **The feature folder** he edited docs in
@@ -384,8 +384,9 @@ because the problem statement is unchanged"* is a complete write. Silence about 
 "it was fine", and that is how `files_count` shipped.
 
 **Status rules:** comments always, because they are append-only and cannot contradict anything.
-Status moves only with the evidence shown. **`Done` is never written by this skill**; the merge
-commit (`Fixes THV-<id>`) owns that transition.
+Status moves only with the evidence shown. **Write Done when the issue's job is finished**
+(code executed, design or PRD task complete). **Write Ready when a surface still needs his eyes.**
+Merge does not move Linear. Do not put `Fixes THV-` in a commit.
 
 ## Step 8 · Always advance
 
@@ -427,7 +428,7 @@ single step whose absence caused the worst finding of the 2026-08-14 audit.
 |---|---|---|
 | a **decision** | the file its prefix names (`WORKFLOW.md` §5) | **no new issue.** Comment the link on the affected issue |
 | a **change to tracked work** | nothing local | **update** the existing issue |
-| **new work** an agent could claim and open a branch for | nothing local | **create**, with Project + Milestone + labels |
+| **new work** an agent could claim and open a branch for | nothing local | **propose, wait for go.** Create only when Andres named a new issue or said go |
 | an **artifact**, meaning a PRD, spec or design | the feature folder, at the path the issue's `Writes to:` line names | **link** it |
 
 **The prefix names the kind. One series per kind, across the audience.**
@@ -461,9 +462,9 @@ decision with no source to cite is what produced `E18`.
 - **A `Sits in:` block always** (`WORKFLOW.md` §8 Location stamp). Initiative, Project,
   Milestone, ledger row, herdr tab. One block. It locates the work; it does not retell the spec.
 - **A `Writes to:` line if and only if the output is a document.** One literal line, one path:
-  `Writes to: thoven2.0/teacher-2.0/decisions/api.md`. **That line is what routes the issue to
-  `Speccing`; without it the issue goes to `In Progress`.** So a `PRD + Architecture` or `Design`
-  issue carries one, and a `Build` or `Review` issue carries none.
+  `Writes to: thoven2.0/teacher-2.0/decisions/api.md`. **That line names the ledger file.** Claim
+  is always `In Progress`. A `PRD + Architecture` or `Design` issue carries one, and a `Build`
+  or `Review` issue carries none.
 - **A `Done when:` line always,** naming something a person can check. For a spec issue that is
   "the document exists at the path above, and says X".
 - **A Build issue is vertical through both repos** and demoable alone (`WORKFLOW.md` §2). Split it
@@ -533,7 +534,7 @@ console.log("=== MAP (frozen archive + manifests) ===\n"+body+"\n\n=== recent lo
 '
 ```
 
-Then `list_issues` for `Speccing` · `In Progress` · `Ready` and print under `=== LINEAR ===`.
+Then `list_issues` for `In Progress` · `Ready` and print under `=== LINEAR ===`.
 
 Then the **tree map** under `=== TREE ===`. **Ask first: which map?** This feature (zoom 0, the
 usual answer), its audience family — "map parent" — (zoom 1), or everything (zoom 2). One word
@@ -552,7 +553,7 @@ requirement survives either path. An orient without a tree is incomplete.
 ```
  === TREE ===  PARENT 2.0 · <date> · live from Linear
   ACTIVATION   Design ▶ THV-169 · THV-170 · BE ○ THV-171/172 · gated by decision #9
-  DASHBOARD    Speccing ▶ THV-119 → THV-120 → (121 ∥ 122) · Controls ○ THV-133 · Build ⊘ THV-143
+  DASHBOARD    In Progress ▶ THV-119 → THV-120 → (121 ∥ 122) · Controls ○ THV-133 · Build ⊘ THV-143
 ```
 
 Write the same render into the STATE.md **Map zone**, after the register body and before `## Log`.
@@ -575,7 +576,7 @@ heading rather than `## [Unreleased]`. Anything failing either test is "claimed,
 |---|---|
 | stale-manifest | `findStaleManifests` returns it, but the feature passes the done-check |
 | lock-collision | two issues in `In Progress`, or one assigned to nobody |
-| wip-breach | `In Progress` + `Ready` over 3 (**`Speccing` is outside the cap**) |
+| wip-breach | `In Progress` + `Ready` over 3 |
 | ghost-path | an issue's `Writes to:` names a path that does not resolve in its worktree |
 | location-blank | an issue body with no `Sits in:` line (`WORKFLOW.md` §8 Location stamp) |
 | orphan-decision | an issue restates a decision instead of linking one |
@@ -688,14 +689,14 @@ If the MCP is not authorized, **stop and say so**, since he runs `/mcp` in an in
 | Skipping a missing role silently | Report it. "No PRD, no DESIGN_<PROJECT>.md" is a ledger imbalance for free |
 | Reading Milestone as a shippable slice | The Milestone is the lifecycle stage. The **Issue** is the slice |
 | Picking a Milestone from the files touched | Files pick the Project. The kind of work picks the Milestone |
-| A spec issue with no `Writes to:` line | That line is what sends it to `Speccing`. Name one path |
+| A spec issue with no `Writes to:` line | That line names the ledger file. Name one path |
 | Uploading a PRD or spec into Linear | It lives in the repo. Linear links to it |
-| Opening an issue from `log` | Only `capture` creates. Report unattributed work and offer |
+| Opening an issue from `log` | Only `capture` creates, and only after go. Report unattributed work and offer |
 | Creating an issue for a thought that is a **decision** | File the decision, comment the link |
 | Waiting for the wrap-up to file a ruling he made an hour ago | Capture at the moment. A compaction beats you to it |
 | Filing a reversal beside the row it reverses | Delete the superseded row. Two live rows for one choice is rule 8's disease |
 | Deleting a proto because `check` found it live | Report it. `feature-ledger` rule 15 owns retirement, and deletion needs a row |
-| Writing `Done` | `Ready`. The merge commit owns `Done` |
+| Writing `Done` when the job is still open | Write Done when code is executed or the design/PRD task is complete. Ready if he still needs to look. Merge does not own Done |
 | Writing an issue and leaving the PRD or `DESIGN_<PROJECT>.md` stale | Name every surface touched, or say which you skipped |
 | Skipping the Log entry because nothing changed | Always write, always advance. A stalled watermark is how the Map started lying |
 | Adding to the archive registers | Capture goes to Linear. Closing a dead item there is fine; adding is not |
