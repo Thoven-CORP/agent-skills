@@ -1,23 +1,22 @@
 ---
 name: herdr
 description: >-
-  Orchestrate parallel agent sessions in herdr — spaces, tabs and panes mapped to the
-  Linear board. Use when launching multiple sessions ("spin up panes", "launch these
-  lanes", "meta orchestration"), sweeping stale panes, recovering sessions stuck on
-  provider errors, or setting up a new space/tab layout for a sprint. Also when Andres
-  says "herder" or "meta tab".
+  Floor layout in herdr. Use when spinning panes, sweeping a space after he has
+  seen the surfaces, recovering a pane stuck on a provider error, or standing up
+  a space for a sprint.
 ---
 
-# herdr orchestration
+# herdr
 
-Run multi-session work in visible panes instead of trusting status labels. Linear stays the
-source of truth; herdr makes parallelism physical.
+Run multi-session work in visible panes. Linear stays the source of truth;
+herdr makes parallelism physical.
 
-**The law lives at `.workspace/WORKFLOW.md` §8.** This skill is the operating procedure;
-that file is the ruling. When they disagree, the file wins.
+**Law:** `.workspace/WORKFLOW.md` §8. This skill is the operating procedure;
+that file is the mapping (space / tab / pane), the two ladders, and the
+location stamp. The file wins on disagreement.
 
-**Source of this skill:** `~/thoven/agent-skills/skills/dev/herdr/`. Home copies are
-installs. Do not freelance-edit them from a Meta desk.
+**Source:** `~/thoven/agent-skills/skills/dev/herdr/`. Home copies are
+installs.
 
 ## Session-start sweep
 
@@ -28,24 +27,17 @@ $H tab list
 $H agent list
 ```
 
-Sweep stale panes only after Andres has seen the surface and is satisfied. A pane
-that just finished is a recap on Meta, not a ghost. Do not `herdr agent prompt`
-without go. Recycle only when he confirms.
+**Done when:** every pane on the floor is listed; labels match §8 (tab =
+Project, pane = `Ledger:` surface plus id); OpenCode `OC | …` leftovers are
+named as stale, not used as routing.
 
-## What maps to what
-
-| Linear | herdr | Label |
-|---|---|---|
-| Initiative / audience | **Space** | `~Parent2.0`, `~Teacher2.0` |
-| **Project** (the feature) | **Tab** | `dashboard`, `activation`, `business` — a bigger piece of work he can hold in his head. Later issues `pane split` inside it. Never a bare `Work`. Never the issue. |
-| **Issue** (the unit of work) | **Pane** | English surface first, ledger + ticket in parens: `Get-started panel on empty dashboard (D2 · THV-195)` |
-| Milestone (Design / Build) | not spatial | Tag the pane in Meta's map as planning / design / build. Do not make a tab named Design. |
-
-Same feature, next phase (design done → backend contract) = **new pane, same tab.**
+Sweep a finished pane only after Andres has seen the surface. Recycle after
+he confirms. `herdr agent prompt` after go.
 
 ## Launching a session
 
-One issue = one pane. Born inside its project's tab:
+One issue = one pane, born inside its Project's tab. Same feature, next phase
+(design done → backend) = **new pane, same tab.**
 
 ```bash
 $H tab create --workspace <WS> --cwd <WORKTREE> --label dashboard
@@ -55,34 +47,36 @@ $H agent start <issue-id-slug> --kind opencode --pane <PANE_ID>
 $H agent prompt <issue-id-slug> "Begin <ISSUE-ID>"
 ```
 
-Stagger first turns (~5 min). Do not nudge `continue` without go. Never rebuild a
-pane for a provider outage.
+Stagger first turns (~5 min). Provider outage: wait or recycle the same pane;
+do not rebuild a second session on the same tree.
 
 Work-pane Begins stay skinny: ticket, ledger paths, named-path git, shared-tree
 guard. They do not evoke workspace or feature-ledger.
 
-Naming:
+Naming — the pane label **is** the location stamp's `Ledger:` line plus the id:
 
 ```bash
 $H pane rename <PANE_ID> "Get-started panel on empty dashboard (D2 · THV-195)"
 $H agent rename <PANE_ID> thv195
 ```
 
-OpenCode session title must match. After start or recycle, `/rename` in that chat
-to the same sentence. `OC | …` leftover is not the room.
+After start or recycle, `/rename` in that chat to the same sentence.
+
+**Done when:** Linear still shows the issue; the pane sits in the Project tab;
+pane label, OpenCode `/rename`, and `Ledger:` agree; Begin has been sent only
+after go.
 
 ## Claim guard
 
-> Stage specific paths only. Never `checkout -f`, `reset --hard`, `clean`, or stashing files you
-> did not write — other sessions' uncommitted work shares this tree. Push race → `pull --rebase`,
-> never force.
+Stage specific paths only. On a push race, `pull --rebase`. Other sessions'
+uncommitted work shares this tree.
 
 ## Verification
 
-Truth is Linear, not terminal chrome. After launch: re-fetch the issue. herdr
-"working" is not shipped.
+Truth is Linear. After launch, re-fetch the issue. herdr `working` is liveness,
+not shipped.
 
-## Meta duties
+## Meta
 
-Meta is the organizer. See the `meta` skill: product-person voice, room map,
-tab digest after his confirmation. This skill only launches and names the floor.
+The organizer desk is the `meta` skill. This skill launches and names the
+floor.

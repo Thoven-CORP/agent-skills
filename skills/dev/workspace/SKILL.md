@@ -458,6 +458,8 @@ decision with no source to cite is what produced `E18`.
   — and set the `Thoven 2.0` Initiative. The audience lives in the name because sub-initiatives are
   Enterprise-only, verified 2026-08-18. **Create only the milestones the Feature needs**: an empty
   milestone reads 0% forever and is a gate that cannot open.
+- **A `Sits in:` block always** (`WORKFLOW.md` §8 Location stamp). Initiative, Project,
+  Milestone, ledger row, herdr tab. One block. It locates the work; it does not retell the spec.
 - **A `Writes to:` line if and only if the output is a document.** One literal line, one path:
   `Writes to: thoven2.0/teacher-2.0/decisions/api.md`. **That line is what routes the issue to
   `Speccing`; without it the issue goes to `In Progress`.** So a `PRD + Architecture` or `Design`
@@ -575,6 +577,7 @@ heading rather than `## [Unreleased]`. Anything failing either test is "claimed,
 | lock-collision | two issues in `In Progress`, or one assigned to nobody |
 | wip-breach | `In Progress` + `Ready` over 3 (**`Speccing` is outside the cap**) |
 | ghost-path | an issue's `Writes to:` names a path that does not resolve in its worktree |
+| location-blank | an issue body with no `Sits in:` line (`WORKFLOW.md` §8 Location stamp) |
 | orphan-decision | an issue restates a decision instead of linking one |
 | milestone-drift | an issue whose work is code sitting in `PRD + Architecture` or `Design`, or a spec issue with no `Writes to:` line |
 | ledger-imbalance | a Project whose feature folder has no `PRD.md`, no `DESIGN_<PROJECT>.md`, or two docs claiming one surface |
