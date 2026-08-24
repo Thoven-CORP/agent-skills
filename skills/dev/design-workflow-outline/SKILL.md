@@ -38,9 +38,11 @@ and invent what isn't — so the skeleton names L2 as a level to walk and leaves
 
 ## Where each level lands
 
-The whole skeleton runs inside the Feature's **`Design` milestone**, and each level (or each
-track-level crossing, where tracks run separately) becomes one Issue carrying a `Writes to:` line
-with the path below. Milestones, lanes and gates: `~/thoven/.workspace/WORKFLOW.md` §3.
+The whole skeleton runs inside the Feature's **`Design` milestone**, and the Issues inside it take
+one of two unit shapes (WORKFLOW.md §1): a **sweep** — one level across screens, the default, one
+Issue per track-level crossing carrying a `Writes to:` line with the path below — or a **screen** —
+one surface walked across levels, as a parent Issue whose sub-issues carry the pieces. Name the
+shape in the title either way. Milestones, lanes and gates: `~/thoven/.workspace/WORKFLOW.md` §3.
 
 Paths are relative to the Project folder: `thoven2.0/<audience>/projects/<project>/` for 2.0 work,
 `docs/<Surface>/` otherwise. An agent writes to the path its issue names and never invents one.
@@ -140,6 +142,42 @@ L2 and L5 already produce this material — L2 reads real components off the cod
 every state and motion. Without this file it dies inside the sprint. **The update log is the
 payload:** the checklist someone executes when the worktree merges.
 
+### ⚠ The update log is a DRAFT, and it is not the return path
+
+**Measured 2026-08-23: three `DESIGN_SYSTEM_CONTRIB.md` files exist across teacher, student and
+parent, and not one of their update logs has ever been executed.** A checklist nobody runs records
+that a sprint *meant* to give something back.
+
+**So the trigger is not sprint-end. It is the moment the change lands.** A sprint-end sweep relies
+on someone remembering, days later, that a value moved — and the person who moved it is the only one
+who knows *why*. The reason is the payload; the value is already in the code.
+
+```
+you changed …                          → you owe a row in …
+──────────────────────────────────────────────────────────────────────
+a lib/*-tokens.ts module                 design-system/ELEVATION.md ·
+  (new rung, role, constant)               MOTION.md · SURFACES.md
+
+a component into components/ui/          design-system/STACK.md
+  or a shared components/<x>/              + a name in lexicon/LEXICON.md
+
+a dependency, or a copied-in source      design-system/STACK.md § Entries,
+                                           under the rule that let it in (7 or 8)
+```
+
+**Exemption, and it is narrow:** a change inside one feature's own folder that no other feature
+could reach owes nothing. `components/` is not a feature folder.
+
+**The full procedure — what to write for each of the three kinds, what NOT to write, and the check
+each one ends in — is `~/thoven/thoven2.0/design-system/CONTRIBUTING.md` — symlinked into every worktree as `docs/thoven2.0/design-system/CONTRIBUTING.md`.**
+`STACK.md` decides what you may take; `CONTRIBUTING.md` decides what you owe back.
+
+**Why this exists, in one measurement.** On 2026-08-23 the Teacher 2.0 Dashboard added
+`elevation.overlay` — a second conditional rung with its own test — and landed four components in
+`components/teacher/`. `ELEVATION.md` still read *"four rest rungs + one conditional"*, and a grep
+across every file in `design-system/` returned **zero** hits for any of the four components.
+**Nothing was skipped out of laziness. No rule fired, because there was no rule.**
+
 Both files point at the PRD and the decision log rather than copying them, so the two can't
 drift apart.
 
@@ -164,6 +202,12 @@ A level compresses — never disappears — and only on a reason a reader can go
 - ❌ "L4 light: this is basically a settings screen."
 
 The first names something verifiable. The second is a vibe.
+
+**Declare the compressions at sprint open.** The skeleton header carries one depth line — which
+tracks compress which levels, and the checkable reason each — and Andres confirms it once. Deciding
+up front is what makes a sprint fast; re-litigating the same compression at every level is the slow
+version of the same call. Mid-sprint compression stays legal for what the sprint could not have
+known at open. What stays illegal is unchanged: a compression with no reason a reader can check.
 
 ## Common Mistakes
 

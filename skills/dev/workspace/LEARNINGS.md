@@ -5,6 +5,21 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-08-23 — an ambiguous read guessed silently, and the intent missed
+
+**What happened.** Andres: he speaks prose and invokes the skill, and when the prose is unclear he
+feels the classification gets missed rather than confirmed.
+
+**Why.** The Common Mistakes row said *"classify it yourself"*. It was written to ban
+verb-vocabulary questions (*"which intent is this?"*), but it read as a ban on all confirmation.
+Step 5's ask-on-ambiguity covered routing work; nothing covered the intent classification itself.
+
+**What changed.** The intents section now requires one outcome-shaped question before writing when
+two intents would write different things. Confident reads never ask. The Common Mistakes row was
+amended to the same shape.
+
+---
+
 ## 2026-08-23 — Linear drift was a finding, so the session started anyway
 
 **What happened.** Codex opened THV-63, a Linear subagent reported *"Todo issue, no milestones"*,

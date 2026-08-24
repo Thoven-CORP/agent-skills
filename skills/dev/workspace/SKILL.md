@@ -78,7 +78,7 @@ permissions** differ, which is what keeps a wrong guess cheap.
 
 | He says something like | Intent | May write |
 |---|---|---|
-| "grill THV-63" · "write the ledger" · "evoke feature-ledger" · opening a `Writes to:` issue | **start** | claim · milestone · assignee · a tool comment. **Stops the session if the gate is red.** |
+| "grill THV-63" · "write the ledger" · "evoke feature-ledger" · opening a `Writes to:` issue | **start** | claim · milestone · assignee · a tool comment. **Stops the session if the session gate is red.** |
 | "ok that's done" · "wrap up" · "logging off" | **log** | comments · status moves when proven · Log · CONTINUE_HERE. **Never opens an issue** |
 | "we should cut onboarding to two steps" · "found a bug in X" · **any ruling he just made** | **capture** | a decision row · an issue update · **the only intent that may create an issue** |
 | "where am I" · "what's next" · `/workspace` bare | **orient** | **nothing** |
@@ -86,6 +86,12 @@ permissions** differ, which is what keeps a wrong guess cheap.
 
 Half-log-half-decision is common, as in *"that's done, and we should cut onboarding to two
 steps."* **Do both.** Do not pick one and drop the other half.
+
+**When two intents would write different things, ask one question before writing.** Phrase it in
+outcomes, never in intent names — *"file this as a ticket, or just log it?"* is answerable; *"which
+intent is this?"* is not. Confident reads never ask; the ask exists for the read that is genuinely
+50/50, because a silent wrong guess either writes the wrong surface or drops the ruling entirely,
+and a re-decided ruling is the most expensive failure this skill has.
 
 ## Two speeds
 
@@ -165,7 +171,7 @@ committed earlier the same day, with no error and no way to notice.
 | **Linear's live lanes** | anything in `Speccing` / `In Progress` / `Ready` is live by definition, however old |
 
 **Flexibility:** the watermark is a default, not a fence. Prose overrides it: *"since Friday"*,
-*"everything"*, *"just materials"*. And the gate **always reports what it excluded**, so he can
+*"everything"*, *"just materials"*. And the checkout scan **always reports what it excluded**, so he can
 say "also look at X".
 
 ---
@@ -389,6 +395,10 @@ commit (`Fixes THV-<id>`) owns that transition.
 something happened, a quiet week stalls the watermark and the window grows unbounded, which is
 how the Map earned its reputation for lying. The Map is derived, so every run refreshes it free.
 
+**Close renders the tree.** The Log entry records why and where the session stopped; the tree in
+the Map zone shows where every lane now stands, so tomorrow's cold start reads position before
+history. Same render as `orient`, same derivation, never hand-edited.
+
 ---
 
 ## `capture` · resolve first, then write
@@ -480,7 +490,7 @@ completely ignore the prior implementation… you just completely forget."*
 **So capture at the moment, not at the wrap-up.** A ruling filed an hour later competes with a
 compaction; a ruling filed now costs one row.
 
-Run the short form. **Skip the gate and the fan-out** — neither tells you anything about a sentence
+Run the short form. **Skip the checkout scan and the fan-out** — neither tells you anything about a sentence
 just spoken:
 
 1. **Search the three places anyway** (Linear, `decisions/`, `DESIGN_<PROJECT>.md` + REJECTED). Thirty
@@ -500,7 +510,7 @@ issue is never deleted; `Canceled` with a comment keeps the id resolving.
 
 ## `orient` · where am I
 
-Gate scan, then the Map, then Linear's live lanes. Writes nothing.
+Checkout scan, then the Map, then Linear's live lanes. Writes nothing.
 
 ```bash
 node -e '
@@ -522,6 +532,21 @@ console.log("=== MAP (frozen archive + manifests) ===\n"+body+"\n\n=== recent lo
 ```
 
 Then `list_issues` for `Speccing` · `In Progress` · `Ready` and print under `=== LINEAR ===`.
+
+Then draw the **tree map** under `=== TREE ===`. Zoom 0 by default: the feature this session
+touches. An audience family ("map parent") is zoom 1. "Map everything" is zoom 2. The tree reads
+Linear live — Projects → Milestones → Issues with status — plus the Feature's `DESIGN_SKELETON.md`
+gate ledger where one exists. It renders position, never prose:
+
+```
+ === TREE ===  PARENT 2.0 · <date> · live from Linear
+  ACTIVATION   Design ▶ THV-169 · THV-170 · BE ○ THV-171/172 · gated by decision #9
+  DASHBOARD    Speccing ▶ THV-119 → THV-120 → (121 ∥ 122) · Controls ○ THV-133 · Build ⊘ THV-143
+```
+
+Write the same render into the STATE.md **Map zone**, after the register body and before `## Log`.
+The regen script above rewrites that zone each run, so the tree re-renders fresh or not at all —
+the same derived-or-nothing guarantee the rest of the Map runs on.
 
 **Label the halves.** The Map's register items are a **frozen archive**, history rather than work
 in flight. Linear's lanes are the live half. Letting the archive read as current is the failure
@@ -638,8 +663,8 @@ If the MCP is not authorized, **stop and say so**, since he runs `/mcp` in an in
 
 | Mistake | Instead |
 |---|---|
-| Starting a grill or ledger write while the issue is Todo | Run `start`. The script is the gate. Listing "no milestone" under Imbalances is the 2026-08-18 failure repeating |
-| Asking him which verb he means | He speaks prose. Classify it yourself |
+| Starting a grill or ledger write while the issue is Todo | Run `start`. The script is the session gate. Listing "no milestone" under Imbalances is the 2026-08-18 failure repeating |
+| Asking him which verb he means | He speaks prose. Classify it yourself — and when two intents would write different things, ask one outcome-shaped question before writing |
 | Routing on his words when git disagrees | Evidence leads. Surface the disagreement; it is a caught mistake, not a nuisance |
 | A bare `git log --since` on a feature branch | `main..HEAD`. Inherited commits made a silent branch look like 41 commits of work |
 | Skipping dirty checkouts because the watermark is recent | Dirty is always in scope. 85 uncommitted files in lessonspace have no date |
