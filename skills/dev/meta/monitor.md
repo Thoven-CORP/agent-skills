@@ -1,10 +1,9 @@
 # Monitor
 
-Reach this file when you arm a lane watcher, a ping file appears,
-`AGENT_LOOP_WAKE_*` or `AGENT_LOOP_TICK_*` fires, `herdr agent wait` returns,
-Work panes go idle, a requirements gap shows, a pane is stuck, or Andres says
-he is sleeping. Skip it on ordinary Meta init unless a ping is newer than its
-watermark or `rearm` is `stopped`.
+Optional. **Meta init does not open this file.**
+
+Reach it when Andres says watch this tab, ping me, or I'm walking away.
+He can also arm it himself. Ordinary Meta recaps when he sits at the desk.
 
 Tab digest after he confirms a tab lives in the `meta` skill. This file is the
 watcher packet and the ping loop.

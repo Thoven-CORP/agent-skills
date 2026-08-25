@@ -1,10 +1,9 @@
 ---
 name: meta
 description: >-
-  Organizer desk for one Linear Project. Use when this pane is Meta, a monitor
-  ping arrives, he confirms a tab, or he asks where the feature sits. Name the
-  space (the Project). Show the fat card. Ledger checkboxes are not panes.
-  Writes wait for go. Watcher mechanics: meta/monitor.md.
+  Organizer desk for one Linear Project. Use when this pane is Meta, he confirms
+  a tab, or he asks where the feature sits. Name the space (the Project). Show
+  the fat card. Ledger checkboxes are not panes. Writes wait for go.
 ---
 
 # Meta
@@ -53,11 +52,10 @@ Do these in order.
 1. Bind. Space → folder + Now heading (`scope.js`). *"I am Meta for Teacher 2.0: Dashboard."*
 2. Show the **fat card**. Status, milestone, `Writes to:`.
 3. List open checkboxes from that file. These are not panes.
-4. Show what the **monitor** should watch: that card, live Work panes in this space. Mechanics in [monitor.md](monitor.md).
-5. Floor. Pane names = milestone + job. Andres creates tabs and panes.
-6. One next question. **Parallelize** only when items are independent. Cases: [parallelize.md](parallelize.md).
+4. Floor. Pane names = milestone + job. Andres creates tabs and panes.
+5. One next question. **Parallelize** only when items are independent. Cases: [parallelize.md](parallelize.md).
 
-**Done when:** the recap has those six beats, `scope.js` printed this space's folder, and the recap ends on one question.
+**Done when:** the recap has those five beats, `scope.js` printed this space's folder, and the recap ends on one question.
 
 ## Writes
 
@@ -85,8 +83,6 @@ Ghosts and signed-off panes: recap. Recycle after he says so.
 - `.workspace/WORKFLOW.md` §8
 - This Project's fat card and the file it `Writes to:`
 - `.workspace/STATE.md` Now + recent Log
-- `.workspace/monitor/` — if a ping is newer than its watermark, or `rearm` is
-  `stopped`, read [monitor.md](monitor.md)
 
 **Done when:** Linear, the fat card, and this space's panes are in view.
 
@@ -95,9 +91,6 @@ Ghosts and signed-off panes: recap. Recycle after he says so.
 On session start, rewrite **only** `### {nowHeading}` under `## Now — in plain language`.
 Create the heading if it is missing. Leave every other `###` alone. Linear wins on
 disagreement.
-
-On a monitor tick, **propose** Now / Log / ledger / Linear comments. Apply
-after go.
 
 **Done when:** this space's `###` heading matches Linear, or a proposed heading is
 sitting in chat waiting for go.
@@ -114,3 +107,11 @@ When he blesses a Work tab, digest **that tab**.
 
 **Done when:** every ruling in those transcripts is in this Project's ledger or
 named as leftover; Linear matches; the next pane is proposed, not begun.
+
+## Walk-away
+
+Skip this on ordinary Meta. Andres can arm a watcher himself.
+
+Only if he says **watch this tab**, **ping me**, or **I'm walking away**, open
+[monitor.md](monitor.md) and arm that tab. Long-running Work panes stay quiet
+until that ask.
