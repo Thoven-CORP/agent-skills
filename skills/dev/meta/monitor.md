@@ -111,7 +111,7 @@ the watcher process has exited.
 status: quiet | landed | drifted | hallucinated | stuck | recap
 kind: design_check | build_landed | plan_landed | files | req_gap | stuck | quiet_recap
 issue: ISSUE-… or none
-linear: In Progress | Ready | Todo | …
+linear: In Progress | Ready | Done | Todo | …
 pane: herdr pane id or none
 files: named paths only
 quotes: ledger rows touched (verbatim)
@@ -128,7 +128,7 @@ Quote contract rows.
 If the pane claims a payload key, route, or ADR number that is not in
 `closed_read_list`, `status: hallucinated`, `verdict: HALLUCINATION`.
 
-Shipped means Linear Ready and the named paths exist at the watermark SHAs.
+Shipped means Linear Done and the named paths exist at the watermark SHAs. Ready is come-look.
 
 ## Meta on ping
 
