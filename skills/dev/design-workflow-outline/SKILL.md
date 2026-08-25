@@ -12,9 +12,11 @@ Draws the **skeleton** a design sprint gets walked through: one **track** per st
 the human and from the levels below. The output makes the shape of the work visible so anyone can
 say where they are.
 
-**Not for:** a single component — check it against `components/ui/` and the library tables via
+**Not for:** a Feature whose proto path is already enough · a single component — check it against `components/ui/` and the library tables via
 `thoven-designer` instead, no sprint needed · polishing finished design (`impeccable`,
 `better-ui`) · a sprint already walking an agreed skeleton.
+
+Reach for this on a **greenfield** Feature that needs a long design walk and persistence. Skip it otherwise. The proto path on the DESIGN row is the default.
 
 ## The six levels
 

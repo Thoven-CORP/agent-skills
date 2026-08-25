@@ -11,7 +11,7 @@ watcher packet and the ping loop.
 
 ## Split
 
-**Work panes** build or draw. Brief = ticket + ledger paths.
+**Work panes** build or draw. Brief = ticket if one exists, plus ledger paths.
 
 **Watcher** (cheap, background, one cycle). Sweep the packet. Write the ping
 file. Stop.
@@ -55,7 +55,6 @@ Higher wins. Meta repairs the lower one, after go.
 1. Ledger files (what to build). Ticket bodies **point** (location stamp). They
    do not restate the spec.
 2. Linear (lifecycle: In Progress / Ready / Done). Done is finished work. Ready is come-look.
-   slice. Merge owns Done.
 3. herdr (liveness). `working` is not shipped.
 4. Named-path git (what landed). Stage the paths you wrote.
 
@@ -135,7 +134,7 @@ Shipped means Linear Ready and the named paths exist at the watermark SHAs.
 
 1. Read the ping. Open the cited ledger rows yourself.
 2. Recap in chat: the surface, the floor, what he is ruling. Tag the pane with
-   its Linear milestone (planning / design / build).
+   its Linear milestone (`PRD + Architecture` · `Design` · `Build` · `Review`).
 3. **Requirements pass** when a pane claims done: ticket `Done when:` vs named
    files vs quoted ledger rows. Report misses from this desk.
 4. Propose workspace (`log` / Now) and feature-ledger writes as a block,

@@ -24,7 +24,7 @@ Exit 1 → `workspace` `start`. Re-run.
 **Do not file a row, do not open `open` or `reconcile`, while it is red.**
 
 `open` of a brand-new Feature has no issue yet — create the Project and its first fat card,
-issues, then run the script on each one. They must come back green.
+then run the script on that card. It must come back green.
 
 A large feature keeps a **ledger**: one folder where every decision is an entry, every entry points at its evidence, and the whole thing must **balance**. Every user story reaches a layer, every deferral names an owner that exists, every "built" has a commit.
 
@@ -209,7 +209,7 @@ change the shit around it."*
 ## open
 
 Session gate first — except a brand-new Feature has no issue yet. After step 6, run the script
-on every issue just created. Red means the fat card is missing `Writes to:`, a milestone,
+on the fat card just created. Red means the fat card is missing `Writes to:`, a milestone,
 or an assignee.
 
 1. **Create the Linear Project.** One Feature, spanning frontend and backend, never one per repo.
@@ -236,23 +236,23 @@ or an assignee.
 4. **Fill `PRD.md` and `CONTINUE_HERE.md`** from what the session already knows, including the `E#`
    stories that can already be named.
 5. **Seed each Project's `DESIGN_<PROJECT>.md` with a row per surface** (rule 13). Each names what to build from, a
-   status, and an **owning gate that resolves: a pasted `THV-` URL**, never a prose name. That turns
-   ghost-owner rule 4 from a rule into a check, which is rule 9 doing its job.
+   status, and **where the final prototype is going to be**: a path that opens
+   (`app/dev/<feature>/page.tsx` or a drawing). That path is the owning gate. Not a `THV-` URL.
 6. **Create the Project's first fat card**, one issue for the first milestone. It
    carries a literal `Writes to:` line naming the primary document, and a `Done when` line
    checkable against that file. Checklists for sibling docs live in that file.
 7. **Create the paired worktrees**, `frontend-<feature>` and `backend-<feature>`.
 
-**Done when** every path in the shape resolves, every `DESIGN_<PROJECT>.md` row's path and owning gate open,
-every surface the feature touches has a row, and the Linear Project shows its chosen milestones with
-at least one fat card standing against the first.
+**Done when** every path in the shape resolves, every `DESIGN_<PROJECT>.md` row names a proto path
+that opens, every surface the feature touches has a row, and the Linear Project shows its chosen
+milestones with one fat card standing against the first.
 
 ## reconcile
 
 Session gate first — the heading at the top of this file. Red is a stop, not an Imbalances row.
 
-Run over the whole ledger. Read the decision files and `STATE.md`, then check each entry against the
-code and against Linear.
+Run over this Project's folder. Read the decision files and `STATE.md`, then check each entry against the
+code and against Linear. Meta passes the folder from WORKFLOW §8 ledger bind.
 
 An entry **balances** when all of these hold:
 

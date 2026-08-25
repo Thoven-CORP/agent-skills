@@ -576,7 +576,7 @@ heading rather than `## [Unreleased]`. Anything failing either test is "claimed,
 |---|---|
 | stale-manifest | `findStaleManifests` returns it, but the feature passes the done-check |
 | lock-collision | two issues in `In Progress`, or one assigned to nobody |
-| wip-breach | `In Progress` + `Ready` over 3 |
+| wip-breach | Build `In Progress` + `Ready` over 3. PRD/Design fat cards sit outside the cap |
 | ghost-path | an issue's `Writes to:` names a path that does not resolve in its worktree |
 | location-blank | an issue body with no `Sits in:` line (`WORKFLOW.md` §8 Location stamp) |
 | orphan-decision | an issue restates a decision instead of linking one |
@@ -617,7 +617,7 @@ which then passed every gate because each one checked the prose.
 | start a large feature | `feature-ledger open`, **before** its issues exist |
 | file a decision with no folder to file it in | `feature-ledger open`, then file |
 | write a plan or PRD | `feature-ledger reconcile` first, because a plan on an unbalanced ledger freezes the imbalance |
-| resolve a `DESIGN_<PROJECT>.md` owning gate | it must be a pasted `THV-` URL, never a prose name |
+| resolve a `DESIGN_<PROJECT>.md` owning gate | the proto path that opens (`app/dev/<feature>/page.tsx`) |
 | move an issue to `Ready` whose output was a designed surface | `feature-ledger` rule 15 first: the proto retires in the same breath as the ship, or the next session builds from it |
 
 **A feature folder and a Linear Project are one thing seen twice.** The folder holds the

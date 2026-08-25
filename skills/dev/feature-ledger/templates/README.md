@@ -37,7 +37,7 @@ covering a whole audience could never reach 100%.
 | **Emitted by** | api.md | Filled from the serializer, never the type file. `contract-check` never validates response bodies, so this column is the only place a phantom field is caught. |
 | **Migration** | database.md | Answers "why does this column exist" in one place, and the named migration has to exist. |
 | **What to build from** | DESIGN.md | A drawing, a proto route plus screen, or a component and the commit it was canon at. Anything vaguer sends a builder to guess. |
-| **Owning gate** | DESIGN.md | A pasted `THV-` URL that opens. Four prose owners were cited thirteen times and none of them existed. |
+| **Owning gate** | DESIGN.md | Where the final prototype is going to be. A path that opens (`app/dev/<feature>/page.tsx`). |
 | **REJECTED, and why** | DESIGN.md | The rejected alternative is what catches a decision quietly reintroducing a shape already thrown out. Delete superseded rows; keep this. |
 | **Surfaces covered** | DESIGN.md, cross-surface rules | A rule scoped wider than its pointers leaves a surface inside the scope with no authority at all. |
 | **Commit / Repo / Issue** | STATE.md | "What did you build?" used to take three greps. |

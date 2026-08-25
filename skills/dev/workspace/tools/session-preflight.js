@@ -4,10 +4,8 @@
 // node session-preflight.js < snapshot.json
 // exit 0 = may proceed; exit 1 = claim / milestone / Writes to: first.
 
-const LANE = {
-  WITH_WRITES_TO: new Set(['In Progress', 'Ready']),
-  WITHOUT_WRITES_TO: new Set(['In Progress', 'Ready']),
-};
+const ALLOWED = new Set(['In Progress', 'Ready']);
+const UNCLAIMED = new Set(['Triage', 'Backlog', 'Todo']);
 
 function preflight(issue) {
   const failures = [];
@@ -17,10 +15,8 @@ function preflight(issue) {
 
   const id = issue.identifier;
   const state = issue.state || '';
-  const hasWritesTo = Boolean(issue.writesTo);
-  const unclaimed = new Set(['Triage', 'Backlog', 'Todo']);
 
-  if (unclaimed.has(state)) {
+  if (UNCLAIMED.has(state)) {
     failures.push(`unclaimed: ${id} is ${state}. Claim it before the work starts.`);
   }
 
@@ -32,15 +28,12 @@ function preflight(issue) {
     failures.push(`milestone: ${id} has no lifecycle milestone. Create the stage this work is, then attach.`);
   }
 
-  if (hasWritesTo) {
-    if (state && !LANE.WITH_WRITES_TO.has(state) && !unclaimed.has(state)) {
-      failures.push(`lane: ${id} has Writes to: and is ${state}. In Progress is the lane.`);
-    }
-    if (issue.writesToExists === false) {
-      failures.push(`ghost-path: Writes to: ${issue.writesTo} does not resolve.`);
-    }
-  } else if (state && !LANE.WITHOUT_WRITES_TO.has(state) && !unclaimed.has(state)) {
-    failures.push(`lane: ${id} has no Writes to: and is ${state}. In Progress is the lane.`);
+  if (state && !ALLOWED.has(state) && !UNCLAIMED.has(state)) {
+    failures.push(`lane: ${id} is ${state}. In Progress is the lane.`);
+  }
+
+  if (issue.writesToExists === false) {
+    failures.push(`ghost-path: Writes to: ${issue.writesTo} does not resolve.`);
   }
 
   return { ok: failures.length === 0, failures, identifier: id };
@@ -63,4 +56,4 @@ if (require.main === module) {
   process.exit(result.ok ? 0 : 1);
 }
 
-module.exports = { preflight, LANE };
+module.exports = { preflight, ALLOWED, UNCLAIMED };

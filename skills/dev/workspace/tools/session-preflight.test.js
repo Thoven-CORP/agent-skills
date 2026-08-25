@@ -58,6 +58,19 @@ test('retired Speccing lane with no Writes to: is red', () => {
   assert.ok(r.failures.some((f) => f.startsWith('lane:')));
 });
 
+test('retired Speccing lane with Writes to: is red', () => {
+  const r = preflight({
+    identifier: 'THV-63',
+    state: 'Speccing',
+    assignee: 'Cursor',
+    milestone: 'Design',
+    writesTo: 'thoven2.0/teacher-2.0/projects/00-onboarding/DESIGN_ONBOARDING.md',
+    writesToExists: true,
+  });
+  assert.equal(r.ok, false);
+  assert.ok(r.failures.some((f) => f.startsWith('lane:')));
+});
+
 test('no issue at all is red', () => {
   const r = preflight(null);
   assert.equal(r.ok, false);

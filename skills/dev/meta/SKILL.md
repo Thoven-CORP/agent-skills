@@ -11,17 +11,32 @@ description: >-
 
 This desk is the **organizer** for **one** Linear Project. Andres is the product person.
 
-You write orchestration surfaces only: STATE Now/Log, CONTINUE_HERE, Linear
-comments, herdr names, pane prompts after go, ledger rows in **this** folder.
+You write orchestration surfaces only: STATE Now/Log (this space's `###` heading),
+CONTINUE_HERE, Linear comments, herdr names, pane prompts after go, ledger rows in
+**this** folder.
 
-**Source:** `~/thoven/agent-skills/skills/dev/meta/`. Home copies are installs.
-Edit the repo, then copy out.
+**Source:** `~/thoven/agent-skills/skills/dev/meta/`. Home copies are
+installs. Edit the repo, then copy out.
 
 **Law:** `.workspace/WORKFLOW.md` §8. This skill is the desk procedure. The file
 wins on disagreement.
 
-**Refuse.** A Meta in `~Dashboard` does not edit `projects/00-onboarding/` or any
-other Project's folder. Name that work and stop.
+**Bind.** First action: read this space's `label` from `herdr workspace list`,
+then run
+
+```bash
+node ~/.agents/skills/meta/tools/scope.js "~Dashboard"
+```
+
+Swap the label for this space. That prints `{ folder, nowHeading }`. Ledger
+writes stay under `folder`. STATE.md rewrites stay on `### {nowHeading}`. A
+write elsewhere is a stop, not a finding.
+
+```bash
+node ~/.agents/skills/meta/tools/scope.js "~Dashboard" "<abs-path>"
+```
+
+Exit 1 → do not write that path. Name the other Project and stop.
 
 ## Voice
 
@@ -35,14 +50,14 @@ Report like you are talking to the product person.
 
 Do these in order.
 
-1. Name the **space**. That is the Linear Project. *"I am Meta for Teacher 2.0: Dashboard."*
+1. Bind. Space → folder + Now heading (`scope.js`). *"I am Meta for Teacher 2.0: Dashboard."*
 2. Show the **fat card**. Status, milestone, `Writes to:`.
 3. List open checkboxes from that file. These are not panes.
 4. Show what the **monitor** should watch: that card, live Work panes in this space. Mechanics in [monitor.md](monitor.md).
-5. Floor. Pane names = milestone + job.
+5. Floor. Pane names = milestone + job. Andres creates tabs and panes.
 6. One next question. **Parallelize** only when items are independent. Cases: [parallelize.md](parallelize.md).
 
-**Done when:** the recap has those six beats and ends on one question.
+**Done when:** the recap has those six beats, `scope.js` printed this space's folder, and the recap ends on one question.
 
 ## Writes
 
@@ -75,16 +90,16 @@ Ghosts and signed-off panes: recap. Recycle after he says so.
 
 **Done when:** Linear, the fat card, and this space's panes are in view.
 
-## Refresh the Now digest
+## Refresh this space's Now heading
 
-On session start, rewrite `## Now — in plain language` so a product person can
-follow it with no ids. Linear wins on disagreement. Scope the Now block to
-**this** Project.
+On session start, rewrite **only** `### {nowHeading}` under `## Now — in plain language`.
+Create the heading if it is missing. Leave every other `###` alone. Linear wins on
+disagreement.
 
 On a monitor tick, **propose** Now / Log / ledger / Linear comments. Apply
 after go.
 
-**Done when:** Now matches Linear for this Project, or a proposed Now block is
+**Done when:** this space's `###` heading matches Linear, or a proposed heading is
 sitting in chat waiting for go.
 
 ## Tab digest
@@ -93,9 +108,9 @@ When he blesses a Work tab, digest **that tab**.
 
 1. Read the transcripts of the panes in that tab.
 2. After go, a Work pane may output: what shipped, what was ruled, what is leftover.
-3. From **this** desk, run workspace + feature-ledger on this Project so the
-   ledger, the location stamp, and Linear match the floor.
-4. The next unit of the **same Project** is a **new pane in a named room**. Propose it. He says go.
+3. From **this** desk, run `feature-ledger` `reconcile` on the bound folder. Then
+   the location stamp and Linear match the floor. Do not run unscoped `workspace`.
+4. The next unit of the **same Project** is a **new pane in a named room**. Propose it. He creates it.
 
 **Done when:** every ruling in those transcripts is in this Project's ledger or
 named as leftover; Linear matches; the next pane is proposed, not begun.

@@ -6,17 +6,19 @@ about one.**
 
 ## Done when
 
-Every surface the Feature touches has a row, and every path and owning gate in those rows resolve.
+Every surface the Feature touches has a row, and every path in those rows opens. The owning
+gate is where the final prototype is going to be.
 
 ## Surfaces
 
 One row per surface, not only one per drawing. **What to build from** is a drawing, a proto route
 plus screen, or a component and the commit it was canon at. **A surface with no row is a blocker,
-not a default: STOP and ask.** The owning gate is a pasted `THV-` URL that opens, never a prose name.
+not a default: STOP and ask.** The owning gate is the proto path (`app/dev/<feature>/page.tsx`)
+or the drawing. A path that opens.
 
 | `D#` | Surface | What to build from | Status | Owning gate | REJECTED, and why |
 |---|---|---|---|---|---|
-| D1 | | `design/drawings/*.html` · `app/dev/<feature>/page.tsx` screen N · component @ commit | | THV- | |
+| D1 | | `design/drawings/*.html` · `app/dev/<feature>/page.tsx` screen N · component @ commit | | `app/dev/<feature>/page.tsx` | |
 
 ## Rules that span surfaces
 

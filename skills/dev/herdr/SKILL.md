@@ -36,19 +36,27 @@ he confirms. `herdr agent prompt` after go.
 
 ## Launching a session
 
-Open a pane in the space. Attach an existing issue if Andres named one. A
-Work tab can exist for a named room with no new THV-.
+Andres creates the Work tab and the pane. This skill names and, if the pane is
+still a shell, starts an agent in it.
+
+`herdr agent start <NAME>` starts Cursor or OpenCode **in an existing pane**.
+NAME is a nickname (`messages-panel`, `upcoming`). It is not a Linear id and it
+does not mint a THV-. Docs: https://herdr.dev/docs/agent-automation/
+
+Agents he launched by hand are already detected. Address them by pane id.
+Give a nickname only when a stable target helps.
 
 Same Project, next independent unit = **new pane in that room, or a new room
-Meta named.** Same feature, next phase of the *same* unit = new pane, same tab.
+he named.** Same feature, next phase of the *same* unit = new pane, same tab.
 
 ```bash
-$H tab create --workspace <WS> --cwd <WORKTREE> --label notifications
 $H pane list
-$H pane split --pane <PANE_ID> --direction right --ratio 0.5 --cwd <WORKTREE>
-$H agent start <issue-id-slug> --kind opencode --pane <PANE_ID>
-$H agent prompt <issue-id-slug> "Begin <ISSUE-ID>"
+$H pane rename <PANE_ID> "Build · Upcoming person-or-count"
+$H agent start upcoming --kind opencode --pane <PANE_ID>
+$H agent prompt upcoming "Begin THV-189"
 ```
+
+Skip `agent start` when the pane already has an agent. Prompt by pane id.
 
 Stagger first turns (~5 min). Provider outage: wait or recycle the same pane;
 do not rebuild a second session on the same tree.
@@ -60,7 +68,7 @@ Naming — the pane label is **milestone + job**, then the id when one exists:
 
 ```bash
 $H pane rename <PANE_ID> "Design · Messages panel (THV-149)"
-$H agent rename <PANE_ID> thv149
+$H agent rename <PANE_ID> messages-panel
 ```
 
 After start or recycle, `/rename` in that chat to the same sentence.
