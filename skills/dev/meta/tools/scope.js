@@ -12,18 +12,23 @@ const os = require('node:os');
 
 const THOVEN = path.join(os.homedir(), 'thoven');
 
+// Mirrors the ledger-bind table in .workspace/WORKFLOW.md §8. That file is the law;
+// this is the enforcement. Updated 2026-08-27: ~Dashboard and ~Onboarding retired
+// (both shipped through Teacher 2.0 Part 1, so their folders are evidence now), and
+// the three section interiors were promoted out of archive/legacy-projects/ because
+// they still carry live locks. A folder under archive/ must not bind anything.
 const MAP = {
-  '~Dashboard': {
-    folder: 'thoven2.0/teacher-2.0/projects/02-dashboard',
-    nowHeading: 'Teacher 2.0: Dashboard',
-  },
   '~Business': {
-    folder: 'thoven2.0/teacher-2.0/projects/07-business',
+    folder: 'thoven2.0/teacher-2.0/projects/business',
     nowHeading: 'Teacher 2.0: Business',
   },
-  '~Onboarding': {
-    folder: 'thoven2.0/teacher-2.0/projects/00-onboarding',
-    nowHeading: 'Teacher 2.0: Onboarding',
+  '~Settings': {
+    folder: 'thoven2.0/teacher-2.0/projects/settings',
+    nowHeading: 'Teacher 2.0: Settings',
+  },
+  '~Schedule': {
+    folder: 'thoven2.0/teacher-2.0/projects/schedule',
+    nowHeading: 'Teacher 2.0: Schedule',
   },
   '~Parent2.0': {
     folder: 'thoven2.0/parent-2.0',
