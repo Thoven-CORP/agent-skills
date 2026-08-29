@@ -22,3 +22,13 @@ test("shared engine is deterministic for both skill consumers", () => {
   const input = { identity: { name: "Teacher: Shell", dir: "/x/projects/shell" }, linear: normalizeLinear({ issues: [] }), git, projectState };
   assert.equal(deriveSnapshot(input).snapshotFingerprint, deriveSnapshot(input).snapshotFingerprint);
 });
+
+test("missing Linear access never routes to a write intent", () => {
+  const snapshot = deriveSnapshot({
+    identity: { name: "Teacher: Business", dir: "/x/projects/business" },
+    linear: { state: "UNKNOWN", reason: "Linear unavailable: fetch failed", issues: [], projects: [] },
+    git,
+    projectState: { ...projectState, source: "/x/STATE.md", compatibility: true },
+  });
+  assert.equal(snapshot.next, "Restore Linear access and re-run $workspace");
+});

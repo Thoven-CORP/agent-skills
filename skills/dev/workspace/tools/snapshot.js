@@ -31,7 +31,15 @@ function deriveSnapshot({ identity, linear, git, projectState, workflow = null, 
     ...base,
     snapshotFingerprint,
     completionClaim: blockers.length ? S.BLOCKED : unknowns.length ? S.UNKNOWN : S.VERIFIED,
-    next: current ? `${current.identifier}: ${current.title}` : tickets.length ? "$feature-ledger reconcile" : "$workspace capture",
+    next: current
+      ? `${current.identifier}: ${current.title}`
+      : linear.state === S.UNKNOWN
+        ? "Restore Linear access and re-run $workspace"
+        : !projectState.source || projectState.compatibility
+          ? "$feature-ledger open"
+          : tickets.length
+            ? "$feature-ledger reconcile"
+            : "$workspace capture",
   };
 }
 
