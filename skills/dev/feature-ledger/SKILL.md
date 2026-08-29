@@ -265,6 +265,7 @@ An entry **balances** when all of these hold:
 | **coverage** | if a plan exists, every user story and architecture decision appears in its table |
 | **authority** (rule 13) | every surface the feature touches has a `DESIGN_<PROJECT>.md` row naming what to build from. No row is a finding, never a default |
 | **singleton** (rule 15) | exactly **one** live artifact claims this surface. A proto still on disk for a surface whose row names a component is a finding; so is a row still naming a proto whose component has shipped. Two live artifacts is the state that makes an agent rediscover the truth every session |
+| **liveness** | a **call site** is a production mount or a production importer — never the module's own test, never a comment, never a ledger row. `IntegrationsTab` imported only by `IntegrationsTab.test.tsx` is dead, however green the suite. Fill `IN FLIGHT` and `KNOWN DEAD` (same fields as `prompts/ARCHITECTURE-AUDIT.md`) before any reconcile that would label a path T3/legacy: an in-session file called dead is a finding against the audit, not against the code. Knip/Stryker recipes do not belong here; Teacher Consolidation step 1 owns install |
 | **downstream** | a `LOCKED` decision is cited by a plan, issue or commit. A decision nothing downstream mentions is an **orphan** |
 | **scaffold** | `grep -rl "SCAFFOLD" <audience>/` returns nothing **and `open` has scaffolded this folder**. On a folder the templates were never applied to, an empty result proves nothing and is itself the finding |
 | **container** | **no Linear PROJECT or Milestone description contradicts a live decision.** The decision file wins; the description is the finding. **Detect it, do not eyeball it:** pull every `D#`/`A#`/`ADR#`/`E#` cited in the Project description and each Milestone description, and check each id's status in the ledger. A cited id that is `SUPERSEDED`, `PARTLY SUPERSEDED`, or absent is drift. Also compare the *names* a description uses against the ledger's current ones — a renamed surface is the tell that fires first |
@@ -275,7 +276,8 @@ Then:
 
 1. **Log every imbalance in plain English**, saying what the ledger claims and what the code does.
    *"`D73` says the format picker uses `ThovenTile`. `ThovenTile` has zero call sites outside
-   `/dev`."*
+   `/dev`."* A test file importing the module does not count. If you cannot fill `IN FLIGHT` /
+   `KNOWN DEAD` for this Project, stop and ask — do not invent a dead-code list.
 2. **Grep the decisions for orphans, both directions.** A `LOCKED` row whose id appears in no plan,
    issue or commit is unbuilt and unowned however well it is written. A deferral naming a **level or
    phase** (*"L5 wires it"*, *"the next gate"*) is a rule-4 ghost owner wherever it lives,

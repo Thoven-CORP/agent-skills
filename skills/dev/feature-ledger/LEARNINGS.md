@@ -5,6 +5,25 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-08-28 — unused-code audits poisoned the next architecture because a test counted as a caller
+
+**What happened.** Parent wallet audit was wrong three times by trusting file presence (a “live
+bug” unreachable; a “gen 2 stalled build” that was gen-4-never-wired). Teacher Settings ledger
+rows named `IntegrationsTab` / `GoogleCalendarCard` — zero production importers, green tests.
+Schedule audits kept reading Store B / old booking-request. That is why Consolidation exists, and
+why its step 1 is move-safety *before* the tree audit.
+
+**Why.** Reconcile already had “zero call sites outside `/dev`” as an example, not a check.
+Nothing said a test import is not a caller, or that IN FLIGHT must be filled before a path is
+called legacy. Dumping Knip into `/workspace` would have made every orient talk unused files;
+workspace owns Linear/Map/Log.
+
+**What changed.** Reconcile table gained **liveness**. Workspace was not edited. The install
+recipe (knip, owners_spec, e2e-no-dev, dependency-cruiser) stays in
+`thoven2.0/teacher-2.0/plans/2026-08-28-consolidation-milestone.md` § Move-safety.
+
+---
+
 ## 2026-08-23 — reconcile listed Linear drift and then wrote the docs anyway
 
 **What happened.** Cursor invoked this skill, wrote `00-onboarding` (`D152`–`D165`, `E6`–`E11`,

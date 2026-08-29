@@ -39,12 +39,16 @@ he confirms. `herdr agent prompt` after go.
 Andres creates the Work tab and the pane. This skill names and, if the pane is
 still a shell, starts an agent in it.
 
-`herdr agent start <NAME>` starts Cursor or OpenCode **in an existing pane**.
-NAME is a nickname (`messages-panel`, `upcoming`). It is not a Linear id and it
-does not mint a THV-. Docs: https://herdr.dev/docs/agent-automation/
+Start OpenCode with `pane run <PANE_ID> opencode2`. Nickname (`messages-panel`,
+`upcoming`) is not a Linear id and does not mint a THV-. Docs:
+https://herdr.dev/docs/agent-automation/
 
-Agents he launched by hand are already detected. Address them by pane id.
-Give a nickname only when a stable target helps.
+`agent start --kind opencode` launches `opencode` 1.18.22. Work panes use
+`opencode2` (`~/.opencode/bin/opencode2`). Herdr still detects that process as
+kind `opencode`. Address it by pane id after it is idle.
+
+Agents he launched by hand are already detected. Give a nickname only when a
+stable target helps.
 
 Same Project, next independent unit = **new pane in that room, or a new room
 he named.** Same feature, next phase of the *same* unit = new pane, same tab.
@@ -52,11 +56,13 @@ he named.** Same feature, next phase of the *same* unit = new pane, same tab.
 ```bash
 $H pane list
 $H pane rename <PANE_ID> "Build · Upcoming person-or-count"
-$H agent start upcoming --kind opencode --pane <PANE_ID>
+$H pane run <PANE_ID> opencode2
+$H agent wait <PANE_ID> --until idle --timeout 45000
+$H agent rename <PANE_ID> upcoming
 $H agent prompt upcoming "Begin THV-189"
 ```
 
-Skip `agent start` when the pane already has an agent. Prompt by pane id.
+Skip the launch when the pane already has a live `opencode2`. Prompt by pane id.
 
 Stagger first turns (~5 min). Provider outage: wait or recycle the same pane;
 do not rebuild a second session on the same tree.
