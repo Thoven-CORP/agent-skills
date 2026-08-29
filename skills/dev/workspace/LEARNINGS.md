@@ -5,6 +5,19 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-08-29 — two skills shared a subject but not a snapshot
+
+**What happened.** Workspace oriented from Linear and audience-level state while feature-ledger
+re-read a different set of files. Each invocation could be locally reasonable and globally
+contradictory.
+
+**Why.** The protocol lived inside long skill prose. There was no pure snapshot value or stable
+fingerprint for the main session to read.
+
+**What changed.** Both skills now consume one disclosed Project-snapshot protocol and the same
+deterministic engine. Workspace owns mechanical lifecycle work; feature-ledger owns semantic
+reconciliation. Neither invokes or writes through the other.
+
 ## 2026-08-23 — an ambiguous read guessed silently, and the intent missed
 
 **What happened.** Andres: he speaks prose and invokes the skill, and when the prose is unclear he

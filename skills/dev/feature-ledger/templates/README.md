@@ -5,13 +5,13 @@ template.
 
 ## Which level each template belongs to
 
-**The workflow lives at the Project.** The audience folder above it is a holding area
-(`WORKFLOW.md` §5).
+**The workflow and continuation state live at the Project.** Audience-level state remains a
+read-only compatibility input until each existing Project is migrated.
 
 | Template | Level | Copies |
 |---|---|---|
-| `CONTINUE_HERE.md` | **audience** | one |
-| `STATE.md` | **audience** | one |
+| `CONTINUE_HERE.md` | **project** | one per Project |
+| `STATE.md` | **project** | one per Project |
 | `PRD.md` | **project** | one per Project |
 | `architecture.md` · `api.md` · `database.md` | **project**, in `decisions/` | one set per Project |
 | `DESIGN_PROJECT.md` | **project** | one per Project, renamed for what it designs: `DESIGN_DASHBOARD.md` |
@@ -40,4 +40,5 @@ covering a whole audience could never reach 100%.
 | **Owning gate** | DESIGN.md | Where the final prototype is going to be. A path that opens (`app/dev/<feature>/page.tsx`). |
 | **REJECTED, and why** | DESIGN.md | The rejected alternative is what catches a decision quietly reintroducing a shape already thrown out. Delete superseded rows; keep this. |
 | **Surfaces covered** | DESIGN.md, cross-surface rules | A rule scoped wider than its pointers leaves a surface inside the scope with no authority at all. |
-| **Commit / Repo / Issue** | STATE.md | "What did you build?" used to take three greps. |
+| **Authority / mount / proof pointers** | STATE.md Coverage | File presence was repeatedly mistaken for a built, reachable surface. |
+| **Work unit / Commit / Repo / Issue / Paths / Receipt** | STATE.md | Preserves exact ownership and lets dirty-tree-safe commits be audited. |

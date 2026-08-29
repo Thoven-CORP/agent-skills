@@ -17,6 +17,22 @@ the corpus.
 
 ---
 
+## 2026-08-29 — pane ownership needed a value, not more routing prose
+
+**What happened.** Pane sessions independently reconstructed Project state from Linear, global
+state, audience handoffs, and feature files. The session gate, Map, and ledger could each be
+internally green while describing different Projects or different working trees.
+
+**Why.** Long entrypoint prose assigned overlapping ownership, and the architecture made the
+optional organizer pane the synchronization point. It offered no immutable evidence package for
+the main session to inspect.
+
+**What changed.** Workspace and feature-ledger now share a pure Project snapshot and stable
+fingerprint. Meta is optional. The main session owns synthesis and approved shared writes. Agents
+own bounded path sets; disjoint green units commit exact paths, same-file edits serialize through a
+named integration session, and red work returns an evidence receipt instead of an ambiguous dirty
+tree.
+
 ## 2026-08-23 — miners looked in Cursor; the sessions are in Claude
 
 **What happened.** The first pass of this audit mined Codex + `STATE.md` and
@@ -451,4 +467,3 @@ W20. **`writing-plans` invented path** is a second source against
 Not this list: script fail-closed (17), DialKit-the-widget (68),
 lefthook branch names (94), `andres-mode` (93). Those are code or a
 mode skill, not writing-for-agents.
-

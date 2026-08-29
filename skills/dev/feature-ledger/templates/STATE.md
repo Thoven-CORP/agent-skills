@@ -1,29 +1,39 @@
 <!-- SCAFFOLD — delete this line when the first real row lands -->
-# STATE — <feature>
+# STATE — <project>
 
-The commit ledger. **Status lives in Linear**: this file records what landed, never what is claimed.
+Project evidence only. **Status lives in Linear.** Coverage points to authorities; it never
+restates them.
 
 ## Done when
 
-Every commit on this feature's branches appears in the ledger with what it did, and every open
-imbalance from the last reconcile has been put to Andres.
+Every surface has one resolving authority pointer, every coherent work-unit commit is recorded,
+and every current imbalance is visible.
+
+## Coverage
+
+One row per surface. Pointers only.
+
+| Surface | Authority | Layer | Production mount | Proof |
+|---|---|---|---|---|
+| | `DESIGN_<PROJECT>.md#D1` | | | |
 
 ## Commit ledger
 
 Append as work lands.
 
-| Commit | Repo | Issue | What it did |
-|---|---|---|---|
-| | | THV- | |
+| Work unit | Commit | Repo | Issue | Paths | Evidence receipt |
+|---|---|---|---|---|---|
+| | | | THV- | | |
 
-## Imbalances
+## Unresolved imbalances
 
 From the last reconcile. Plain English: what the ledger claims, what the code does.
 
-| Entry | Ledger claims | Code does | Ruled? |
-|---|---|---|---|
-| | | | |
+| ID | Surface | Claim | Evidence | State | Owner / next action |
+|---|---|---|---|---|---|
+| I1 | | | | UNKNOWN | |
 
-## Log
+## Feature log
 
-Session reasoning, append-only: why a thing was done, and where the session stopped.
+Append-only decisions and resolutions. When an imbalance resolves, remove it from the current table
+and append exactly one `RESOLVED <id>:` entry here.

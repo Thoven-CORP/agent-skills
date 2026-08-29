@@ -1,0 +1,19 @@
+---
+name: session-memory
+description: Archived. Project continuation and logging moved to workspace and Project-local state.
+---
+
+# Session Memory — archived 2026-08-29
+
+This skill wrote session reasoning to the global `.workspace/STATE.md` Log and audience-level
+`CONTINUE_HERE.md`. That split ownership from the Linear Project and made multiple invocations
+reconstruct different current state.
+
+Live responsibilities now belong to `$workspace`, backed by the shared Project snapshot protocol:
+
+- Project-local `projects/<project>/CONTINUE_HERE.md`
+- Project-local `projects/<project>/STATE.md` → `## Feature log`
+- exact proposed writes, approved and applied serially
+- a fresh post-write snapshot fingerprint
+
+This file intentionally uses the `.archived` suffix so installers cannot discover it.

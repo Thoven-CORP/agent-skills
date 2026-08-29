@@ -6,32 +6,32 @@ const { bind, allowedWrite, normalize } = require('./scope.js');
 
 const THOVEN = path.join(os.homedir(), 'thoven');
 
-test('space label binds to one folder', () => {
-  const b = bind('~Dashboard');
-  assert.equal(b.folder, 'thoven2.0/teacher-2.0/projects/02-dashboard');
-  assert.equal(b.nowHeading, 'Teacher 2.0: Dashboard');
+test('space label binds to one Project folder', () => {
+  const b = bind('~Business');
+  assert.equal(b.folder, 'thoven2.0/teacher-2.0/projects/business');
+  assert.equal(b.nowHeading, 'Teacher 2.0: Business');
 });
 
 test('parked suffix still binds', () => {
-  assert.equal(bind('~Onboarding · parked').folder, 'thoven2.0/teacher-2.0/projects/00-onboarding');
+  assert.equal(bind('~Settings · parked').folder, 'thoven2.0/teacher-2.0/projects/settings');
 });
 
 test('unknown space is unbound', () => {
   assert.equal(bind('~Teacher2.0 · parked'), null);
 });
 
-test('Dashboard Meta may write its DESIGN file', () => {
+test('Business Meta may write Project-local STATE', () => {
   const r = allowedWrite(
-    '~Dashboard',
-    path.join(THOVEN, 'thoven2.0/teacher-2.0/projects/02-dashboard/DESIGN_DASHBOARD.md'),
+    '~Business',
+    path.join(THOVEN, 'thoven2.0/teacher-2.0/projects/business/STATE.md'),
   );
   assert.equal(r.ok, true);
 });
 
-test('Dashboard Meta may not write Onboarding', () => {
+test('Business Meta may not write Settings', () => {
   const r = allowedWrite(
-    '~Dashboard',
-    path.join(THOVEN, 'thoven2.0/teacher-2.0/projects/00-onboarding/DESIGN_ONBOARDING.md'),
+    '~Business',
+    path.join(THOVEN, 'thoven2.0/teacher-2.0/projects/settings/STATE.md'),
   );
   assert.equal(r.ok, false);
   assert.ok(r.reason.startsWith('outside-bind:'));

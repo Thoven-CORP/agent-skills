@@ -18,7 +18,7 @@ or the drawing. A path that opens.
 
 | `D#` | Surface | What to build from | Status | Owning gate | REJECTED, and why |
 |---|---|---|---|---|---|
-| D1 | | `design/drawings/*.html` · `app/dev/<feature>/page.tsx` screen N · component @ commit | | `app/dev/<feature>/page.tsx` | |
+| D1 | | `drawings/*.html` · `app/dev/<feature>/page.tsx` screen N · component @ commit | | `app/dev/<feature>/page.tsx` | |
 
 ## Rules that span surfaces
 
@@ -45,6 +45,6 @@ and its citation must resolve for each of them.
 
 | Level | Path | Format |
 |---|---|---|
-| L1–L3 | `design/drawings/*.html` | HTML + CSS, runnable |
+| L1–L3 | `drawings/*.html` | HTML + CSS, runnable |
 | L4 | `app/dev/<feature>/page.tsx` | running React, **the app repo** |
 | L5 | the shipped components | code |

@@ -1,0 +1,12 @@
+"use strict";
+
+const SNAPSHOT_STATES = Object.freeze({
+  VERIFIED: "VERIFIED",
+  UNKNOWN: "UNKNOWN",
+  STALE: "STALE",
+  CONTRADICTED: "CONTRADICTED",
+  BLOCKED: "BLOCKED",
+  ADVISORY: "ADVISORY",
+});
+
+module.exports = { SNAPSHOT_STATES };

@@ -1,18 +1,17 @@
 ---
 name: meta
 description: >-
-  Organizer desk for one Linear Project. Use when this pane is Meta, he confirms
-  a tab, or he asks where the feature sits. Name the space (the Project). Show
-  the fat card. Ledger checkboxes are not panes. Writes wait for go.
+  Optional organizer desk for one Linear Project. Use when the user explicitly names a Meta pane
+  or asks it to coordinate a Project. Reads the same Project snapshot as workspace; writes wait for go.
 ---
 
 # Meta
 
 This desk is the **organizer** for **one** Linear Project. Andres is the product person.
 
-You write orchestration surfaces only: STATE Now/Log (this space's `###` heading),
-CONTINUE_HERE, Linear comments, herdr names, pane prompts after go, ledger rows in
-**this** folder.
+Meta is optional. You write orchestration surfaces only: Project-local `STATE.md` feature log,
+`CONTINUE_HERE.md`, Linear comments, herdr names, pane prompts after go, and ledger rows in **this**
+Project folder.
 
 **Source:** `~/thoven/agent-skills/skills/dev/meta/`. Home copies are
 installs. Edit the repo, then copy out.
@@ -49,13 +48,16 @@ Report like you are talking to the product person.
 
 Do these in order.
 
-1. Bind. Space → folder + Now heading (`scope.js`). *"I am Meta for Teacher 2.0: Dashboard."*
-2. Show the **fat card**. Status, milestone, `Writes to:`.
-3. List open checkboxes from that file. These are not panes.
-4. Floor. Pane names = milestone + job. Andres creates tabs and panes.
-5. One next question. **Parallelize** only when items are independent. Cases: [parallelize.md](parallelize.md).
+1. Bind. Space → Project folder (`scope.js`). *"I am Meta for Teacher 2.0: Dashboard."*
+2. Read `../workspace/references/PROJECT_SNAPSHOT.md` and run the same `workspace/tools/map.js`
+   command for the bound Project. Personally read its fingerprint and findings.
+3. Show the **fat card**. Status, milestone, `Writes to:`.
+4. List open checkboxes from that file. These are not panes.
+5. Floor. Pane names = milestone + job. Andres creates tabs and panes.
+6. One next question. **Parallelize** only when items are independent. Cases: [parallelize.md](parallelize.md).
 
-**Done when:** the recap has those five beats, `scope.js` printed this space's folder, and the recap ends on one question.
+**Done when:** the recap has those six beats, names the snapshot fingerprint, `scope.js` printed this
+space's folder, and the recap ends on one question.
 
 ## Writes
 
@@ -82,18 +84,14 @@ Ghosts and signed-off panes: recap. Recycle after he says so.
 
 - `.workspace/WORKFLOW.md` §8
 - This Project's fat card and the file it `Writes to:`
-- `.workspace/STATE.md` Now + recent Log
+- This Project's `STATE.md` and `CONTINUE_HERE.md`
 
 **Done when:** Linear, the fat card, and this space's panes are in view.
 
-## Refresh this space's Now heading
+## Refresh this Project's continuation
 
-On session start, rewrite **only** `### {nowHeading}` under `## Now — in plain language`.
-Create the heading if it is missing. Leave every other `###` alone. Linear wins on
-disagreement.
-
-**Done when:** this space's `###` heading matches Linear, or a proposed heading is
-sitting in chat waiting for go.
+After go, update only the bound Project's `CONTINUE_HERE.md` and `STATE.md` feature log. Linear owns
+status. Re-run the Project snapshot after any write.
 
 ## Tab digest
 

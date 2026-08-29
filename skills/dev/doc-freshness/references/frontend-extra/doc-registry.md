@@ -86,7 +86,7 @@ These are loaded into Claude context regularly. Staleness here directly degrades
 - **Content verification**:
   - Every skill named in a routing table still exists (`ls .claude/skills/` + the session-injected skill list); flag rows for retired skills
   - Every agent in the Agents table still exists in `.claude/agents/`; flag stale model tiers
-  - **Work-state verbs**: each verb in the table still exists in `~/.claude/skills/workspace/SKILL.md` (fallback: `find ~/.claude ~/thoven -name SKILL.md -path '*/workspace/*'`); flag any deleted/renamed verb. Verify `~/thoven/.workspace/STATE.md` still exists.
+  - **Work-state routing**: the routing table points bare Project orientation, capture, close, and log to `workspace`; semantic reconciliation points to `feature-ledger`. Verify both installed skills and `~/thoven/.workspace/WORKFLOW.md` exist.
   - Disambiguation entries still name live skills (e.g. `skill-creator` was retired 2026-07-25 in favor of `superpowers:writing-skills`)
 - **Update strategy**: Update rows to match disk. This file is allowed to grow — it is loaded on demand, not every session.
 - **Key sections to check**: Disambiguating ambiguous phrases, Work-state verbs, Development / Animation / Session / Strategy / Meta tables, Agents table
@@ -113,12 +113,12 @@ These are loaded into Claude context regularly. Staleness here directly degrades
 
 These files live outside the FE repo. Check them when `standard` or `full` scope is requested.
 
-- **Paths**: `~/thoven/.workspace/STATE.md`, `~/thoven/.workspace/TODO.md`, `~/thoven/.workspace/TECH_DEBT.md`, `~/thoven/.workspace/FUTURE_IMPROVEMENTS.md`
+- **Paths**: `~/thoven/.workspace/WORKFLOW.md`, compatibility registers, and Project-local `projects/<project>/{STATE.md,CONTINUE_HERE.md}`
 - **Source of truth**: the live `workspace` skill verbs (`~/.claude/skills/workspace/SKILL.md`; fallback: `find ~/.claude ~/thoven -name SKILL.md -path '*/workspace/*'`) + the actual item files in `~/thoven/.workspace/`
 - **Content verification**:
-  - `STATE.md` — check that any file paths referenced in the Map header or preamble still exist on disk; check that verb/skill names referenced still exist. If STATE.md header says "rebuilt on DATE" but item registers have newer entries, flag as "Map stale, run workspace resume". Count correctness (open todos, open tech-debt tallies) is OUT OF SCOPE — run `workspace audit` for that.
+  - State docs — check referenced paths and skill names. Audience-level state is a compatibility input, not the current Project authority. Snapshot correctness is OUT OF SCOPE — run bare `workspace` for the Project.
   - `TODO.md` / `TECH_DEBT.md` / `FUTURE_IMPROVEMENTS.md` — check if items marked "open" reference file paths or branches that no longer exist on disk
-- **Update strategy**: These files are normally re-derived or maintained by the `workspace` skill. `docs-freshness` should ONLY flag staleness here — do NOT re-derive the Map; instruct the user to run `workspace resume` or `workspace audit` instead.
+- **Update strategy**: `doc-freshness` only flags staleness. Do not derive or apply Project state; instruct the user to run bare `workspace`.
 - **Key sections to check**: STATE.md header/preamble, item counts, any referenced file paths
 
 ---

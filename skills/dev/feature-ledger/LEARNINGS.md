@@ -5,6 +5,21 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-08-29 — audience continuation state hid Project ownership
+
+**What happened.** Several panes treated one audience-level `STATE.md` as their own continuation
+record. Concurrent work could not tell which Project owned a row, and semantic reconciliation
+started from a different world than workspace orientation.
+
+**Why.** Linear Projects were the real containers, but state and continuation were stored one level
+above them. Commit policy described what not to touch without positively assigning bounded work
+units and exact path sets.
+
+**What changed.** New Projects keep `STATE.md` and `CONTINUE_HERE.md` inside their Project folder.
+The shared snapshot records git fingerprints, disjoint work units may commit exact paths, same-file
+work serializes through a named integration session, and the main session owns synthesis and shared
+writes.
+
 ## 2026-08-28 — unused-code audits poisoned the next architecture because a test counted as a caller
 
 **What happened.** Parent wallet audit was wrong three times by trusting file presence (a “live

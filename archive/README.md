@@ -9,8 +9,9 @@ Retired Thoven-custom skills. **History, not an install source.**
 | `brainstorm` | `/grill-with-docs` then `/architect` |
 | `investigate` (generic) | `/investigate-thoven` or `/diagnosing-bugs` |
 | `dev` (GSD conductor) | retired. Session plan is `/writing-plans`. Slices are `/to-tickets`. `app/dev/` proto routes are unrelated |
+| `session-memory` | `/workspace` Project-local log and continuation |
 
-Do not move these folders back under `skills/dev/`. Do not rename `SKILL.md.archived` to `SKILL.md`. A merge from an old branch that restores `skills/dev/brainstorm/SKILL.md` (or `investigate` / `dev`) will make `npx skills add --skill '*'` install it again for everyone.
+Do not move these folders back under `skills/dev/`. Do not rename `SKILL.md.archived` to `SKILL.md`. A merge from an old branch that restores a retired live `SKILL.md` will make `npx skills add --skill '*'` install it again for everyone.
 
 `scripts/assert-retired-skills-not-installable.sh` fails the commit if that happens.
 

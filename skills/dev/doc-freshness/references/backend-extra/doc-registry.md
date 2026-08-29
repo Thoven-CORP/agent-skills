@@ -79,7 +79,7 @@ These are loaded into Claude context regularly. Staleness here directly degrades
 - **Content verification**:
   - Verify the skill list matches actual skills in `.claude/skills/` plus the session-injected list
   - Verify the agent list matches actual agents in `.claude/agents/`
-  - **Work-state verbs**: each verb still exists in `~/.claude/skills/workspace/SKILL.md` (fallback: `find ~/.claude ~/thoven -name SKILL.md -path '*/workspace/*'`); flag deleted/renamed verbs. Verify `~/thoven/.workspace/STATE.md` still exists.
+  - **Work-state routing**: bare Project orientation, capture, close, and log resolve to `workspace`; semantic reconciliation resolves to `feature-ledger`. Verify both installed skills and `~/thoven/.workspace/WORKFLOW.md` exist.
   - Graph node/edge counts still roughly match `index_status`
 - **Update strategy**: Update rows to match disk. This file is allowed to grow — it is loaded on demand, not every session.
 

@@ -48,9 +48,9 @@ Run detection across selected tiers. Read `references/doc-registry.md` for the c
    - CLAUDE.md: verify Docs table paths exist, bash commands match `package.json` scripts, three-section structure intact (skill/agent tables must NOT reappear here)
    - `.claude/docs/SKILL_AND_AGENT_ROUTING.md`: verify every skill/agent row still exists on disk
 
-   **Work-state docs (audit the docs *about* the system — never re-derive the Map; that's `workspace audit`/`resume`):**
-   - `.claude/docs/SKILL_AND_AGENT_ROUTING.md` `## Work-state verbs` section — flag stale if the verb table lists a `workspace` verb that no longer exists (e.g. the verb was deleted or renamed), or if it points at file paths (e.g. `~/thoven/.workspace/STATE.md`) that no longer exist on disk. Verify verbs against `~/.claude/skills/workspace/SKILL.md` (fallback: `find ~/.claude ~/thoven -name SKILL.md -path '*/workspace/*'`). CLAUDE.md's `The Repo` section carries only the one-line work-state summary — check its `~/thoven/.workspace` path too.
-   - Global store docs (`~/thoven/.workspace/STATE.md`, `~/thoven/.workspace/TODO.md`, `~/thoven/.workspace/TECH_DEBT.md`, `~/thoven/.workspace/FUTURE_IMPROVEMENTS.md`) — flag stale if the doc/Map header references file paths or skill/verb names that no longer exist on disk. If STATE.md header says "rebuilt on DATE" but item registers have newer entries, flag as "Map stale, run workspace resume". Count correctness (open todos, tech-debt tallies) is OUT OF SCOPE — run `workspace audit` for that.
+   **Work-state docs (audit the docs *about* the system — never derive a snapshot; that is bare `workspace`):**
+   - `.claude/docs/SKILL_AND_AGENT_ROUTING.md` work-state section — flag stale if Project orientation/lifecycle does not route to `workspace`, or semantic reconciliation does not route to `feature-ledger`. Verify the skills and `~/thoven/.workspace/WORKFLOW.md` exist.
+   - Workflow law and compatibility store docs (`~/thoven/.workspace/WORKFLOW.md`, `STATE.md`, `TODO.md`, `TECH_DEBT.md`, `FUTURE_IMPROVEMENTS.md`) — flag stale paths or skill names. Project `STATE.md` and `CONTINUE_HERE.md` live under `projects/<project>/`; audience-level copies are compatibility inputs. Snapshot correctness is OUT OF SCOPE — run bare `workspace` for that Project.
 
 3. **Semantic check** — read recent git log for the watched dirs and check if changes are doc-worthy:
    ```bash
@@ -106,7 +106,7 @@ For each approved doc:
 - Match the existing doc's formatting, heading style, and level of detail
 - Add new content near related existing content (don't append everything at the bottom)
 - Remove documented items that no longer exist in code
-- Update counts, table sizes, and summary numbers for code-tracked docs (e.g., "61 API modules" -> "63 API modules") — never recompute counts for the workspace global-store files (that's `workspace audit`)
+- Update counts, table sizes, and summary numbers for code-tracked docs (e.g., "61 API modules" -> "63 API modules") — never derive Project snapshot claims; that belongs to bare `workspace`
 - Never remove historical context or architectural decision records unless the decision was reversed
 - Use Edit tool for surgical updates — NEVER rewrite entire docs with Write tool
 - For CHANGELOG.md: voice polish only. NEVER delete, replace, or regenerate entries.
@@ -148,13 +148,13 @@ When this skill runs post-release, also:
 | Not checking CLAUDE.md after updating .claude/docs/ | CLAUDE.md references these docs — verify cross-references still hold |
 | Clobbering CHANGELOG entries | Voice polish only. Never delete, replace, or regenerate CHANGELOG content |
 
-## Boundary vs `workspace audit` / `resume`
+## Boundary vs the Project snapshot
 
 This skill audits **documentation about** the work-state system — it does NOT re-derive the Map.
 
 | Job | Tool |
 |-----|------|
-| Re-derive the State Map from live items + git | `workspace resume` or `workspace audit` |
+| Derive Project state from Linear, Project files, and git | bare `workspace` |
 | Check that docs *describing* the state system are current | **this skill** (`docs-freshness`) |
 
 Concretely: if the `## Work-state verbs` table in `.claude/docs/SKILL_AND_AGENT_ROUTING.md` lists a verb that was deleted from the `workspace` skill, `docs-freshness` flags it as stale. Fixing it means updating that table to match the current `workspace` skill verbs — not re-deriving the Map itself. For Map correctness, run the `workspace` skill.
