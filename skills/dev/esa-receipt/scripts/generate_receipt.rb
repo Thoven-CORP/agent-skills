@@ -91,7 +91,10 @@ def gather_enrichment(stu_cfg)
   klass      = enrollment&.teacher_class
 
   loads    = OdysseyWalletLoad.where(student_id: student.id).to_a
-  credits  = loads.sum(&:lessons_loaded)
+  # Lifetime sum across every load this student has ever had. On a repeat family that is NOT
+  # this order's credit count — set "credits_override" in the config to the credits this order
+  # funded (e.g. 5 under the ESA bonus-lesson model).
+  credits  = CFG["credits_override"] || loads.sum(&:lessons_loaded)
   duration = loads.map(&:duration_minutes).compact.uniq.first || 30
 
   req  = SimpleBookingRequest.where(student_id: student.id).order(:created_at).first
