@@ -18,18 +18,83 @@ perform semantic feature reconciliation.
    evidence states, and ownership rules are binding.
 2. Resolve the current Linear Project from the named issue, session context, or cwd. If those
    disagree, report `CONTRADICTED`; do not guess.
-3. Produce the shared snapshot:
+3. Fetch the Project's issues yourself, through the **Linear MCP connector**, then feed them to
+   `map.js`. `map.js` never reaches for a Linear API key on its own.
+
+   - Use `mcp__claude_ai_Linear__list_issues` (and `mcp__claude_ai_Linear__list_projects` if you
+     need Project rows). That connector is authorized.
+   - Do **not** use `mcp__plugin_linear_linear__*`. That connector is unauthorized and will fail.
+   - Write the response to a file in the shape below, then:
 
    ```bash
    node ~/.agents/skills/workspace/tools/map.js \
      --project '<Linear Project name>' \
-     --project-dir '<projects/<project>>'
+     --project-dir '<projects/<project>>' \
+     --linear-json /tmp/linear-<project>.json
    ```
 
-   `--linear-json <file>` and `--stdin` are deterministic adapters. `--feature` and `--family`
-   remain supported for the legacy tree views.
-4. Account for every `BLOCKED`, `CONTRADICTED`, and `UNKNOWN` finding. Missing Linear access is
-   `UNKNOWN`, never inferred from local prose.
+   `--stdin` takes the same JSON on standard input. With neither, the snapshot still renders — git,
+   Project folder, and Project `STATE.md` are all read — and the ticket ledger carries one
+   `ADVISORY linear-input` finding telling you to fetch through the MCP. `--linear-api` is an
+   opt-in escape hatch that uses `LINEAR_API_KEY` or `~/.linear-api-key`; that key is dead, so do
+   not reach for it. `--feature` and `--family` remain supported for the legacy tree views.
+
+   **The `--linear-json` shape.** One object with `issues` and optional `projects`. The
+   `mcp__claude_ai_Linear__list_issues` response drops in unchanged — save its `issues` array as-is.
+   The raw GraphQL envelope (`{"data": {"issues": {"nodes": [...]}}}`) is also accepted. Ask the
+   connector for these `fields` so nothing the snapshot needs is missing:
+
+   ```
+   ["title", "description", "status", "statusType", "project", "projectMilestone", "assignee", "updatedAt"]
+   ```
+
+   The canonical record, showing every field the snapshot reads:
+
+   ```json
+   {
+     "issues": [
+       {
+         "identifier": "THV-318",
+         "title": "Bind homework success to requested identity",
+         "description": "Why this exists.\nWrites to: projects/identity-access/decisions/api.md",
+         "updatedAt": "2026-08-30T18:04:11.000Z",
+         "state": { "type": "started", "name": "In Progress" },
+         "project": { "name": "Shared: Identity & Access" },
+         "projectMilestone": { "name": "Build" },
+         "assignee": { "name": "Andres Martinez" }
+       }
+     ],
+     "projects": [{ "name": "Shared: Identity & Access", "status": { "name": "In Progress" } }]
+   }
+   ```
+
+   Every field takes three spellings — GraphQL, MCP, or flat — so you never have to remap:
+
+   | Snapshot field | GraphQL node | MCP record | Flat |
+   |---|---|---|---|
+   | identifier | `identifier` | `id` | `identifier` |
+   | state name | `state.name` | `status` | `state` |
+   | state type | `state.type` | `statusType` | `stateType` |
+   | project | `project.name` | `project` | `project` |
+   | milestone | `projectMilestone.name` | `projectMilestone.name` | `milestone` |
+   | assignee | `assignee.name` | `assignee` | `assignee` |
+
+   Rules the parser enforces:
+
+   - `project` must equal `--project` (case-insensitive, exact string) or the issue is not in the
+     ledger.
+   - The state type is the lifecycle glyph and sort key: `triage` · `backlogged` · `unstarted` ·
+     `started` · `completed` · `canceled`. Omit it and the issue still lists, sorted last, with a
+     `·` glyph.
+   - The state *name* is what the session gate reads; it must be the Linear state name
+     (`In Progress`, `Ready`, …), not the type.
+   - `Writes to: <path>` is parsed out of `description` — first match, own line, verbatim. Linear
+     descriptions usually wrap the path in backticks, and the parsed value keeps them; strip before
+     using the string as a path.
+   - Milestone and assignee are both read by the session gate; missing either is `BLOCKED`.
+4. Account for every `BLOCKED`, `CONTRADICTED`, and `UNKNOWN` finding. Linear data that was never
+   supplied is `ADVISORY linear-input` — fetch it through the MCP connector and re-run. A Linear
+   fetch that was attempted and failed is `UNKNOWN`. Neither is ever inferred from local prose.
 5. For `orient` or bare invocation, print the snapshot unchanged: Project and fingerprint, ticket
    ledger including Done and Canceled history, mechanical findings, completion claim, and next
    issue or skill invocation.

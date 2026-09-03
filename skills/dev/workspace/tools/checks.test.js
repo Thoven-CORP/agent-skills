@@ -23,3 +23,11 @@ test("stage gate requires claimed routed work", () => {
   assert.equal(sessionGate({ identifier: "THV-1", state: "In Progress", assignee: "A", milestone: "Build", writesTo: "x" }).state, "VERIFIED");
   assert.equal(sessionGate({ identifier: "THV-1", state: "Todo" }).state, "BLOCKED");
 });
+
+test("a finished Project is complete, not unknown", () => {
+  // Two different meanings of "no active issue". Nothing filed is UNKNOWN; everything
+  // terminal is finished. Collapsing them left a completed Project unable to say so.
+  assert.equal(sessionGate(null, { hasTickets: true }).state, "VERIFIED");
+  assert.equal(sessionGate(null, { hasTickets: false }).state, "UNKNOWN");
+  assert.equal(sessionGate(null).state, "UNKNOWN");
+});

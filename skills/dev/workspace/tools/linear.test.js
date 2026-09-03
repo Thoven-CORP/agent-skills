@@ -12,6 +12,27 @@ test("keeps open, Done, and Canceled history", () => {
   assert.deepEqual(result.issues.map((issue) => issue.stateType), ["started", "completed", "canceled"]);
 });
 
+test("normalizes a verbatim Linear MCP record", () => {
+  const result = normalizeLinear({ issues: [{
+    id: "THV-318",
+    title: "Prove the intro-call identity handoff",
+    description: "Writes to: `projects/identity-access/decisions/api.md`",
+    status: "In Progress",
+    statusType: "started",
+    project: "Shared: Identity & Access",
+    projectMilestone: { id: "1da56880", name: "Parent 2.0: learner journey consolidation" },
+    assignee: "Andres Martinez",
+  }] });
+  const issue = result.issues[0];
+  assert.equal(issue.identifier, "THV-318");
+  assert.equal(issue.state, "In Progress");
+  assert.equal(issue.stateType, "started");
+  assert.equal(issue.project, "Shared: Identity & Access");
+  assert.equal(issue.milestone, "Parent 2.0: learner journey consolidation");
+  assert.equal(issue.assignee, "Andres Martinez");
+  assert.equal(issue.writesTo, "`projects/identity-access/decisions/api.md`");
+});
+
 test("extracts exact Writes to path", () => assert.equal(writesTo("Why\nWrites to: foo/bar.md\n"), "foo/bar.md"));
 
 test("missing Linear access is UNKNOWN", async () => {

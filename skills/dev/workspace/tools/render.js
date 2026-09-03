@@ -11,7 +11,9 @@ function renderSnapshot(snapshot) {
     "",
     "Ticket ledger:",
   ];
-  if (!snapshot.tickets.length) lines.push("  (none or Linear UNKNOWN)");
+  if (!snapshot.tickets.length) {
+    lines.push(snapshot.linearState === "ADVISORY" ? "  (no Linear data supplied — see findings)" : "  (none or Linear UNKNOWN)");
+  }
   for (const issue of snapshot.tickets) lines.push(`  ${GLYPH[issue.stateType] || "·"} ${issue.identifier}  ${short(issue.title)}  [${issue.state}]`);
   lines.push("", "Mechanical findings:");
   for (const item of snapshot.findings) lines.push(`  ${item.state}  ${item.code}: ${item.message}`);

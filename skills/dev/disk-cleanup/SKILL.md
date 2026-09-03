@@ -9,11 +9,47 @@ Scan macOS for space hogs and guide safe cleanup. Also checks CPU and memory whe
 
 ## Step 1: Scan disk
 
-Run the scanner script:
-
 ```bash
-bash ~/.claude/skills/disk-cleanup/scripts/scan.sh
+bash ~/.claude/skills/disk-cleanup/scripts/scan.sh          # what is big
+bash ~/.claude/skills/disk-cleanup/scripts/growth-audit.sh  # what is GROWING (7d/30d write volume)
+bash ~/.claude/skills/disk-cleanup/scripts/prune.sh         # dry-run the safe tier
 ```
+
+**Size is not the problem; growth is.** `scan.sh` finds big directories, most of which are
+self-limiting caches that regrow to the same size no matter how often you clear them.
+`growth-audit.sh` is what distinguishes a static 8G directory from a 3G one adding 1G a week.
+Run it whenever the user says the problem keeps coming back.
+
+`prune.sh --apply` executes the entire safe tier and reaps orphaned crashpad handlers.
+It is idempotent, skips any `.next/cache` whose dev server is live, and skips `~/.cache/uv`
+when a uv process is running. Prefer it over hand-rolled `rm` for everything it already covers;
+extend the script rather than running one-off deletions, so the next session inherits the fix.
+`TRANSCRIPT_DAYS` (default 30) bounds AI session-history retention; `TRANSCRIPT_DAYS=0` disables it.
+A weekly launchd job at `~/Library/LaunchAgents/co.thoven.disk-prune.plist` runs it Mondays 9am.
+
+### The safety contract (do not weaken this)
+
+`prune.sh` routes every deletion through one `guard()` function. A path is deleted only if it is
+absolute, under `$HOME`, at least two levels deep, free of `..`, not under any `memory/` directory,
+under a declared allowed root, and **if it sits inside a git work tree, gitignored according to
+`git check-ignore`**. That last rule is the actual guarantee that the script cannot touch source
+code, because tracked files and untracked-but-unignored files both fail it. Individual aged files
+additionally need an extension on `ALLOWED_FILE_EXT`; clearing a declared cache root wholesale
+skips that check, since the root itself is the proof of disposability.
+
+A guard failure aborts the run with exit 3 rather than skipping the one path, because a violation
+means the caller's assumptions are wrong. If a weekly run exits 3, read `prune.log` and fix the
+caller. **Do not relax the guard to make a run succeed.**
+
+Verify with `bash scripts/prune-test.sh`. It builds a throwaway `$HOME`, plants real source files,
+memory files and documents in every location the script deletes from, runs `prune.sh --apply`
+against it, and asserts what survived and what went. **Run it after any edit to `prune.sh`.**
+
+Why this exists: on 2026-09-01 an earlier version of the retention pass deleted
+`~/.claude/projects/-Users-andresmartinez/memory/` by matching every file older than the window
+and then removing the emptied directory. Seven memory files were lost. `~/.claude/projects` holds
+transcripts, memory files, and tool-result documents in the same tree, so **never delete by age
+alone in any directory an agent writes to. Match an explicit filename pattern.**
 
 ## Step 1b: Check CPU & memory (when reported, or always if convenient)
 
@@ -87,6 +123,25 @@ Run `df -h /` and show before/after comparison. If `df`'s free-space change does
 - Any file the user has open or recently modified
 
 ## Cleanup History
+
+### 2026-09-01 — the session that stopped re-diagnosing and built the lever. 11.8G → 19.6G free, load 10.38 → 3.91
+**Two root causes found, both now encoded in `scripts/prune.sh` instead of in this document.**
+
+**1. Three orphaned Cursor crashpad handlers, 2,208 accumulated CPU-hours.** PIDs from Aug 16/17/19, each pegged at ~140% CPU, running continuously for 15-18 days = roughly 4.2 of 10 cores burned nonstop. Launched from `/Volumes/Cursor Installer`, a DMG that had since been **unmounted** — the processes survived the volume vanishing, and Cursor itself was not running. This is a *recurrence* of the single-process version documented 2026-08-08, which was killed by hand and therefore came back and multiplied. Killing all three dropped the 5-min load average from 9.90 to 3.91. **Encoded:** `prune.sh` now has `reap_orphans()`, which kills any `chrome_crashpad_handler` whose own binary path no longer exists on disk. That test is unambiguous — a live app's handler always has a real binary — so it needs no confirmation and cannot false-positive on Chrome's or a running Cursor's handler.
+
+**2. Six AI coding tools accumulate ~12.4G of session transcripts and not one of them rotates.** `~/.codex` 8.2G (sessions 3.6G, `logs_2.sqlite` 615M, `thread_history_1.sqlite` 527M, packages 832M, plugins 391M), `~/.claude/projects` 2.1G, `~/.cursor/chats` 1.7G, `~/.local/share/{claude,cursor-agent,kilo,opencode}` 2.8G. **Nine prior cleanup sessions never touched any of it.** Every one of them pruned `.next/cache` and `~/Library/Caches`, which are self-limiting and regrow to the same size within days — that is exactly why the disk got worse every week no matter how much was reclaimed. **Encoded:** `prune.sh` enforces `TRANSCRIPT_DAYS` retention (30d, user's choice) across all four stores.
+
+**The measurement that mattered:** a 30d retention frees only 0.64G today, because almost none of the 12.4G is older than a month. The hypothesis "old transcripts are piling up" was wrong. The correct reading is that these stores are written at ~2-3G/week and the cap converts unbounded growth into a ~10-12G steady state. Built `scripts/growth-audit.sh` to measure 7d/30d write volume per directory, since size alone cannot tell a static hog from a growing one. **Run it before theorizing about recurrence.**
+
+**Also pruned:** `~/Library/Caches` ×3 passes (1.1G total, it regrew 0.56G within 20 minutes), `~/.cache/uv` + `~/.cache/puppeteer` (~1.1G, no uv process live), `.next/cache` in `frontend-parent-2.0` (2.8G — `frontend-teacher-2.0` skipped, dev server live in it), Wispr Flow backup (1.8G, byte-for-byte the same size as the live `flow.sqlite`; there is **no config knob** for it — `config.json` has no backup key and there is no launch agent, so the only durable fix is the weekly sweep now in `prune.sh`), `GoogleUpdater` staging (0.72G), stray npx `node_modules`. `brew cleanup --prune=all` yielded nothing again (Cellar 1.8G, lean for the 4th session running — **stop offering it**).
+
+**Declined by user:** the pnpm consolidation of 4.5G across `frontend` / `frontend-parent-2.0` / `frontend-teacher-2.0`. Now recommended and declined in **6 sessions**. Stop re-recommending it every time; raise it only when it is the difference between clearing a hard requirement and not.
+
+**Left alone:** `~/.local/share/kilo` (658M, untouched since 2026-06-09, looks abandoned but was never approved for deletion), `~/.codex` non-session data, Mail, Messages, Homebrew.
+
+**Structural lesson.** The prior nine entries kept re-deriving the same findings in prose and re-recommending the same fixes. Prose does not execute. When a finding recurs across sessions, put it in `prune.sh` and shorten this document.
+
+
 
 Log of what was actually pruned each session, so future runs know what's already been hit and what's structurally recurring.
 

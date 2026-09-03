@@ -16,14 +16,16 @@ function writesTo(description = "") {
   return description.match(/^Writes to:\s*(.+)$/mi)?.[1]?.trim() || null;
 }
 
+// Accepts three shapes: the GraphQL node (identifier/state{}), the Linear MCP record
+// (id/status/statusType), and a flat hand-built record.
 function normalizeIssue(issue) {
   return {
-    identifier: issue.identifier,
+    identifier: issue.identifier || issue.id,
     title: issue.title || "",
     description: issue.description || "",
     updatedAt: issue.updatedAt || null,
-    state: issue.state?.name || issue.state || "Unknown",
-    stateType: issue.state?.type || issue.stateType || "unknown",
+    state: issue.state?.name || issue.state || issue.status || "Unknown",
+    stateType: issue.state?.type || issue.stateType || issue.statusType || "unknown",
     project: issue.project?.name || issue.project || null,
     projectId: issue.project?.id || issue.projectId || null,
     milestone: issue.projectMilestone?.name || issue.milestone || null,
@@ -37,6 +39,17 @@ function normalizeLinear(input) {
   const issues = data.issues?.nodes || data.issues || [];
   const projects = data.projects?.nodes || data.projects || [];
   return { state: SNAPSHOT_STATES.VERIFIED, issues: issues.map(normalizeIssue), projects };
+}
+
+const MCP_FETCH_HINT = [
+  "No Linear data supplied.",
+  "Fetch the Project's issues with the Linear MCP connector (mcp__claude_ai_Linear__list_issues),",
+  "then re-run with --linear-json <file> or --stdin.",
+  "Do not use mcp__plugin_linear_linear__* — that connector is unauthorized.",
+].join(" ");
+
+function linearNotSupplied(reason = MCP_FETCH_HINT) {
+  return { state: SNAPSHOT_STATES.ADVISORY, reason, issues: [], projects: [] };
 }
 
 function apiKey() {
@@ -72,4 +85,4 @@ async function fetchLinear(key = apiKey()) {
   return normalizeLinear({ projects, issues: all });
 }
 
-module.exports = { QUERY, apiKey, fetchLinear, normalizeIssue, normalizeLinear, writesTo };
+module.exports = { MCP_FETCH_HINT, QUERY, apiKey, fetchLinear, linearNotSupplied, normalizeIssue, normalizeLinear, writesTo };

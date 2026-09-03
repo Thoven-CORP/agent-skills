@@ -4,8 +4,13 @@ const { SNAPSHOT_STATES: S } = require("./states.js");
 
 function finding(state, code, message, evidence = null) { return { state, code, message, evidence }; }
 
-function sessionGate(issue) {
-  if (!issue) return finding(S.UNKNOWN, "session-gate", "No matching Linear issue was found");
+function sessionGate(issue, { hasTickets = false } = {}) {
+  // No active issue has two very different meanings. A Project with no issues at all is
+  // UNKNOWN — nothing has been filed. A Project whose issues are all terminal is FINISHED,
+  // and reporting that as UNKNOWN made a completed Project unable to state it was complete.
+  if (!issue) return hasTickets
+    ? finding(S.VERIFIED, "session-gate", "every issue in this Project is complete")
+    : finding(S.UNKNOWN, "session-gate", "No matching Linear issue was found");
   if (!["In Progress", "Ready"].includes(issue.state)) return finding(S.BLOCKED, "session-gate", `${issue.identifier} is ${issue.state}`);
   if (!issue.assignee) return finding(S.BLOCKED, "session-gate", `${issue.identifier} has no assignee`);
   if (!issue.milestone) return finding(S.BLOCKED, "session-gate", `${issue.identifier} has no milestone`);
