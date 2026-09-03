@@ -99,10 +99,11 @@ If detection is ambiguous, the skill asks once.
 | `/investigate` (generic) | `/investigate-thoven` |
 | `/dev` (GSD conductor) | retired — `/writing-plans` + `/to-tickets`. `app/dev/` proto routes stay |
 | `codebase-memory` (`codebase-memory-mcp`) | `/graphify` + the `graphify` CLI (2026-08-21) |
+| `dialkit` | `/interface-craft` — it absorbed dialkit whole (2026-09-03) |
 
 `email-writing` is unchanged — that is outbound email in Andres's voice, not Rails mailers.
 
-Retired bodies live in [`archive/`](./archive/README.md) as `SKILL.md.archived`. The installer only discovers a file named `SKILL.md`, so `npx skills add --skill '*'` and `npx skills update` cannot install or refresh them. Do not put a `SKILL.md` back under `skills/dev/brainstorm`, `skills/dev/investigate`, `skills/dev/dev`, or `skills/dev/codebase-memory` — `scripts/assert-retired-skills-not-installable.sh` fails if a merge does that.
+Retired bodies live in [`archive/`](./archive/README.md) as `SKILL.md.archived`. The installer only discovers a file named `SKILL.md`, so `npx skills add --skill '*'` and `npx skills update` cannot install or refresh them. Do not put a `SKILL.md` back under `skills/dev/brainstorm`, `skills/dev/investigate`, `skills/dev/dev`, `skills/dev/codebase-memory`, or `skills/dev/dialkit` — `scripts/assert-retired-skills-not-installable.sh` fails if a merge does that.
 
 ## Layout
 

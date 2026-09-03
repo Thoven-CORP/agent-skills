@@ -10,6 +10,7 @@ must_not_exist=(
   "skills/dev/investigate/SKILL.md"
   "skills/dev/dev/SKILL.md"
   "skills/dev/codebase-memory/SKILL.md"
+  "skills/dev/dialkit/SKILL.md"
 )
 
 echo "assert-retired-skills-not-installable"
