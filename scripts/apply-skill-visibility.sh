@@ -38,7 +38,7 @@ auto_skills=(
   principle-test-behavior-not-implementation principle-type-system-discipline
 
   # Product verification and daily Thoven work
-  qa-flow control-cli control-ui find-skills preflight verify workspace
+  qa-flow control-cli control-ui find-skills preflight publish verify workspace
   feature-ledger investigate-thoven doc-freshness
 
   # Explicitly retained design and writing packages
