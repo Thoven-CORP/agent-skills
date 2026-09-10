@@ -16,11 +16,11 @@ Anyone at Thoven who uses an AI coding agent on our repos. You need:
 
 ```bash
 npx skills add Thoven-CORP/agent-skills -g -y \
-  -a claude-code -a cursor -a codex \
+  -a claude-code -a cursor \
   --skill '*'
 ```
 
-That copies skills into `~/.agents/skills/` and links them for each agent.
+That copies skills into the canonical `~/.agents/skills/` catalog and links them for Claude Code and Cursor. Codex discovers that canonical catalog directly; do **not** also target `-a codex`, which creates a second model-visible symlink catalog and can exhaust Codex's skills-context budget.
 
 Restart the agent (new Cursor chat / new `claude` session) so it picks them up.
 
@@ -43,10 +43,10 @@ than re-running blind — check any skill you just changed actually landed:
 ```bash
 grep -l "<a line you just added>" ~/.agents/skills/*/SKILL.md \
   ~/.claude/skills/*/SKILL.md ~/.cursor/skills/*/SKILL.md \
-  ~/.codex/skills/*/SKILL.md ~/.hermes/skills/*/SKILL.md
+  ~/.hermes/skills/*/SKILL.md
 ```
 
-Five hits means it worked, whatever the installer said.
+The canonical hit is what matters for Codex; agent-specific hits confirm the other requested adapters.
 
 ## Update after we change skills
 
@@ -57,6 +57,14 @@ whatever is on `main`.
 commit installs nothing and reports success.
 
 Do **not** run `npx skills remove --all` — that would also wipe third-party skills (GSAP, Neon, Matt Pocock, etc.).
+
+### Pstack composition
+
+Pstack stays third-party and installs from its own source. Thoven skills compose with it rather than copying it here:
+
+- `/poteto-mode` frames nontrivial work; `/how`, `/why`, `/teach`, and `/recall` supply a grounded mental model.
+- `/qa-flow` is Thoven's product-verification loop: it chooses realistic state, drives the real user path, and leaves criterion-level evidence.
+- `/create-verification-skill` and `/maintain-verification-skill` create and keep a product-specific control surface and Feature Map. When one exists, `/qa-flow` uses it rather than inventing one-off browser scripts.
 
 ## How to use them
 
