@@ -58,6 +58,24 @@ commit installs nothing and reports success.
 
 Do **not** run `npx skills remove --all` — that would also wipe third-party skills (GSAP, Neon, Matt Pocock, etc.).
 
+### Keep the model-visible catalog small
+
+After **any** `npx skills add` or update, run:
+
+```bash
+bash ~/thoven/agent-skills/scripts/apply-skill-visibility.sh
+```
+
+It preserves every installed skill. The Pstack suite, `/qa-flow`, daily Thoven workflows, retained Better/Interface/Transitions/Emil design skills, and the Matt Pocock skills used routinely stay automatically discoverable. The rest move to `~/.agents/skills-on-demand/`, outside Codex’s discovery root, so they cannot exhaust its skills-context budget.
+
+To use a parked package, activate it globally and start a new Codex session:
+
+```bash
+bash ~/thoven/agent-skills/scripts/apply-skill-visibility.sh activate sentry-ruby-sdk
+```
+
+It remains installed and source-managed. Park it again when finished with `deactivate sentry-ruby-sdk`, or run the normal `sync` command. This is a Codex limitation: the installed version indexes every folder under `~/.agents/skills` and ignores `disable-model-invocation` metadata.
+
 ### Pstack composition
 
 Pstack stays third-party and installs from its own source. Thoven skills compose with it rather than copying it here:
