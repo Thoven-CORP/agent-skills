@@ -64,6 +64,8 @@ It's a dry run: it asks the installed `skills` CLI which adapters it supports (t
 bash scripts/probe-skills-adapter.sh --apply
 ```
 
+**Devin's native paths** (confirmed against docs.devin.ai, verified on a cloud session): Devin globally reads both `~/.config/devin/skills/` and `~/.agents/skills/` — so `-a devin` populates a natively-read catalog directly, and `-a universal` (or any install that writes canonical `~/.agents/skills/`) also works without extra adapters. Per-repo, Devin scans `.devin/skills/`, `.agents/skills/` (recommended), `.github/skills/`, `.claude/skills/`, `.cognition/skills/`, and `.windsurf/skills/` — a committed `.devin/skills/` or `.agents/skills/` needs no `npx skills` at all.
+
 ## Update after we change skills
 
 Re-run the same install command — **with the `-a` flags**. It overwrites the global copies with
