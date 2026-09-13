@@ -48,6 +48,22 @@ grep -l "<a line you just added>" ~/.agents/skills/*/SKILL.md \
 
 The canonical hit is what matters for Codex; agent-specific hits confirm the other requested adapters.
 
+### Detecting the right adapter (dry run)
+
+On a new machine — especially a Devin cloud box — don't guess the `-a` flags. Run:
+
+```bash
+bash scripts/probe-skills-adapter.sh
+```
+
+It's a dry run: it asks the installed `skills` CLI which adapters it supports (the `devin` adapter is not documented here, so the script discovers it rather than assuming it), inspects which catalog dirs exist (`~/.agents/skills/`, `~/.devin/skills/`, `~/.config/devin/skills/`, `~/.claude/skills/`, …), and prints the recommended install command for that machine. Nothing is installed and the global catalog is not touched.
+
+`--apply` performs the recommended install, then runs `apply-skill-visibility.sh sync`, then verifies a known skill actually landed on disk:
+
+```bash
+bash scripts/probe-skills-adapter.sh --apply
+```
+
 ## Update after we change skills
 
 Re-run the same install command — **with the `-a` flags**. It overwrites the global copies with
