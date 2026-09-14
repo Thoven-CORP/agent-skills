@@ -23,7 +23,7 @@ TaskCreate for each:
 - [ ] Step 5.5: Run test suite
 - [ ] Step 5.6: Verify contract-manifest freshness
 - [ ] Step 6: Create publish commit
-- [ ] Step 6.5: Update Notion Dev Tracker cards
+- [ ] Step 6.5: Linear ticket cross-check (release-cited THV IDs exist)
 - [ ] Step 6.75: Sentry observability gate
 - [ ] Step 6.9: Pending post-publish actions (stage:awaiting-publish)
 - [ ] Step 7: Replit deploy checklist
@@ -465,38 +465,22 @@ Mark task complete: `TaskUpdate: Step 6 → completed`
 
 ---
 
-## Step 6.5: Update Notion Dev Tracker Cards (MANDATORY)
+## Step 6.5: Linear Ticket Cross-Check (MANDATORY)
 
-After the publish commit is created and pushed, move active Dev Tracker cards to "Published":
+Linear (workspace `thoven`, team `THV`) is the board — Notion is no longer a source of truth for features or code state. Before the publish commit, confirm every ticket ID this release cites actually exists in Linear, so the changelog never points at a ticket that doesn't exist.
 
 ### Process
 
-1. **Find active MANIFEST files** with Notion Card IDs:
+1. **Collect ticket IDs** — grep this release's changelog section and the unpublished commit messages for `THV-\d+` references:
 ```bash
-find docs/ -path "*/.dev/MANIFEST.md" -exec grep -l "Card ID:" {} \;
+git log <last_published_hash>..HEAD --format="%s %b" | grep -oE 'THV-[0-9]+' | sort -u
 ```
 
-2. **Extract Card IDs** from each MANIFEST that has a populated Card ID (not empty/placeholder).
+2. **Verify each ID exists in Linear** via the Linear MCP (`mcp__linear` tools) or `linear` CLI — read-only. Report each as exists ✅ / not found ⚠️.
 
-3. **Update each card** in Notion:
-```
-Tool: mcp__plugin_Notion_notion__notion-update-page
-Page ID: [card ID from MANIFEST]
-Properties:
-  - Status: Published
-  - Last Updated: [today's date, ISO format]
-```
+3. **Warn, don't block.** A missing or misspelled ID doesn't stop the publish — surface it so the changelog entry can be corrected or the bogus reference removed.
 
-4. **Display** for each card updated:
-```
-📋 Notion: Moved — "[Feature Name]" → Published
-```
-
-### If no MANIFEST files or no Card IDs found
-
-Skip this step silently — not all publishes involve tracked features.
-
-**Error handling:** If Notion MCP tools are unavailable or any update fails, warn but do NOT block the publish workflow. Log the failure and continue to Step 7. The publish commit is the source of truth; Notion is a read-only reflection.
+**Never write to Linear here.** Issue state, comments, and Done/Ready belong to the session that owns each ticket — the publish commits code, it does not move the board. If an issue should reflect that its work shipped, say so in the Step 7 reminder and let the owner (or Andres) move it.
 
 Mark task complete: `TaskUpdate: Step 6.5 → completed`
 
@@ -593,7 +577,7 @@ Mark task complete: `TaskUpdate: Step 7 → completed`
 | 5 | Update CHANGELOG.md | Yes |
 | 5.6 | Verify contract-manifest freshness | Yes |
 | 6 | Create publish commit | Yes |
-| 6.5 | Update Notion Dev Tracker cards | Yes |
+| 6.5 | Linear ticket cross-check — every cited THV ID exists (read-only) | Yes |
 | 6.75 | Sentry observability gate (DSN + release + FE maps) | Reminder — surface missing secrets |
 | 6.9 | Pending post-publish actions (`docs/deployment/PUBLISH_REMINDERS.md`) | Reminder — surface steps verbatim |
 | 7 | Remind to deploy | Yes |
@@ -611,7 +595,7 @@ Mark task complete: `TaskUpdate: Step 7 → completed`
 8. ✅ Use `git add -A` (never selective staging) — and keep `.gitignore` current so it stays safe
 9. ✅ Verify contract-manifest freshness before the publish commit (Step 5.6)
 10. ✅ Include "Publication Status: Published" in commit
-11. ✅ Update Notion Dev Tracker cards after commit
+11. ✅ Cross-check release-cited THV ticket IDs exist in Linear (read-only — never write board state from a publish)
 12. ✅ Remind about Replit UI deployment
 
 **YOU CANNOT:**
