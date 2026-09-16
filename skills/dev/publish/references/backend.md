@@ -24,7 +24,6 @@ TaskCreate for each:
 - [ ] Step 5.6: Verify contract-manifest freshness
 - [ ] Step 6: Create publish commit
 - [ ] Step 6.5: Linear ticket cross-check (release-cited THV IDs exist)
-- [ ] Step 6.75: Sentry observability gate
 - [ ] Step 6.9: Pending post-publish actions (stage:awaiting-publish)
 - [ ] Step 7: Replit deploy checklist
 ```
@@ -486,22 +485,6 @@ Mark task complete: `TaskUpdate: Step 6.5 → completed`
 
 ---
 
-## Step 6.75: Sentry Observability Gate (MANDATORY reminder)
-
-Before telling Andres to click Publish, verify observability will not go dark:
-
-1. **Backend DSN** — Replit production secrets include `SENTRY_DSN` (org `thoven-gy`, project `ruby-rails`). If missing, Sentry never initializes.
-2. **Backend release** — Prefer `SENTRY_RELEASE=<git sha>` on the deploy container (or rely on boot-time `git rev-parse`). Main CI `sentry_release` job finalizes the release when `SENTRY_AUTH_TOKEN` is set in GitHub secrets.
-3. **Frontend DSN** — FE Replit/prod secrets include `NEXT_PUBLIC_SENTRY_DSN` for project `javascript-nextjs` (create the project in Sentry if absent). Without it, FE capture is a production no-op.
-4. **Frontend source maps** — `SENTRY_AUTH_TOKEN` + `SENTRY_ORG=thoven-gy` + `SENTRY_PROJECT=javascript-nextjs` on FE CI/build so `withSentryConfig` uploads maps.
-5. **Smoke** — After publish, confirm a known error path (or Sentry MCP `search_issues`) shows a fresh event with the expected release.
-
-Output a short checklist in the publish reminder. Do NOT block Publish if secrets are known-missing — surface them as **BLOCKERS TO FIX NEXT** so they are not silent.
-
-Mark task complete: `TaskUpdate: Step 6.75 → completed`
-
----
-
 ## Step 6.9: Pending Post-Publish Actions (MANDATORY)
 
 Some work is finished in code but needs a manual step the moment it goes live —
@@ -540,8 +523,6 @@ Remember:
 - The Replit UI "Publish" button snapshots current files and builds a new container
 - Production will run: db:migrate → puma start (with Solid Queue plugin)
 - Verify at https://thoven.co/health after publishing
-- Sentry (Step 6.75): confirm BE `SENTRY_DSN` + FE `NEXT_PUBLIC_SENTRY_DSN` are set;
-  after deploy, spot-check Issues for the new release SHA
 ```
 
 Mark task complete: `TaskUpdate: Step 7 → completed`
@@ -578,7 +559,6 @@ Mark task complete: `TaskUpdate: Step 7 → completed`
 | 5.6 | Verify contract-manifest freshness | Yes |
 | 6 | Create publish commit | Yes |
 | 6.5 | Linear ticket cross-check — every cited THV ID exists (read-only) | Yes |
-| 6.75 | Sentry observability gate (DSN + release + FE maps) | Reminder — surface missing secrets |
 | 6.9 | Pending post-publish actions (`docs/deployment/PUBLISH_REMINDERS.md`) | Reminder — surface steps verbatim |
 | 7 | Remind to deploy | Yes |
 

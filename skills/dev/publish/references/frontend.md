@@ -386,26 +386,11 @@ session — not this run), delete that item from the doc. Don't let
 confirmed-done items linger; the doc's value depends on staying short and
 current.
 
-### Sentry Observability Gate (Publish only)
+### Sentry
 
-Before telling Andres to click Publish, verify FE error tracking will not go dark
-in production. The frontend now ships real `@sentry/nextjs` (not the old no-op
-shim), so a missing DSN silently drops all production errors.
-
-1. **Frontend DSN** — Replit **production** secrets (Deployments tab, not
-   `.env.local`) must include `NEXT_PUBLIC_SENTRY_DSN` for project
-   `javascript-nextjs` (org `thoven-gy`; create the Sentry project if it does not
-   exist yet). Without it, FE capture is a production no-op.
-2. **Source maps** — for readable stack traces, the FE build needs
-   `SENTRY_AUTH_TOKEN` + `SENTRY_ORG=thoven-gy` + `SENTRY_PROJECT=javascript-nextjs`
-   so `withSentryConfig` uploads maps. Absent token → build still succeeds, upload
-   is skipped (traces stay minified).
-3. **Post-deploy smoke** — after Publish, confirm a fresh event appears for the
-   new release SHA (Sentry Issues, or Sentry MCP `search_issues`).
-
-Do NOT hard-block Publish if these are known-missing — surface them as
-**BLOCKERS TO FIX NEXT** in the reminder so they are not silent. (Backend has the
-mirror of this gate as publish Step 6.75.)
+`NEXT_PUBLIC_SENTRY_DSN` is set in Replit production (Andres confirmed this on 2026-09-16).
+**Do not ask Andres about Sentry secrets on a publish.** Bring it up only with
+evidence: no frontend events for the new release SHA after a deploy.
 
 ### Replit Deployment Context
 
