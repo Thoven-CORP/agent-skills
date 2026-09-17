@@ -45,6 +45,7 @@ YOU CANNOT SKIP THE CHECKLIST. CREATE IT NOW.
 - ❌ NEVER create a publish commit without `Publication Status: Published`
 - ❌ NEVER tell the user to pull into Replit after a staging commit — that's a separate decision
 - ❌ NEVER call GitHub a "backup" — it is the source of truth
+- ❌ NEVER `gh workflow run` Parent P1 quality or Pre-publish validation, and do not wait on them. Those are Monday advisory nets. Required remote check is the job named `CI`. A successful `git push origin main` means landed on GitHub, not `CI` green, not Replit deployed.
 
 ### ALWAYS Do This:
 - ✅ ALWAYS create the TaskCreate checklist before any other action
@@ -300,7 +301,7 @@ EOF
 ### After STAGING
 
 1. `git push origin main`
-2. Remind: "Pushed to GitHub."
+2. Remind: "Landed on GitHub. That is not job `CI` green and not deployed."
 3. **Do NOT mention Replit** — pulling into Replit is a separate decision.
 
 ### After TESTING
@@ -322,10 +323,12 @@ EOF
 
 ### Post-Publish Verification (MANDATORY — the `Published` stamp depends on it)
 
-**A release is not published until production serves it.** Everything before the
-Publish click — commit, tag, push, green CI — proves the release was *prepared*,
-not deployed. Replit Publish snapshots the **workspace**, so a workspace behind
-`origin/main` silently republishes the previous build.
+**A release is not published until production serves it.** Three different
+moments: landed on GitHub (`git push`), job `CI` green on that SHA, Replit
+deployed. Push success is only the first. P7 bypass can land a red SHA.
+Do not treat push as green `CI`. Do not dispatch or wait on Parent P1 quality
+or Pre-publish validation. Replit Publish snapshots the **workspace**, so a
+workspace behind `origin/main` silently republishes the previous build.
 
 **This has already happened.** v2.21.0 was committed, tagged, pushed, CI-green and
 stamped `Published 2026-07-27`. The Publish click never happened. Production served
@@ -465,6 +468,7 @@ After reset, verify the workspace matches what you're publishing: `git rev-parse
 - NEVER skip the MANDATORY checklist — every invocation starts with TaskCreate
 - NEVER mention Replit after a staging-only commit
 - NEVER call GitHub a "backup" — it is the source of truth for code
+- NEVER `gh workflow run` Parent P1 quality or Pre-publish validation, and do not wait on them. Landed on GitHub is not job `CI` green is not Replit deployed.
 - NEVER use freeform commit messages — ALL commits must use a Conventional Commits prefix (`feat:`, `fix:`, `docs:`, etc.)
 - ALWAYS include `Co-Authored-By: Claude <noreply@anthropic.com>`
 - ALWAYS verify git status after commit

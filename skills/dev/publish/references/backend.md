@@ -452,13 +452,13 @@ EOF
 )"
 ```
 
-After commit succeeds, push to GitHub for backup:
+After commit succeeds, push to GitHub:
 
 ```bash
 git push origin main
 ```
 
-**This does NOT deploy** — it only backs up the commit to GitHub. Deployment happens via Replit UI.
+**This does NOT deploy.** The push lands on GitHub and starts the required job `CI`. Replit UI still deploys. Do not treat push success as `CI` green. Do not `gh workflow run` Parent P1 quality or Pre-publish validation, and do not wait on them.
 
 Mark task complete: `TaskUpdate: Step 6 → completed`
 
@@ -519,7 +519,7 @@ Output this reminder:
 ⚠️  NEXT STEP: Click "Publish" in the Replit UI to deploy.
 
 Remember:
-- git push does NOT deploy — it only backs up to GitHub
+- git push lands on GitHub and starts required `CI`; it does not deploy
 - The Replit UI "Publish" button snapshots current files and builds a new container
 - Production will run: db:migrate → puma start (with Solid Queue plugin)
 - Verify at https://thoven.co/health after publishing
@@ -588,3 +588,5 @@ Mark task complete: `TaskUpdate: Step 7 → completed`
 - ❌ Create commit without user confirming changelog
 - ❌ Use selective git staging
 - ❌ Tell user "it's deployed" — only Replit UI deploys
+- ❌ Treat `git push origin main` as green `CI` or as a deploy
+- ❌ `gh workflow run` Parent P1 quality or Pre-publish validation, or wait on them
