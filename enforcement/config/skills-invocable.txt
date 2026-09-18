@@ -1,0 +1,24 @@
+# Skills the model may invoke on its own, one name per line.
+#
+# Everything not listed here and not named by a router skill (poteto-mode)
+# stays blocked. That is deliberate: each model-invocable skill's description
+# sits in context every turn. All 344 unblocked costs ~34,800 tokens. This list
+# plus poteto-mode's routes costs ~8,500.
+#
+# Add a name, start a new session, and it is live. Removing a name does not
+# re-block it; do that by hand or say so and it can be made two-way.
+
+verify-this
+graphify
+qa-flow
+thoven-designer
+writing-for-agents
+technical-writing
+review-animations
+how
+why
+swarm
+architect
+pick-ui-library
+prototype
+andres-dev-evaluation

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# On a prompt that names a THV ticket and asks for a build, injects the framing that otherwise arrives at turn 40.
+set -o pipefail
+
+payload="$(cat)"
+cwd="$(jq -r '.cwd // empty' <<<"$payload")"
+case "$cwd" in
+  "$HOME"/thoven/*|"$HOME"/.herdr/worktrees/*) ;;
+  *) exit 0 ;;
+esac
+
+prompt="$(jq -r '.prompt // .user_input // empty' <<<"$payload")"
+[ -n "$prompt" ] || exit 0
+
+ticket="$(grep -oiE 'THV-[0-9]+' <<<"$prompt" | head -1)"
+[ -n "$ticket" ] || exit 0
+
+grep -qiE '\b(build|implement|add|fix|ship|finish|wire|make|create|start|continue|do)\b' <<<"$prompt" || exit 0
+
+session_id="$(jq -r '.session_id // empty' <<<"$payload")"
+state="/tmp/claude-thoven/${session_id:-unknown}"
+mkdir -p "$state"
+[ -f "$state/framed" ] && exit 0
+touch "$state/framed"
+
+jq -n --arg t "$ticket" '{
+  hookSpecificOutput: {
+    hookEventName: "UserPromptSubmit",
+    additionalContext: ("Before the first edit for " + $t + ": read the ticket in full from Linear, including its comments. State in one line what a reviewer will run to see this is done. Resolve anything ambiguous with AskUserQuestion now rather than mid-build. If a design already exists for this surface, open it and build against it.")
+  }
+}'

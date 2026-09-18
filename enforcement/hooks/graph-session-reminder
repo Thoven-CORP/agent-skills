@@ -1,0 +1,27 @@
+#!/bin/bash
+# SessionStart: say something only when the code graph needs rebuilding.
+#
+# Until 2026-09-18 this printed a three-part Code Discovery Protocol on every
+# session start. Part 1 listed the graphify commands, which thoven-graph-first
+# now delivers at the moment of a symbol search. Part 2 described how to use
+# Grep, Glob and Read, which is default behaviour and changed nothing.
+#
+# What is left is the part no one can guess by looking: whether this repo's
+# graph is behind its working tree, and what to run about it. Silent when the
+# graph is fresh.
+STALE_DAYS="${GRAPH_STALE_DAYS:-7}"
+
+payload="$(cat)"
+cwd="$(printf '%s' "$payload" | jq -r '.cwd // empty' 2>/dev/null)"
+[ -n "$cwd" ] || cwd="$PWD"
+
+root="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null)" || exit 0
+graph="$root/graphify-out/graph.json"
+[ -f "$graph" ] || exit 0
+
+built=$(date -r "$graph" +%s 2>/dev/null) || exit 0
+head=$(git -C "$root" log -1 --format=%ct 2>/dev/null || echo "$built")
+days=$(( (head - built) / 86400 ))
+[ "$days" -ge "$STALE_DAYS" ] || exit 0
+
+printf 'This repo has a code graph at graphify-out/, and it is %s days behind the last commit. Rebuild it with `graphify update .` before trusting it for callers, impact or data flow.\n' "$days"

@@ -1,0 +1,187 @@
+#!/usr/bin/env bash
+# Blocks vitest --exclude, git clean/reset --hard, and stash/checkout/restore that could discard other sessions' work.
+set -o pipefail
+
+payload="$(cat)"
+cwd="$(jq -r '.cwd // empty' <<<"$payload")"
+session_id="$(jq -r '.session_id // empty' <<<"$payload")"
+
+case "$cwd" in
+  "$HOME"/thoven/*|"$HOME"/.herdr/worktrees/*) ;;
+  *) exit 0 ;;
+esac
+
+state="/tmp/claude-thoven/${session_id:-unknown}"
+mkdir -p "$state"
+[ -f "$state/started" ] || touch "$state/started"
+edited_file="$state/edited"
+
+command="$(jq -r '.tool_input.command // empty' <<<"$payload")"
+[ -n "$command" ] || exit 0
+
+deny() {
+  local reason="$1"
+  jq -n --arg reason "$reason" '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$reason}}'
+  exit 0
+}
+
+# extract the inner text of every top-level $( ... ) in a string
+extract_parens() {
+  local s="$1" i=0 len=${#s} depth j start
+  while [ "$i" -lt "$len" ]; do
+    if [ "${s:$i:2}" = '$(' ]; then
+      depth=1
+      j=$((i + 2))
+      start=$j
+      while [ "$j" -lt "$len" ] && [ "$depth" -gt 0 ]; do
+        c="${s:$j:1}"
+        [ "$c" = "(" ] && depth=$((depth + 1))
+        [ "$c" = ")" ] && depth=$((depth - 1))
+        j=$((j + 1))
+      done
+      printf '%s\n' "${s:$start:$((j - start - 1))}"
+      i=$j
+    else
+      i=$((i + 1))
+    fi
+  done
+}
+
+# split a string on &&, ||, ;, |, newline (top-level, no quote-awareness)
+split_subcommands() {
+  local s="$1"
+  s="${s//&&/$'\n'}"
+  s="${s//||/$'\n'}"
+  s="${s//;/$'\n'}"
+  s="${s//|/$'\n'}"
+  printf '%s\n' "$s"
+}
+
+resolve_path() {
+  local p="$1"
+  case "$p" in
+    /*) printf '%s\n' "$p" ;;
+    *) printf '%s\n' "$cwd/$p" ;;
+  esac
+}
+
+paths_all_edited() {
+  local paths=("$@")
+  [ "${#paths[@]}" -gt 0 ] || return 1
+  [ -f "$edited_file" ] || return 1
+  local p abs
+  for p in "${paths[@]}"; do
+    abs="$(resolve_path "$p")"
+    grep -qxF "$abs" "$edited_file" || return 1
+  done
+  return 0
+}
+
+# gather every subcommand, expanding $( ... ) recursively
+declare -a queue=("$command")
+declare -a subcommands=()
+while [ "${#queue[@]}" -gt 0 ]; do
+  cur="${queue[0]}"
+  queue=("${queue[@]:1}")
+  while IFS= read -r piece; do
+    [ -n "$piece" ] && queue+=("$piece")
+  done < <(extract_parens "$cur")
+  while IFS= read -r sub; do
+    sub="$(printf '%s' "$sub" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+    [ -n "$sub" ] && subcommands+=("$sub")
+  done < <(split_subcommands "$cur")
+done
+
+for sub in "${subcommands[@]}"; do
+  # Matched at command position, so prose naming the flag stays allowed. The
+  # substring version denied this repo's own README on 2026-09-18, and denied
+  # the edit that fixed it, which is how it got found.
+  read -r -a vwords <<<"$sub"
+  vrunner=""
+  for vw in "${vwords[@]}"; do
+    case "$vw" in
+      vitest|*/vitest) vrunner="$vw"; break ;;
+      npx|pnpm|yarn|bun|npm|run|exec|dlx) continue ;;
+      -*) continue ;;
+      *) break ;;
+    esac
+  done
+  if [ -n "$vrunner" ] && [[ " ${vwords[*]} " == *" --exclude "* ]]; then
+    deny "That flag replaces the config's exclude array and reports failures that do not exist. Run the failing files by path instead."
+  fi
+
+  read -r -a words <<<"$sub"
+  w0="${words[0]:-}"
+  w1="${words[1]:-}"
+  w2="${words[2]:-}"
+
+  # Matched at command position, so a doc or script that merely names these stays allowed.
+  if [ "$w0" = "git" ] && { [ "$w1" = "clean" ] || { [ "$w1" = "reset" ] && [[ " ${words[*]} " == *" --hard "* ]]; }; }; then
+    deny "This tree is shared with other sessions. That command discards work you did not write. Undo your own files by path instead."
+  fi
+
+  if [ "$w0" = "git" ] && [ "$w1" = "stash" ]; then
+    case "$w2" in
+      list|pop|apply|show|drop|clear|branch) : ;;
+      *)
+        rest=("${words[@]:2}")
+        [ "$w2" = "push" ] || [ "$w2" = "save" ] && rest=("${words[@]:3}")
+        paths=()
+        seen_dashdash=0
+        for a in "${rest[@]}"; do
+          if [ "$seen_dashdash" -eq 1 ]; then
+            paths+=("$a")
+          elif [ "$a" = "--" ]; then
+            seen_dashdash=1
+          fi
+        done
+        if [ "$seen_dashdash" -eq 0 ]; then
+          for a in "${rest[@]}"; do
+            [[ "$a" == -* ]] || paths+=("$a")
+          done
+        fi
+        if ! paths_all_edited "${paths[@]}"; then
+          deny "git stash with no paths, or with a path you did not edit this session, takes other sessions' work with it. Stash only your files: git stash push -- <paths you edited>."
+        fi
+        ;;
+    esac
+  fi
+
+  if [ "$w0" = "git" ] && [ "$w1" = "checkout" ]; then
+    if [[ " ${words[*]} " == *" -- "* ]]; then
+      paths=()
+      seen_dashdash=0
+      for a in "${words[@]:2}"; do
+        if [ "$seen_dashdash" -eq 1 ]; then
+          paths+=("$a")
+        elif [ "$a" = "--" ]; then
+          seen_dashdash=1
+        fi
+      done
+      if ! paths_all_edited "${paths[@]}"; then
+        deny "git checkout -- with no paths, or with a path you did not edit this session, takes other sessions' work with it. Undo only your files: git checkout -- <paths you edited>."
+      fi
+    fi
+  fi
+
+  if [ "$w0" = "git" ] && [ "$w1" = "restore" ]; then
+    if [[ "$sub" != *"--staged"* ]]; then
+      paths=()
+      seen_dashdash=0
+      for a in "${words[@]:2}"; do
+        if [ "$seen_dashdash" -eq 1 ]; then
+          paths+=("$a")
+        elif [ "$a" = "--" ]; then
+          seen_dashdash=1
+        elif [[ "$a" != -* ]]; then
+          paths+=("$a")
+        fi
+      done
+      if ! paths_all_edited "${paths[@]}"; then
+        deny "git restore with no paths, or with a path you did not edit this session, takes other sessions' work with it. Undo only your files: git restore <paths you edited>."
+      fi
+    fi
+  fi
+done
+
+exit 0

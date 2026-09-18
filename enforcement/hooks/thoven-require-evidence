@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# Asks once, on a claimed-done code session, what check ran and what it returned.
+#
+# It used to demand an artifact under test-results/. That is what made it
+# expensive: `tsc --noEmit` and `next lint` finish in seconds and write no file,
+# so a blocked model had to escalate to something that does. On 2026-09-18 that
+# meant dev servers on three ports, Playwright on a real Chrome channel, 718
+# vitest tests, and an rspec that hung for 27 minutes. Three herdr panes did it
+# within seven minutes of each other, because nothing coordinates panes.
+#
+# So it asks for a statement instead of a run. "No check run" is an accepted
+# answer, and an honest one is the signal worth having. A free question cannot
+# pile up across panes, which is why this needs no lock.
+set -o pipefail
+
+payload="$(cat)"
+cwd="$(jq -r '.cwd // empty' <<<"$payload")"
+session_id="$(jq -r '.session_id // empty' <<<"$payload")"
+last_msg="$(jq -r '.last_assistant_message // empty' <<<"$payload")"
+
+case "$cwd" in
+  "$HOME"/thoven/*|"$HOME"/.herdr/worktrees/*) ;;
+  *) exit 0 ;;
+esac
+
+state="/tmp/claude-thoven/${session_id:-unknown}"
+[ -d "$state" ] || exit 0
+
+# Once per session. A nudge that repeats is nagging, and the first one already
+# either landed or did not.
+[ -f "$state/nudged" ] && exit 0
+
+# A check already ran, recorded by thoven-track-edits. Nothing to ask.
+[ -s "$state/checks" ] && exit 0
+
+edited_file="$state/edited"
+[ -f "$edited_file" ] || exit 0
+extensions_regex='\.(ts|tsx|js|jsx|mjs|rb|erb|css|scss)$'
+grep -qE "$extensions_regex" "$edited_file" || exit 0
+
+# A done-claim, ignoring a negated one ("not done", "isn't finished").
+pattern='\b(done|built|shipped|complete|completed|finished|fixed|implemented|ready to (review|merge|ship))\b'
+found_claim=0
+while IFS=: read -r off _rest; do
+  [ -n "$off" ] || continue
+  start=$(( off > 12 ? off - 12 : 0 ))
+  pre="${last_msg:$start:$(( off - start ))}"
+  prelow="$(printf '%s' "$pre" | tr '[:upper:]' '[:lower:]')"
+  if [[ "$prelow" != *"not "* && "$prelow" != *"n't "* ]]; then
+    found_claim=1
+    break
+  fi
+done < <(grep -oiEb "$pattern" <<<"$last_msg" 2>/dev/null)
+[ "$found_claim" -eq 1 ] || exit 0
+
+# A run that wrote a result also answers the question. Bounded so a large
+# results directory costs one stat, not a full walk.
+toplevel="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null)"
+root="${toplevel:-$cwd}"
+ref="$state/last-edit"
+if [ -f "$ref" ]; then
+  for r in test-results reports coverage; do
+    [ -d "$root/$r" ] || continue
+    if [ -n "$(find "$root/$r" -type f -newer "$ref" -print -quit 2>/dev/null)" ]; then
+      exit 0
+    fi
+  done
+fi
+
+touch "$state/nudged"
+
+n="$(wc -l < "$edited_file" | tr -d '[:space:]')"
+first3="$(head -n 3 "$edited_file" | sed "s|^$root/||" | paste -sd, -)"
+
+{
+  printf 'You said done and edited %s file(s). Name the check you ran and what it returned, then finish. ' "$n"
+  printf 'Either the command and its result, or "no check run" and why. '
+  printf 'Answer from what you already ran, or from the cheapest check that covers the change. '
+  printf 'A type-check or a lint finishes in seconds and counts as an answer. '
+  printf 'Edited: %s.' "$first3"
+} >&2
+
+exit 2
