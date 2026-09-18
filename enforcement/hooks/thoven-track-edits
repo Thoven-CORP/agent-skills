@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# Records edited files (Edit|Write file_path, or Bash's git-dirty paths since session start) and nudges the UI rule once.
+set -o pipefail
+
+payload="$(cat)"
+cwd="$(jq -r '.cwd // empty' <<<"$payload")"
+session_id="$(jq -r '.session_id // empty' <<<"$payload")"
+tool_name="$(jq -r '.tool_name // empty' <<<"$payload")"
+
+case "$cwd" in
+  "$HOME"/thoven/*|"$HOME"/.herdr/worktrees/*) ;;
+  *) exit 0 ;;
+esac
+
+[ -n "$session_id" ] || exit 0
+
+state="/tmp/claude-thoven/$session_id"
+mkdir -p "$state"
+[ -f "$state/started" ] || touch "$state/started"
+
+edited_file="$state/edited"
+
+case "$tool_name" in
+  Edit|Write)
+    file_path="$(jq -r '.tool_input.file_path // empty' <<<"$payload")"
+    if [ -n "$file_path" ]; then
+      touch "$edited_file"
+      grep -qxF "$file_path" "$edited_file" || echo "$file_path" >> "$edited_file"
+      touch "$state/last-edit"
+    fi
+    ;;
+  Bash)
+    toplevel="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null)"
+    if [ -n "$toplevel" ]; then
+      touch "$edited_file"
+      count="$(wc -l < "$edited_file" | tr -d '[:space:]')"
+      [[ "$count" =~ ^[0-9]+$ ]] || count=0
+      newly=()
+      while IFS= read -r line; do
+        [ -n "$line" ] || continue
+        [ "$count" -ge 200 ] && break
+        rel="${line:3}"
+        case "$rel" in *" -> "*) rel="${rel#*" -> "}" ;; esac
+        abs="$toplevel/$rel"
+        [ -f "$abs" ] || continue
+        [ "$abs" -ot "$state/started" ] && continue
+        grep -qxF "$abs" "$edited_file" && continue
+        echo "$abs" >> "$edited_file"
+        newly+=("$abs")
+        count=$((count + 1))
+        touch "$state/last-edit"
+      done < <(git -C "$cwd" status --porcelain --untracked-files=all 2>/dev/null)
+
+      if [ ! -f "$state/ui-rule-shown" ]; then
+        match=0
+        for p in "${newly[@]:-}"; do
+          [ -n "$p" ] || continue
+          case "$p" in
+            */components/*) match=1 ;;
+          esac
+          case "$p" in
+            */app/*.tsx) match=1 ;;
+          esac
+        done
+        if [ "$match" -eq 1 ]; then
+          printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"Thoven UI rule: before changing a component, run the thoven-designer skill to find the binding token file for the value in question. The surface named in the task is the only one in scope."}}'
+          touch "$state/ui-rule-shown"
+        fi
+      fi
+    fi
+    ;;
+esac
+
+exit 0

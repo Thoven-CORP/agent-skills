@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# Names graphify once per session when a search looks structural.
+#
+# Tool-agnostic on purpose. The same search arrives as a Grep tool call or as a
+# Bash command depending on mode and on what the model judges best, and in this
+# setup Bash wins by 5228 to 0. A hook keyed on one tool name is a guess about
+# which one gets picked, so this reads the pattern out of whichever shape it
+# arrives in and stays out of the choice.
+set -o pipefail
+
+payload="$(cat)"
+session_id="$(jq -r '.session_id // empty' <<<"$payload")"
+cwd="$(jq -r '.cwd // empty' <<<"$payload")"
+tool="$(jq -r '.tool_name // empty' <<<"$payload")"
+
+case "$tool" in
+  Grep|Glob)
+    pattern="$(jq -r '.tool_input.pattern // empty' <<<"$payload")"
+    ;;
+  Bash)
+    cmd="$(jq -r '.tool_input.command // empty' <<<"$payload")"
+    # First non-flag argument after a search binary. A quoted phrase splits
+    # across words, so an opening quote with no closing one means prose, and
+    # prose is someone looking for text rather than for a symbol.
+    read -r -a words <<<"$cmd"
+    idx=-1
+    for i in "${!words[@]}"; do
+      case "${words[$i]}" in
+        grep|egrep|fgrep|rg|ag|ack) idx=$i; break ;;
+      esac
+    done
+    [ "$idx" -ge 0 ] || exit 0
+    pattern=""
+    for (( j = idx + 1; j < ${#words[@]}; j++ )); do
+      w="${words[$j]}"
+      case "$w" in -*) continue ;; esac
+      case "$w" in
+        \'*\'|\"*\") w="${w:1:${#w}-2}" ;;
+        \'*|\"*) exit 0 ;;
+      esac
+      pattern="$w"; break
+    done
+    ;;
+  *) exit 0 ;;
+esac
+[ -n "$pattern" ] || exit 0
+
+root="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null)" || exit 0
+[ -f "$root/graphify-out/graph.json" ] || exit 0
+
+state="/tmp/claude-thoven/${session_id:-unknown}"
+mkdir -p "$state"
+[ -f "$state/graph-nudged" ] && exit 0
+
+# A bare identifier. Prose, paths and flags are someone looking for text.
+case "$pattern" in *" "*|*/*|-*) exit 0 ;; esac
+printf '%s' "$pattern" | grep -qE '^[A-Za-z_][A-Za-z0-9_]{2,}$' || exit 0
+
+touch "$state/graph-nudged"
+days=$(( ( $(date +%s) - $(date -r "$root/graphify-out/graph.json" +%s) ) / 86400 ))
+jq -n --arg p "$pattern" --arg d "$days" '{
+  hookSpecificOutput: {
+    hookEventName: "PreToolUse",
+    additionalContext: ("This repo has graphify-out/graph.json, built \($d) day(s) ago. For callers, impact or data flow on a symbol like \($p), `graphify query \"what calls \($p)?\"` and `graphify affected \($p)` trace relationships a text search cannot follow. Search however suits the question; this is only about relationships. Once per session.")
+  }
+}'
+exit 0
