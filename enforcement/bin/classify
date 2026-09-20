@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+# Asks a hosted classifier typed questions about stdin and always answers the caller,
+# even when the network does not: every failure path prints an undecided record and
+# exits 0, because a stall here is worse than one missing answer.
+set -o pipefail
+
+schema_path="$1"
+endpoint="${CLASSIFY_ENDPOINT:-https://api.typesafe.ai/v1/systemone}"
+timeout="${CLASSIFY_TIMEOUT:-1.5}"
+floor="${CLASSIFY_FLOOR:-0.7}"
+
+# A run leaves a record on disk when CLASSIFY_MARKER names one, so a caller can be
+# scored without parsing a transcript format.
+record() {
+  [ -n "${CLASSIFY_MARKER:-}" ] || return 0
+  mkdir -p "$(dirname "$CLASSIFY_MARKER")" 2>/dev/null
+  printf '%s\n' "$1" >> "$CLASSIFY_MARKER"
+}
+
+undecided() {
+  local rec
+  rec="$(jq -c -n --arg schema "${schema_id:-unknown}" --arg reason "$1" \
+    '{schema: $schema, status: "undecided", reason: $reason}')"
+  record "$rec"
+  printf '%s\n' "$rec"
+  exit 0
+}
+
+state="$(cat)"
+
+# The schema is read before the key is checked so every record names the schema
+# it was asked for. An unreadable file has no id, and the path's basename is the
+# only honest identity left.
+if [ -z "$schema_path" ] || [ ! -f "$schema_path" ] || ! schema="$(jq -c '.' "$schema_path" 2>/dev/null)"; then
+  [ -n "$schema_path" ] && schema_id="$(basename "$schema_path" .json)"
+  undecided "no-schema"
+fi
+
+schema_id="$(jq -r '.id' <<<"$schema")"
+model="$(jq -r '.model' <<<"$schema")"
+questions="$(jq -c '.questions' <<<"$schema")"
+
+if [ -z "$TYPESAFE_API_KEY" ]; then
+  undecided "no-key"
+fi
+
+body="$(jq -n --arg state "$state" --arg model "$model" --argjson questions "$questions" \
+  '{state: $state, model: $model, questions: $questions}')"
+
+# classifier.dev is keyless and single-label, so each question becomes its own
+# call with its own label set. The answers are assembled into the same shape the
+# hosted service returns, which keeps every path below this point identical.
+if [ "${CLASSIFY_PROVIDER:-typesafe}" = "classifier.dev" ]; then
+  cd_endpoint="${CLASSIFY_CD_ENDPOINT:-https://classifier.dev}"
+  built="{}"
+  for q in $(jq -r '.questions | keys[]' <<<"$schema"); do
+    qtype="$(jq -r --arg q "$q" '.questions[$q].type' <<<"$schema")"
+    case "$qtype" in
+      choice) labels="$(jq -c --arg q "$q" '.questions[$q].criteria | keys' <<<"$schema")" ;;
+      score)  labels="$(jq -c --arg q "$q" '.questions[$q].criteria' <<<"$schema")" ;;
+      noul)   labels='["yes","no"]' ;;
+      *) undecided "malformed" ;;
+    esac
+    req="$(jq -n --argjson labels "$labels" --arg text "$state" '{labels: $labels, inputs: [$text]}')"
+    raw="$(curl -s --max-time "$timeout" -H 'Content-Type: application/json' -d "$req" "$cd_endpoint")" \
+      || undecided "unreachable"
+    jq -e '.results[0].label' >/dev/null 2>&1 <<<"$raw" || undecided "malformed"
+    built="$(jq -c --arg q "$q" --arg t "$qtype" --argjson labels "$labels" --argjson r "$raw" --argjson acc "$built" '
+      ($r.results[0]) as $res
+      | ($res.confidence) as $c
+      | $acc + {($q): (
+          if $t == "choice" then {type:"choice", choice:$res.label, confidence:$c}
+          elif $t == "score" then {type:"score", score:(($labels | index($res.label)) // 0), legend:($labels | to_entries | map({(.key|tostring): .value}) | add), confidence:$c}
+          else {type:"noul", noul:(if $res.label == "yes" then 0.5 + $c/2 else 0.5 - $c/2 end)}
+          end)}' <<<'null')"
+  done
+  answers="$built"
+else
+
+response_file="$(mktemp)"
+trap 'rm -f "$response_file"' EXIT
+
+http_code="$(curl -s -o "$response_file" -w '%{http_code}' \
+  --max-time "$timeout" \
+  -H "Authorization: Bearer $TYPESAFE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "$body" \
+  "$endpoint")"
+curl_status=$?
+
+if [ "$curl_status" -eq 28 ]; then
+  undecided "timeout"
+fi
+if [ "$curl_status" -ne 0 ]; then
+  undecided "unreachable"
+fi
+if [ "$http_code" != "200" ]; then
+  undecided "http-$http_code"
+fi
+
+if ! answers="$(jq -e -c '.answers' "$response_file" 2>/dev/null)"; then
+  undecided "malformed"
+fi
+fi
+
+# An answered record answers every question the schema asked. A response that
+# covers only some of them, or carries a type this contract does not define,
+# would otherwise produce a record whose missing key reads as a false answer.
+result="$(jq -c -n --arg schema "$schema_id" --argjson answers "$answers" \
+  --argjson questions "$questions" --argjson floor "$floor" '
+  ($answers | with_entries(select(
+    .value.type == "choice" or .value.type == "score" or .value.type == "noul"
+  ))) as $typed
+  | if (($questions | keys) - ($typed | keys)) != [] then empty
+    else {schema: $schema, status: "answered", reason: "ok", answers: (
+      $typed
+      | map_values(
+          if .type == "choice" then {value: .choice, confidence: .confidence}
+          elif .type == "score" then {value: .score, confidence: .confidence}
+          else {value: (.noul >= 0.5), confidence: ((.noul - 0.5) | fabs * 2)}
+          end)
+      | map_values(. + {binding: (.confidence >= $floor)})
+    )}
+    end
+')" || undecided "malformed"
+[ -n "$result" ] || undecided "malformed"
+
+record "$result"
+echo "$result"

@@ -63,6 +63,76 @@ echo "== 1 THV-592 artifacts (reads the last run in $CWD)"
 [ -f "$CWD/test-results/results.json" ] && jq -e '[.. | .specs? // empty | .[] | .tests[].results[].status] | length > 0' "$CWD/test-results/results.json" >/dev/null 2>&1 && pass "results.json has per-test status" || fail "results.json missing or empty"
 find "$CWD/test-results" -name trace.zip 2>/dev/null | grep -q . && pass "trace.zip present" || fail "no trace.zip"
 
+echo "== 7 THV-640 router destinations"
+SD="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+O="$HOME/.agents/skills-on-demand/orchestrate"
+if [ ! -x "$SD/check-skill-routes.sh" ]; then
+  pass "check-skill-routes.sh not in this commit, skip"
+elif [ -d "$O" ]; then
+  routes_args=("$O/SKILL.md" "$O"/references/*.md)
+  for s in orchestrate-frontend.json orchestrate-backend.json; do
+    f="$SD/../evals/schemas/$s"
+    [ -f "$f" ] && routes_args+=("$f")
+  done
+  "$SD/check-skill-routes.sh" "${routes_args[@]}" >/tmp/routes-$$.txt 2>&1 \
+    && pass "every orchestrate destination resolves" \
+    || fail "dead orchestrate destinations: $(grep -c '^DEAD' /tmp/routes-$$.txt) ($(grep '^DEAD' /tmp/routes-$$.txt | awk '{print $2}' | paste -sd, -))"
+  rm -f /tmp/routes-$$.txt
+else
+  fail "orchestrate not installed at ~/.agents/skills-on-demand"
+fi
+
+echo "== 8 THV-640 evidence schema and verify-this"
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+EV="$REPO/evals/schemas/evidence.json"
+CL="$REPO/enforcement/bin/classify"
+VT="$REPO/enforcement/skill-overrides/verify-this.SKILL.md"
+if [ ! -f "$EV" ]; then fail "evals/schemas/evidence.json missing"
+elif ! jq -e '.id=="evidence" and .model and .questions.evidence.criteria.none' "$EV" >/dev/null; then fail "evidence schema lacks id, model, or none"
+else pass "evidence schema is well-formed"; fi
+if [ ! -x "$CL" ]; then fail "enforcement/bin/classify missing"
+else
+  nokey="$(env -u TYPESAFE_API_KEY "$CL" "$EV" <<<'Done, renamed LessonSummary.' 2>/dev/null)"
+  [ "$(jq -r '.status + "/" + .reason' <<<"$nokey" 2>/dev/null)" = "undecided/no-key" ] \
+    && pass "no key fails open with no-key" || fail "no key: $nokey"
+  port=8722
+  "$REPO/evals/stub-classifier.sh" "$port" echo >/dev/null 2>&1 & stub=$!
+  for _ in $(seq 1 50); do curl -s -o /dev/null "http://127.0.0.1:$port/" 2>/dev/null && break; sleep 0.1; done
+  echo_out="$(TYPESAFE_API_KEY=test CLASSIFY_ENDPOINT="http://127.0.0.1:$port/v1/systemone" CLASSIFY_TIMEOUT=2 \
+    "$CL" "$EV" <<<'Renamed LessonSummary. Nothing runtime changed.' 2>/dev/null)"
+  kill "$stub" 2>/dev/null; wait "$stub" 2>/dev/null
+  [ "$(jq -r '.status + "/" + (.answers.evidence.value // "") + "/" + (.answers.evidence.binding|tostring)' <<<"$echo_out")" = "answered/type_check/true" ] \
+    && pass "stub echo binds type_check on a types-only claim" || fail "stub echo: $echo_out"
+fi
+if [ ! -f "$VT" ]; then fail "verify-this override missing"
+else
+  grep -q 'classify ~/thoven/agent-skills/evals/schemas/evidence.json' "$VT" \
+    && pass "verify-this override calls classify" || fail "verify-this override has no classify invocation"
+  grep -q '## Fallback surfaces' "$VT" \
+    && pass "six-surface list is behind the undecided pointer" || fail "fallback heading missing"
+  awk '/^## Workflow$/,/^## /' "$VT" | grep -q 'CLI/TUI behavior' \
+    && fail "six-surface list still sits in the always-read workflow" \
+    || pass "workflow step does not contain the six-surface list"
+fi
+DS="$REPO/skills/dev/thoven-designer/SKILL.md"
+OS="$REPO/skills/dev/orchestrate/SKILL.md"
+IS="$REPO/skills/dev/investigate-thoven/SKILL.md"
+if [ -f "$DS" ] && grep -q 'evals/schemas/thoven-designer.json' "$DS"; then
+  framing=0
+  for f in "$DS" "$OS" "$IS" "$VT"; do
+    if grep -q 'classify ' "$f"; then pass "$(basename "$(dirname "$f")") calls classify"
+    else fail "$(basename "$f") has no classify invocation"; framing=1; fi
+  done
+  if grep -qE '^#### Dimension [123]:' "$IS"; then fail "investigate still has Dimension 1-3 tables in SKILL.md"; framing=1
+  else pass "investigate Dimension 1-3 tables are not in SKILL.md"; fi
+  if grep -qE '^## The map$|^## When to use$|^## Not for$' "$DS"; then fail "designer still has the map or fork tables in SKILL.md"; framing=1
+  else pass "designer map and fork tables are not in SKILL.md"; fi
+  if grep -qE '^\| .* \| `?/' "$OS"; then fail "orchestrate SKILL.md still has the destination table"; framing=1
+  else pass "orchestrate destination table is not in SKILL.md"; fi
+else
+  pass "THV-640 skill rewrites not in this commit, skip framing"
+fi
+
 echo "== token cost"
 for f in "$HOME/.claude/CLAUDE.md" "$HOME/thoven/CLAUDE.md"; do printf '%s\t%s\n' "$(wc -c < "$f" | tr -d ' ')" "$f"; done
 printf '%s\tbytes of agent description lines in ~/.claude/agents\n' "$(cat "$HOME"/.claude/agents/*.md 2>/dev/null | grep '^description:' | wc -c | tr -d ' ')"

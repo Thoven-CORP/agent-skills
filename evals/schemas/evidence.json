@@ -1,0 +1,17 @@
+{
+  "id": "evidence",
+  "model": "jev-latest",
+  "questions": {
+    "evidence": {
+      "type": "choice",
+      "instructions": "A session edited these files and claimed the work is done. What would actually prove it works?",
+      "criteria": {
+        "type_check": "Types, a rename, or a signature changed, and nothing runtime did",
+        "unit_test": "Pure logic changed and a test can assert the literal result",
+        "browser_screenshot": "A visible surface changed and one frame shows it",
+        "recording": "A sequence or timing changed and one frame cannot show it",
+        "none": "Nothing a check exercises changed. Docs, comments, config or dead code"
+      }
+    }
+  }
+}
