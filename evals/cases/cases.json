@@ -1,0 +1,89 @@
+{
+  "note": "Gold labels are drafts. Andres reviews and corrects before any result is quoted.",
+  "cases": [
+    {
+      "id": "c1-missing-section",
+      "provenance": "mined verbatim from a transcript, 2026-08-20 onward",
+      "shape": "single",
+      "turns": [
+        "After the change Classroom never renders `[data-section-shell]` nor a region named \"Private lessons\", and there is no sidebar link to `/teacher/group-lessons`. Can you work out what is broken?"
+      ],
+      "gold": {
+        "category": "simple_ui",
+        "severity": 2,
+        "complexity": 1,
+        "context": "standalone",
+        "needs_repro": false,
+        "repro_method": "browser",
+        "evidence": "browser_screenshot"
+      },
+      "notes": {
+        "trigger_clause": "Appended so investigate-thoven's description can match. Without a trigger word the skill did not enter context and the row measured discovery, not mandate-following."
+      }
+    },
+    {
+      "id": "c2-intermittent-blank",
+      "provenance": "handwritten stress case",
+      "shape": "single",
+      "turns": [
+        "Some students get a blank lesson page after submitting homework. No console error. I cannot make it happen on my machine. It seems to be maybe one in ten."
+      ],
+      "gold": {
+        "category": "intermittent",
+        "severity": 1,
+        "complexity": 1,
+        "context": "standalone",
+        "needs_repro": true,
+        "repro_method": "not_locally",
+        "evidence": "recording"
+      },
+      "gold_corrections": {
+        "severity": "was 2. Criterion 1 is 'broken for some users or in some conditions' and the report says one in ten. Criterion 2 is 'broken for every user', which this is not.",
+        "repro_method": "was logs_or_trace. The report says 'I cannot make it happen on my machine', which is criterion not_locally verbatim. logs_or_trace requires production logs, which the report never mentions.",
+        "reviewed_by": "model, 2026-09-19. Andres has not confirmed these."
+      }
+    },
+    {
+      "id": "c3-typecheck-midfeature",
+      "provenance": "handwritten stress case",
+      "shape": "multi",
+      "turns": [
+        "I am partway through the group lessons panel and tsc is now complaining that LessonSummary is missing xp_awarded on two call sites.",
+        "Yes it is the same shape the API returns. Keep going and tell me what you would check before calling it done. Can you help me fix this?"
+      ],
+      "gold": {
+        "category": "typescript",
+        "severity": 1,
+        "complexity": 0,
+        "context": "during_feature",
+        "needs_repro": false,
+        "repro_method": "failing_test",
+        "evidence": "type_check"
+      },
+      "notes": {
+        "trigger_clause": "Appended so investigate-thoven's description can match. Without a trigger word the skill did not enter context and the row measured discovery, not mandate-following."
+      }
+    },
+    {
+      "id": "c4-prod-auth",
+      "provenance": "handwritten stress case",
+      "shape": "multi",
+      "turns": [
+        "Parents are reporting they can see another family's student dashboard right now. This is live.",
+        "It started after this morning's deploy. Walk me to a root cause and tell me how confident you are in it before you touch any code. This is a serious problem."
+      ],
+      "gold": {
+        "category": "critical",
+        "severity": 3,
+        "complexity": 2,
+        "context": "production_incident",
+        "needs_repro": false,
+        "repro_method": "logs_or_trace",
+        "evidence": "production_check"
+      },
+      "notes": {
+        "trigger_clause": "Appended so investigate-thoven's description can match. Without a trigger word the skill did not enter context and the row measured discovery, not mandate-following."
+      }
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "id": "investigate-intake",
+  "model": "jev-latest",
+  "questions": {
+    "category": {
+      "type": "choice",
+      "instructions": "Which kind of bug is this? It selects the specialist agents that investigate it.",
+      "criteria": {
+        "simple_ui": "A visual or layout defect in one component, no data or state involved",
+        "api_backend": "A request, response, contract, status code or auth problem",
+        "state": "Client state is wrong, stale, or out of sync between components",
+        "ssr_hydration": "Server and client render differently, or a hydration mismatch",
+        "performance": "It works but is slow, janky, or does too much work",
+        "typescript": "A type error, an inference failure, or a signature mismatch",
+        "accessibility": "Keyboard, screen reader, focus order, or contrast",
+        "intermittent": "It fails only sometimes, or under timing or load",
+        "unknown": "The report does not identify the area well enough to place it",
+        "critical": "Production is down, data is being lost, or auth can be bypassed"
+      }
+    },
+    "severity": {
+      "type": "score",
+      "instructions": "How much is broken, and for how many people?",
+      "criteria": [
+        "Cosmetic or a minor annoyance, nobody is blocked",
+        "A feature is broken for some users or in some conditions",
+        "A feature is broken for every user",
+        "Production is down, data is being lost, or auth can be bypassed"
+      ]
+    },
+    "complexity": {
+      "type": "score",
+      "instructions": "How much work is the fix, given what the report says?",
+      "criteria": [
+        "One file, a clear error, a known pattern. Fix it inline",
+        "Two or three files with a root cause that diagnosis will reach",
+        "Architectural or spanning three or more concerns, or three fixes already failed"
+      ]
+    },
+    "context": {
+      "type": "choice",
+      "instructions": "What situation is this bug being worked in? It selects how the work closes.",
+      "criteria": {
+        "standalone": "A reported bug, not part of feature work in progress",
+        "during_feature": "Found while building something else, not its own ticket",
+        "production_incident": "Broken in production right now, with urgency"
+      }
+    },
+    "needs_repro": {
+      "type": "noul",
+      "instructions": "Must this be reproduced before it can be diagnosed?",
+      "criteria": {
+        "true": "Intermittent, state-dependent, environment-specific, no error text, or the behaviour contradicts what the code says should happen",
+        "false": "An explicit error with a stack trace, a named file with a visible defect, or a static surface whose cause is readable in the source"
+      }
+    },
+    "repro_method": {
+      "type": "choice",
+      "instructions": "How should this be reproduced?",
+      "criteria": {
+        "browser": "A user-visible behaviour, layout, interaction or hydration issue",
+        "failing_test": "Deterministic logic with a known input, worth keeping as a regression",
+        "http_call": "A contract question. Status, payload shape, auth",
+        "logs_or_trace": "It already happened in production, so read Sentry, logs or a trace",
+        "data_snapshot": "It depends on specific production data",
+        "not_locally": "It cannot be reproduced here, so read the code and instrument instead"
+      }
+    },
+    "evidence": {
+      "type": "choice",
+      "instructions": "What artifact would prove the fix worked? Choose the cheapest one that covers the change.",
+      "criteria": {
+        "type_check": "Types, a rename, or a signature changed, and nothing runtime did",
+        "unit_test": "Pure logic changed and a test can assert the literal result",
+        "browser_screenshot": "A visible surface changed and one frame shows it",
+        "recording": "A sequence or timing changed and one frame cannot show it",
+        "production_check": "The fix is only confirmable against production",
+        "none": "Nothing exercised by a check changed"
+      }
+    }
+  }
+}

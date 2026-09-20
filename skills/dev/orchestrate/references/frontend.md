@@ -1,111 +1,154 @@
-# Routing requests to skills
+# Routing requests to skills, frontend
 
-Classifies user requests and routes to the correct skill. Domain skills take priority over universal skills. **This skill names destination skills only — it never describes their internal modes, phases, or counts** (those drift). When invoked, the destination skill speaks for its own structure.
+Names a destination for a request. Every destination carries a leading slash so
+`scripts/check-skill-routes.sh` can verify it resolves against the installed
+skills and enabled plugins. On 2026-09-19 that check found 19 unreachable
+destinations here, including `expert-team`. A name without the slash is prose,
+not a destination.
 
-## When to Use
+The eight `gsap-*` skills are a special case worth knowing. They exist, with
+`SKILL.md` files, only under
+`~/.herdr/worktrees/frontend/feature-marketplace-polish/.agents/skills/`. Devin
+and Claude resolve project skills relative to the working directory, so they are
+reachable inside that worktree and nowhere else. A global table cannot name
+them. For scroll-scrubbed or pinned motion outside it, `/motion` picks the
+layer.
 
-- User gives an ambiguous or multi-part request
-- Starting a new task and unsure which skill applies
-- Need to chain multiple skills in sequence
+This file carries **when to reach for a skill**, which looking cannot tell you.
+It does not carry what each skill does. The skill's own description does that,
+and restating it here is what drifted.
 
-## When NOT to Use
+## Reading order
 
-- User explicitly names a skill (e.g., "/investigate-thoven", "/verify") — just use it
-- Simple question that doesn't need a workflow
-- Already mid-execution of another skill
+Most requests match one row. Take the first match going down, and prefer a
+domain row over a universal one. When two rows match equally, ask one question.
 
----
+## Routing
 
-## Design Stack Architecture (read before routing design work)
+| The request | Destination |
+|---|---|
+| Build or change a feature, 3+ concerns, multi-file | `/grill-with-docs` |
+| Shape types and module boundaries before code | `/architect` |
+| Turn a settled design into a written spec | `/to-spec` |
+| Reconcile a large feature's PRD, design, contract and code | `/feature-ledger` |
+| Write an implementation plan from requirements | `/superpowers:writing-plans` |
+| Something is broken at runtime in Thoven | `/investigate-thoven` |
+| A hard bug or perf regression anywhere | `/diagnosing-bugs` |
+| Claiming done, pre-commit | `/verify` |
+| Prove one specific claim with fresh evidence | `/verify-this` |
+| Product-level evidence on a real user path | `/qa-flow` |
+| This repo has no control skill or Feature Map | `/create-verification-skill` |
+| An existing verify-app map is stale | `/maintain-verification-skill` |
+| Commit, deploy, release | `/publish` |
+| Where does this stand, log work, move a ticket | `/workspace` |
 
-Design work routes through a layered stack — pick the entry point that matches the request's scope:
+### Design and UI
 
-1. **`thoven-designer`** — brand meta-enforcer. Entry point for any *new* component, page, or redesign. Owns dedup check, wireframe gate, design spec, brand compliance.
-2. **`/impeccable <verb>`** — opt-in domain quality. Entry point for verbs the user explicitly says: `critique`, `audit`, `polish`, `clarify`, `harden`, `onboard`, `animate`, `bolder`, `quieter`, `distill`, `colorize`, `typeset`, `layout`, `delight`, `overdrive`, `adapt`, `optimize`. Reads PRODUCT.md + DESIGN.md as context. Use when the request is about *quality* on existing work, not building new.
-3. **`motion`** — motion decision + feel vocabulary. Entry point when the user is unsure *which* animation approach to use, or describes a *feel*. Routes to **`motion-react`** (Framer Motion + CSS, default for React UI motion) or the **`gsap-*`** skills (scroll-scrubbed/pinned + complex timelines: `gsap-core`, `gsap-react`, `gsap-scrolltrigger`, `gsap-timeline`, `gsap-plugins`, `gsap-performance`, `gsap-frameworks`, `gsap-utils`). Load the specific implementation skill once the layer is chosen.
-4. **`wireframe` / `design-research`** — UX exploration. Use inside thoven-designer Phase 1.5 or for external pattern hunting.
+| The request | Destination |
+|---|---|
+| A new component, page, or redesign | `/thoven-designer` |
+| Is this value locked, which token binds it | `/thoven-designer` |
+| Build a component from scratch, accessible and composable | `/building-components` |
+| Which library for this widget | `/pick-ui-library` |
+| Try several versions of a surface and pick one | `/prototype` |
+| A full quality pass across the interface | `/better-interface` |
+| Grouping, alignment, reading order | `/better-layout` |
+| Type sizes, weights, measure | `/better-typography` |
+| Colour choices and contrast | `/better-colors` |
+| Keyboard, screen reader, focus order | `/better-accessibility` |
+| Radius, depth, hit areas, icon choice | `/better-ui` |
+| Product copy, labels, error strings | `/better-writing` |
+| Check a shipped surface against a11y rules | `/accessibility-check` |
+| Critique, audit, polish, harden, distill, clarify a surface | `/impeccable <verb>` |
+| Make it bolder, quieter, more delightful, animate it | `/impeccable <verb>` |
+| How this behaves on a phone | `/mobile-audit` |
+| Explore a UX pattern before designing | `/design-research` |
+| Set up or extract a design system, run live browser iteration | `/impeccable <verb>` |
+| Sketch a layout before committing | `/wireframe` |
 
-If the request straddles two layers (e.g. "design a new animated card"), route to thoven-designer first — it will recommend impeccable / GSAP as opt-in layers inside its own phases.
+### Motion
 
-## Classification Table
+| The request | Destination |
+|---|---|
+| Unsure which animation approach, or describing a feel | `/motion` |
+| Implement it in React | `/motion-react` |
+| Open, close, swap, badge, page transition in CSS | `/transitions-dev` |
+| Audit a codebase's motion and plan fixes | `/improve-animations` |
+| Review a motion diff against a craft bar | `/review-animations` |
+| Find where motion would help | `/find-animation-opportunities` |
+| Name a feel precisely | `/animation-vocabulary` |
+| Storyboard, timeline, live tuning panels | `/interface-craft` |
+| Should this animate at all | `/emil-design-eng` |
 
-| Category | Signal Words | Route To |
-|----------|-------------|----------|
-| **Feature Development** | "build", "create", "add feature", "new page", "implement", multi-file, 3+ concerns | `grill-with-docs` → `architect` → `to-spec` / `feature-ledger` |
-| **Quick Design/Ideation** | "redesign", "what if", brainstorm-only (no implementation) | `grill-with-docs` |
-| **Planning Only** | "plan", "break down", "scaffold", "spec" (no build needed) | `superpowers:writing-plans` |
-| **Bug/Debug** (runtime) | "bug", "broken", "not working", "crash", "throws", "500", "doesn't render", "race condition" | `investigate-thoven` |
-| **Verification** | "check", "verify", "review", "ready to commit" (NOT design craft — see Design Quality Review below) | `verify` |
-| **Session** | "where was I", "continue", "resume", "start session" | `session-management` |
-| **Commit/Deploy** | "commit", "push", "publish", "release", "deploy", "stage" | `publish` |
-| **Design System / Component** (NEW work) | "design", "component", "thoven style", "brand", "new card", "new panel", "scaffold component", "redesign" | `thoven-designer` |
-| **Design Quality Review** (existing work) | "critique", "audit [design/UX/craft]", "does this hold up", "is this on-brand", "review the visual" | `/impeccable critique` (UX heuristics) or `/impeccable audit` (a11y + perf + responsive technical pass) |
-| **Design Polish** (pre-ship) | "polish", "final pass", "before we ship the look", "tighten this up" | `/impeccable polish` |
-| **Voice / Copy / Tone** | "copy feels off", "tone is jarring", "rewrite this error", "label is confusing", "error messages feel SaaS-y" | `/impeccable clarify` (or `thoven-designer` if visual treatment also changes) |
-| **Motion / Animation** | "add animation", "scroll effect", "parallax", "fade up", "spring", "GSAP", "stagger", "motion design", "what animation should I use", "make this feel snappy/elegant/playful" | `motion` (decides the layer, then routes to `motion-react`, `gsap-*`, or gated Lenis) |
-| **Make it bolder / quieter / more delightful** | "too bland", "too loud", "more personality", "feels safe", "amp it up", "tone it down" | `/impeccable bolder`, `/impeccable quieter`, `/impeccable delight`, `/impeccable distill` |
-| **Production hardening** | "edge cases", "error states", "first-run", "empty states", "i18n", "harden this" | `/impeccable harden` (edge cases) or `/impeccable onboard` (first-run) |
-| **Strategic design context (PRODUCT.md)** | "design principles", "what's our register", "set up PRODUCT.md", "what does the brand stand for" | `/impeccable teach` |
-| **Strategy** | "strategy", "pricing", "growth", "fundraise", "board" | `thoven-boardroom` |
-| **Market Research** | "market", "TAM", "competitors", "investors", "pitch" | `market-research-vc-intelligence` |
-| **Product Ideas** | "feature ideas", "prioritize", "RICE", "roadmap" | `product-strategy-brainstorming` |
-| **First Principles** | "should we", "pivot", "focus", "stage-appropriate" | `founder-first-principles-framework` |
-| **Learning Science** | "pedagogy", "learning", "practice", "curriculum" | `edtech-learning-science` |
-| **Customer Obsession** | "user experience", "11-star", "NPS", "referral", "peak moments", "delight strategy" | `customer-obsession-design-thinking` |
-| **Pre-ship QA gate** | "qa", "test the site", "find bugs", "pre-ship test", "health score" | `/qa --diff-aware` (feature branches) or `/qa --standard` (pre-publish) |
-| **QA Runbook** | "testing runbook", "manual test", "smoke test", "walkthrough" | `manual-qa` |
-| **Accessibility (deep)** | "a11y audit", "WCAG audit", "screen reader pass", "deep accessibility review" | `/impeccable audit` (default — deeper technical pass) |
-| **Accessibility (lightweight)** | "quick a11y check", "is this WCAG AA", narrow focused-scope a11y question | `accessibility-check` (lightweight alternate) |
-| **Mobile** | "mobile", "responsive", "touch", "breakpoints" | `mobile-audit` or `/impeccable adapt` (for cross-device redesign) |
-| **SEO** | "SEO", "resource page", "organic", "content" | `seo-resource-page` |
-| **Email** | "write email", "draft email" | `email-writing` |
-| **API** | "new endpoint", "API function", "fetch wrapper" | `api-endpoint` |
+### React, Next and types
 
----
+| The request | Destination |
+|---|---|
+| React patterns, hooks, component structure | `/react-expert` |
+| Next App Router, routing, data fetching | `/next-best-practices` |
+| Caching, `use cache`, revalidation | `/next-cache-components` |
+| Upgrade Next across a major | `/next-upgrade` |
+| Render cost, bundle size, re-renders | `/vercel-react-best-practices` |
+| Types, generics, inference | `/typescript-best-practices` |
+| Plain JS, Node, tooling | `/javascript-pro` |
+| Drive or inspect a real browser | `/playwright-expert` |
 
-## Full Skill Inventory
+### Before review
 
-Claude Code injects every available skill and agent with its description into each session — that injected list is the complete inventory, and duplicating it here causes drift.
+| The request | Destination |
+|---|---|
+| Strip AI slop from a diff | `/deslop` |
+| Sharpen prose, remove AI tells | `/unslop` |
+| Remove comments that restate the code | `/no-comments` |
+| Review a branch against standards and spec | `/code-review` |
+| Write the test first | `/tdd` |
 
-For **which one to pick when several match**, see `.claude/docs/SKILL_AND_AGENT_ROUTING.md` — disambiguation of ambiguous phrases ("audit the codebase", "write a plan", "review the code"), skill-vs-skill "NOT for X" notes, `workspace` work-state verbs, and agent model tiers.
+### Domain
 
----
+| The request | Destination |
+|---|---|
+| A new endpoint or fetch wrapper | `/api-endpoint` |
+| Write or rewrite an email | `/email-writing` |
+| Pricing, growth, fundraising, board | `/thoven-boardroom` |
+| Market size, competitors, investors | `/market-research-vc-intelligence` |
+| Feature ideas, prioritisation, roadmap | `/product-strategy-brainstorming` |
+| Pedagogy, practice design, curriculum | `/edtech-learning-science` |
+| What the user actually needs | `/customer-obsession-design-thinking` |
 
-## Skill Chains (Common Patterns)
+## Chains
+
+A chain is worth naming when the order matters and the wrong order wastes work.
 
 | Pattern | Chain |
-|---------|-------|
-| New feature (full lifecycle) | `grill-with-docs` → `architect` → `to-spec` → `feature-ledger` |
-| Bug report | `investigate-thoven` → `verify` |
-| Feature complete | `/qa --diff-aware` → `verify` → `publish` |
-| Complex design with planning | `grill-with-docs` → `architect` |
-| Strategy session | `thoven-boardroom` → `product-strategy-brainstorming` |
-| New page/component | `thoven-designer` → `verify` |
-| New page/component with motion | `thoven-designer` (Phase 2 design) → `motion` (pick layer + preset) → `motion-react` or `gsap-*` (Phase 3 implementation) → `verify` |
-| Design quality review at GATE 2 | `thoven-designer` Phase 2 → `/impeccable critique` (opt-in) → resume GATE 2 |
-| Pre-ship design pass | `/impeccable polish` → `/impeccable audit` (deep a11y/perf) → `/qa --standard` → `publish` |
-| Bland or templated design | `/impeccable bolder` or `/impeccable delight` (existing surface, no rebuild) |
-| Voice/tone rewrite | `/impeccable clarify` (copy only) or `thoven-designer` (if visual also changes) |
-| First-run / activation polish | `/impeccable onboard` (empty states, first lesson, signup) |
-| Production hardening | `/impeccable harden` (edge cases, errors, i18n) → `verify` |
+|---|---|
+| Idea to shipped feature | `/grill-with-docs` → `/architect` → `/to-spec` → `/feature-ledger` |
+| Bug report | `/investigate-thoven` → `/verify` |
+| New component | `/thoven-designer` → `/building-components` → `/verify` |
+| New component with motion | `/thoven-designer` → `/motion` → `/motion-react` → `/verify` |
+| Pre-ship quality pass | `/impeccable polish` → `/accessibility-check` → `/qa-flow` → `/publish` |
+| Pre-commit | `/deslop` → `/no-comments` → `/code-review` → `/verify` |
 
----
+## Quality work, `/impeccable` or a `better-*` skill
 
-## Model Selection Guidance
+Both cover interface quality. Split on what the human said. A verb from
+`/impeccable`'s own set goes there, since the verb is its argument surface:
+`shape`, `audit`, `critique`, `animate`, `bolder`, `colorize`, `delight`,
+`layout`, `overdrive`, `quieter`, `typeset`, `adapt`, `clarify`, `distill`,
+`harden`, `onboard`, `optimize`, `polish`, `init`, `document`, `extract`,
+`live`. A dimension named without a verb goes to the matching `better-*` row
+above.
 
-| Complexity | Model | Examples |
-|-----------|-------|---------|
-| Complex reasoning, architecture, multi-file | Opus | `feature-orchestrator`, `investigate-thoven` (CRITICAL severity), `grill-with-docs` / `architect` |
-| Standard implementation, single concern | Sonnet | Most tasks, standard `verify`, component work |
-| Quick lookups, simple generation | Haiku | Quick `verify`, simple questions, formatting |
+## Disambiguation
 
----
+When several rows match a phrase like "audit the codebase", "write a plan" or
+"review the code", the frontend repo's `.claude/docs/SKILL_AND_AGENT_ROUTING.md`
+resolves it, and also carries each skill's "not for X" notes and the agent model
+tiers.
 
 ## Rules
 
-- Domain skills ALWAYS take priority over universal skills
-- If user names a specific skill, use it directly — don't re-route
-- If task spans multiple categories, recommend the FIRST skill in the chain
-- Present routing as a suggestion, not a mandate — user can override
-- For ambiguous requests, ask one clarifying question before routing
-- Keep this simple: classify -> route -> done. Don't over-think.
+- Name one destination. A second choice is a question, not a recommendation.
+- Give one sentence of reason.
+- A named skill routes to itself. Run what the human typed.
+- Mid-workflow, continue the current skill.
+- The routing is a suggestion the human may override.

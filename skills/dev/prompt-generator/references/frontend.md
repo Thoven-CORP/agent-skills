@@ -139,7 +139,7 @@ After classification, identify which existing skills the generated prompt should
 
 | Prompt Type | Pre-Work Skills | Post-Work Skills |
 |-------------|----------------|-----------------|
-| Implementation | `/feature-orchestrator` (if 3+ concerns), `/grill-with-docs` (if creative/new) | `/verify`, `/qa-flow` (if testable), `/publish` |
+| Implementation | `/architect` (if 3+ concerns), `/grill-with-docs` (if creative/new) | `/verify`, `/qa-flow` (if testable), `/publish` |
 | Architecture | `/grill-with-docs`, `/thoven-boardroom` (if strategic) | `/verify` (docs mode) |
 | Research | `/research-orchestration` (if multi-topic) | — |
 | Debugging/Bugfix | `/investigate-thoven` | `/verify`, `/qa-flow` |
@@ -149,8 +149,12 @@ After classification, identify which existing skills the generated prompt should
 | Creative/Brainstorming | `/grill-with-docs` | — |
 | Cross-Codebase Handoff | — | — |
 | Refactoring | `/simplify` | `/verify` |
-| SEO work | `/seo-resource-page` | `/verify` |
-| UI/Design work | `/thoven-designer`, `/mama-frontend` | `/accessibility-check`, `/mobile-audit` |
+| SEO work | `/programmatic-seo` | `/verify` |
+| New component or page | `/thoven-designer`, `/building-components` | `/accessibility-check`, `/mobile-audit` |
+| Interface polish | `/interface-craft`, `/better-ui` | `/accessibility-check` |
+| One quality dimension | the matching `better-*` skill | `/verify` |
+| Open, close, swap, page transition | `/transitions-dev` | `/verify` |
+| Motion audit across a surface | `/improve-animations`, `/find-animation-opportunities` | — |
 
 **Mapping Rules:**
 1. **Always check** — every prompt gets a skill scan, even Light tier
@@ -164,7 +168,7 @@ After classification, identify which existing skills the generated prompt should
 
 ```
 Bug workflow:     /investigate-thoven → [fix prompt] → /verify → /qa-flow → /publish
-Feature workflow: /grill-with-docs → /architect → /to-spec → /feature-orchestrator → [implement prompt] → /verify
+Feature workflow: /grill-with-docs → /architect → /to-spec → /superpowers:writing-plans → [implement prompt] → /verify
 Audit workflow:   /[audit skill] → [fix prompt from findings] → /verify
 Design workflow:  /thoven-designer → [implement prompt] → /accessibility-check → /mobile-audit → /verify
 ```

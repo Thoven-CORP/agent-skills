@@ -15,12 +15,16 @@ KNOWN_EXTS = {"ts", "tsx", "mjs", "js", "json", "css", "md", "sh", "rb", "yml", 
 BACKTICK_RE = re.compile(r"`([^`\n]+)`")
 MDLINK_RE = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
 TEMPLATE_RE = re.compile(r"<[A-Za-z][A-Za-z0-9_-]*>")
+# /skill-name and /plugin:skill-name belong to check-skill-routes.sh, not here.
+SKILL_ROUTE_RE = re.compile(r"^/[a-z][a-z0-9-]*(:[a-z][a-z0-9-]*)?$")
 
 
 def looks_like_path(tok: str) -> bool:
     if not tok or tok.isspace():
         return False
     if tok.startswith("http://") or tok.startswith("https://"):
+        return False
+    if SKILL_ROUTE_RE.match(tok):
         return False
     if "/" in tok:
         return True

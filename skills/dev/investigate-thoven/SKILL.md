@@ -7,31 +7,7 @@ description: Systematic 7-phase debugging workflow with mandatory pattern checki
 
 Systematic 7-phase debugging workflow aligned with backend architecture. Classification drives everything downstream — agent roster, fix strategy, and close workflow are all determined by the initial classification. No judgment calls mid-workflow.
 
-## Enforcement Rules (READ FIRST)
-
-**CRITICAL — YOU MUST FOLLOW THESE RULES:**
-
-### NEVER Do This:
-- ❌ NEVER skip the pattern check against common-errors.md
-- ❌ NEVER attempt to debug without launching the MANDATORY agents for the bug category
-- ❌ NEVER use "optional" specialist logic — classification dictates the roster
-- ❌ NEVER proceed to FIX without explicit user approval at the GATE
-- ❌ NEVER claim root cause without evidence from agent investigation
-- ❌ NEVER say "I think the issue is..." without agent findings to support it
-- ❌ NEVER read code directly and propose fixes (use agents to investigate)
-- ❌ NEVER skip pattern logging in CLOSE phase
-
-### ALWAYS Do This:
-- ✅ ALWAYS check common-errors.md for matching patterns BEFORE launching agents
-- ✅ ALWAYS launch the MANDATORY agents for the classified bug category (no optional specialists)
-- ✅ ALWAYS wait for agent results before diagnosing
-- ✅ ALWAYS present a diagnostic report with "Investigation Sources" section
-- ✅ ALWAYS ask user to choose a fix option before implementing
-- ✅ ALWAYS cite specific file:line references from agent findings
-- ✅ ALWAYS run the pattern quality gate before logging to common-errors.md
-- ✅ ALWAYS determine fix tier (simple/medium/complex) from classification, not intuition
-
----
+Read [enforcement-rules.md](references/enforcement-rules.md) before Phase 1.
 
 ## MANDATORY First Action
 
@@ -66,7 +42,7 @@ Phase 4: DIAGNOSE (structured report from agent findings)
     ↓
 Phase 5: GATE (mandatory stop — user chooses fix option)
     ↓
-Phase 6: FIX (simple=inline, medium=subagent, complex=feature-orchestrator)
+Phase 6: FIX (simple=inline, medium=subagent, complex=/architect then a plan)
     ↓
 Phase 7: VERIFY (user confirms bug is closed)
     ↓
@@ -99,58 +75,47 @@ Before asking questions, gather basic context:
 
 ### Step 2: Classify Bug Type
 
-**YOU MUST classify across all three dimensions. Classification is FINAL — it determines the agent roster, fix tier, and close workflow.**
+Run this before reading any dimension table. stdin is the bug report. Done when a JSON record is in context.
 
-#### Dimension 1: Bug Category → determines agent roster
+```bash
+classify ~/thoven/agent-skills/evals/schemas/investigate-intake.json
+```
+
+If `status` is `answered`, fill the label from the binding answers. Look up the roster from `category`. Do not re-read the indicator tables to re-derive them.
+
+If `status` is `undecided` or an answer is not binding, read [references/intake-tables.md](references/intake-tables.md) for that dimension only.
+
+Roster from `category` (lookup, not a second classification):
 
 | Category | Mandatory Agents | Parallel? |
 |----------|-----------------|-----------|
-| **Simple UI** | `code-explorer` | No (1 agent) |
-| **API/Backend** | `debug-specialist` + `api-designer` | Yes |
-| **State** | `debug-specialist` + `react-specialist` | Yes |
-| **SSR/Hydration** | `debug-specialist` + `next-js-developer` | Yes |
-| **Performance** | `debug-specialist` + `performance-analyzer` | Yes |
-| **TypeScript** | `debug-specialist` + `typescript-pro` | Yes |
-| **Accessibility** | `code-explorer` + `accessibility-tester` | Yes |
-| **Intermittent** | `debug-specialist` + `code-explorer` | Yes |
-| **Unknown** | `debug-specialist` + `code-explorer` | Yes |
-| **CRITICAL (any)** | Category roster + devil's advocate agent | Yes |
+| **simple_ui** | `code-explorer` | No (1 agent) |
+| **api_backend** | `debug-specialist` + `api-designer` | Yes |
+| **state** | `debug-specialist` + `react-specialist` | Yes |
+| **ssr_hydration** | `debug-specialist` + `next-js-developer` | Yes |
+| **performance** | `debug-specialist` + `performance-analyzer` | Yes |
+| **typescript** | `debug-specialist` + `typescript-pro` | Yes |
+| **accessibility** | `code-explorer` + `accessibility-tester` | Yes |
+| **intermittent** | `debug-specialist` + `code-explorer` | Yes |
+| **unknown** | `debug-specialist` + `code-explorer` | Yes |
+| **critical** | Category roster + devil's advocate agent | Yes |
 
-#### Dimension 2: Severity → modifies agent count
+Severity 0 = LOW (1 agent min). 3 or `critical` adds devil's advocate. Complexity 0 = fix inline, 1 = domain subagent, 2 = `/architect` then a plan.
 
-| Severity | Indicators | Agent Override |
-|----------|-----------|----------------|
-| **LOW** | Cosmetic, minor UX | 1 agent min (even if roster says 2) |
-| **MEDIUM** | Feature broken for some users | Standard roster |
-| **HIGH** | Feature broken for all users | Standard roster |
-| **CRITICAL** | Production down, data loss, auth bypass | Category roster + devil's advocate |
-
-#### Dimension 3: Complexity → determines fix strategy
-
-| Tier | Indicators | Fix Strategy |
-|------|-----------|-------------|
-| **SIMPLE** | Single file, clear error, CSS fix, missing prop, known pattern | Fix inline |
-| **MEDIUM** | 2-3 files, clear root cause from diagnosis | Delegate to domain-specific subagent |
-| **COMPLEX** | 3-strikes, architectural, cross-concern (3+ domains) | Invoke `feature-orchestrator` |
+Binding `needs_repro` and `repro_method` are Dimension 4. Binding `evidence` is Dimension 5. Keep both on the label. They are consumed in Phase 3 and Phase 7. Do not re-read those indicator tables when the answers bind.
 
 #### Output the Classification Label
 
 After classifying, output this label before proceeding:
 
 ```
-🏷️ Classification: [CATEGORY] / [SEVERITY] / [COMPLEXITY] / [CONTEXT]
-Example: State / HIGH / MEDIUM / Standalone
+Classification: [CATEGORY] / [SEVERITY] / [COMPLEXITY] / [CONTEXT] / repro=[YES|NO]:[METHOD] / evidence=[EVIDENCE]
+Example: State / HIGH / MEDIUM / Standalone / repro=YES:Browser / evidence=Browser screenshot
 ```
 
 ### Step 3: Determine Context (for CLOSE phase)
 
-Classify the debugging context:
-
-| Context | Indicators |
-|---------|-----------|
-| **Standalone bug fix** | User reported a bug, not part of feature work |
-| **During feature dev** | Bug found while building a feature (not a standalone ticket) |
-| **Production incident** | Something is broken in prod right now, urgency |
+Binding `context` fills this. If that answer is not binding, read the Context table in [references/intake-tables.md](references/intake-tables.md).
 
 ### Step 4: Ask Targeted Questions (If Needed)
 
@@ -353,6 +318,21 @@ Before proceeding to Phase 4, verify:
 [Which option and why]
 ```
 
+### Diagnosis Confidence Gate
+
+Rate the diagnosis before proposing a fix, and say the level in the report.
+
+| Level | Meaning |
+|---|---|
+| **0 Guess** | A symptom and a suspicion. No mechanism named |
+| **1 Plausible** | A mechanism named and consistent with the symptom, never observed |
+| **2 Traced** | The mechanism observed in the running system or in a failing test |
+| **3 Proven** | The mechanism observed, and removing it makes the symptom go away |
+
+**At 0 or 1, reproduce or instrument before fixing.** The 3-strikes rule in
+Phase 6 catches a wrong diagnosis after three failed fixes. This catches it
+before the first one.
+
 ### Required Fields Validation
 
 Before presenting the report, verify it includes:
@@ -439,27 +419,28 @@ Task tool:
 
 Review the agent's changes before accepting.
 
-### Tier 3: COMPLEX (invoke feature-orchestrator)
+### Tier 3: COMPLEX (hand to /architect)
 
 **Indicators:** 3-strikes rule triggered, architectural issue, cross-concern bug (3+ domains interacting), requires new abstractions.
 
-**Action:** Hand off to `feature-orchestrator` skill with the full diagnosis.
+**Action:** Hand the full diagnosis to `/architect` to shape the change, then sequence it with `/superpowers:writing-plans`.
 
 Present to user:
 
-> "This bug is architectural — it needs a planned approach rather than a direct fix. I'm handing the diagnosis to `feature-orchestrator` to break it into a proper implementation plan."
+> "This bug is architectural. It needs a planned approach rather than a direct fix. I am handing the diagnosis to `/architect` to shape the change, then turning that into a sequenced plan."
 
-Then invoke the `feature-orchestrator` skill with context:
+Then invoke `/architect` with context:
 
 ```
-Skill: feature-orchestrator
+Skill: architect
 
 Context: Bug investigation produced this diagnosis that requires architectural work.
 
 [Paste full diagnostic report]
 
 The fix requires changes across 3+ concerns and/or new abstractions.
-Please break this into a feature plan with proper task breakdown.
+Shape the types and module boundaries first, then hand to /superpowers:writing-plans
+for a sequenced plan.
 ```
 
 ### Escalation: 3-Strikes Rule
@@ -471,7 +452,7 @@ If you've attempted 3 fixes and the bug persists, **STOP**.
 After 3 strikes:
 1. Present all 3 attempted fixes and why each failed
 2. Reclassify the bug as COMPLEX
-3. Escalate to `feature-orchestrator`
+3. Escalate to `/architect`
 
 ### 5-Whys Analysis (for pattern bugs)
 
@@ -493,12 +474,18 @@ Flag systemic issues: "This bug points to a systemic issue: [description]. The f
 
 ### Verify by Context
 
-| Context | Verify Action |
-|---------|--------------|
-| **Standalone bug fix** | Invoke `verify` skill (Quick mode minimum) |
-| **During feature dev** | Run `npm run type-check && npm run lint` inline |
-| **Production incident** | Invoke `verify` skill (Standard mode) |
-| **HIGH/CRITICAL severity** | Always invoke `verify` skill regardless of context |
+Dimension 5 chose this at intake, where the bug's nature was known.
+
+| Evidence | Verify action |
+|---|---|
+| **Type-check** | `npm run type-check` inline, and name the result |
+| **Unit test** | Run the test that now passes, and name it |
+| **Browser screenshot** | Drive the surface and attach the frame |
+| **Recording** | Capture the sequence |
+| **Production check** | Confirm against production and name what you looked at |
+| **None** | State what changed and why no check covers it |
+
+HIGH or CRITICAL severity invokes the `verify` skill on top of the row above.
 
 ### User Confirmation Gate
 
@@ -601,37 +588,11 @@ python .claude/skills/investigate-thoven/scripts/log_error.py \
 
 ---
 
-## Quick Reference
-
-**First action before anything else:** `TaskCreate` for all 8 phases.
-
-| Phase | Mandatory Action | Gate |
-|-------|-----------------|------|
-| **0. TASKS** | TaskCreate for all phases (MANDATORY FIRST) | Tasks created |
-| 1. CLASSIFY | Category / Severity / Complexity / Context label | `🏷️` label output |
-| 2. PATTERN CHECK | Scan common-errors.md by category | Match found? User decides |
-| 3. INVESTIGATE | Launch MANDATORY agents (no optional) | Agent findings received |
-| 4. DIAGNOSE | Present structured report with sources | Report complete |
-| 5. GATE | **USER CHOOSES FIX OPTION** | Explicit selection |
-| 6. FIX | Execute at correct tier (inline/subagent/orchestrator) | Fix implemented |
-| 7. VERIFY | type-check + lint + user confirms fixed | **User says "yes, fixed"** |
-| 8. CLOSE | Log pattern, commit (conditional) | Pattern gate evaluated |
-
----
-
-## Common Mistakes
-
-- **Fixing symptom not root cause** — The error appears in component A but the bug is in the data flowing from component B. Always trace upstream.
-- **Not checking git log** — `git log --oneline -10 <file>` often reveals the change that introduced the bug.
-- **Assuming the bug is where the error appears** — Stack traces point to where the error manifests, not where it originates.
-- **Skipping the pattern check** — The #1 time-saver. Most repeat bugs are in common-errors.md already.
-- **Substituting agents** — If the roster says `react-specialist`, don't use `code-explorer` instead. The roster exists for a reason.
-- **Not logging patterns** — Every bug you fix without logging means someone (or Claude) hits the same bug again later.
-
----
-
 ## References
 
+- [enforcement-rules.md](references/enforcement-rules.md) — NEVER and ALWAYS
+- [quick-reference.md](references/quick-reference.md) — phase table
+- [intake-tables.md](references/intake-tables.md) — Dimension tables when classify is undecided
 - [agent-prompts.md](references/agent-prompts.md) — Agent prompt templates for each category
 - [common-errors.md](references/common-errors.md) — Known error patterns (30+ entries, 7 categories)
 - [debug-workflow.md](references/debug-workflow.md) — Agent selection guide and investigation strategies

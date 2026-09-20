@@ -1,0 +1,48 @@
+{
+  "id": "orchestrate-backend",
+  "model": "jev-latest",
+  "questions": {
+    "destination": {
+      "type": "choice",
+      "instructions": "Name the one skill that should run this request. Prefer a domain skill over a universal one. A named skill routes to itself.",
+      "criteria": {
+        "grill-with-docs": "Build or change a feature, 3+ concerns, multi-file; Idea to shipped feature",
+        "architect": "Shape types and module boundaries before code",
+        "feature-ledger": "Reconcile a large feature's PRD, contract and code",
+        "superpowers:writing-plans": "Write an implementation plan from requirements",
+        "investigate-thoven": "Something is broken at runtime in Thoven; Bug report",
+        "diagnosing-bugs": "A hard bug or perf regression anywhere",
+        "verify": "Claiming done, pre-commit; Ship",
+        "verify-this": "Prove one specific claim with fresh evidence",
+        "create-verification-skill": "This repo has no control skill or Feature Map",
+        "maintain-verification-skill": "An existing verify-app map is stale",
+        "publish": "Commit, deploy, release",
+        "fix-ci": "CI is red on a PR",
+        "loop-on-ci": "Watch a PR until its checks pass",
+        "workspace": "Where does this stand, log work, move a ticket",
+        "rails-expert": "Rails patterns, ActiveRecord, controllers, jobs",
+        "postgres-pro": "Query plans, indexes, Postgres behaviour",
+        "safe-migrate": "A schema change or migration; Schema change",
+        "thoven-db-migration-security": "Whether a migration is safe for live data",
+        "rspec-map": "Find the specs covering a change",
+        "run-smoke-tests": "Smoke the running app",
+        "production-data-audit": "What is actually in production data",
+        "delete-user-account": "Delete a user and everything attached",
+        "security-review": "A general security or auth review",
+        "thoven-rails-security": "Rails-specific security review",
+        "thoven-security-contracts": "Contracts the API must not break",
+        "thoven-coppa-vpc-contracts": "COPPA, verifiable parental consent",
+        "thoven-browser-security": "Browser-side security",
+        "thoven-email-system": "Mailers, templates, delivery",
+        "email-writing": "Write or rewrite the copy in an email",
+        "frontend-handover": "A new endpoint or contract for the frontend",
+        "future-improvements": "Defer an improvement rather than build it now",
+        "doc-freshness": "Docs have drifted from the code",
+        "deslop": "Strip AI slop from a diff; Pre-commit",
+        "no-comments": "Remove comments that restate the code",
+        "code-review": "Review a branch against standards and spec",
+        "tdd": "Write the test first"
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "id": "thoven-designer",
+  "model": "jev-latest",
+  "questions": {
+    "fork": {
+      "type": "choice",
+      "instructions": "Should this design-system question be answered here, handed to a specialist skill, or stopped for Andres?",
+      "criteria": {
+        "answer_here": "The question is which colour, type size, icon, radius, spacing, motion value, lock, existing component, or drift from the system. This skill's sources can answer it.",
+        "route_to_skill": "The work is building a new surface, a craft polish of something already built, or a specialist concern that is not reading an existing token (typography polish, layout craft, a11y, copy, motion craft). Asking which colour or token the system already uses is answer_here, not this.",
+        "needs_andres": "Nothing binds the value, the asker wants to mint a hue outside PALETTE, or the work would resize a neighbouring surface (feature-ledger rule 16)."
+      }
+    },
+    "source": {
+      "type": "choice",
+      "instructions": "Which one file or ledger should be opened? D# rows outrank other sources only when the question names a Feature, Project, DESIGN_ file, or D# row. A colour, type, icon, or token question with no Feature name opens that token file. Do not pick a derived docs/design/*.md file when a token module exists. An existence question (does this component already exist) is components_ui.",
+      "criteria": {
+        "feature_d_rows": "The question names a Feature, a Project, a DESIGN_ file, or a D# row, and asks which system value that surface uses. Do not pick this when the asker only says this button or this chip and names no Feature.",
+        "colour_palette": "The question is which colour, hue, palette, or status colour to use, and it names no Feature. Open tools/build-palette.mjs (PALETTE) and __tests__/palette.test.ts.",
+        "type_ramp": "Type ramp, fonts, weights. Open app/globals.css @theme --text-* and __tests__/theme-tokens.test.ts.",
+        "buttons": "Buttons, ledges, variants. Open thovenButtonTokens in lib/live-lesson-tokens.ts and components/ui/thoven-button.tsx.",
+        "icons": "Icons and the two tiers. Open lib/icon-tokens.ts and the icon tests.",
+        "motion": "Motion, springs, reduced motion. Open lib/motion-config.ts.",
+        "layout": "Layout, viewport, spacing. There is no token module. Open docs/design/layout.md.",
+        "lexicon": "What a thing is called. Open design-system/lexicon/LEXICON.md in thoven2.0.",
+        "components_ui": "Does a component already exist? Dialog, sheet, popover, primitive. Open components/ui/ (primitives only). Pick this over feature_d_rows when no Feature is named.",
+        "stack_md": "Could a user name it, build or take, Interior vs base-ui. Open design-system/STACK.md rule 7.",
+        "design_md": "A declared lock, a divergence row, or intent with no token module. Open DESIGN.md."
+      }
+    }
+  }
+}

@@ -181,7 +181,7 @@ If agents missed something specific, use focused Glob/Grep/Read to find exact lo
 |------|------|--------|
 | Simple | 1 file, known pattern, CSS, missing prop | Fix inline |
 | Medium | 2-3 files, clear root cause | Launch domain agent with diagnosis |
-| Complex | 3-strikes, architectural, cross-concern | Invoke feature-orchestrator |
+| Complex | 3-strikes, architectural, cross-concern | Hand to /architect, then plan |
 
 ---
 

@@ -1,0 +1,51 @@
+{
+  "note": "Gold only where Andres or the THV-640 plan named the expected binding. Do not treat other labels as mined product transcripts. Andres reviews disagreements before any result is quoted.",
+  "cases": [
+    {
+      "id": "d1-colour",
+      "provenance": "Andres 2026-09-20, quoted in /tmp/thv640-handoff-2026-09-20.md. Measured failure is a colour question that reads DESIGN.md plus docs/design.",
+      "shape": "single",
+      "turns": [
+        "what colour should this be"
+      ],
+      "gold": {
+        "fork": "answer_here",
+        "source": "colour_palette"
+      }
+    },
+    {
+      "id": "d2-dialog-exists",
+      "provenance": "THV-640 plan live lane 3 pass criterion. Not mined from a product transcript.",
+      "shape": "single",
+      "turns": [
+        "Does a dialog already exist in the design system?"
+      ],
+      "gold": {
+        "fork": "answer_here",
+        "source": "components_ui"
+      }
+    },
+    {
+      "id": "d3-unlocked-andres",
+      "provenance": "THV-640 plan live lane 4 pass criterion. Not mined from a product transcript. Pass also if the record is undecided.",
+      "shape": "single",
+      "turns": [
+        "I want a new hue outside PALETTE for this neighbouring card, and it would resize the shell next to it."
+      ],
+      "gold": {
+        "fork": "needs_andres"
+      }
+    },
+    {
+      "id": "d4-typography-polish",
+      "provenance": "THV-640 plan live lane 5 pass criterion. Not mined from a product transcript.",
+      "shape": "single",
+      "turns": [
+        "Polish the typography on this already-built page. Type sizes, weights, measure."
+      ],
+      "gold": {
+        "fork": "route_to_skill"
+      }
+    }
+  ]
+}

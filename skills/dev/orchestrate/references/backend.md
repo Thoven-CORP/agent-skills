@@ -1,95 +1,92 @@
-# Orchestrate — Task Router
+# Routing requests to skills, backend
 
-## Overview
+Names a destination for a request. Every destination carries a leading slash so
+`scripts/check-skill-routes.sh` can verify it resolves. A name without the slash
+is prose, not a destination.
 
-Classify incoming tasks and route to the correct skill. This eliminates decision fatigue from overlapping skill frameworks.
+This file carries **when to reach for a skill**. The skill's own description
+carries what it does, and restating that here is what drifted.
 
-**Core Principle:** Right skill, right mode, right away.
+## Reading order
 
-## Process
+Take the first match going down, and prefer a domain row over a universal one.
+When two rows match equally, ask one question.
 
-### Step 1: Classify the Task
+## Routing
 
-Read the user's request and classify into ONE primary category:
+| The request | Destination |
+|---|---|
+| Build or change a feature, 3+ concerns, multi-file | `/grill-with-docs` |
+| Shape types and module boundaries before code | `/architect` |
+| Reconcile a large feature's PRD, contract and code | `/feature-ledger` |
+| Write an implementation plan from requirements | `/superpowers:writing-plans` |
+| Something is broken at runtime in Thoven | `/investigate-thoven` |
+| A hard bug or perf regression anywhere | `/diagnosing-bugs` |
+| Claiming done, pre-commit | `/verify` |
+| Prove one specific claim with fresh evidence | `/verify-this` |
+| This repo has no control skill or Feature Map | `/create-verification-skill` |
+| An existing verify-app map is stale | `/maintain-verification-skill` |
+| Commit, deploy, release | `/publish` |
+| CI is red on a PR | `/fix-ci` |
+| Watch a PR until its checks pass | `/loop-on-ci` |
+| Where does this stand, log work, move a ticket | `/workspace` |
 
-| Category | Signals | Route To |
-|----------|---------|----------|
-| **Creative/Design** | "build", "create", "add feature", "new", "design" | `grill-with-docs` (in a repo) |
-| **Planning** | "plan", "break down", "scaffold", "implement plan" | `feature-ledger` |
-| **Complex Execution** | "build this", "implement", multi-file changes, needs debate | `expert-team` |
-| **Investigation** | "bug", "error", "broken", "not working", "debug", "fix" | `investigate-thoven` (Thoven runtime); `diagnosing-bugs` (generic hard bugs) |
-| **Verification** | "check", "verify", "review", "is this done", "test" | `verify` |
-| **Session Mgmt** | "where was I", "continue", "resume", "end session" | `resume-session` |
-| **Domain-Specific** | Email work, migrations, security, user deletion, deploy | Domain skill (see below) |
+### Rails and data
 
-### Step 2: Check for Domain Skills
+| The request | Destination |
+|---|---|
+| Rails patterns, ActiveRecord, controllers, jobs | `/rails-expert` |
+| Query plans, indexes, Postgres behaviour | `/postgres-pro` |
+| A schema change or migration | `/safe-migrate` |
+| Whether a migration is safe for live data | `/thoven-db-migration-security` |
+| Find the specs covering a change | `/rspec-map` |
+| Smoke the running app | `/run-smoke-tests` |
+| What is actually in production data | `/production-data-audit` |
+| Delete a user and everything attached | `/delete-user-account` |
 
-If the task involves a specific domain, route to the specialized skill:
+### Security and compliance
 
-| Domain | Skill | Trigger Words |
-|--------|-------|---------------|
-| Email templates/mailers | `email` | "email", "mailer", "SendGrid", "template" |
-| Database migrations | `safe-migrate` | "migrate", "migration", "schema change" |
-| Security/auth | `security-review` | "security", "auth", "COPPA", "Stripe audit" |
-| Production data | `production-data-audit` | "audit", "production data", "data state" |
-| Account deletion | `delete-user-account` | "delete user", "remove account" |
-| Frontend handover | `frontend-handover` | "handover", "API contract", "frontend docs" |
-| TODO management | `manage-todos` | "todo", "task list", "what's next" |
-| Deferred improvements | `future-improvements` | "future improvement", "defer this", "backlog this", "too complex for now" |
-| Technical debt | `tech-debt` | "tech debt", "workaround", "known issue", "temporary fix", "hack" |
-| Publishing/deploy | `publish` | "publish", "deploy", "release" |
+| The request | Destination |
+|---|---|
+| A general security or auth review | `/security-review` |
+| Rails-specific security review | `/thoven-rails-security` |
+| Contracts the API must not break | `/thoven-security-contracts` |
+| COPPA, verifiable parental consent | `/thoven-coppa-vpc-contracts` |
+| Browser-side security | `/thoven-browser-security` |
 
-### Step 3: Recommend Skill + Mode
+### Domain
 
-Present a concise recommendation:
+| The request | Destination |
+|---|---|
+| Mailers, templates, delivery | `/thoven-email-system` |
+| Write or rewrite the copy in an email | `/email-writing` |
+| A new endpoint or contract for the frontend | `/frontend-handover` |
+| Defer an improvement rather than build it now | `/future-improvements` |
+| Docs have drifted from the code | `/doc-freshness` |
 
-```
-**Recommended:** `/[skill-name]` — [one-line reason]
-**Mode:** [if skill has modes, recommend one]
-**Chain:** [if task needs multiple skills in sequence]
-```
+### Before review
 
-### Step 4: Check for Skill Chains
+| The request | Destination |
+|---|---|
+| Strip AI slop from a diff | `/deslop` |
+| Remove comments that restate the code | `/no-comments` |
+| Review a branch against standards and spec | `/code-review` |
+| Write the test first | `/tdd` |
 
-Some tasks benefit from chaining skills in sequence:
+## Chains
 
 | Pattern | Chain |
-|---------|-------|
-| New feature (idea → code) | `grill-with-docs` → `architect` → `feature-ledger` → `expert-team` |
-| New feature (spec exists) | `feature-ledger` → `expert-team` |
-| Bug report | `investigate-thoven` → `verify` |
-| Feature complete | `verify` → `publish` |
-| Complex design problem | `grill-with-docs` → `architect` → `feature-ledger` |
-
-## Model Selection (Embedded — from SADD)
-
-When dispatching sub-agents from ANY skill, use this decision tree:
-
-```
-Is task COMPLEX (architecture, design, novel problem, critical decision)?
-→ YES → Opus
-→ NO → Is task SIMPLE and SHORT?
-        → YES → Haiku
-        → NO → Is output LONG but task not complex?
-                → YES → Sonnet
-                → NO → Opus (default)
-```
-
-## When NOT to Use
-- User explicitly names a skill ("run /investigate-thoven") — just invoke it directly
-- Task is a simple question or clarification — no routing needed
-- Already mid-workflow in another skill — don't re-route
-
-## Common Mistakes
-- Recommending multiple skills when one is clearly best — pick ONE
-- Routing to grill-with-docs for simple bug fixes — use `investigate-thoven` instead
-- Suggesting expert-team for tasks a single agent can handle
-- Re-routing mid-workflow instead of continuing the current skill
+|---|---|
+| Idea to shipped feature | `/grill-with-docs` → `/architect` → `/feature-ledger` |
+| Bug report | `/investigate-thoven` → `/verify` |
+| Schema change | `/safe-migrate` → `/thoven-db-migration-security` → `/verify` |
+| Pre-commit | `/deslop` → `/no-comments` → `/code-review` → `/verify` |
+| Ship | `/verify` → `/publish` → `/loop-on-ci` |
 
 ## Rules
 
-- **ONE recommendation** — Don't list 3 options. Pick the best one.
-- **Explain briefly** — One sentence on why this skill fits.
-- **Offer chain if applicable** — But don't force multi-step workflows for simple tasks.
-- **Domain skills take priority** — If it's clearly email work, route to `email`, not `grill-with-docs`.
-- **When in doubt, ask** — If classification is genuinely ambiguous, ask ONE clarifying question.
+- Name one destination. A second choice is a question, not a recommendation.
+- Give one sentence of reason.
+- A named skill routes to itself. Run what the human typed.
+- Mid-workflow, continue the current skill.
+- The routing is a suggestion the human may override.
