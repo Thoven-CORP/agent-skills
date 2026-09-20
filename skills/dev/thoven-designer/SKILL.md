@@ -42,7 +42,6 @@ and decide from those tables.
 
 | `source` | Open |
 |---|---|
-| `feature_d_rows` | the Feature's `DESIGN_<PROJECT>.md` `D#` rows and `decisions/` |
 | `colour_palette` | `tools/build-palette.mjs` and `__tests__/palette.test.ts` |
 | `type_ramp` | `app/globals.css` `@theme` `--text-*` and `__tests__/theme-tokens.test.ts` |
 | `buttons` | `lib/live-lesson-tokens.ts` (`thovenButtonTokens`) and `components/ui/thoven-button.tsx` |
@@ -54,10 +53,7 @@ and decide from those tables.
 | `stack_md` | `design-system/STACK.md` rule 7 |
 | `design_md` | `DESIGN.md` |
 
-`feature_d_rows` outranks every other source when the question is about a surface inside a Feature.
-A `D#` may not mint a hue outside `PALETTE`. Report that row. Do not obey it.
-
-**A ruling made this session is not in the ledger yet.** Check what this session already ruled
+**A ruling made this session is not in a file yet.** Check what this session already ruled
 before answering from files, then hand it to `workspace` `capture`.
 
 After the file is open: say which lock tier the answer came from (token module plus test = enforced;
@@ -106,10 +102,9 @@ Comma-separated arbitrary values emit CSS. Tailwind rewrites every colour slot i
 
 The browser is Andres's, not a scratch surface.
 
-- Review at his viewport. Ask the size, or use the one the Feature's ledger records.
+- Review at his viewport. Ask the size.
 - If you resize, zoom, or navigate, restore it before handing control back.
 - Name the route and the viewport when you hand over a URL.
-- Never hand over a route a `DESIGN_<PROJECT>.md` row has retired (`feature-ledger` rule 15).
 - Check the surface while the window changes size.
 
 ## Standing checks
@@ -119,4 +114,4 @@ The browser is Andres's, not a scratch surface.
 - No raw colours. `bg-blue-600`, hand-rolled shadows and hex literals route through tokens.
 - Focus rings are `:focus-visible` only.
 - Every component covers loading, empty, error and disabled before it is called done.
-- Values found by feel go through `dialkit` and land as a token module with a test at **Build**, not during Design. While a surface is still being designed the value lives in the proto and the `D#` row.
+- Values found by feel go through `dialkit` and land as a token module with a test at **Build**, not during Design. While a surface is still being designed the value lives in the proto.

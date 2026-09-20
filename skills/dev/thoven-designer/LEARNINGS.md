@@ -5,6 +5,19 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-09-20 — D# rows and the design project are not a source
+
+**What happened.** Classify treated `feature_d_rows` as a first-class source: open the Feature's
+`DESIGN_<PROJECT>.md` when a surface was named. Andres: Feature D# rows are stale, the design
+project is a bad thing to do, the skill should be general about the design system.
+
+**What changed.** Dropped `feature_d_rows` from the schema, the lookup table, and `sources.md`.
+Colour, type, icons, components still open their token file. Session rulings still bind and still
+go to `workspace` `capture`. `docs/design-system.html` stays Tier 3 (compiled view), not a
+classify source.
+
+---
+
 ## 2026-08-22 — the map was repo-wide, so every answer missed the Feature's own assignments
 
 **What happened.** Three failures in the Teacher 2.0 dashboard sprint, all the same shape.
