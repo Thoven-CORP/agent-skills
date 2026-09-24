@@ -54,7 +54,7 @@ PATCHES = [
     (
         "poteto-mode",
         "the `deslop` skill from the `cursor-team-kit` plugin (`/deslop`)",
-        "the `deslop` skill from the `team-kit` plugin (`/team-kit:deslop`)",
+        "the **deslop** skill (`/deslop`)",
     ),
     (
         "poteto-mode",
@@ -62,9 +62,9 @@ PATCHES = [
         "the **writing-for-agents** skill (for authoring SKILL.md files)",
     ),
     (
-        "poteto-mode",
-        "Use the **create-skill** skill (Cursor's built-in for authoring SKILL.md files).",
-        "Use the **writing-for-agents** skill for authoring SKILL.md files.",
+        "deslop",
+        "description: Remove AI-generated code slop and clean up code style",
+        "description: Remove AI-generated slop from the current branch's diff vs main — stray/over-explanatory comments, defensive try/catch on trusted paths, `any` casts that only silence types, needless deep nesting. Surgical and behavior-preserving. Use right after generating code, before review; pair with `thermo-nuclear-code-quality-review` for a structural pass.",
     ),
 ]
 

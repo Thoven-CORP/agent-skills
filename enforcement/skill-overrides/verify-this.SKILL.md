@@ -7,6 +7,8 @@ description: "Verify a claim with fresh local evidence: restate it falsifiably, 
 
 Verification is not a recap. It proves or disproves a specific claim with repeatable evidence.
 
+> **Not the same as the `verify` skill.** `verify` runs pre-commit task-completion checks (type-check, lint, docs drift). `verify-this` falsifies one *specific claim* with baseline/treatment evidence and returns a single verdict.
+
 ## When to use
 
 - The user asks "verify this", "prove it works", "did this fix it", or "show me the evidence".

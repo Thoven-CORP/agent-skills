@@ -106,6 +106,22 @@ restore.
 which `poteto-mode` dispatches throughout its playbooks, plus `explorer` and
 `ui-builder`.
 
+`thermo-nuclear-review-subagent` and `thermo-nuclear-code-quality-review-subagent`
+are cursor/plugins' `thermos/agents/` files, kept under upstream's names so the
+npx-installed `/thermos` dispatches them unpatched. `npx skills` installs skills
+only, never agents, so these are the one upstream piece copied by hand. Only the
+Cursor-specific orchestration line is rewritten.
+
+## pstack and cursor-team-kit skills
+
+`deslop`, `verify-this`, `weekly-review`, `poteto-mode` and the three thermo
+skills come from cursor/plugins through `npx skills`, and nowhere else. The
+`thoven-dev` marketplace's `team-kit` plugin was a fork of these and is retired:
+it put a second copy of each in the slash menu as `team-kit:<name>`. Local
+changes to upstream skills live here, as a string patch in
+`reapply-skill-patches.py`, a whole-file `skill-overrides/` entry, or a line in
+`config/skills-invocable.txt`. Never in a forked copy.
+
 ## Harness coverage
 
 Claude Code and Codex both run these hooks from their own copies, kept in step by

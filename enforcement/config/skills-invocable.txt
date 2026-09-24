@@ -22,3 +22,10 @@ architect
 pick-ui-library
 prototype
 andres-dev-evaluation
+# pstack / cursor-team-kit skills installed by npx from cursor/plugins.
+# Upstream ships them with disable-model-invocation; the thoven-dev
+# team-kit fork that used to carry them unblocked is retired.
+thermos
+thermo-nuclear-review
+thermo-nuclear-code-quality-review
+deslop
