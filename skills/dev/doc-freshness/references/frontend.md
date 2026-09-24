@@ -49,8 +49,8 @@ Run detection across selected tiers. Read `references/doc-registry.md` for the c
    - `.claude/docs/SKILL_AND_AGENT_ROUTING.md`: verify every skill/agent row still exists on disk
 
    **Work-state docs (audit the docs *about* the system — never derive a snapshot; that is bare `workspace`):**
-   - `.claude/docs/SKILL_AND_AGENT_ROUTING.md` work-state section — flag stale if Project orientation/lifecycle does not route to `workspace`, or semantic reconciliation does not route to `feature-ledger`. Verify the skills and `~/thoven/.workspace/WORKFLOW.md` exist.
-   - Workflow law and compatibility store docs (`~/thoven/.workspace/WORKFLOW.md`, `STATE.md`, `TODO.md`, `TECH_DEBT.md`, `FUTURE_IMPROVEMENTS.md`) — flag stale paths or skill names. Project `STATE.md` and `CONTINUE_HERE.md` live under `projects/<project>/`; audience-level copies are compatibility inputs. Snapshot correctness is OUT OF SCOPE — run bare `workspace` for that Project.
+   - `.claude/docs/SKILL_AND_AGENT_ROUTING.md` work-state section — flag stale if Project orientation/lifecycle does not route to `workspace`, or semantic reconciliation does not route to `feature-ledger`. Verify the skills and `~/.agents/skills/workspace/references/WORKFLOW.md` exist.
+   - Workflow law (`~/.agents/skills/workspace/references/WORKFLOW.md`) and compatibility store docs (`~/thoven/.workspace/STATE.md`, `TODO.md`, `TECH_DEBT.md`, `FUTURE_IMPROVEMENTS.md`) — flag stale paths or skill names. Project `STATE.md` and `CONTINUE_HERE.md` live under `projects/<project>/`; audience-level copies are compatibility inputs. Snapshot correctness is OUT OF SCOPE — run bare `workspace` for that Project.
 
 3. **Semantic check** — read recent git log for the watched dirs and check if changes are doc-worthy:
    ```bash

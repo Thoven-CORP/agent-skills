@@ -11,7 +11,7 @@ description: >-
 Run multi-session work in visible panes. Linear stays the source of truth;
 herdr makes parallelism physical.
 
-**Law:** `.workspace/WORKFLOW.md` §8. This skill is the operating procedure;
+**Law:** `~/.agents/skills/workspace/references/WORKFLOW.md` §8. This skill is the operating procedure;
 that file is the mapping (space / tab / pane), the two ladders, and the
 location stamp. The file wins on disagreement.
 

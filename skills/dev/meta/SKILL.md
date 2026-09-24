@@ -16,7 +16,7 @@ Project folder.
 **Source:** `~/thoven/agent-skills/skills/dev/meta/`. Home copies are
 installs. Edit the repo, then copy out.
 
-**Law:** `.workspace/WORKFLOW.md` §8. This skill is the desk procedure. The file
+**Law:** `~/.agents/skills/workspace/references/WORKFLOW.md` §8. This skill is the desk procedure. The file
 wins on disagreement.
 
 **Bind.** First action: read this space's `label` from `herdr workspace list`,
@@ -82,7 +82,7 @@ Ghosts and signed-off panes: recap. Recycle after he says so.
 
 ## Read the law and the story
 
-- `.workspace/WORKFLOW.md` §8
+- `~/.agents/skills/workspace/references/WORKFLOW.md` §8
 - This Project's fat card and the file it `Writes to:`
 - This Project's `STATE.md` and `CONTINUE_HERE.md`
 

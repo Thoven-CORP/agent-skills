@@ -12,7 +12,7 @@ const os = require('node:os');
 
 const THOVEN = path.join(os.homedir(), 'thoven');
 
-// Mirrors the ledger-bind table in .workspace/WORKFLOW.md §8. That file is the law;
+// Mirrors the ledger-bind table in ~/.agents/skills/workspace/references/WORKFLOW.md §8. That file is the law;
 // this is the enforcement. Updated 2026-08-27: ~Dashboard and ~Onboarding retired
 // (both shipped through Teacher 2.0 Part 1, so their folders are evidence now), and
 // the three section interiors were promoted out of archive/legacy-projects/ because

@@ -86,7 +86,7 @@ These are loaded into Claude context regularly. Staleness here directly degrades
 - **Content verification**:
   - Every skill named in a routing table still exists (`ls .claude/skills/` + the session-injected skill list); flag rows for retired skills
   - Every agent in the Agents table still exists in `.claude/agents/`; flag stale model tiers
-  - **Work-state routing**: the routing table points bare Project orientation, capture, close, and log to `workspace`; semantic reconciliation points to `feature-ledger`. Verify both installed skills and `~/thoven/.workspace/WORKFLOW.md` exist.
+  - **Work-state routing**: the routing table points bare Project orientation, capture, close, and log to `workspace`; semantic reconciliation points to `feature-ledger`. Verify both installed skills and `~/.agents/skills/workspace/references/WORKFLOW.md` exist.
   - Disambiguation entries still name live skills (e.g. `skill-creator` was retired 2026-07-25 in favor of `superpowers:writing-skills`)
 - **Update strategy**: Update rows to match disk. This file is allowed to grow — it is loaded on demand, not every session.
 - **Key sections to check**: Disambiguating ambiguous phrases, Work-state verbs, Development / Animation / Session / Strategy / Meta tables, Agents table
@@ -113,7 +113,7 @@ These are loaded into Claude context regularly. Staleness here directly degrades
 
 These files live outside the FE repo. Check them when `standard` or `full` scope is requested.
 
-- **Paths**: `~/thoven/.workspace/WORKFLOW.md`, compatibility registers, and Project-local `projects/<project>/{STATE.md,CONTINUE_HERE.md}`
+- **Paths**: `~/.agents/skills/workspace/references/WORKFLOW.md`, compatibility registers under `~/thoven/.workspace/`, and Project-local `projects/<project>/{STATE.md,CONTINUE_HERE.md}`
 - **Source of truth**: the live `workspace` skill verbs (`~/.claude/skills/workspace/SKILL.md`; fallback: `find ~/.claude ~/thoven -name SKILL.md -path '*/workspace/*'`) + the actual item files in `~/thoven/.workspace/`
 - **Content verification**:
   - State docs — check referenced paths and skill names. Audience-level state is a compatibility input, not the current Project authority. Snapshot correctness is OUT OF SCOPE — run bare `workspace` for the Project.

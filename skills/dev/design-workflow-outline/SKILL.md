@@ -44,7 +44,7 @@ The whole skeleton runs inside the Feature's **`Design` milestone**, and the Iss
 one of two unit shapes (WORKFLOW.md §1): a **sweep** — one level across screens, the default, one
 Issue per track-level crossing carrying a `Writes to:` line with the path below — or a **screen** —
 one surface walked across levels, as a parent Issue whose sub-issues carry the pieces. Name the
-shape in the title either way. Milestones, lanes and gates: `~/thoven/.workspace/WORKFLOW.md` §3.
+shape in the title either way. Milestones, lanes and gates: `~/.agents/skills/workspace/references/WORKFLOW.md` §3.
 
 Paths are relative to the Project folder: `thoven2.0/<audience>/projects/<project>/` for 2.0 work,
 `docs/<Surface>/` otherwise. An agent writes to the path its issue names and never invents one.
