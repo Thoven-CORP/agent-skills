@@ -11,7 +11,7 @@ This path covers both repos in one run. The backend goes first. The frontend onl
 
 ## Steps
 
-Stop at the first failure and report it with its output. Every step marked **Stop** waits: show Andres the exact command, or the blocker, and wait for Andres's "go". A go covers only the command shown with it.
+Stop at the first failure and report it with its output. A label that starts with "Stop" waits: show Andres the exact command, or the blocker, and wait for Andres's "go". A go covers only the command shown with it.
 
 1. **Production exists.**
 
@@ -21,7 +21,7 @@ Stop at the first failure and report it with its output. Every step marked **Sto
 
    Done when both names print with branch `release/2.0`. Hold their IDs for later steps. No output means the production services do not exist yet (THV-703): stop and tell Andres there is no 2.0 production to deploy to.
 
-2. **Pick the SHAs.** For each repo, the SHA to promote is the one staging runs now. Read it from `render deploys list srv-dao470bm8hqs73d71sh0 -o json --confirm | jq -r '[.[] | select(.status=="live")][0].commit.id'` (backend) and `curl -s https://staging.thoven.co/api/version | jq -r .sha` (frontend). A repo with nothing new since the last promote (`git rev-parse origin/release/2.0` already equals the SHA) skips its half.
+2. **Pick the SHAs.** For each repo, the SHA to promote is the one staging runs now. Read it from `render deploys list srv-dao470bm8hqs73d71sh0 -o json --confirm | jq -r '[.[] | select(.status=="live")][0].commit.id'` (backend) and `curl -s https://staging.thoven.co/api/version | jq -r .sha` (frontend). A repo with nothing new since the last promote (`git rev-parse origin/release/2.0` already equals the SHA) skips its half. Done when each repo has a SHA or is marked as skipping.
 
 3. **Each SHA is staging-green.** Run steps 2 to 5 of `references/staging-2.0.md` on it, unless that report already exists for this exact SHA in this session. Done when both repos report staging-green. A gate that could not run (missing accounts, a skipped test) is not green: carry it into the plan in step 5.
 
@@ -34,7 +34,7 @@ Stop at the first failure and report it with its output. Every step marked **Sto
 
    Done when it prints `fast-forward`. No output means `release/2.0` holds a commit that `feature/teacher-2.0` lacks: stop and tell Andres. Promotion never merges, cherry-picks, or force-pushes.
 
-5. **Show the plan.** One block listing both SHAs, the proof from step 3, every gate that did not run and why, and the commands of steps 6, 7 and 9 with the SHAs and service IDs filled in. A go on a plan with a gate that did not run accepts that gap. Name the gap again at each stop.
+5. **Show the plan.** One block listing both SHAs, the proof from step 3, every gate that did not run and why, and the commands of steps 6, 7 and 9 with the SHAs and service IDs filled in. A go on a plan with a gate that did not run accepts that gap. Name the gap again at each stop. Done when Andres has the block.
 
 6. **Stop: promote the backend.** After Andres's go, from the backend worktree of step 3 (`~/thoven/backend-publish-<be-sha7>`, a detached checkout of `<be-sha>`):
 
@@ -53,7 +53,7 @@ Stop at the first failure and report it with its output. Every step marked **Sto
    test -n "$GHOST_TEACHER_EMAIL" && echo accounts-loaded
    ```
 
-   **Stop: accounts missing.** No `accounts-loaded` line means the file does not hold the accounts yet (THV-707 Phase B creates them). Tell Andres. Continue to step 9 only after Andres's go that accepts a production release with no smoke and no ghost harness. With the accounts loaded:
+   No `accounts-loaded` line means the file does not hold the accounts yet (THV-707 Phase B creates them). Skip the commands below and go to the stop after them. With the accounts loaded:
 
    ```bash
    export SMOKE_TEACHER_TOKEN=$(jq -n --arg e "$GHOST_TEACHER_EMAIL" --arg p "$GHOST_TEACHER_PASSWORD" '{user:{email:$e,password:$p}}' \
@@ -62,7 +62,9 @@ Stop at the first failure and report it with its output. Every step marked **Sto
    SMOKE_HOST=https://api.thoven.co bundle exec rake deploy:smoke
    ```
 
-   Done when it exits 0. A failure here is a rollback decision for Andres (section "Roll back").
+   Done when `accounts-loaded` printed and `deploy:smoke` exits 0.
+
+   **Stop: release without smoke.** Only when the accounts were missing or the smoke failed. Tell Andres which, with the output. A failed smoke is also a rollback decision (section "Roll back"). Continue to step 9 only after Andres says "Go: release without smoke". A go covers only the command shown with it, so this go does not cover step 9's push. Step 9 needs its own go.
 
 9. **Stop: promote the frontend.** After Andres's go, from a detached checkout of `<fe-sha>`, so the pre-push check runs on the code being promoted:
 
@@ -83,7 +85,9 @@ Stop at the first failure and report it with its output. Every step marked **Sto
 
     Done when `sha` equals `<fe-sha>` and `ref` is `release/2.0`. Re-run the curl each minute while the newest `vercel ls` row reads `Building`. A row reading `Error`, or the old SHA after 15 minutes, stops the path: report it to Andres with the `vercel ls` output. A newest row reading `Ready` while `/api/version` still shows the old SHA means an earlier rollback holds the domain (section "Roll back"). Go to step 10a.
 
-10a. **Stop: promote the new deployment.** Only when step 10 sent you here. Copy the URL of the newest `Ready` row of `vercel ls thoven --prod`, show Andres that exact URL and the command below, and wait for a fresh go:
+10a. **Promote the new deployment.** Only when step 10 sent you here. Copy the URL of the newest `Ready` row of `vercel ls thoven --prod`.
+
+    **Stop: promote the new deployment.** Show Andres that exact URL and the command below, and wait for a fresh go:
 
     ```bash
     vercel promote <newest-ready-deployment-url> --yes
@@ -98,7 +102,9 @@ Stop at the first failure and report it with its output. Every step marked **Sto
     GHOST_TARGET=ghost npm run test:ghost
     ```
 
-    Done when no test fails. Report every skip with the variable it names.
+    Done when no test fails and none is skipped.
+
+    **Stop: harness failed or skipped.** Only when a test failed or skipped. Tell Andres, with each failure and each skip's variable. Production already runs the SHA, so this is a rollback decision for Andres (section "Roll back").
 
 12. **Report.** Per repo: the SHA, the proof from steps 7 and 10, and each gate's result. Say "production runs `<sha>`" only for a repo whose proof passed.
 
@@ -107,7 +113,9 @@ Stop at the first failure and report it with its output. Every step marked **Sto
 Roll back a repo when its production deploy went live and then misbehaved. A refused or failed deploy needs no rollback: the previous deploy kept serving. Neither rollback moves `release/2.0`.
 
 - **Backend.** Follow "Roll back" in the Render runbook. It reads both services' deploy lists, stops when web and worker disagree, stops on any migration in the range, and stops for Andres's go before the redeploy.
-- **Frontend.** Roll it back only when it misbehaves itself, or when it calls backend code the backend rollback removed. After Andres's go:
+- **Frontend rollback.** Roll the frontend back only when it misbehaves itself, or when it calls backend code the backend rollback removed.
+
+  **Stop: roll back the frontend.** Show Andres the commands below with the previous deployment's URL filled in. After Andres's go:
 
   ```bash
   vercel ls thoven --prod
@@ -117,7 +125,9 @@ Roll back a repo when its production deploy went live and then misbehaved. A ref
 
   Done when `sha` is the previous SHA. A rollback turns off Vercel's auto-assignment of the production domain, so later pushes to `release/2.0` build but do not go live. The next promote reaches step 10a, which turns auto-assignment back on.
 
-After either rollback, run steps 8 and 11 again against the rolled-back SHAs and report them. The fix goes into `feature/teacher-2.0` as a PR and reaches production through a normal promote.
+- **Checks after a frontend rollback.** Run steps 8 and 11 again. Done when both pass. The backend runbook runs the same checks after a backend rollback.
+
+The fix goes into `feature/teacher-2.0` as a PR and reaches production through a normal promote.
 
 ## Changelog
 

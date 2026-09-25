@@ -40,6 +40,7 @@ TaskCreate for each:
 - [ ] Step 7: Execute post-commit actions per decision (push / push+pull / push+pull+publish)
 - [ ] Step 7.5 (Publish only): Check docs/deployment/PUBLISH_REMINDERS.md for pending post-publish actions
 - [ ] Step 8 (Publish only): After the Publish click, run `npm run verify:prod` — only stamp the changelog `Published` once it exits 0
+- [ ] Step 8.5 (Publish only): Once `verify:prod` exits 0, tag the release SHA with `git tag -a vX.X.X` (see *Git Tag*)
 - [ ] Step 9: Carry the fix into 2.0 the same day (see *Carry the Fix into 2.0*)
 YOU CANNOT SKIP THE CHECKLIST. CREATE IT NOW.
 
@@ -279,17 +280,6 @@ Publication Status: Published
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
-### Git Tag (Publish Only)
-
-After `npm run verify:prod` exits 0, tag the release SHA (`git fetch origin release/1.0` first, so the tag lands on the merged commit):
-
-```bash
-git tag -a vX.X.X -m "vX.X.X: Brief summary" origin/release/1.0
-git push origin vX.X.X
-```
-
-This makes every production release checkpointed — you can `git checkout v1.22.0` to see exactly what was deployed.
-
 ### Use HEREDOC for commit
 
 ```bash
@@ -314,8 +304,8 @@ CI runs on a pull request into `release/1.0`, never on a push to it. The hotfix 
 
 1. `git push -u origin hotfix/<slug>`
 2. `gh pr create --base release/1.0 --title "<type>: <summary>" --body "<what and why>"`
-3. `gh pr checks --watch`. Done when the job `CI` passes.
-4. **Stop.** Andres merges the PR ("merge it"). Then `git fetch origin release/1.0 && git rev-parse origin/release/1.0` is the release SHA.
+3. **CI passes on the PR.** `gh pr checks --watch`. Done when the job `CI` passes.
+4. **Stop: merge the hotfix PR.** Andres merges the PR ("merge it" for this PR). Then `git fetch origin release/1.0 && git rev-parse origin/release/1.0` is the release SHA.
 
 ### After STAGING
 
@@ -338,6 +328,7 @@ CI runs on a pull request into `release/1.0`, never on a push to it. The hotfix 
    4. Come back and confirm the click happened — then run `npm run verify:prod` (see *Post-Publish Verification* below)"
    - Cross-repo releases (FE + BE both have unreleased changes): deploy the **backend first**, confirm healthy, then publish the frontend — FE code that calls new BE contracts will 500 if FE ships first.
 4. If `docs/deployment/PUBLISH_REMINDERS.md` had open items (Step 7.5), append their numbered steps to this reminder now — right after the Publish click is the moment they need to happen.
+5. **Stop: Andres clicks Publish.** Only Andres clicks Publish in Replit. Wait until Andres confirms the click.
 
 ### Post-Publish Verification (MANDATORY — the `Published` stamp depends on it)
 
@@ -374,11 +365,24 @@ release commit must carry the version header, leave the date line as
 `- Publishing` and correct it to the real deploy date in a follow-up commit once
 verified.
 
+1. **Production serves the release.** Run `npm run verify:prod`. Done when it exits 0.
+
 **Adding a release to the check:** add a `SURFACES` entry in
 `scripts/verify-prod-release.mjs` with `expectPresent` (strings the release
 introduced) and `expectAbsent` (strings it deleted). Every `expectPresent` marker
 is validated against tracked source first, so a typo'd or reworded marker fails
 loudly instead of passing vacuously.
+
+### Git Tag (Publish Only)
+
+1. **The release is tagged.** After `npm run verify:prod` exits 0, tag the release SHA (`git fetch origin release/1.0` first, so the tag lands on the merged commit). Done when `git ls-remote --tags origin vX.X.X` prints the tag:
+
+   ```bash
+   git tag -a vX.X.X -m "vX.X.X: Brief summary" origin/release/1.0
+   git push origin vX.X.X
+   ```
+
+The tag checkpoints every production release: `git checkout v1.22.0` shows exactly what was deployed.
 
 ### Pending Post-Publish Actions (Publish only)
 
@@ -457,7 +461,9 @@ After reset, verify the workspace matches what you're publishing: `git rev-parse
 
 ## Carry the Fix into 2.0
 
-A 1.0 fix that skips 2.0 comes back at cutover. The same day, open a PR of the fix into `feature/teacher-2.0`:
+A 1.0 fix that skips 2.0 comes back at cutover.
+
+1. **Carry the fix into `feature/teacher-2.0` the same day.** Open a PR of the fix into `feature/teacher-2.0`. Done when `gh pr create` prints the PR URL:
 
 ```bash
 git fetch origin feature/teacher-2.0

@@ -23,12 +23,12 @@ Each website watches exactly one branch. To change a website, move its branch.
 
    | Andres says / the change is on | Path | Read | Andres's tick list |
    |---|---|---|---|
-   | "hotfix", "fix the live site", "publish on Replit", or the change is on `release/1.0` | 1.0 hotfix | frontend: `references/hotfix-1.0-frontend.md` · backend: `references/hotfix-1.0-backend.md` | checklist, "1.0 hotfix (Replit)" |
+   | "hotfix", "fix the live site", "publish on Replit", or the change is on `release/1.0` | 1.0 hotfix | frontend: `references/hotfix-1.0-frontend.md` · backend: `references/hotfix-1.0-backend.md` | checklist, "1.0 frontend hotfix" or "1.0 backend hotfix" |
    | "staging", "is it on staging", or the change is merged into `feature/teacher-2.0` | 2.0 staging | `references/staging-2.0.md` | checklist, "2.0 on staging" |
-   | "deploy to production", "promote", "ghost prod", "release/2.0" | 2.0 production | `references/production-2.0.md` | checklist, "2.0 to production" |
+   | "deploy to production", "promote", "ghost prod", "release/2.0" | 2.0 production | `references/production-2.0.md` | checklist, "2.0 to production" and "Deploy a SHA (Render)" |
    | "roll back", "revert production", a 2.0 production deploy misbehaves | 2.0 rollback | `references/production-2.0.md`, section "Roll back" | checklist, "Roll back the 2.0 backend" and "Roll back the 2.0 frontend" |
 
-   The checklist is `docs/Platform/projects/platform-upgrade-and-hosting/PUBLISH_CHECKLIST.md` in the frontend repo (from the backend repo: `git -C ~/thoven/frontend show origin/feature/teacher-2.0:docs/Platform/projects/platform-upgrade-and-hosting/PUBLISH_CHECKLIST.md`). Tick its items in your report as each one passes.
+   The checklist is `docs/Platform/projects/platform-upgrade-and-hosting/PUBLISH_CHECKLIST.md` in the frontend repo (from the backend repo: `git -C ~/thoven/frontend show origin/feature/teacher-2.0:docs/Platform/projects/platform-upgrade-and-hosting/PUBLISH_CHECKLIST.md`). Every check and every stop in the reference files has one checklist item with the same name. Tick each in your report as it passes. `scripts/check-publish-checklist.py` in the agent-skills repo fails when the two drift.
 
    A request that fits no row, or fits two, gets one question: "1.0 hotfix, 2.0 staging, or 2.0 production?"
 3. **Read only that one file and follow it in order.** The 2.0 production path covers both repos in one run. The other paths cover the repo from step 1.

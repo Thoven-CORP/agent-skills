@@ -452,13 +452,15 @@ EOF
 
 After the commit, land it on `release/1.0` through a PR. CI runs on a pull request into `release/1.0`, never on a push to it:
 
-```bash
-git push -u origin hotfix/<slug>
-gh pr create --base release/1.0 --title "fix: <summary>" --body "<what and why>"
-gh pr checks --watch
-```
+1. **CI passes on the PR.** Done when the job `CI` passes:
 
-Done when the job `CI` passes. **Stop.** Andres merges the PR ("merge it"). Then `git fetch origin release/1.0 && git rev-parse origin/release/1.0` is the release SHA. Before Step 7, repeat PRE-CHECK 1 steps 1 and 2 so the Replit Shell sits on this SHA.
+   ```bash
+   git push -u origin hotfix/<slug>
+   gh pr create --base release/1.0 --title "fix: <summary>" --body "<what and why>"
+   gh pr checks --watch
+   ```
+
+2. **Stop: merge the hotfix PR.** Andres merges the PR ("merge it" for this PR). Then `git fetch origin release/1.0 && git rev-parse origin/release/1.0` is the release SHA. Before Step 7, repeat PRE-CHECK 1 steps 1 and 2 so the Replit Shell sits on this SHA.
 
 **This does NOT deploy.** Replit UI still deploys. Do not treat push success as `CI` green. Do not `gh workflow run` Parent P1 quality or Pre-publish validation, and do not wait on them.
 
@@ -524,8 +526,10 @@ Remember:
 - git push lands on GitHub and starts required `CI`; it does not deploy
 - The Replit UI "Publish" button snapshots current files and builds a new container
 - Production will run: db:migrate → puma start (with Solid Queue plugin)
-- Verify `curl -s https://thovenbackend-am-andres234.replit.app/health`: `revision.sha` is a prefix of the release SHA
 ```
+
+1. **Stop: Andres clicks Publish.** Only Andres clicks Publish in Replit. Wait until Andres confirms the click.
+2. **Production serves the release.** Run `curl -s https://thovenbackend-am-andres234.replit.app/health`. Done when `revision.sha` is a prefix of the release SHA.
 
 Mark task complete: `TaskUpdate: Step 7 → completed`
 
@@ -533,7 +537,9 @@ Mark task complete: `TaskUpdate: Step 7 → completed`
 
 ## Step 8: Carry the Fix into 2.0 (MANDATORY)
 
-A 1.0 fix that skips 2.0 comes back at cutover. The same day, open a PR of the fix into `feature/teacher-2.0`:
+A 1.0 fix that skips 2.0 comes back at cutover.
+
+1. **Carry the fix into `feature/teacher-2.0` the same day.** Open a PR of the fix into `feature/teacher-2.0`. Done when `gh pr create` prints the PR URL:
 
 ```bash
 git fetch origin feature/teacher-2.0

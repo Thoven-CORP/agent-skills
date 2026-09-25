@@ -53,7 +53,7 @@ Run each step in the repo it names. Steps 1 to 4 check each repo that changed. S
    test -n "$STAGING_SMOKE_TEACHER_EMAIL" && echo smoke-teacher-loaded
    ```
 
-   **Stop: smoke teacher missing.** No `smoke-teacher-loaded` line means the file does not hold the smoke teacher yet. Tell Andres. The SHA is not staging-green until the smoke runs. With the teacher loaded:
+   **Stop: smoke teacher missing.** Only when no `smoke-teacher-loaded` line printed: the file does not hold the smoke teacher yet. Tell Andres. The SHA is not staging-green until the smoke runs. With the teacher loaded:
 
    ```bash
    bin/dogfood-staging
