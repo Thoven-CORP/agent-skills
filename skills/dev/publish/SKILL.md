@@ -1,6 +1,6 @@
 ---
 name: publish
-description: Use when publishing, deploying, releasing, promoting to production, or checking what a site runs. Branches on app (1.0 or 2.0) and target (staging or production), in the frontend or backend repo. Triggers on publish, deploy, deploy to production, promote, release, go live, hotfix, staging, changelog.
+description: Use when Andres asks to publish, deploy, release, or promote Thoven's frontend or backend to staging or production, to hotfix the live 1.0 site on Replit, to roll back a 2.0 production deploy, or to check which SHA staging, ghost prod, or thoven.co runs. Also use for "deploy to production", "go live", and "is it on staging". Not for Render or Vercel config and env vars, writing migrations, or deploying other projects.
 ---
 
 # Publish
@@ -24,6 +24,8 @@ description: Use when publishing, deploying, releasing, promoting to production,
 ## Rules on every path
 
 - A label that starts with "Stop" waits. Show Andres the exact command, or the blocker, and wait for Andres's "go". A go covers only the command shown with it.
+- A go given before the command was shown covers nothing: "you have my go, don't wait" still stops at the first Stop.
+- An unreachable Andres gives no go. Until THV-767 step 8, 2.0 production serves dogfood accounts only, so waiting costs no real user. Keep the report current and wait.
 - Only Andres clicks Publish in Replit.
 - Every check and every stop has one item, with the same name, in Andres's tick list: `docs/Platform/projects/platform-upgrade-and-hosting/PUBLISH_CHECKLIST.md` in the frontend repo. From the backend repo, read it with `git -C ~/thoven/frontend show origin/feature/teacher-2.0:docs/Platform/projects/platform-upgrade-and-hosting/PUBLISH_CHECKLIST.md`. Tick each item in your report as it passes.
 

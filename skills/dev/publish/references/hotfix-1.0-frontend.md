@@ -1,5 +1,7 @@
 # Publish: 1.0 frontend hotfix (Replit)
 
+Contents: Deployment Pipeline · MANDATORY First Action · Phase 0: Analyze · Phase 1: Decide · Phase 2: Update Changelog · Phase 3: Commit · Phase 4: Post-Commit Actions · Carry the Fix into 2.0 · Changelog State Lifecycle · Rules · References
+
 1.0 takes hotfixes only. Replit serves `release/1.0` (tag `thoven-1.0`) on thoven.co until cutover, and stays the rollback after it. Start the fix from `origin/release/1.0`:
 
 ```bash
@@ -279,6 +281,7 @@ CI runs on a pull request into `release/1.0`, never on a push to it. The hotfix 
 1. `git push -u origin hotfix/<slug>`
 2. `gh pr create --base release/1.0 --title "<type>: <summary>" --body "<what and why>"`
 3. **CI passes on the PR.** `gh pr checks --watch`. Done when the job `CI` passes.
+   **Stop: push without CI.** Only when Andres asks to push straight to `release/1.0`. Say once that a direct push gets no CI. Push directly only after Andres says "Go: push without CI" for this fix. For a Publish, add the `SURFACES` entry to the commit first. Then run `git push origin HEAD:release/1.0` and continue at the Replit steps.
 4. **Stop: merge the hotfix PR.** Andres merges the PR ("merge it" for this PR). Then `git fetch origin release/1.0 && git rev-parse origin/release/1.0` is the release SHA.
 
 ### After STAGING

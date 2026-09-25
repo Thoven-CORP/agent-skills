@@ -34,7 +34,7 @@ Stop at the first failure and report it with its output. A label that starts wit
 
    Done when it prints `fast-forward`. No output means `release/2.0` holds a commit that `feature/teacher-2.0` lacks: stop and tell Andres. Promotion never merges, cherry-picks, or force-pushes.
 
-5. **Show the plan.** One block listing both SHAs, the proof from step 3, every gate that did not run and why, and the commands of steps 6, 7 and 9 with the SHAs and service IDs filled in. A go on a plan with a gate that did not run accepts that gap. Name the gap again at each stop. Done when Andres has the block.
+5. **Show the plan.** Run step 8's accounts check first (`accounts-loaded`), so a missing-accounts gap is in the plan. One block listing both SHAs, the proof from step 3, every gate that did not run and why, and the commands of steps 6, 7 and 9 with the SHAs and service IDs filled in. A go on a plan with a gate that did not run accepts that gap. Name the gap again at each stop. Done when Andres has the block.
 
 6. **Stop: promote the backend.** After Andres's go, from the backend worktree of step 3 (`~/thoven/backend-publish-<be-sha7>`, a detached checkout of `<be-sha>`):
 

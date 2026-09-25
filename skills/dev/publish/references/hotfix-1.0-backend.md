@@ -1,5 +1,7 @@
 # Publish: 1.0 backend hotfix (Replit)
 
+Contents: MANDATORY First Action · Three-Environment Reference (CRITICAL — read once, then apply) · PRE-CHECK 0: Verify Neon Matches Last "Published" Marker (MANDATORY) · PRE-CHECK 1: Replit-Shell Migrate (MANDATORY when migrations exist) · Step 1: Find Last Published Commit (MANDATORY) · Step 2: List All Unpublished Commits (MANDATORY) · Step 3: Verify CHANGELOG Completeness (MANDATORY) · APPROVAL GATE (MANDATORY STOP) · Step 4: Determine Version Bump (MANDATORY) · Step 5: Update CHANGELOG.md (MANDATORY) · Step 5.5: Run Test Suite (MANDATORY) · Step 5.6: Verify Contract-Manifest Freshness (MANDATORY) · Step 5.7: Verify Slot Time-Rendering (run when a slot controller/serializer/model changed) · Step 6: Create Publish Commit (MANDATORY) · Step 6.5: Linear Ticket Cross-Check (MANDATORY) · Step 6.9: Pending Post-Publish Actions (MANDATORY) · Step 7: Remind to Deploy (MANDATORY) · Step 8: Carry the Fix into 2.0 (MANDATORY) · When NOT to Use · Common Mistakes
+
 1.0 takes hotfixes only. Replit serves `release/1.0` (tag `thoven-1.0`) until cutover, and stays the rollback after it. Start the fix from `origin/release/1.0`:
 
 ```bash
@@ -458,6 +460,8 @@ After the commit, land it on `release/1.0` through a PR. CI runs on a pull reque
    gh pr create --base release/1.0 --title "fix: <summary>" --body "<what and why>"
    gh pr checks --watch
    ```
+
+   **Stop: push without CI.** Only when Andres asks to push straight to `release/1.0`. Say once that a direct push gets no CI. Push directly only after Andres says "Go: push without CI" for this fix. Then run `git push origin HEAD:release/1.0` and continue at Step 7.
 
 2. **Stop: merge the hotfix PR.** Andres merges the PR ("merge it" for this PR). Then `git fetch origin release/1.0 && git rev-parse origin/release/1.0` is the release SHA. Before Step 7, repeat PRE-CHECK 1 steps 1 and 2 so the Replit Shell sits on this SHA.
 
