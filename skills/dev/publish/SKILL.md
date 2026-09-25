@@ -19,7 +19,15 @@ description: Use when Andres asks to publish, deploy, release, or promote Thoven
 
    A request that fits no row, or fits two, gets one question: "1.0 hotfix, 2.0 staging, 2.0 production, or rollback?" Done when exactly one row fits.
 2. For the 1.0 hotfix, pick the repo. Backend if `Gemfile` is in cwd or a parent, or `git remote get-url origin` contains `backend-remote`. Frontend if `package.json` and `app/` exist, or origin contains `frontend-remote`. Done when you name one repo. The 2.0 paths cover both repos in one run.
-3. Read only that one file, and follow it in order. Done when its last step reports.
+3. Check that Andres's tick list matches the references:
+
+   ```bash
+   git -C ~/thoven/frontend fetch origin feature/teacher-2.0
+   python3 ~/thoven/agent-skills/scripts/check-publish-checklist.py ~/thoven/agent-skills/skills/dev/publish ~/thoven/frontend origin/feature/teacher-2.0
+   ```
+
+   Done when it prints `checklist matches sources`. Any other output is a drift: show Andres the diff and follow the reference file, which is the source.
+4. Read only that one file, and follow it in order. Done when its last step reports.
 
 ## Rules on every path
 

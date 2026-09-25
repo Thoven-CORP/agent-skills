@@ -13,6 +13,6 @@ A push, a green CI run, or a finished deploy is not proof. The site answering wi
 | 1.0 frontend | `npm run verify:prod` | exit 0 |
 | 1.0 backend | `curl -s https://thovenbackend-am-andres234.replit.app/health` | `revision.sha` is a prefix of the release SHA |
 
-`env` reads `production` on both Vercel projects, so `ref` is what tells staging from ghost prod. Staging service IDs: `thoven-api-staging` is `srv-dao470bm8hqs73d71sh0`, `thoven-worker-staging` is `srv-dao470bm8hqs73d71shg`.
+`env` reads `production` on both Vercel projects, so `ref` is what tells staging from ghost prod. Service IDs: the Render runbook's services table.
 
 Done when every row you were asked about has its check output and a pass or fail.

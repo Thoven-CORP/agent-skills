@@ -1,6 +1,6 @@
 # Publish: 1.0 backend hotfix (Replit)
 
-Contents: MANDATORY First Action · Three-Environment Reference (CRITICAL — read once, then apply) · PRE-CHECK 0: Verify Neon Matches Last "Published" Marker (MANDATORY) · PRE-CHECK 1: Replit-Shell Migrate (MANDATORY when migrations exist) · Step 1: Find Last Published Commit (MANDATORY) · Step 2: List All Unpublished Commits (MANDATORY) · Step 3: Verify CHANGELOG Completeness (MANDATORY) · APPROVAL GATE (MANDATORY STOP) · Step 4: Determine Version Bump (MANDATORY) · Step 5: Update CHANGELOG.md (MANDATORY) · Step 5.5: Run Test Suite (MANDATORY) · Step 5.6: Verify Contract-Manifest Freshness (MANDATORY) · Step 5.7: Verify Slot Time-Rendering (run when a slot controller/serializer/model changed) · Step 6: Create Publish Commit (MANDATORY) · Step 6.5: Linear Ticket Cross-Check (MANDATORY) · Step 6.9: Pending Post-Publish Actions (MANDATORY) · Step 7: Remind to Deploy (MANDATORY) · Step 8: Carry the Fix into 2.0 (MANDATORY) · When NOT to Use · Common Mistakes
+Contents: MANDATORY First Action · Three-Environment Reference (CRITICAL: read once, then apply) · PRE-CHECK 0: Verify Neon Matches Last "Published" Marker (MANDATORY) · PRE-CHECK 1: Replit-Shell Migrate (MANDATORY when migrations exist) · Step 1: Find Last Published Commit (MANDATORY) · Step 2: List All Unpublished Commits (MANDATORY) · Step 3: Verify CHANGELOG Completeness (MANDATORY) · APPROVAL GATE (MANDATORY STOP) · Step 4: Determine Version Bump (MANDATORY) · Step 5: Update CHANGELOG.md (MANDATORY) · Step 5.5: Run Test Suite (MANDATORY) · Step 5.6: Verify Contract-Manifest Freshness (MANDATORY) · Step 5.7: Verify Slot Time-Rendering (run when a slot controller/serializer/model changed) · Step 6: Create Publish Commit (MANDATORY) · Step 6.5: Linear Ticket Cross-Check (MANDATORY) · Step 6.9: Pending Post-Publish Actions (MANDATORY) · Step 7: Remind to Deploy (MANDATORY) · Step 8: Carry the Fix into 2.0 (MANDATORY) · When NOT to Use · Common Mistakes
 
 1.0 takes hotfixes only. Replit serves `release/1.0` (tag `thoven-1.0`) until cutover, and stays the rollback after it. Start the fix from `origin/release/1.0`:
 
@@ -36,7 +36,7 @@ TaskCreate for each:
 - [ ] Step 8: Carry the fix into 2.0 the same day
 ```
 
-## Three-Environment Reference (CRITICAL — read once, then apply)
+## Three-Environment Reference (CRITICAL: read once, then apply)
 
 This workflow spans three environments. Confusing them is the #1 publish failure mode. Full architecture: `.claude/docs/DEPLOYMENT.md`.
 
@@ -130,7 +130,7 @@ git log --oneline origin/release/1.0..HEAD
 git reset --hard origin/release/1.0
 git log --oneline -3   # confirm HEAD matches origin/release/1.0
 ```
-If `git log --oneline origin/release/1.0..HEAD` shows a real local commit (rare — only happens if you edited files in Replit Shell), STOP and preserve it via cherry-pick before resetting.
+If `git log --oneline origin/release/1.0..HEAD` shows a real local commit (rare: it only happens if you edited files in Replit Shell), STOP and preserve it via cherry-pick before resetting.
 
 The Replit-local helium migrate at Step 3 is the load-bearing step. Without it, Publish ships nothing new.
 
@@ -204,7 +204,7 @@ STEPS (covers all three environments per the table above):
 2. COMMIT + PUSH to GitHub (Warp Shell).
 
 3. REPLIT-LOCAL MIGRATE (Replit Shell → Replit's helium PG via $DATABASE_URL):
-     git pull --ff-only origin release/1.0     # ALWAYS --ff-only — see PRE-CHECK 1 for why
+     git pull --ff-only origin release/1.0     # ALWAYS --ff-only. PRE-CHECK 1 says why
      rails db:migrate                          # NO RAILS_ENV (banned per HARD CONSTRAINT)
      rails db:migrate:status | tail -10        # verify all new migrations show `up`
 

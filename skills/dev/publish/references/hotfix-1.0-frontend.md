@@ -24,7 +24,7 @@ Local (Warp)  →  GitHub (source of truth)  →  Replit workspace (staging)  �
 | **Publish** | commit + push + pull + click Publish in Replit | `[X.X.X] - YYYY-MM-DD - Published` |
 
 - **GitHub** is the source of truth for code. Multiple sessions push here frequently.
-- **Replit workspace** is the staging environment. Pull from GitHub when ready to test or deploy — always pulls everything on `release/1.0`.
+- **Replit workspace** is the staging environment. Pull from GitHub when ready to test or deploy. A pull always takes everything on `release/1.0`.
 - **Replit Publish** deploys the workspace snapshot to production at thoven.co.
 
 ## MANDATORY First Action
@@ -288,7 +288,7 @@ CI runs on a pull request into `release/1.0`, never on a push to it. The hotfix 
 ### After STAGING
 
 1. Steps 1 to 3 of *Land the hotfix*. The PR stays open.
-2. **Do NOT mention Replit** — pulling into Replit is a separate decision.
+2. **Do NOT mention Replit.** Pulling into Replit is a separate decision.
 
 ### After TESTING
 
@@ -300,12 +300,12 @@ CI runs on a pull request into `release/1.0`, never on a push to it. The hotfix 
 1. **The release has a SURFACES entry.** Before the PR merges, add this release's `SURFACES` entry to `scripts/verify-prod-release.mjs` (see *Adding a release to the check*). Without it `verify:prod` proves nothing about this release. Done when `git diff origin/release/1.0 -- scripts/verify-prod-release.mjs` shows the new entry.
 2. Steps 1 to 4 of *Land the hotfix*.
 3. Remind: "Merged into `release/1.0`. Next steps:
-   1. Resync the Replit workspace — **do NOT blind `git pull`** (see *Replit Workspace Divergence Trap* below): `git fetch origin release/1.0 --tags` → `git log origin/release/1.0..HEAD --stat` → if local commits are only empty `Published your App` markers, `git reset --hard origin/release/1.0`
+   1. Resync the Replit workspace. **Do NOT blind `git pull`** (see *Replit Workspace Divergence Trap* below): `git fetch origin release/1.0 --tags` → `git log origin/release/1.0..HEAD --stat` → if local commits are only empty `Published your App` markers, `git reset --hard origin/release/1.0`
    2. Verify `git rev-parse HEAD` equals the release SHA
    3. Click **Publish** in the Replit Deployments tab to deploy to production
    4. Come back and confirm the click happened — then run `npm run verify:prod` (see *Post-Publish Verification* below)"
    - Cross-repo releases (FE + BE both have unreleased changes): deploy the **backend first**, confirm healthy, then publish the frontend — FE code that calls new BE contracts will 500 if FE ships first.
-4. If `docs/deployment/PUBLISH_REMINDERS.md` had open items (Step 7.5), append their numbered steps to this reminder now — right after the Publish click is the moment they need to happen.
+4. If `docs/deployment/PUBLISH_REMINDERS.md` had open items (Step 7.5), append their numbered steps to this reminder now. Right after the Publish click is the moment they need to happen.
 5. **Stop: Andres clicks Publish.** Only Andres clicks Publish in Replit. Wait until Andres confirms the click.
 
 ### Post-Publish Verification (MANDATORY — the `Published` stamp depends on it)
@@ -418,7 +418,7 @@ Replit Workspace (staging)          Replit Deployment (production)
 
 ### Replit Workspace Divergence Trap (ALWAYS check before a Replit pull)
 
-**This happens on nearly every publish.** Each time you click Publish, Replit auto-creates a checkpoint commit in the *workspace* — `Published your App` by `Replit Agent <agent@replit.com>` (with `Replit-Commit-*` trailers). These commits are **never pushed to GitHub**, so the workspace silently diverges from `origin/release/1.0` (the source of truth). A blind `git pull` then creates yet another merge commit mixing Replit's auto-snapshots with origin — messy, and it can deploy a tree that isn't exactly what's on GitHub.
+**This happens on nearly every publish.** Each time you click Publish, Replit auto-creates a checkpoint commit in the *workspace*: `Published your App` by `Replit Agent <agent@replit.com>` (with `Replit-Commit-*` trailers). These commits are **never pushed to GitHub**, so the workspace silently diverges from `origin/release/1.0` (the source of truth). A blind `git pull` then creates yet another merge commit mixing Replit's auto-snapshots with origin. That is messy, and it can deploy a tree that isn't exactly what's on GitHub.
 
 **Symptom:** `git status` in the Replit workspace says *"Your branch and 'origin/release/1.0' have diverged, and have N and M different commits each."* The local-only commits are `Published your App` (Replit Agent) + the occasional merge.
 
@@ -434,12 +434,12 @@ Then decide based on what `git log origin/release/1.0..HEAD --stat` shows:
 
 | What the local-only commits contain | Action |
 |---|---|
-| **Only empty `Published your App` checkpoints + merges** (no `--stat` file changes) | Safe to realign to GitHub: `git reset --hard origin/release/1.0` — discards only empty Replit markers, loses no code. |
+| **Only empty `Published your App` checkpoints + merges** (no `--stat` file changes) | Safe to realign to GitHub: `git reset --hard origin/release/1.0`. It discards only empty Replit markers, loses no code. |
 | **Real file changes** (someone built/edited directly in the Replit workspace and never pushed) | **STOP.** Preserve first — branch + push those commits to GitHub, reconcile, *then* deploy. Do not reset. |
 
 After reset, verify the workspace matches what you're publishing: `git rev-parse --short HEAD` must equal the release commit you pushed (Publish snapshots the **workspace**, not GitHub).
 
-**Why `reset --hard`, not `pull`:** the local commits are empty deployment markers with no tree change, so a merge gains nothing and only adds history cruft + a new workspace-only merge commit (more future divergence). Resetting to `origin/release/1.0` makes the workspace exactly equal the audited GitHub state. The one rule: **inspect with `--stat` before resetting** — never `reset --hard` without first confirming the local commits carry no real work.
+**Why `reset --hard`, not `pull`:** the local commits are empty deployment markers with no tree change, so a merge gains nothing and only adds history cruft + a new workspace-only merge commit (more future divergence). Resetting to `origin/release/1.0` makes the workspace exactly equal the audited GitHub state. The one rule: **inspect with `--stat` before resetting.** Never `reset --hard` without first confirming the local commits carry no real work.
 
 ---
 
@@ -481,7 +481,7 @@ A conflict means 2.0 changed that code. Resolve it for 2.0's code and say so in 
 - ALWAYS ask Andres "Staging, Testing, or Publish?" before Phase 2
 - ALWAYS run verify (type-check, lint on the touched files, contract-check) before committing
 - ALWAYS match the post-commit actions to the chosen stage
-- NEVER blind `git pull` in a Replit workspace — it has diverged via auto `Published your App` checkpoints. Inspect with `git log origin/release/1.0..HEAD --stat`, then `git reset --hard origin/release/1.0` ONLY if the local-only commits are empty Replit markers (see *Replit Workspace Divergence Trap*). If they carry real file changes, STOP and preserve them first.
+- NEVER blind `git pull` in a Replit workspace. It has diverged via auto `Published your App` checkpoints. Inspect with `git log origin/release/1.0..HEAD --stat`, then `git reset --hard origin/release/1.0` ONLY if the local-only commits are empty Replit markers (see *Replit Workspace Divergence Trap*). If they carry real file changes, STOP and preserve them first.
 - NEVER commit secrets (.env, credentials, API keys) — enforced by `secret-scan-on-commit.sh` hook
 - NEVER skip the MANDATORY checklist — every invocation starts with TaskCreate
 - NEVER mention Replit after a staging-only commit

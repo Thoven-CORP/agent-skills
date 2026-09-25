@@ -7,12 +7,18 @@ name of the bold label that opens its step at column 0 (`3. **CI is green on tha
 A "Done when" inside a step that opens with a Stop label belongs to that stop.
 A checklist item is `- [ ] **<name>.** ...`.
 
-Usage:
-  check-publish-checklist.py <publish-skill-dir> <frontend-repo-root>
+It compares names, order, and the presence of each "Done when". It does not read
+the text of a check, so a weakened condition under an unchanged name still passes.
 
-Prints a unified diff per section (expected from the sources, actual from the
-checklist) and exits 1 on any difference.
+Usage:
+  check-publish-checklist.py <publish-skill-dir> <frontend-repo-root> [<git-ref>]
+
+With <git-ref>, the frontend files are read from that ref (`git show`), so a
+frontend checkout on another branch works. Prints a unified diff per section
+(expected from the sources, actual from the checklist) and exits 1 on any
+difference.
 """
+import subprocess
 import difflib
 import re
 import sys
@@ -30,6 +36,14 @@ SECTIONS = [
     ("1.0 frontend hotfix", "hotfix-frontend", None, None),
     ("1.0 backend hotfix", "hotfix-backend", None, None),
 ]
+
+SOURCE_NAMES = {
+    "staging": "staging-2.0.md",
+    "production": "production-2.0.md",
+    "hotfix-frontend": "hotfix-1.0-frontend.md",
+    "hotfix-backend": "hotfix-1.0-backend.md",
+    "runbook": "RUNBOOK_RENDER.md",
+}
 
 STEP_LABEL = re.compile(r"^(?:\d+[a-z]?\.\s+|-\s+)?\*\*([^*]+?)\*\*")
 EVENT = re.compile(r"\*\*(Stop(?::[^*]*)?)\*\*|Done when")
@@ -88,19 +102,29 @@ def actual(checklist, heading):
     return items
 
 
-def main(skill_dir, fe_root):
+def reader(fe, ref):
+    if ref is None:
+        return lambda path: (fe / path).read_text()
+    return lambda path: subprocess.run(
+        ["git", "-C", str(fe), "show", f"{ref}:{path}"], check=True, capture_output=True, text=True
+    ).stdout
+
+
+def main(skill_dir, fe_root, ref=None):
     skill, fe = Path(skill_dir), Path(fe_root)
+    read_fe = reader(fe, ref)
     sources = {
         "staging": skill / "references/staging-2.0.md",
         "production": skill / "references/production-2.0.md",
         "hotfix-frontend": skill / "references/hotfix-1.0-frontend.md",
         "hotfix-backend": skill / "references/hotfix-1.0-backend.md",
-        "runbook": fe / PROJECT / "RUNBOOK_RENDER.md",
     }
-    checklist = (fe / PROJECT / "PUBLISH_CHECKLIST.md").read_text()
+    texts = {key: path.read_text() for key, path in sources.items()}
+    texts["runbook"] = read_fe(f"{PROJECT}/RUNBOOK_RENDER.md")
+    checklist = read_fe(f"{PROJECT}/PUBLISH_CHECKLIST.md")
     failed = False
     for heading, key, start, end in SECTIONS:
-        want, errors = expected(section(sources[key].read_text(), start, end))
+        want, errors = expected(section(texts[key], start, end))
         have = actual(checklist, heading)
         if have is None:
             print(f"MISSING SECTION: ## {heading}")
@@ -109,7 +133,7 @@ def main(skill_dir, fe_root):
         for error in errors:
             print(f"{heading}: {error}")
             failed = True
-        diff = list(difflib.unified_diff(want, have, f"{sources[key].name} ({heading})", f"PUBLISH_CHECKLIST.md ({heading})", lineterm=""))
+        diff = list(difflib.unified_diff(want, have, f"{SOURCE_NAMES[key]} ({heading})", f"PUBLISH_CHECKLIST.md ({heading})", lineterm=""))
         if diff:
             print("\n".join(diff))
             failed = True
@@ -118,6 +142,6 @@ def main(skill_dir, fe_root):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) not in (3, 4):
         sys.exit(__doc__)
-    sys.exit(main(sys.argv[1], sys.argv[2]))
+    sys.exit(main(*sys.argv[1:]))

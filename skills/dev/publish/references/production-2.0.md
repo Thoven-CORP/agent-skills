@@ -11,7 +11,7 @@ This path covers both repos in one run. The backend goes first. The frontend onl
 
 ## Steps
 
-Stop at the first failure and report it with its output. A label that starts with "Stop" waits: show Andres the exact command, or the blocker, and wait for Andres's "go". A go covers only the command shown with it.
+Stop at the first failure and report it with its output.
 
 1. **Production exists.**
 
@@ -21,18 +21,18 @@ Stop at the first failure and report it with its output. A label that starts wit
 
    Done when both names print with branch `release/2.0`. Hold their IDs for later steps. No output means the production services do not exist yet (THV-703): stop and tell Andres there is no 2.0 production to deploy to.
 
-2. **Pick the SHAs.** In each repo, fetch first: `git fetch origin release/2.0 feature/teacher-2.0`. For each repo, the SHA to promote is the one staging runs now. Read it from `render deploys list srv-dao470bm8hqs73d71sh0 -o json --confirm | jq -r '[.[] | select(.status=="live")][0].commit.id'` (backend) and `curl -s https://staging.thoven.co/api/version | jq -r .sha` (frontend). A repo with nothing new since the last promote (`git rev-parse origin/release/2.0` already equals the SHA) skips its half. Done when each repo has a SHA or is marked as skipping.
+2. **Pick the SHAs.** In each repo, fetch first: `git -C <repo> fetch origin release/2.0 feature/teacher-2.0`, with `<repo>` set to `~/thoven/backend` or `~/thoven/frontend`. For each repo, the SHA to promote is the one staging runs now. Read it from `render deploys list srv-dao470bm8hqs73d71sh0 -o json --confirm | jq -r '[.[] | select(.status=="live")][0].commit.id'` (backend) and `curl -s https://staging.thoven.co/api/version | jq -r .sha` (frontend). A repo with nothing new since the last promote (`git -C <repo> rev-parse origin/release/2.0` already equals the SHA) skips its half. Done when each repo has a SHA or is marked as skipping.
 
 3. **Each SHA is staging-green.** Run steps 2 to 5 of `references/staging-2.0.md` on it, unless that report already exists for this exact SHA in this session. Done when both repos report staging-green. A gate that could not run (missing accounts, a skipped test) is not green: carry it into the plan in step 5.
 
-4. **Each SHA fast-forwards.** In each repo:
+4. **Each SHA fast-forwards.** In each repo, with `<repo>` as in step 2:
 
    ```bash
-   git fetch origin release/2.0 feature/teacher-2.0
-   git merge-base --is-ancestor origin/release/2.0 <sha> && git merge-base --is-ancestor <sha> origin/feature/teacher-2.0 && echo fast-forward
+   git -C <repo> fetch origin release/2.0 feature/teacher-2.0
+   git -C <repo> merge-base --is-ancestor origin/release/2.0 <sha> && git -C <repo> merge-base --is-ancestor <sha> origin/feature/teacher-2.0 && echo fast-forward
    ```
 
-   Done when it prints `fast-forward`. No output means `release/2.0` holds a commit that `feature/teacher-2.0` lacks: stop and tell Andres. Promotion never merges, cherry-picks, or force-pushes.
+   Done when the fetch exits 0 and it prints `fast-forward`. No output means `release/2.0` holds a commit that `feature/teacher-2.0` lacks: stop and tell Andres. Promotion never merges, cherry-picks, or force-pushes.
 
 5. **Show the plan.** Run step 8's accounts check first (`accounts-loaded`), so a missing-accounts gap is in the plan. List the migrations step 7 will run on production:
 
@@ -49,7 +49,7 @@ Stop at the first failure and report it with its output. A label that starts wit
 6. **Stop: promote the backend.** After Andres's go, from the backend worktree of step 3 (`~/thoven/backend-publish-<be-sha7>`, a detached checkout of `<be-sha>`):
 
    ```bash
-   git push origin <be-sha>:refs/heads/release/2.0
+   git -C ~/thoven/backend-publish-<be-sha7> push origin <be-sha>:refs/heads/release/2.0
    ```
 
    Git refuses anything but a fast-forward. Nothing deploys yet: `thoven-api` and `thoven-worker` have auto-deploy off. Done when `git ls-remote origin release/2.0` prints `<be-sha>`.
@@ -74,7 +74,7 @@ Stop at the first failure and report it with its output. A label that starts wit
 
    Done when `accounts-loaded` printed and `deploy:smoke` exits 0.
 
-   **Stop: release without smoke.** Only when the accounts were missing or the smoke failed. Tell Andres which, with the output. A failed smoke is also a rollback decision (section "Roll back"). Continue to step 9 only after Andres says "Go: release without smoke". A go covers only the command shown with it, so this go does not cover step 9's push. Step 9 needs its own go.
+   **Stop: release without smoke.** Only when the accounts were missing or the smoke failed. Tell Andres which, with the output. A failed smoke is also a rollback decision (section "Roll back"). Continue to step 9 only after Andres says "Go: release without smoke". This go does not cover step 9.
 
 9. **Stop: promote the frontend.** After Andres's go, from a detached checkout of `<fe-sha>`, so the pre-push check runs on the code being promoted:
 
@@ -112,9 +112,17 @@ Stop at the first failure and report it with its output. A label that starts wit
     GHOST_TARGET=ghost npm run test:ghost
     ```
 
-    Done when no test fails and none is skipped.
+    Done when `.stats.unexpected` is `0` and the skip diff below prints nothing. The only expected ghost skips are the staging browser path's two tests (`seeded staging credentials exist on staging only`):
 
-    **Stop: harness failed or skipped.** Only when a test failed or skipped. Tell Andres, with each failure and each skip's variable. Production already runs the SHA, so this is a rollback decision for Andres (section "Roll back").
+    ```bash
+    jq -r '.stats.unexpected' test-results/ghost.json
+    diff <(jq -r '[.. | objects | select(has("specs")) | .specs[] | select(any(.tests[]; .status == "skipped")) | .title] | sort | .[]' test-results/ghost.json) - <<'SKIPS'
+a teacher signs in and the schedule loads upcoming lessons with zero CORS errors
+the frontend serves without a Vercel login wall
+SKIPS
+    ```
+
+    **Stop: harness failed or skipped.** Only when a test failed, or the skip diff printed a line. Tell Andres, with each failure and each unexpected skip's reason. Production already runs the SHA, so this is a rollback decision for Andres (section "Roll back").
 
 12. **Report.** Per repo: the SHA, the proof from steps 7 and 10, and each gate's result, with the tick list's items ticked. Say "production runs `<sha>`" only for a repo whose proof passed. Done when Andres has the report.
 
