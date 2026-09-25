@@ -21,7 +21,7 @@ Stop at the first failure and report it with its output. A label that starts wit
 
    Done when both names print with branch `release/2.0`. Hold their IDs for later steps. No output means the production services do not exist yet (THV-703): stop and tell Andres there is no 2.0 production to deploy to.
 
-2. **Pick the SHAs.** For each repo, the SHA to promote is the one staging runs now. Read it from `render deploys list srv-dao470bm8hqs73d71sh0 -o json --confirm | jq -r '[.[] | select(.status=="live")][0].commit.id'` (backend) and `curl -s https://staging.thoven.co/api/version | jq -r .sha` (frontend). A repo with nothing new since the last promote (`git rev-parse origin/release/2.0` already equals the SHA) skips its half. Done when each repo has a SHA or is marked as skipping.
+2. **Pick the SHAs.** In each repo, fetch first: `git fetch origin release/2.0 feature/teacher-2.0`. For each repo, the SHA to promote is the one staging runs now. Read it from `render deploys list srv-dao470bm8hqs73d71sh0 -o json --confirm | jq -r '[.[] | select(.status=="live")][0].commit.id'` (backend) and `curl -s https://staging.thoven.co/api/version | jq -r .sha` (frontend). A repo with nothing new since the last promote (`git rev-parse origin/release/2.0` already equals the SHA) skips its half. Done when each repo has a SHA or is marked as skipping.
 
 3. **Each SHA is staging-green.** Run steps 2 to 5 of `references/staging-2.0.md` on it, unless that report already exists for this exact SHA in this session. Done when both repos report staging-green. A gate that could not run (missing accounts, a skipped test) is not green: carry it into the plan in step 5.
 
@@ -34,7 +34,17 @@ Stop at the first failure and report it with its output. A label that starts wit
 
    Done when it prints `fast-forward`. No output means `release/2.0` holds a commit that `feature/teacher-2.0` lacks: stop and tell Andres. Promotion never merges, cherry-picks, or force-pushes.
 
-5. **Show the plan.** Run step 8's accounts check first (`accounts-loaded`), so a missing-accounts gap is in the plan. One block listing both SHAs, the proof from step 3, every gate that did not run and why, and the commands of steps 6, 7 and 9 with the SHAs and service IDs filled in. A go on a plan with a gate that did not run accepts that gap. Name the gap again at each stop. Done when Andres has the block.
+5. **Show the plan.** Run step 8's accounts check first (`accounts-loaded`), so a missing-accounts gap is in the plan. List the migrations step 7 will run on production:
+
+   ```bash
+   base=$(render deploys list <api-id> -o json --confirm | jq -r '[.[] | select(.status=="live")][0].commit.id // empty')
+   git -C <backend-worktree> fetch origin --tags
+   git -C <backend-worktree> diff --name-only "${base:-thoven-1.0}" <be-sha> -- db/migrate/
+   ```
+
+   With no live `thoven-api` deploy yet, the base is the tag `thoven-1.0`, because `thoven-prod` holds 1.0's schema. An empty list is stated in the plan as "no migrations".
+
+   The plan is one block: both SHAs, the proof from step 3, every gate that did not run and why, the migration list, and the commands of steps 6, 7 and 9 with the SHAs and service IDs filled in. Approving the plan authorizes none of those commands. Steps 6, 7 and 9 each show their command again and wait for their own go. A go on the plan accepts only its gaps: name each gap again at each stop. Done when Andres has the block.
 
 6. **Stop: promote the backend.** After Andres's go, from the backend worktree of step 3 (`~/thoven/backend-publish-<be-sha7>`, a detached checkout of `<be-sha>`):
 
@@ -50,7 +60,7 @@ Stop at the first failure and report it with its output. A label that starts wit
 
    ```bash
    set -a; . ~/thoven/.secrets/thoven-prod.env; set +a
-   test -n "$GHOST_TEACHER_EMAIL" && echo accounts-loaded
+   test -n "$GHOST_TEACHER_EMAIL" && test -n "$GHOST_TEACHER_PASSWORD" && echo accounts-loaded
    ```
 
    No `accounts-loaded` line means the file does not hold the accounts yet (THV-707 Phase B creates them). Skip the commands below and go to the stop after them. With the accounts loaded:

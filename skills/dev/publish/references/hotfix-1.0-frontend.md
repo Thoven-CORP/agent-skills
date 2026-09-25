@@ -297,7 +297,7 @@ CI runs on a pull request into `release/1.0`, never on a push to it. The hotfix 
 
 ### After PUBLISH
 
-1. Before the PR merges, add this release's `SURFACES` entry to `scripts/verify-prod-release.mjs` (see *Adding a release to the check*). Without it `verify:prod` proves nothing about this release.
+1. **The release has a SURFACES entry.** Before the PR merges, add this release's `SURFACES` entry to `scripts/verify-prod-release.mjs` (see *Adding a release to the check*). Without it `verify:prod` proves nothing about this release. Done when `git diff origin/release/1.0 -- scripts/verify-prod-release.mjs` shows the new entry.
 2. Steps 1 to 4 of *Land the hotfix*.
 3. Remind: "Merged into `release/1.0`. Next steps:
    1. Resync the Replit workspace — **do NOT blind `git pull`** (see *Replit Workspace Divergence Trap* below): `git fetch origin release/1.0 --tags` → `git log origin/release/1.0..HEAD --stat` → if local commits are only empty `Published your App` markers, `git reset --hard origin/release/1.0`
