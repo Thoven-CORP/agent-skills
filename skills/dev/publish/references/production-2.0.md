@@ -36,7 +36,7 @@ Stop at the first failure and report it with its output. Three steps are **stops
 
 5. **Show the plan.** One block listing both SHAs, the proof from step 3, every gate that did not run and why, and the commands of steps 6, 7 and 9 with the SHAs and service IDs filled in. A go on a plan with a gate that did not run accepts that gap. Name the gap again at each stop.
 
-6. **Stop: promote the backend.** After Andres's go, in the backend repo:
+6. **Stop: promote the backend.** After Andres's go, from the backend worktree of step 3 (`~/thoven/backend-publish-<be-sha7>`, a detached checkout of `<be-sha>`):
 
    ```bash
    git push origin <be-sha>:refs/heads/release/2.0
@@ -58,13 +58,15 @@ Stop at the first failure and report it with its output. Three steps are **stops
 
    Done when it exits 0. Without the accounts, the smoke did not run: name it at stop 9. A failure here is a rollback decision for Andres (section "Roll back").
 
-9. **Stop: promote the frontend.** After Andres's go, in the frontend repo:
+9. **Stop: promote the frontend.** After Andres's go, from a detached checkout of `<fe-sha>`, so the pre-push check runs on the code being promoted:
 
    ```bash
+   git -C ~/thoven/frontend worktree add --detach ~/thoven/frontend-publish-<fe-sha7> <fe-sha>
+   cd ~/thoven/frontend-publish-<fe-sha7> && npm ci
    git push origin <fe-sha>:refs/heads/release/2.0
    ```
 
-   The frontend's lefthook `pre-push` runs `npm run contract-check`. If it blocks, stop and report its output: the SHA passed CI, so a block means the contract manifest drifted since. Vercel builds it for production, about 4 minutes. Staging's build is not reused, because the frontend bakes its API host and keys in at build time.
+   The frontend's lefthook `pre-push` runs `npm run contract-check`. Never push with `--no-verify` on this path. If it blocks, stop and report its output: the SHA passed CI, so a block means the contract manifest drifted since. Vercel builds it for production, about 4 minutes. Staging's build is not reused, because the frontend bakes its API host and keys in at build time.
 
 10. **Frontend runs the SHA.**
 
@@ -73,9 +75,9 @@ Stop at the first failure and report it with its output. Three steps are **stops
     vercel ls thoven --prod
     ```
 
-    Done when `sha` equals `<fe-sha>` and `ref` is `release/2.0`. Re-run the curl each minute while the newest `vercel ls` row reads `Building`. A row reading `Error`, or the old SHA after 15 minutes, stops the path: report it to Andres with the `vercel ls` output.
+    Done when `sha` equals `<fe-sha>` and `ref` is `release/2.0`. Re-run the curl each minute while the newest `vercel ls` row reads `Building`. A row reading `Error`, or the old SHA after 15 minutes, stops the path: report it to Andres with the `vercel ls` output. A newest row reading `Ready` while `/api/version` still shows the old SHA means an earlier rollback holds the domain (section "Roll back"): run `vercel promote <newest-ready-deployment-url> --yes`, which go 3 covers, then re-run the curl.
 
-11. **Ghost harness.** From the frontend repo, with the THV-707 dogfood accounts loaded as in step 8 (`GHOST_PARENT_EMAIL` and the rest, as `e2e/ghost/target.ts` lists):
+11. **Ghost harness.** From the frontend worktree of step 9 (the harness tests the remote sites, so any checkout of `<fe-sha>` works), with the THV-707 dogfood accounts loaded as in step 8 (`GHOST_PARENT_EMAIL` and the rest, as `e2e/ghost/target.ts` lists):
 
     ```bash
     GHOST_TARGET=ghost npm run test:ghost

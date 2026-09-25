@@ -198,7 +198,9 @@ This signals that everything in `[Unreleased]` has been pulled into the Replit w
 ### Contract Manifest Refresh (Step 5, before verify)
 
 Before running the verify skill, best-effort refresh the committed contract
-manifest from a local backend checkout:
+manifest from a local backend checkout. Skip this step unless
+`git -C ~/thoven/backend branch --show-current` prints `release/1.0`: a
+backend on 2.0 code writes a 2.0 manifest into a 1.0 hotfix.
 
 ```bash
 npm run sync-manifest

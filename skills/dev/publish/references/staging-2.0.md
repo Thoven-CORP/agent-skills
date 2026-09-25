@@ -57,7 +57,7 @@ Run each step in the repo it names. Steps 1 to 4 check each repo that changed. S
    SMOKE_HOST=https://thoven-api-staging.onrender.com bundle exec rake deploy:smoke
    ```
 
-   From the frontend repo:
+   From a frontend checkout of `origin/feature/teacher-2.0`. The harness tests the remote sites, so the local commit only supplies the tests:
 
    ```bash
    set -a; . ~/thoven/.secrets/staging.env; set +a
