@@ -263,7 +263,6 @@ skill drift check).
 
 **Do NOT proceed with Publish until the local helium migrate is clean and — for any unique-constraint migration — the PRE-FLIGHT duplicate check on Neon comes back empty. If Replit Publish shows "Generated migrations" with DROP statements → REJECT and investigate: local helium schema may be ahead of Neon (worktree DB pollution is a known vector — see memory `feedback_worktree_db_pollution`).**
 
-**If Replit publish shows "Generated migrations" with DROP statements → REJECT and sync local DB first.**
 
 Mark task complete: `TaskUpdate: Step 2 → completed`
 
@@ -558,7 +557,6 @@ Mark task complete: `TaskUpdate: Step 8 → completed`
 ## When NOT to Use
 - No unpublished commits exist — skill auto-detects and exits
 - Still actively developing — publish when a logical batch is ready
-- Need to deploy a hotfix — consider committing + publishing in one step
 
 ## Common Mistakes
 - Forgetting to run test suite before creating publish commit
@@ -566,53 +564,3 @@ Mark task complete: `TaskUpdate: Step 8 → completed`
 - Auto-determining version bump without asking the user
 - Missing changelog entries for commits since last publish
 - Staging with `git add -A` in a shared tree, which sweeps other sessions' work into the release
-
----
-
-## Quick Reference
-
-| Step | Action | Blocking? |
-|------|--------|-----------|
-| PRE-CHECK 0 | Verify Neon matches last "Published" marker (read-only psql) | Yes — catches stale markers |
-| PRE-CHECK 1 | Replit-Shell `rails db:migrate` if migrations exist | Yes — makes Publish diff non-empty |
-| 1 | Find last published commit | Yes |
-| 2 | List unpublished commits | Yes |
-| 3 | Verify changelog completeness | Yes |
-| GATE | User confirms changelog | **MANDATORY STOP** |
-| 4 | Determine version bump | Yes |
-| 5 | Update CHANGELOG.md | Yes |
-| 5.6 | Verify contract-manifest freshness | Yes |
-| 6 | Create publish commit | Yes |
-| 6.5 | Linear ticket cross-check — every cited THV ID exists (read-only) | Yes |
-| 6.9 | Pending post-publish actions (`docs/deployment/PUBLISH_REMINDERS.md`) | Reminder — surface steps verbatim |
-| 7 | Remind to deploy | Yes |
-| 8 | Port the fix into `feature/teacher-2.0` | Yes |
-
-## Enforcement Summary
-
-**YOU MUST:**
-1. ✅ Create todo checklist at start (now includes PRE-CHECK 0 + PRE-CHECK 1)
-2. ✅ Verify last "Published" marker actually deployed on Neon (PRE-CHECK 0)
-3. ✅ Confirm Replit-local helium is migrated (PRE-CHECK 1) before clicking Publish
-4. ✅ Find last published commit before anything else
-5. ✅ Show completeness report with missing entries
-6. ✅ STOP at approval gate — wait for user
-7. ✅ Ask user for version bump type
-8. ✅ Stage release files by exact path
-9. ✅ Verify contract-manifest freshness before the publish commit (Step 5.6)
-10. ✅ Include "Publication Status: Published" in commit
-11. ✅ Cross-check release-cited THV ticket IDs exist in Linear (read-only — never write board state from a publish)
-12. ✅ Remind about Replit UI deployment
-
-**YOU CANNOT:**
-- ❌ Trust "Publication Status: Published" markers without verifying against Neon
-- ❌ Skip the Replit-Shell `rails db:migrate` step when migrations exist
-- ❌ Confuse Warp-local helium with Replit-local helium (different DBs, both called "local")
-- ❌ Run `RAILS_ENV=production rails db:migrate` (HARD CONSTRAINT)
-- ❌ Skip changelog verification
-- ❌ Auto-determine version bump without asking
-- ❌ Create commit without user confirming changelog
-- ❌ Use `git add -A`
-- ❌ Tell user "it's deployed" — only Replit UI deploys
-- ❌ Treat a push as green `CI` or as a deploy
-- ❌ `gh workflow run` Parent P1 quality or Pre-publish validation, or wait on them

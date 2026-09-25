@@ -42,9 +42,9 @@ Stop at the first failure and report it with its output. A label that starts wit
    git push origin <be-sha>:refs/heads/release/2.0
    ```
 
-   Git refuses anything but a fast-forward. Nothing deploys yet: `thoven-api` and `thoven-worker` have auto-deploy off.
+   Git refuses anything but a fast-forward. Nothing deploys yet: `thoven-api` and `thoven-worker` have auto-deploy off. Done when `git ls-remote origin release/2.0` prints `<be-sha>`.
 
-7. **Stop: deploy the backend.** After Andres's go, follow "Deploy a SHA" in the Render runbook: `thoven-api` first, and only after it is live, `thoven-worker`, both on `<be-sha>`. The runbook's checks end the step: both services `live` on `<be-sha>`, `https://api.thoven.co/health` reporting a `revision.sha` that is a prefix of it, and `https://api.thoven.co/up` answering `200`. A refused or failed web deploy ends the whole path here, with the worker untouched. Read "When the deploy is refused" in the runbook.
+7. **Stop: deploy the backend.** After Andres's go, follow "Deploy a SHA" in the Render runbook: `thoven-api` first, and only after it is live, `thoven-worker`, both on `<be-sha>`. The runbook's checks end the step: both services `live` on `<be-sha>`, `https://api.thoven.co/health` reporting a `revision.sha` that is a prefix of it, and `https://api.thoven.co/up` answering `200`. A refused or failed web deploy ends the whole path here, with the worker untouched. Read "When the deploy is refused" in the runbook. Done when every runbook check has passed.
 
 8. **Backend smoke.** From the backend worktree of step 3 (`~/thoven/backend-publish-<be-sha7>`), with a dogfood teacher's JWT. The dogfood accounts are THV-707's, never a real teacher. Source their file:
 
@@ -74,7 +74,7 @@ Stop at the first failure and report it with its output. A label that starts wit
    git push origin <fe-sha>:refs/heads/release/2.0
    ```
 
-   The frontend's lefthook `pre-push` runs `npm run contract-check`. Never push with `--no-verify` on this path. If it blocks, stop and report its output: the SHA passed CI, so a block means the contract manifest drifted since. Vercel builds it for production, about 4 minutes. Staging's build is not reused, because the frontend bakes its API host and keys in at build time.
+   The frontend's lefthook `pre-push` runs `npm run contract-check`. Never push with `--no-verify` on this path. If it blocks, stop and report its output: the SHA passed CI, so a block means the contract manifest drifted since. Done when `git ls-remote origin release/2.0` prints `<fe-sha>`. Vercel then builds it for production, about 4 minutes. Staging's build is not reused, because the frontend bakes its API host and keys in at build time.
 
 10. **Frontend runs the SHA.**
 
@@ -106,7 +106,7 @@ Stop at the first failure and report it with its output. A label that starts wit
 
     **Stop: harness failed or skipped.** Only when a test failed or skipped. Tell Andres, with each failure and each skip's variable. Production already runs the SHA, so this is a rollback decision for Andres (section "Roll back").
 
-12. **Report.** Per repo: the SHA, the proof from steps 7 and 10, and each gate's result. Say "production runs `<sha>`" only for a repo whose proof passed.
+12. **Report.** Per repo: the SHA, the proof from steps 7 and 10, and each gate's result, with the tick list's items ticked. Say "production runs `<sha>`" only for a repo whose proof passed. Done when Andres has the report.
 
 ## Roll back
 

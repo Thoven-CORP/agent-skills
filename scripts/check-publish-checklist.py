@@ -3,7 +3,8 @@
 
 Every `**Stop: <name>.**` and every "Done when" in a source section needs exactly
 one checklist item, in the same order, named the same. A "Done when" takes the
-name of the bold label that opens its step (`3. **CI is green on that SHA.**`).
+name of the bold label that opens its step at column 0 (`3. **CI is green on that SHA.**`).
+A "Done when" inside a step that opens with a Stop label belongs to that stop.
 A checklist item is `- [ ] **<name>.** ...`.
 
 Usage:
@@ -30,7 +31,7 @@ SECTIONS = [
     ("1.0 backend hotfix", "hotfix-backend", None, None),
 ]
 
-STEP_LABEL = re.compile(r"^\s*(?:\d+[a-z]?\.\s+|-\s+)?\*\*([^*]+?)\*\*")
+STEP_LABEL = re.compile(r"^(?:\d+[a-z]?\.\s+|-\s+)?\*\*([^*]+?)\*\*")
 EVENT = re.compile(r"\*\*(Stop(?::[^*]*)?)\*\*|Done when")
 ITEM = re.compile(r"^- \[ \] \*\*([^*]+?)\*\*")
 
@@ -54,7 +55,7 @@ def expected(lines):
     labels, step, errors = [], None, []
     for number, line in enumerate(lines, 1):
         opener = STEP_LABEL.match(line)
-        if opener and not opener.group(1).startswith("Stop"):
+        if opener:
             step = clean(opener.group(1))
         for event in EVENT.finditer(line):
             if event.group(1):
@@ -64,7 +65,7 @@ def expected(lines):
                 labels.append(label)
             elif step is None:
                 errors.append(f"'Done when' with no step label at section line {number}")
-            else:
+            elif not step.startswith("Stop"):
                 labels.append(step)
     return labels, errors
 

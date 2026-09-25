@@ -44,33 +44,7 @@ TaskCreate for each:
 - [ ] Step 9: Carry the fix into 2.0 the same day (see *Carry the Fix into 2.0*)
 YOU CANNOT SKIP THE CHECKLIST. CREATE IT NOW.
 
-**CRITICAL - YOU MUST FOLLOW THESE RULES:**
-
-### NEVER Do This:
-- ❌ NEVER jump straight to `git commit` without updating CHANGELOG first
-- ❌ NEVER skip the Staging/Testing/Publish decision gate
-- ❌ NEVER commit without running verify (type-check + lint + contract-check)
-- ❌ NEVER commit secrets (.env, credentials, API keys)
-- ❌ NEVER create a publish commit without `Publication Status: Published`
-- ❌ NEVER tell the user to pull into Replit after a staging commit — that's a separate decision
-- ❌ NEVER call GitHub a "backup" — it is the source of truth
-- ❌ NEVER `gh workflow run` Parent P1 quality or Pre-publish validation, and do not wait on them. Those are Monday advisory nets. Required remote check is the job named `CI`. A successful `git push` means landed on GitHub, not `CI` green, not Replit deployed.
-
-### ALWAYS Do This:
-- ✅ ALWAYS create the TaskCreate checklist before any other action
-- ✅ ALWAYS read CHANGELOG.md before modifying it
-- ✅ ALWAYS ask user Staging, Testing, or Publish before proceeding
-- ✅ ALWAYS run verify before committing
-- ✅ ALWAYS include `Co-Authored-By: Claude <noreply@anthropic.com>`
-- ✅ ALWAYS match post-commit actions to the chosen pipeline stage
-
----
-
-## Workflow Overview
-
-```
-Phase 0: ANALYZE → Phase 1: DECIDE → Phase 2: UPDATE CHANGELOG → Phase 3: COMMIT → Phase 4: POST-COMMIT ACTIONS
-```
+The rules are in *Rules* at the end of this file.
 
 ---
 
@@ -490,19 +464,13 @@ A conflict means 2.0 changed that code. Resolve it for 2.0's code and say so in 
 
 ---
 
-## Quick Reference
-
-| Stage | Changelog Action | Commit Format | Post-Commit |
-|-------|-----------------|---------------|-------------|
-| **Staging** | Add to `[Unreleased] - Not Published` | Descriptive summary | Push to GitHub |
-| **Testing** | Flip to `[Unreleased] - In Staging` | Summary + "staging test" | Push + pull into Replit |
-| **Publish** | Version `[X.X.X] - Published` | `Publish vX.X.X: ...` | Push + pull + Publish in Replit + check PUBLISH_REMINDERS.md |
-
----
-
 ## Rules
 
 - NEVER force push unless explicitly requested
+- ALWAYS read CHANGELOG.md, and update it, before `git commit`
+- ALWAYS ask Andres "Staging, Testing, or Publish?" before Phase 2
+- ALWAYS run verify (type-check, lint on the touched files, contract-check) before committing
+- ALWAYS match the post-commit actions to the chosen stage
 - NEVER blind `git pull` in a Replit workspace — it has diverged via auto `Published your App` checkpoints. Inspect with `git log origin/release/1.0..HEAD --stat`, then `git reset --hard origin/release/1.0` ONLY if the local-only commits are empty Replit markers (see *Replit Workspace Divergence Trap*). If they carry real file changes, STOP and preserve them first.
 - NEVER commit secrets (.env, credentials, API keys) — enforced by `secret-scan-on-commit.sh` hook
 - NEVER skip the MANDATORY checklist — every invocation starts with TaskCreate

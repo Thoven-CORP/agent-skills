@@ -71,7 +71,7 @@ Run each step in the repo it names. Steps 1 to 4 check each repo that changed. S
 
    Done when `bin/dogfood-staging` exits 0, `deploy:smoke` exits 0, and the ghost harness reports no failed test. A skipped ghost test names the missing account variable. Report each skip; a skip is not a pass.
 
-6. **Report.** One line per repo: SHA, CI run URL, the proof from steps 3 and 4, and each gate's result. Say "staging-green" only when every step passed.
+6. **Report.** One line per repo: SHA, CI run URL, the proof from steps 3 and 4, and each gate's result, with the tick list's items ticked. Say "staging-green" only when every step passed. Done when Andres has the report.
 
 ## Changelog
 
