@@ -1,11 +1,11 @@
 ---
 name: thoven-db-migration-security
-description: Review Thoven Rails migrations and data backfills for production safety, Neon/Replit publish constraints, COPPA data safety, reversible operations, and schema drift risk. Use with Warden for backend DB changes.
+description: Review Thoven Rails migrations and data backfills for production safety, deploy-time migration constraints (Render preDeploy on 2.0, Replit Publish on 1.0), COPPA data safety, reversible operations, and schema drift risk. Use with Warden for backend DB changes.
 ---
 
 # Thoven DB Migration Security
 
-Review backend migrations and data backfills for safety under Thoven's Rails, PostgreSQL, Neon, and Replit deployment constraints.
+Review backend migrations and data backfills for safety under Thoven's Rails, PostgreSQL, Neon, Render (2.0) and Replit (1.0 hotfix) deployment constraints.
 
 ## Required Checks
 
@@ -16,7 +16,7 @@ Review backend migrations and data backfills for safety under Thoven's Rails, Po
 
 2. **Production execution safety**
    - Flag instructions to run `RAILS_ENV=production rails db:migrate` manually.
-   - Verify Replit Publish/Neon constraints are respected.
+   - Verify the version is in `permitted` in `config/migration-policy.yml`, so `bin/controlled-migrate` runs it in Render's preDeploy. A 1.0 hotfix follows `/publish` `references/hotfix-1.0-backend.md`.
    - Check long-running operations, full-table locks, and backfills on large tables are bounded or split.
 
 3. **Backfill safety**

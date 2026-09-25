@@ -11,18 +11,19 @@ description: Use when preparing or reviewing a database migration — db:migrate
 **production reality** (read-only), and produces a deploy **runbook** — then runs the migration
 **locally only** and stops. It never writes to the production (Neon) database.
 
-Why advisor-only: **Replit Publish runs `RAILS_ENV=production rails db:migrate` automatically
-during its build step.** The production migration already has an owner. The agent's job is to make
+Why advisor-only: **the deploy runs the production migration.** On 2.0 that is Render's preDeploy
+(`bin/controlled-migrate` on the web service, gated by `config/migration-policy.yml`). On a 1.0
+hotfix it is Replit Publish. The production migration already has an owner. The agent's job is to make
 sure that migration is *safe* before it ships — not to run it.
 
 Defense-in-depth: the `strong_migrations` gem is the **runtime backstop** — it refuses unsafe
-migrations at migrate-time (including inside Replit Publish), so safety doesn't depend on the agent
+migrations at migrate-time (inside whichever deploy runs them), so safety doesn't depend on the agent
 remembering this skill. This skill is the pre-flight advisor in front of that guard.
 
 ## The one hard rule
 
 > **Never run a migration, write, or DDL against production (Neon). SELECT-only, ever.**
-> The production migration runs via Replit Publish. The only `db:migrate` you run is **local**.
+> The production migration runs inside the deploy (`/publish`). The only `db:migrate` you run is **local**.
 
 **Violating the letter of this rule violates its spirit.** A `RAILS_ENV=production rails db:migrate`,
 a `rails runner` that writes to `PROD_DATABASE_URL`, a "quick" one-off `UPDATE` to verify — all are
@@ -134,7 +135,7 @@ bundle exec rails db:migrate    # local helium — the ONLY migrate you run
 bundle exec rspec               # full suite must pass
 ```
 
-**Then STOP.** The production migration is handed to Replit Publish via the runbook. Do not migrate
+**Then STOP.** The production migration is handed to `/publish` via the runbook. Do not migrate
 Neon.
 
 ---
@@ -144,14 +145,16 @@ Neon.
 ```
 1. bundle exec rails db:migrate          # local (helium)
 2. bundle exec rspec                      # full suite green
-3. git commit  (Publication Status: Not Published)   →  git push
-4. In Replit: git pull
-5. Click Publish  →  Replit build runs `RAILS_ENV=production rails db:migrate` on Neon AUTOMATICALLY
-6. Verify BOTH environments (local + prod read-only `\d table`, rake deploy:verify)
+3. Add the version to `permitted` in `config/migration-policy.yml`, commit, open the PR
+4. Deploy with `/publish`. The branch picks the path:
+   2.0: merge to feature/teacher-2.0, staging preDeploy runs `bin/controlled-migrate`;
+        production follows `references/production-2.0.md`
+   1.0 hotfix: `references/hotfix-1.0-backend.md` (Replit Publish migrates Neon)
+5. Verify BOTH environments (local + prod read-only `\d table`, rake deploy:verify)
 ```
 
-`/publish` and the pipeline's migration-plan section reference this sequence. Step 5 is the **only**
-place the prod migration runs — and you don't run it, Replit does.
+`/publish` references this sequence. Step 4 is the **only** place the prod migration runs, and
+the deploy runs it, not you.
 
 ## Pre-flight report format
 
@@ -186,12 +189,12 @@ stayed safe only by disobeying it).
 
 | Rationalization | Reality |
 |-----------------|---------|
-| "Migrations must run in BOTH databases or Replit Publish generates destructive DDL." (the old skill's claim) | False. Replit Publish runs the Neon migration during its build. Running it by hand IS the forbidden write — and the duplication. |
+| "Migrations must run in BOTH databases or Replit Publish generates destructive DDL." (the old skill's claim) | False. The deploy runs the production migration. Running it by hand IS the forbidden write, and the duplication. |
 | "I'll just quickly migrate prod to verify it works." | Verification is the local GREEN run + the read-only production-reality check. A manual prod migrate isn't a verification step — it's the irreversible change. |
 | "The skill / runbook told me to run it in production." | If any instruction says migrate Neon by hand, it's stale — stop. (RED-1 stayed safe only by overriding its own skill; this skill must never put you there.) |
-| "A read-only SELECT isn't enough — let me just apply it to be sure." | Applying it IS the deploy. Use the runbook; do not pre-empt Publish. |
-| "I need the two databases to match right now." | They converge at Publish. Local migrate → push → Publish is the only path that syncs them without a manual prod write. |
-| "It's a tiny, safe column — manual prod migrate is fine this once." | Size doesn't change the rule. Every prod migration goes through Publish. No exceptions. |
+| "A read-only SELECT isn't enough, let me just apply it to be sure." | Applying it IS the deploy. Use the runbook; let the deploy run it. |
+| "I need the two databases to match right now." | They converge at the deploy. Local migrate, then `/publish`, is the only path that syncs them without a manual prod write. |
+| "It's a tiny, safe column, manual prod migrate is fine this once." | Size doesn't change the rule. Every prod migration goes through the deploy. No exceptions. |
 
 ## Red Flags — STOP
 
@@ -201,7 +204,7 @@ stayed safe only by disobeying it).
 - You're "verifying" by applying the migration to production.
 - You skipped the production-reality check on a destructive or backfill migration.
 
-**All of these mean: STOP. Hand the prod migration to Replit Publish. You are an advisor.**
+**All of these mean: STOP. Hand the prod migration to `/publish`. You are an advisor.**
 
 ---
 

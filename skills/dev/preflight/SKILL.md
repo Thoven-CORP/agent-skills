@@ -58,6 +58,6 @@ The spine + manifest + seed are **checked in** — every shipped feature accrete
 
 ## Known limits
 
-- Local-only: prod-config drift (env vars, CDN, Replit) stays uncovered — that is `manual-qa` Release mode's job post-publish.
+- Local-only: prod-config drift (env vars, CDN, Vercel and Render for 2.0, Replit for 1.0) stays uncovered. That is `manual-qa` Release mode's job post-publish.
 - Judgment cost scales with the gallery (~15–25 screenshots/feature); keep checkpoints purposeful.
 - Design verdicts are model judgment anchored on the anti-pattern list; pilot ground truth: the pass rediscovered known findings unprompted (2026-07-16).

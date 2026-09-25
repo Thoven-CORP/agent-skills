@@ -12,7 +12,7 @@ skippable. Match the dispatch to the risk.
 | Touches a sensitive table (`users`, `students`, `profiles`, `guardianships`, `payment_methods`, `simple_booking_requests`, `simple_booking_slots`) | **`security-engineer`** (in addition) |
 
 All dispatches are **advisory** — the agent reviews and reports. No agent runs a migration. The skill
-is an advisor; production migrations run only via Replit Publish.
+is an advisor; production migrations run only inside the deploy (`/publish`).
 
 ---
 

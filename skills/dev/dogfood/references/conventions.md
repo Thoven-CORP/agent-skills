@@ -20,7 +20,7 @@ If a page bounces to login mid-run, **pause and log in manually** — never fall
 The browser can lie ("Booked!" toast with no row written). For wallet + booking, confirm the backend truth. For everything else, UI is enough.
 
 **Run facts:**
-- **Prod base URL:** `https://thoven.co` — all routes, marketing and app (marketplace, `/teacher/[id]`, dashboards). Confirm any subdomain nuance on calibration.
+- **Prod base URL:** `https://thoven.co` (1.0 on Replit until cutover; 2.0 ghost prod is `https://thoven.vercel.app`), for all routes, marketing and app (marketplace, `/teacher/[id]`, dashboards). Confirm any subdomain nuance on calibration.
 - **Backend assertion query (read-only):** `set -a && source ~/thoven/backend/.env && set +a && psql "$PROD_DATABASE_URL" -c "SELECT …"`. `SELECT` only — never write. Resolve household IDs (`teacher_id` / `student_id` / parent `profile_id`) once on calibration by email lookup; store them in `household.local.json` so assertions don't re-resolve every run.
 
 ## Exact expected values
@@ -37,4 +37,4 @@ Unlike `manual-qa` (read-only on prod), dogfood **does** book, approve, pay, and
 
 ## Post-publish transient rule
 
-Right after a Replit publish, dynamic routes can briefly `404` (Replit warm-up / RSC version skew). **Re-probe a few times** before labeling a post-deploy 404 a real bug — a self-resolving warm-up blip is Low/transient, not a Critical.
+Right after a deploy, dynamic routes can briefly `404` (Replit warm-up on 1.0, RSC version skew on any host). `/publish` `references/site-sha.md` shows which SHA each site runs. **Re-probe a few times** before labeling a post-deploy 404 a real bug. A self-resolving warm-up blip is Low/transient, not a Critical.
