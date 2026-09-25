@@ -26,6 +26,7 @@ Each website watches exactly one branch. To change a website, move its branch.
    | "hotfix", "fix the live site", "publish on Replit", or the change is on `release/1.0` | 1.0 hotfix | frontend: `references/hotfix-1.0-frontend.md` · backend: `references/hotfix-1.0-backend.md` |
    | "staging", "is it on staging", or the change is merged into `feature/teacher-2.0` | 2.0 staging | `references/staging-2.0.md` |
    | "deploy to production", "promote", "ghost prod", "release/2.0" | 2.0 production | `references/production-2.0.md` |
+   | "roll back", "revert production", a 2.0 production deploy misbehaves | 2.0 rollback | `references/production-2.0.md`, section "Roll back" |
 
    A request that fits no row, or fits two, gets one question: "1.0 hotfix, 2.0 staging, or 2.0 production?"
 3. **Read only that one file and follow it in order.** The 2.0 production path covers both repos in one run. The other paths cover the repo from step 1.
@@ -49,6 +50,7 @@ These steps cannot be undone by the next push. Show Andres the exact command, th
 
 - pushing `release/2.0` in either repo (one go per repo),
 - deploying the production backend (one go covers `thoven-api` then `thoven-worker`),
+- rolling back 2.0 production (one go per repo),
 - clicking Publish in Replit (only Andres clicks it).
 
 Everything else in these files runs without asking.

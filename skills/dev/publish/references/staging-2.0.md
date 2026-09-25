@@ -9,7 +9,7 @@ On this path `/publish` pushes nothing and deploys nothing. It proves staging ru
 
 ## Steps
 
-Run each step in the repo it names. Stop at the first failure and report it with its output.
+Run each step in the repo it names. Steps 1 to 4 check each repo that changed. Step 5 runs in full every time, because its gates exercise both halves. Stop at the first failure and report it with its output.
 
 1. **Name the SHA.** In each repo that changed:
 
@@ -36,7 +36,7 @@ Run each step in the repo it names. Stop at the first failure and report it with
    curl -s https://thoven-api-staging.onrender.com/health | jq '.revision'
    ```
 
-   Done when both services show `status` `live` with `commit` equal to the SHA, and `revision.sha` is a prefix of it. A deploy still `build_in_progress` or `update_in_progress` means wait. A `pre_deploy_failed` status means `bin/controlled-migrate` refused: read the refusal section of the Render runbook (below).
+   Done when both services show `status` `live` with `commit` equal to the SHA, and `revision.sha` is a prefix of it. A deploy still `build_in_progress`, `pre_deploy_in_progress`, or `update_in_progress` means wait and re-run; after 20 minutes, report it as stuck. A `pre_deploy_failed` status means `bin/controlled-migrate` refused: read the refusal section of the Render runbook (below).
 
 4. **Frontend: Vercel runs the SHA.**
 
@@ -46,7 +46,7 @@ Run each step in the repo it names. Stop at the first failure and report it with
 
    Done when `sha` equals the SHA and `ref` is `feature/teacher-2.0`.
 
-5. **Staging gates on the SHA.** From a backend checkout of `origin/feature/teacher-2.0` (the staging teacher is seed data, staging only):
+5. **Staging gates on the SHA.** From a backend checkout of the backend SHA (`git -C ~/thoven/backend worktree add --detach ~/thoven/backend-publish-<sha7> <sha>`, then `bundle install` in it). `bin/dogfood-staging` needs no environment. The staging teacher below is seed data on staging only:
 
    ```bash
    bin/dogfood-staging

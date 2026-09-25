@@ -432,18 +432,10 @@ Mark task complete: `TaskUpdate: Step 5.7 → completed`
 
 ## Step 6: Create Publish Commit (MANDATORY)
 
-**MUST use `git add -A`** (solo developer project — stage everything).
-
-⚠️ This is safe only because junk directories are gitignored — not because
-the working tree is assumed clean. `.scratch/` was added to `.gitignore` on
-2026-07-27 after `-A` swept 102 in-flight planning files and 11,830 lines
-into the v2.33.0 release commit (`346b2e54`). **If a new directory starts
-accumulating untracked scratch/agent/notes output, add it to `.gitignore` —
-do not leave it for `-A` to find.** Keeping the ignore list current is what
-makes this step correct.
+Stage the release files by exact path: `CHANGELOG.md` and any file this release changed. Other sessions share this tree, so `git add -A` would sweep their work into the release.
 
 ```bash
-git add -A
+git add CHANGELOG.md <paths>
 git commit -m "$(cat <<'EOF'
 docs: update changelog for vX.Y.Z publish
 
@@ -458,13 +450,17 @@ EOF
 )"
 ```
 
-After commit succeeds, push to GitHub:
+After the commit, land it on `release/1.0` through a PR. CI runs on a pull request into `release/1.0`, never on a push to it:
 
 ```bash
-git push origin HEAD:release/1.0
+git push -u origin hotfix/<slug>
+gh pr create --base release/1.0 --title "fix: <summary>" --body "<what and why>"
+gh pr checks --watch
 ```
 
-**This does NOT deploy.** The push lands on GitHub and starts the required job `CI`. Replit UI still deploys. Do not treat push success as `CI` green. Do not `gh workflow run` Parent P1 quality or Pre-publish validation, and do not wait on them.
+Done when the job `CI` passes. **Stop.** Andres merges the PR ("merge it"). Then `git fetch origin release/1.0 && git rev-parse origin/release/1.0` is the release SHA. Before Step 7, repeat PRE-CHECK 1 steps 1 and 2 so the Replit Shell sits on this SHA.
+
+**This does NOT deploy.** Replit UI still deploys. Do not treat push success as `CI` green. Do not `gh workflow run` Parent P1 quality or Pre-publish validation, and do not wait on them.
 
 Mark task complete: `TaskUpdate: Step 6 → completed`
 
@@ -563,8 +559,7 @@ Mark task complete: `TaskUpdate: Step 8 → completed`
 - Telling user "it's deployed" — only Replit UI deploys, not git push
 - Auto-determining version bump without asking the user
 - Missing changelog entries for commits since last publish
-- Using selective git staging instead of `git add -A`
-- Letting a new scratch/notes directory accumulate untracked instead of gitignoring it — `git add -A` will sweep it into the release
+- Staging with `git add -A` in a shared tree, which sweeps other sessions' work into the release
 
 ---
 
@@ -597,7 +592,7 @@ Mark task complete: `TaskUpdate: Step 8 → completed`
 5. ✅ Show completeness report with missing entries
 6. ✅ STOP at approval gate — wait for user
 7. ✅ Ask user for version bump type
-8. ✅ Use `git add -A` (never selective staging) — and keep `.gitignore` current so it stays safe
+8. ✅ Stage release files by exact path
 9. ✅ Verify contract-manifest freshness before the publish commit (Step 5.6)
 10. ✅ Include "Publication Status: Published" in commit
 11. ✅ Cross-check release-cited THV ticket IDs exist in Linear (read-only — never write board state from a publish)
@@ -611,7 +606,7 @@ Mark task complete: `TaskUpdate: Step 8 → completed`
 - ❌ Skip changelog verification
 - ❌ Auto-determine version bump without asking
 - ❌ Create commit without user confirming changelog
-- ❌ Use selective git staging
+- ❌ Use `git add -A`
 - ❌ Tell user "it's deployed" — only Replit UI deploys
-- ❌ Treat `git push origin HEAD:release/1.0` as green `CI` or as a deploy
+- ❌ Treat a push as green `CI` or as a deploy
 - ❌ `gh workflow run` Parent P1 quality or Pre-publish validation, or wait on them

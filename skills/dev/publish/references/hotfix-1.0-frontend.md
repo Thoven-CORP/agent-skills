@@ -53,7 +53,7 @@ YOU CANNOT SKIP THE CHECKLIST. CREATE IT NOW.
 - ❌ NEVER create a publish commit without `Publication Status: Published`
 - ❌ NEVER tell the user to pull into Replit after a staging commit — that's a separate decision
 - ❌ NEVER call GitHub a "backup" — it is the source of truth
-- ❌ NEVER `gh workflow run` Parent P1 quality or Pre-publish validation, and do not wait on them. Those are Monday advisory nets. Required remote check is the job named `CI`. A successful `git push origin HEAD:release/1.0` means landed on GitHub, not `CI` green, not Replit deployed.
+- ❌ NEVER `gh workflow run` Parent P1 quality or Pre-publish validation, and do not wait on them. Those are Monday advisory nets. Required remote check is the job named `CI`. A successful `git push` means landed on GitHub, not `CI` green, not Replit deployed.
 
 ### ALWAYS Do This:
 - ✅ ALWAYS create the TaskCreate checklist before any other action
@@ -179,9 +179,9 @@ This signals that everything in `[Unreleased]` has been pulled into the Replit w
    - Minor = new features
    - Major = breaking changes
 
-2. **Rename Unreleased section to versioned**
+2. **Rename Unreleased section to versioned.** The date line reads `Publishing` until `npm run verify:prod` exits 0 (see *Post-Publish Verification*):
    ```markdown
-   ## [1.12.3] - 2026-03-12 - Published
+   ## [1.12.3] - 2026-03-12 - Publishing
    ```
 
 3. **Create new empty Unreleased**
@@ -190,7 +190,7 @@ This signals that everything in `[Unreleased]` has been pulled into the Replit w
 
    ---
 
-   ## [1.12.3] - 2026-03-12 - Published
+   ## [1.12.3] - 2026-03-12 - Publishing
    ```
 
 ---
@@ -279,10 +279,10 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 ### Git Tag (Publish Only)
 
-After a publish commit, tag the release:
+After `npm run verify:prod` exits 0, tag the release SHA (`git fetch origin release/1.0` first, so the tag lands on the merged commit):
 
 ```bash
-git tag -a vX.X.X -m "vX.X.X: Brief summary"
+git tag -a vX.X.X -m "vX.X.X: Brief summary" origin/release/1.0
 git push origin vX.X.X
 ```
 
@@ -306,28 +306,36 @@ EOF
 
 **Actions differ based on the pipeline stage chosen in Phase 1.**
 
+### Land the hotfix on `release/1.0`
+
+CI runs on a pull request into `release/1.0`, never on a push to it. The hotfix lands through a PR:
+
+1. `git push -u origin hotfix/<slug>`
+2. `gh pr create --base release/1.0 --title "<type>: <summary>" --body "<what and why>"`
+3. `gh pr checks --watch`. Done when the job `CI` passes.
+4. **Stop.** Andres merges the PR ("merge it"). Then `git fetch origin release/1.0 && git rev-parse origin/release/1.0` is the release SHA.
+
 ### After STAGING
 
-1. `git push origin HEAD:release/1.0`
-2. Remind: "Landed on GitHub. That is not job `CI` green and not deployed."
-3. **Do NOT mention Replit** — pulling into Replit is a separate decision.
+1. Steps 1 to 3 of *Land the hotfix*. The PR stays open.
+2. **Do NOT mention Replit** — pulling into Replit is a separate decision.
 
 ### After TESTING
 
-1. `git push origin HEAD:release/1.0`
-2. Remind: "Pushed to GitHub. Next: pull into Replit workspace (`git pull` in Replit) to test."
-3. User pulls in Replit manually and tests in the workspace environment.
+1. Steps 1 to 4 of *Land the hotfix*.
+2. Remind: "Merged into `release/1.0`. Next: resync the Replit workspace with the *Replit Workspace Divergence Trap* procedure below, then test there."
 
 ### After PUBLISH
 
-1. `git push origin HEAD:release/1.0`
-2. Remind: "Pushed to GitHub. Next steps:
+1. Before the PR merges, add this release's `SURFACES` entry to `scripts/verify-prod-release.mjs` (see *Adding a release to the check*). Without it `verify:prod` proves nothing about this release.
+2. Steps 1 to 4 of *Land the hotfix*.
+3. Remind: "Merged into `release/1.0`. Next steps:
    1. Resync the Replit workspace — **do NOT blind `git pull`** (see *Replit Workspace Divergence Trap* below): `git fetch origin release/1.0 --tags` → `git log origin/release/1.0..HEAD --stat` → if local commits are only empty `Published your App` markers, `git reset --hard origin/release/1.0`
-   2. Verify `git rev-parse --short HEAD` equals the release commit you just pushed
+   2. Verify `git rev-parse HEAD` equals the release SHA
    3. Click **Publish** in the Replit Deployments tab to deploy to production
    4. Come back and confirm the click happened — then run `npm run verify:prod` (see *Post-Publish Verification* below)"
    - Cross-repo releases (FE + BE both have unreleased changes): deploy the **backend first**, confirm healthy, then publish the frontend — FE code that calls new BE contracts will 500 if FE ships first.
-3. If `docs/deployment/PUBLISH_REMINDERS.md` had open items (Step 7.5), append their numbered steps to this reminder now — right after the Publish click is the moment they need to happen.
+4. If `docs/deployment/PUBLISH_REMINDERS.md` had open items (Step 7.5), append their numbered steps to this reminder now — right after the Publish click is the moment they need to happen.
 
 ### Post-Publish Verification (MANDATORY — the `Published` stamp depends on it)
 
@@ -496,7 +504,7 @@ A conflict means 2.0 changed that code. Resolve it for 2.0's code and say so in 
 - NEVER use freeform commit messages — ALL commits must use a Conventional Commits prefix (`feat:`, `fix:`, `docs:`, etc.)
 - ALWAYS include `Co-Authored-By: Claude <noreply@anthropic.com>`
 - ALWAYS verify git status after commit
-- ALWAYS tag publish commits with `git tag -a vX.X.X`
+- ALWAYS tag the release SHA with `git tag -a vX.X.X` once `verify:prod` exits 0
 - ALWAYS run `npm run verify:prod` after the Publish click, and NEVER write the changelog `Published` stamp until it exits 0 — a stamp written before the deploy is a lie the repo will keep telling (see *Post-Publish Verification*)
 - Publish commits MUST use `release:` prefix and include `Publication Status: Published`
 
