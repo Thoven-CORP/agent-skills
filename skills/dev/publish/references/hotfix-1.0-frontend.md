@@ -1,6 +1,13 @@
-# Publish Skill
+# Publish: 1.0 frontend hotfix (Replit)
 
-Handles commits, changelog updates, and the three-stage deployment pipeline.
+1.0 takes hotfixes only. Replit serves `release/1.0` (tag `thoven-1.0`) on thoven.co until cutover, and stays the rollback after it. Start the fix from `origin/release/1.0`:
+
+```bash
+git fetch origin release/1.0
+git switch -c hotfix/<slug> origin/release/1.0
+```
+
+In this file "staging" means the Replit workspace on `release/1.0`, never staging.thoven.co.
 
 ## Deployment Pipeline
 
@@ -15,7 +22,7 @@ Local (Warp)  →  GitHub (source of truth)  →  Replit workspace (staging)  �
 | **Publish** | commit + push + pull + click Publish in Replit | `[X.X.X] - YYYY-MM-DD - Published` |
 
 - **GitHub** is the source of truth for code. Multiple sessions push here frequently.
-- **Replit workspace** is the staging environment. Pull from GitHub when ready to test or deploy — always pulls everything on main.
+- **Replit workspace** is the staging environment. Pull from GitHub when ready to test or deploy — always pulls everything on `release/1.0`.
 - **Replit Publish** deploys the workspace snapshot to production at thoven.co.
 
 ## MANDATORY First Action
@@ -33,6 +40,7 @@ TaskCreate for each:
 - [ ] Step 7: Execute post-commit actions per decision (push / push+pull / push+pull+publish)
 - [ ] Step 7.5 (Publish only): Check docs/deployment/PUBLISH_REMINDERS.md for pending post-publish actions
 - [ ] Step 8 (Publish only): After the Publish click, run `npm run verify:prod` — only stamp the changelog `Published` once it exits 0
+- [ ] Step 9: Carry the fix into 2.0 the same day (see *Carry the Fix into 2.0*)
 YOU CANNOT SKIP THE CHECKLIST. CREATE IT NOW.
 
 **CRITICAL - YOU MUST FOLLOW THESE RULES:**
@@ -45,7 +53,7 @@ YOU CANNOT SKIP THE CHECKLIST. CREATE IT NOW.
 - ❌ NEVER create a publish commit without `Publication Status: Published`
 - ❌ NEVER tell the user to pull into Replit after a staging commit — that's a separate decision
 - ❌ NEVER call GitHub a "backup" — it is the source of truth
-- ❌ NEVER `gh workflow run` Parent P1 quality or Pre-publish validation, and do not wait on them. Those are Monday advisory nets. Required remote check is the job named `CI`. A successful `git push origin main` means landed on GitHub, not `CI` green, not Replit deployed.
+- ❌ NEVER `gh workflow run` Parent P1 quality or Pre-publish validation, and do not wait on them. Those are Monday advisory nets. Required remote check is the job named `CI`. A successful `git push origin HEAD:release/1.0` means landed on GitHub, not `CI` green, not Replit deployed.
 
 ### ALWAYS Do This:
 - ✅ ALWAYS create the TaskCreate checklist before any other action
@@ -300,21 +308,21 @@ EOF
 
 ### After STAGING
 
-1. `git push origin main`
+1. `git push origin HEAD:release/1.0`
 2. Remind: "Landed on GitHub. That is not job `CI` green and not deployed."
 3. **Do NOT mention Replit** — pulling into Replit is a separate decision.
 
 ### After TESTING
 
-1. `git push origin main`
+1. `git push origin HEAD:release/1.0`
 2. Remind: "Pushed to GitHub. Next: pull into Replit workspace (`git pull` in Replit) to test."
 3. User pulls in Replit manually and tests in the workspace environment.
 
 ### After PUBLISH
 
-1. `git push origin main`
+1. `git push origin HEAD:release/1.0`
 2. Remind: "Pushed to GitHub. Next steps:
-   1. Resync the Replit workspace — **do NOT blind `git pull`** (see *Replit Workspace Divergence Trap* below): `git fetch origin main --tags` → `git log origin/main..HEAD --stat` → if local commits are only empty `Published your App` markers, `git reset --hard origin/main`
+   1. Resync the Replit workspace — **do NOT blind `git pull`** (see *Replit Workspace Divergence Trap* below): `git fetch origin release/1.0 --tags` → `git log origin/release/1.0..HEAD --stat` → if local commits are only empty `Published your App` markers, `git reset --hard origin/release/1.0`
    2. Verify `git rev-parse --short HEAD` equals the release commit you just pushed
    3. Click **Publish** in the Replit Deployments tab to deploy to production
    4. Come back and confirm the click happened — then run `npm run verify:prod` (see *Post-Publish Verification* below)"
@@ -328,7 +336,7 @@ moments: landed on GitHub (`git push`), job `CI` green on that SHA, Replit
 deployed. Push success is only the first. P7 bypass can land a red SHA.
 Do not treat push as green `CI`. Do not dispatch or wait on Parent P1 quality
 or Pre-publish validation. Replit Publish snapshots the **workspace**, so a
-workspace behind `origin/main` silently republishes the previous build.
+workspace behind `origin/release/1.0` silently republishes the previous build.
 
 **This has already happened.** v2.21.0 was committed, tagged, pushed, CI-green and
 stamped `Published 2026-07-27`. The Publish click never happened. Production served
@@ -412,28 +420,44 @@ Replit Workspace (staging)          Replit Deployment (production)
 
 ### Replit Workspace Divergence Trap (ALWAYS check before a Replit pull)
 
-**This happens on nearly every publish.** Each time you click Publish, Replit auto-creates a checkpoint commit in the *workspace* — `Published your App` by `Replit Agent <agent@replit.com>` (with `Replit-Commit-*` trailers). These commits are **never pushed to GitHub**, so the workspace silently diverges from `origin/main` (the source of truth). A blind `git pull` then creates yet another merge commit mixing Replit's auto-snapshots with origin — messy, and it can deploy a tree that isn't exactly what's on GitHub.
+**This happens on nearly every publish.** Each time you click Publish, Replit auto-creates a checkpoint commit in the *workspace* — `Published your App` by `Replit Agent <agent@replit.com>` (with `Replit-Commit-*` trailers). These commits are **never pushed to GitHub**, so the workspace silently diverges from `origin/release/1.0` (the source of truth). A blind `git pull` then creates yet another merge commit mixing Replit's auto-snapshots with origin — messy, and it can deploy a tree that isn't exactly what's on GitHub.
 
-**Symptom:** `git status` in the Replit workspace says *"Your branch and 'origin/main' have diverged, and have N and M different commits each."* The local-only commits are `Published your App` (Replit Agent) + the occasional merge.
+**Symptom:** `git status` in the Replit workspace says *"Your branch and 'origin/release/1.0' have diverged, and have N and M different commits each."* The local-only commits are `Published your App` (Replit Agent) + the occasional merge.
 
 **Safe resync procedure — NEVER blind-pull:**
 
 ```bash
-git fetch origin main --tags
-git log origin/main..HEAD --stat     # inspect the LOCAL-only commits
+git fetch origin release/1.0 --tags
+git log origin/release/1.0..HEAD --stat     # inspect the LOCAL-only commits
 git status                            # confirm working tree is clean
 ```
 
-Then decide based on what `git log origin/main..HEAD --stat` shows:
+Then decide based on what `git log origin/release/1.0..HEAD --stat` shows:
 
 | What the local-only commits contain | Action |
 |---|---|
-| **Only empty `Published your App` checkpoints + merges** (no `--stat` file changes) | Safe to realign to GitHub: `git reset --hard origin/main` — discards only empty Replit markers, loses no code. |
+| **Only empty `Published your App` checkpoints + merges** (no `--stat` file changes) | Safe to realign to GitHub: `git reset --hard origin/release/1.0` — discards only empty Replit markers, loses no code. |
 | **Real file changes** (someone built/edited directly in the Replit workspace and never pushed) | **STOP.** Preserve first — branch + push those commits to GitHub, reconcile, *then* deploy. Do not reset. |
 
 After reset, verify the workspace matches what you're publishing: `git rev-parse --short HEAD` must equal the release commit you pushed (Publish snapshots the **workspace**, not GitHub).
 
-**Why `reset --hard`, not `pull`:** the local commits are empty deployment markers with no tree change, so a merge gains nothing and only adds history cruft + a new workspace-only merge commit (more future divergence). Resetting to `origin/main` makes the workspace exactly equal the audited GitHub state. The one rule: **inspect with `--stat` before resetting** — never `reset --hard` without first confirming the local commits carry no real work.
+**Why `reset --hard`, not `pull`:** the local commits are empty deployment markers with no tree change, so a merge gains nothing and only adds history cruft + a new workspace-only merge commit (more future divergence). Resetting to `origin/release/1.0` makes the workspace exactly equal the audited GitHub state. The one rule: **inspect with `--stat` before resetting** — never `reset --hard` without first confirming the local commits carry no real work.
+
+---
+
+## Carry the Fix into 2.0
+
+A 1.0 fix that skips 2.0 comes back at cutover. The same day, open a PR of the fix into `feature/teacher-2.0`:
+
+```bash
+git fetch origin feature/teacher-2.0
+git switch -c port/<slug> origin/feature/teacher-2.0
+git cherry-pick -x <fix-sha>...
+git push -u origin port/<slug>
+gh pr create --base feature/teacher-2.0 --title "<type>: port 1.0 hotfix <slug>" --body "Ports <fix-sha> from release/1.0."
+```
+
+A conflict means 2.0 changed that code. Resolve it for 2.0's code and say so in the PR body. The PR is held for Andres like any other.
 
 ---
 
@@ -463,7 +487,7 @@ After reset, verify the workspace matches what you're publishing: `git rev-parse
 ## Rules
 
 - NEVER force push unless explicitly requested
-- NEVER blind `git pull` in a Replit workspace — it has diverged via auto `Published your App` checkpoints. Inspect with `git log origin/main..HEAD --stat`, then `git reset --hard origin/main` ONLY if the local-only commits are empty Replit markers (see *Replit Workspace Divergence Trap*). If they carry real file changes, STOP and preserve them first.
+- NEVER blind `git pull` in a Replit workspace — it has diverged via auto `Published your App` checkpoints. Inspect with `git log origin/release/1.0..HEAD --stat`, then `git reset --hard origin/release/1.0` ONLY if the local-only commits are empty Replit markers (see *Replit Workspace Divergence Trap*). If they carry real file changes, STOP and preserve them first.
 - NEVER commit secrets (.env, credentials, API keys) — enforced by `secret-scan-on-commit.sh` hook
 - NEVER skip the MANDATORY checklist — every invocation starts with TaskCreate
 - NEVER mention Replit after a staging-only commit

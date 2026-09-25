@@ -1,8 +1,13 @@
-# Publish Workflow
+# Publish: 1.0 backend hotfix (Replit)
 
-## Overview
+1.0 takes hotfixes only. Replit serves `release/1.0` (tag `thoven-1.0`) until cutover, and stays the rollback after it. Start the fix from `origin/release/1.0`:
 
-Automates the full publish workflow: find unpublished commits, verify changelog completeness, bump version, create publish commit, and remind to deploy via Replit UI.
+```bash
+git fetch origin release/1.0
+git switch -c hotfix/<slug> origin/release/1.0
+```
+
+Andres clicks Publish in the Replit UI. It runs `db:migrate` on Replit's Neon, then boots the new container.
 
 **THIS IS A RIGID SKILL. FOLLOW EVERY STEP IN ORDER. NO SHORTCUTS.**
 
@@ -13,7 +18,7 @@ Before ANY other action, you MUST create a todo checklist:
 ```
 TaskCreate for each:
 - [ ] PRE-CHECK 0: Verify Neon matches last "Published" marker (catch stale markers)
-- [ ] PRE-CHECK 1: Replit-Shell migrate so Replit-local helium matches origin/main
+- [ ] PRE-CHECK 1: Replit-Shell migrate so Replit-local helium matches origin/release/1.0
 - [ ] Step 1: Find last published commit
 - [ ] Step 2: List all unpublished commits
 - [ ] Step 3: Verify CHANGELOG completeness
@@ -26,6 +31,7 @@ TaskCreate for each:
 - [ ] Step 6.5: Linear ticket cross-check (release-cited THV IDs exist)
 - [ ] Step 6.9: Pending post-publish actions (stage:awaiting-publish)
 - [ ] Step 7: Replit deploy checklist
+- [ ] Step 8: Carry the fix into 2.0 the same day
 ```
 
 ## Three-Environment Reference (CRITICAL — read once, then apply)
@@ -82,8 +88,8 @@ Mark task complete: `TaskUpdate: PRE-CHECK 0 → completed`
 ⚠️ Code was written locally in Warp. Sync Replit Shell so Replit Publish has something meaningful to diff:
 
 ```
-1. Replit Shell: git pull --ff-only          ⚠️ ALWAYS --ff-only (see below)
-2. Replit Shell: git log --oneline -3        (must match origin/main)
+1. Replit Shell: git pull --ff-only origin release/1.0   ⚠️ ALWAYS --ff-only (see below)
+2. Replit Shell: git log --oneline -3        (must match origin/release/1.0)
 3. Replit Shell: bundle install              ⚠️ REQUIRED EVERY PUBLISH (see below)
 4. Replit Shell: rails db:migrate            (no RAILS_ENV — defaults to Replit's dev env, migrates Replit's local helium)
 5. Replit Shell: rails db:migrate:status | tail -10   (verify your new migrations show `up`)
@@ -107,26 +113,26 @@ runs its own `bundle install` before `db:migrate`. This is a Shell-only step.
 Skipping it also silently skips the Strong Migrations pre-flight, since the gem
 has to be installed to evaluate anything (`dd-bad40`).
 
-⚠️ **ALWAYS use `git pull --ff-only` in Replit Shell.** Replit's deploy pipeline silently creates empty `"Published your App"` marker commits on its local `main`, and historic Replit Shell sessions may have left interactive `Merge branch 'main' ...` commits behind. A plain `git pull` against that state creates an auto-merge that:
+⚠️ **ALWAYS use `git pull --ff-only` in Replit Shell.** Replit's deploy pipeline silently creates empty `"Published your App"` marker commits on its local `release/1.0`, and historic Replit Shell sessions may have left interactive `Merge branch 'main' ...` commits behind. A plain `git pull` against that state creates an auto-merge that:
 - Garbles the merge commit message if the user's next keystrokes land in git's commit-message editor (`"git log --oneline -3Merge branch..."`)
-- Leaves Replit `main` ahead of `origin/main` with junk commits in the lineage
-- Causes Replit Publish to deploy from the divergent local HEAD instead of `origin/main`
+- Leaves Replit `release/1.0` ahead of `origin/release/1.0` with junk commits in the lineage
+- Causes Replit Publish to deploy from the divergent local HEAD instead of `origin/release/1.0`
 
 `--ff-only` refuses to merge and fails loudly instead — surfacing the divergence so it can be cleaned up before publish. See memories `feedback_replit_published_marker` + `feedback_replit_branch_sync`.
 
 **Recovery if a plain `git pull` already created the auto-merge:**
 ```bash
-git log --oneline origin/main..HEAD
+git log --oneline origin/release/1.0..HEAD
 # If the only local-only commits are "Published your App" empty markers
 # and "Merge branch 'main'..." auto-merges (no real code changes), reset:
-git reset --hard origin/main
-git log --oneline -3   # confirm HEAD matches origin/main
+git reset --hard origin/release/1.0
+git log --oneline -3   # confirm HEAD matches origin/release/1.0
 ```
-If `git log --oneline origin/main..HEAD` shows a real local commit (rare — only happens if you edited files in Replit Shell), STOP and preserve it via cherry-pick before resetting.
+If `git log --oneline origin/release/1.0..HEAD` shows a real local commit (rare — only happens if you edited files in Replit Shell), STOP and preserve it via cherry-pick before resetting.
 
 The Replit-local helium migrate at Step 3 is the load-bearing step. Without it, Publish ships nothing new.
 
-**Do not proceed to Step 1 of the publish flow until Replit-local helium reflects origin/main.**
+**Do not proceed to Step 1 of the publish flow until Replit-local helium reflects origin/release/1.0.**
 
 **YOU CANNOT SKIP THE CHECKLIST. CREATE IT NOW.**
 
@@ -196,7 +202,7 @@ STEPS (covers all three environments per the table above):
 2. COMMIT + PUSH to GitHub (Warp Shell).
 
 3. REPLIT-LOCAL MIGRATE (Replit Shell → Replit's helium PG via $DATABASE_URL):
-     git pull --ff-only                        # ALWAYS --ff-only — see PRE-CHECK 1 for why
+     git pull --ff-only origin release/1.0     # ALWAYS --ff-only — see PRE-CHECK 1 for why
      rails db:migrate                          # NO RAILS_ENV (banned per HARD CONSTRAINT)
      rails db:migrate:status | tail -10        # verify all new migrations show `up`
 
@@ -455,7 +461,7 @@ EOF
 After commit succeeds, push to GitHub:
 
 ```bash
-git push origin main
+git push origin HEAD:release/1.0
 ```
 
 **This does NOT deploy.** The push lands on GitHub and starts the required job `CI`. Replit UI still deploys. Do not treat push success as `CI` green. Do not `gh workflow run` Parent P1 quality or Pre-publish validation, and do not wait on them.
@@ -522,10 +528,28 @@ Remember:
 - git push lands on GitHub and starts required `CI`; it does not deploy
 - The Replit UI "Publish" button snapshots current files and builds a new container
 - Production will run: db:migrate → puma start (with Solid Queue plugin)
-- Verify at https://thoven.co/health after publishing
+- Verify `curl -s https://thovenbackend-am-andres234.replit.app/health`: `revision.sha` is a prefix of the release SHA
 ```
 
 Mark task complete: `TaskUpdate: Step 7 → completed`
+
+---
+
+## Step 8: Carry the Fix into 2.0 (MANDATORY)
+
+A 1.0 fix that skips 2.0 comes back at cutover. The same day, open a PR of the fix into `feature/teacher-2.0`:
+
+```bash
+git fetch origin feature/teacher-2.0
+git switch -c port/<slug> origin/feature/teacher-2.0
+git cherry-pick -x <fix-sha>...
+git push -u origin port/<slug>
+gh pr create --base feature/teacher-2.0 --title "<type>: port 1.0 hotfix <slug>" --body "Ports <fix-sha> from release/1.0."
+```
+
+A hotfix migration also needs its version in `config/migration-policy.yml` under `permitted`, or 2.0's `bin/controlled-migrate` refuses it. A conflict means 2.0 changed that code: resolve it for 2.0 and say so in the PR body. The PR is held for Andres like any other.
+
+Mark task complete: `TaskUpdate: Step 8 → completed`
 
 ---
 
@@ -561,6 +585,7 @@ Mark task complete: `TaskUpdate: Step 7 → completed`
 | 6.5 | Linear ticket cross-check — every cited THV ID exists (read-only) | Yes |
 | 6.9 | Pending post-publish actions (`docs/deployment/PUBLISH_REMINDERS.md`) | Reminder — surface steps verbatim |
 | 7 | Remind to deploy | Yes |
+| 8 | Port the fix into `feature/teacher-2.0` | Yes |
 
 ## Enforcement Summary
 
@@ -588,5 +613,5 @@ Mark task complete: `TaskUpdate: Step 7 → completed`
 - ❌ Create commit without user confirming changelog
 - ❌ Use selective git staging
 - ❌ Tell user "it's deployed" — only Replit UI deploys
-- ❌ Treat `git push origin main` as green `CI` or as a deploy
+- ❌ Treat `git push origin HEAD:release/1.0` as green `CI` or as a deploy
 - ❌ `gh workflow run` Parent P1 quality or Pre-publish validation, or wait on them
