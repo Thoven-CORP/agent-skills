@@ -71,7 +71,7 @@ From **Replit Shell** (READ-ONLY):
 psql $DATABASE_URL -c "SELECT version FROM schema_migrations ORDER BY version DESC LIMIT 5;"
 ```
 
-Compare top Neon version against the migrations introduced by the last `Publication Status: Published` commit (find via `git log --grep="Publication Status: Published" -1 --format="%H %s"` then `git show --stat <hash> -- db/migrate/`).
+Compare top Neon version against the newest migration at the last `Publication Status: Published` commit, the stamp commit of the last proven release: `git log --grep="Publication Status: Published" -1 --format=%H`, then `git ls-tree --name-only <hash> db/migrate/ | tail -1`.
 
 **If Neon's top version matches → previous Publish actually landed.** Proceed.
 
@@ -361,8 +361,10 @@ Mark task complete: `TaskUpdate: Step 4 → completed`
 ```markdown
 ## [Unreleased]
 
-## [X.Y.Z] - YYYY-MM-DD - Published YYYY-MM-DD
+## [X.Y.Z] - YYYY-MM-DD - Publishing
 ```
+
+The header reads `Publishing` until the release proves itself in Step 7.
 
 3. Keep the empty `[Unreleased]` header at top for future changes
 4. Verify the edit looks correct
@@ -441,9 +443,9 @@ git commit -m "$(cat <<'EOF'
 docs: update changelog for vX.Y.Z publish
 
 - Moved [Unreleased] entries to [X.Y.Z]
-- Published YYYY-MM-DD
+- Publishing
 
-Publication Status: Published - YYYY-MM-DD HH:MM UTC
+Publication Status: Publishing
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 Co-Authored-By: Claude <noreply@anthropic.com>
@@ -533,6 +535,9 @@ Remember:
 
 1. **Stop: Andres clicks Publish.** Only Andres clicks Publish in Replit. Wait until Andres confirms the click.
 2. **Production serves the release.** Run `curl -s https://thovenbackend-am-andres234.replit.app/health`. Done when `revision.sha` is a prefix of the release SHA.
+3. **The release is stamped Published.** Only after the check above passes. On a branch from `origin/release/1.0`, change the CHANGELOG header's `- Publishing` to `- Published YYYY-MM-DD`, the deploy date. Commit it with the trailer `Publication Status: Published - YYYY-MM-DD HH:MM UTC`, the marker Step 1 finds next time. Land it like the hotfix: a PR into `release/1.0`, then `gh pr checks --watch`. It needs no Publish click, because it changes only `CHANGELOG.md`.
+
+   **Stop: merge the stamp PR.** Andres merges it ("merge it" for this PR). Done when the stamp PR is merged.
 
 Mark task complete: `TaskUpdate: Step 7 → completed`
 

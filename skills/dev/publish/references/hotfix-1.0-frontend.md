@@ -43,6 +43,7 @@ TaskCreate for each:
 - [ ] Step 7.5 (Publish only): Check docs/deployment/PUBLISH_REMINDERS.md for pending post-publish actions
 - [ ] Step 8 (Publish only): After the Publish click, run `npm run verify:prod` — only stamp the changelog `Published` once it exits 0
 - [ ] Step 8.5 (Publish only): Once `verify:prod` exits 0, tag the release SHA with `git tag -a vX.X.X` (see *Git Tag*)
+- [ ] Step 8.6 (Publish only): Land the stamp PR that flips `Publishing` to `Published` (see *Stamp the Release*)
 - [ ] Step 9: Carry the fix into 2.0 the same day (see *Carry the Fix into 2.0*)
 YOU CANNOT SKIP THE CHECKLIST. CREATE IT NOW.
 
@@ -251,7 +252,7 @@ release: Publish vX.X.X: Brief summary of major features
 - Feature highlight 1
 - Feature highlight 2
 
-Publication Status: Published
+Publication Status: Publishing
 
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
@@ -355,11 +356,17 @@ loudly instead of passing vacuously.
 1. **The release is tagged.** After `npm run verify:prod` exits 0, tag the release SHA (`git fetch origin release/1.0` first, so the tag lands on the merged commit). Done when `git ls-remote --tags origin vX.X.X` prints the tag:
 
    ```bash
-   git tag -a vX.X.X -m "vX.X.X: Brief summary" origin/release/1.0
+   git tag -a vX.X.X -m "vX.X.X: Brief summary" <release-sha>
    git push origin vX.X.X
    ```
 
 The tag checkpoints every production release: `git checkout v1.22.0` shows exactly what was deployed.
+
+### Stamp the Release (Publish Only)
+
+1. **The release is stamped Published.** Only after `npm run verify:prod` exits 0. On a branch from `origin/release/1.0`, change the CHANGELOG line `- Publishing` to `- Published YYYY-MM-DD`, the deploy date. Commit it with the trailer `Publication Status: Published - YYYY-MM-DD HH:MM UTC`. Land it like the hotfix: a PR into `release/1.0`, then `gh pr checks --watch`. It needs no Publish click, because it changes only `CHANGELOG.md`.
+
+   **Stop: merge the stamp PR.** Andres merges it ("merge it" for this PR). Done when the stamp PR is merged.
 
 ### Pending Post-Publish Actions (Publish only)
 
@@ -485,7 +492,7 @@ A conflict means 2.0 changed that code. Resolve it for 2.0's code and say so in 
 - ALWAYS verify git status after commit
 - ALWAYS tag the release SHA with `git tag -a vX.X.X` once `verify:prod` exits 0
 - ALWAYS run `npm run verify:prod` after the Publish click, and NEVER write the changelog `Published` stamp until it exits 0 — a stamp written before the deploy is a lie the repo will keep telling (see *Post-Publish Verification*)
-- Publish commits MUST use `release:` prefix and include `Publication Status: Published`
+- Publish commits MUST use `release:` prefix and include `Publication Status: Publishing`. The `Published` trailer rides only the stamp commit, after `verify:prod` exits 0 (see *Stamp the Release*)
 
 ---
 

@@ -1,6 +1,6 @@
 # Publish: 2.0 staging
 
-Staging deploys itself. Merging a PR into `feature/teacher-2.0` rebuilds staging in both repos:
+Staging deploys itself. Merging a PR into `feature/teacher-2.0` rebuilds staging in both repos. Each merge, frontend or backend, needs Andres's "merge it" for that PR: see "Who does what" in the Render runbook (below).
 
 - frontend: Vercel project `thoven-staging` builds the new commit and serves staging.thoven.co,
 - backend: Render `thoven-api-staging` and `thoven-worker-staging` deploy the new commit. The web service runs `bin/controlled-migrate` before it goes live.
@@ -26,7 +26,7 @@ Run each step in the repo it names. Steps 1 to 4 check each repo that changed. S
    gh run list --workflow CI --branch feature/teacher-2.0 --commit <sha> --json status,conclusion,url
    ```
 
-   Done when a run shows `completed` and `success`. `in_progress` means wait and re-run the command. `failure` stops the path.
+   Done when a run shows `completed` and `success`. An empty list means CI has not started yet: wait 30 seconds and re-run. An empty list is never a failure and never green. `in_progress` means wait and re-run the command. `failure` stops the path.
 
 3. **Backend: Render runs the SHA.** Service IDs: `thoven-api-staging` is `srv-dao470bm8hqs73d71sh0`, `thoven-worker-staging` is `srv-dao470bm8hqs73d71shg`.
 

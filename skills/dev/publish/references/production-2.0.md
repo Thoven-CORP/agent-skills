@@ -110,7 +110,7 @@ Stop at the first failure and report it with its output. A label that starts wit
 
 ## Roll back
 
-Roll back a repo when its production deploy went live and then misbehaved. A refused or failed deploy needs no rollback: the previous deploy kept serving. Neither rollback moves `release/2.0`.
+Andres declares a rollback. An agent only proposes one, on the trigger in the Render runbook's "Roll back". Roll back a repo when its production deploy went live and then misbehaved. A refused or failed deploy needs no rollback: the previous deploy kept serving. Neither rollback moves `release/2.0`.
 
 - **Backend.** Follow "Roll back" in the Render runbook. It reads both services' deploy lists, stops when web and worker disagree, stops on any migration in the range, and stops for Andres's go before the redeploy.
 - **Frontend rollback.** Roll the frontend back only when it misbehaves itself, or when it calls backend code the backend rollback removed.
@@ -125,7 +125,7 @@ Roll back a repo when its production deploy went live and then misbehaved. A ref
 
   Done when `sha` is the previous SHA. A rollback turns off Vercel's auto-assignment of the production domain, so later pushes to `release/2.0` build but do not go live. The next promote reaches step 10a, which turns auto-assignment back on.
 
-- **Checks after a frontend rollback.** Run steps 8 and 11 again. Done when both pass. The backend runbook runs the same checks after a backend rollback.
+- **Checks after a frontend rollback.** Run "Backend smoke again" and "Ghost harness again" from the Render runbook's "Roll back". Each builds its own checkout. Done when both pass.
 
 The fix goes into `feature/teacher-2.0` as a PR and reaches production through a normal promote.
 
