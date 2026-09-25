@@ -21,12 +21,14 @@ Each website watches exactly one branch. To change a website, move its branch.
 1. **Pick the repo.** Backend if `Gemfile` is in cwd or a parent, or `git remote get-url origin` contains `backend-remote`. Frontend if `package.json` and `app/` exist, or origin contains `frontend-remote`.
 2. **Pick the path** from what Andres said and the branch the change is on:
 
-   | Andres says / the change is on | Path | Read |
-   |---|---|---|
-   | "hotfix", "fix the live site", "publish on Replit", or the change is on `release/1.0` | 1.0 hotfix | frontend: `references/hotfix-1.0-frontend.md` · backend: `references/hotfix-1.0-backend.md` |
-   | "staging", "is it on staging", or the change is merged into `feature/teacher-2.0` | 2.0 staging | `references/staging-2.0.md` |
-   | "deploy to production", "promote", "ghost prod", "release/2.0" | 2.0 production | `references/production-2.0.md` |
-   | "roll back", "revert production", a 2.0 production deploy misbehaves | 2.0 rollback | `references/production-2.0.md`, section "Roll back" |
+   | Andres says / the change is on | Path | Read | Andres's tick list |
+   |---|---|---|---|
+   | "hotfix", "fix the live site", "publish on Replit", or the change is on `release/1.0` | 1.0 hotfix | frontend: `references/hotfix-1.0-frontend.md` · backend: `references/hotfix-1.0-backend.md` | checklist, "1.0 hotfix (Replit)" |
+   | "staging", "is it on staging", or the change is merged into `feature/teacher-2.0` | 2.0 staging | `references/staging-2.0.md` | checklist, "2.0 on staging" |
+   | "deploy to production", "promote", "ghost prod", "release/2.0" | 2.0 production | `references/production-2.0.md` | checklist, "2.0 to production" |
+   | "roll back", "revert production", a 2.0 production deploy misbehaves | 2.0 rollback | `references/production-2.0.md`, section "Roll back" | checklist, "Roll back the 2.0 backend" and "Roll back the 2.0 frontend" |
+
+   The checklist is `docs/Platform/projects/platform-upgrade-and-hosting/PUBLISH_CHECKLIST.md` in the frontend repo (from the backend repo: `git -C ~/thoven/frontend show origin/feature/teacher-2.0:docs/Platform/projects/platform-upgrade-and-hosting/PUBLISH_CHECKLIST.md`). Tick its items in your report as each one passes.
 
    A request that fits no row, or fits two, gets one question: "1.0 hotfix, 2.0 staging, or 2.0 production?"
 3. **Read only that one file and follow it in order.** The 2.0 production path covers both repos in one run. The other paths cover the repo from step 1.
@@ -51,6 +53,8 @@ These steps cannot be undone by the next push. Show Andres the exact command, th
 - pushing `release/2.0` in either repo (one go per repo),
 - deploying the production backend (one go covers `thoven-api` then `thoven-worker`),
 - rolling back 2.0 production (one go per repo),
+- `vercel promote` after an earlier frontend rollback (its own go, with the URL shown),
+- going on without the smoke accounts (staging or production).
 - clicking Publish in Replit (only Andres clicks it).
 
 Everything else in these files runs without asking.

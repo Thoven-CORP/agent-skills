@@ -46,21 +46,26 @@ Run each step in the repo it names. Steps 1 to 4 check each repo that changed. S
 
    Done when `sha` equals the SHA and `ref` is `feature/teacher-2.0`.
 
-5. **Staging gates on the SHA.** From a backend checkout of the backend SHA (`git -C ~/thoven/backend worktree add --detach ~/thoven/backend-publish-<sha7> <sha>`, then `bundle install` in it). `bin/dogfood-staging` needs no environment. The staging teacher below is seed data on staging only:
+5. **Staging gates on the SHA.** From a backend checkout of the backend SHA (`git -C ~/thoven/backend worktree add --detach ~/thoven/backend-publish-<sha7> <sha>`, then `bundle install` in it). `bin/dogfood-staging` needs no environment. The smoke teacher's login lives in `~/thoven/.secrets/staging.env` as `STAGING_SMOKE_TEACHER_EMAIL` and `STAGING_SMOKE_TEACHER_PASSWORD`. Never print either value.
+
+   ```bash
+   set -a; . ~/thoven/.secrets/staging.env; set +a
+   test -n "$STAGING_SMOKE_TEACHER_EMAIL" && echo smoke-teacher-loaded
+   ```
+
+   **Stop: smoke teacher missing.** No `smoke-teacher-loaded` line means the file does not hold the smoke teacher yet. Tell Andres. The SHA is not staging-green until the smoke runs. With the teacher loaded:
 
    ```bash
    bin/dogfood-staging
-   export SMOKE_TEACHER_TOKEN=$(curl -s -D - -o /dev/null -X POST https://thoven-api-staging.onrender.com/api/v1/auth/login \
-     -H 'Content-Type: application/json' \
-     -d '{"user":{"email":"staging-teacher@example.com","password":"password123"}}' \
+   export SMOKE_TEACHER_TOKEN=$(jq -n --arg e "$STAGING_SMOKE_TEACHER_EMAIL" --arg p "$STAGING_SMOKE_TEACHER_PASSWORD" '{user:{email:$e,password:$p}}' \
+     | curl -s -D - -o /dev/null -X POST https://thoven-api-staging.onrender.com/api/v1/auth/login -H 'Content-Type: application/json' -d @- \
      | awk 'tolower($1)=="authorization:"{print $3}' | tr -d '\r')
    SMOKE_HOST=https://thoven-api-staging.onrender.com bundle exec rake deploy:smoke
    ```
 
-   From a frontend checkout of `origin/feature/teacher-2.0`. The harness tests the remote sites, so the local commit only supplies the tests:
+   From a frontend checkout of `origin/feature/teacher-2.0`, in the same shell so `staging.env` stays loaded. The harness tests the remote sites, so the local commit only supplies the tests:
 
    ```bash
-   set -a; . ~/thoven/.secrets/staging.env; set +a
    GHOST_TARGET=staging npm run test:ghost
    ```
 

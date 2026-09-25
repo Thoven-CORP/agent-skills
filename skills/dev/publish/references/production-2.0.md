@@ -11,7 +11,7 @@ This path covers both repos in one run. The backend goes first. The frontend onl
 
 ## Steps
 
-Stop at the first failure and report it with its output. Three steps are **stops**: show Andres the exact command and wait for Andres's "go".
+Stop at the first failure and report it with its output. Every step marked **Stop** waits: show Andres the exact command, or the blocker, and wait for Andres's "go". A go covers only the command shown with it.
 
 1. **Production exists.**
 
@@ -46,17 +46,23 @@ Stop at the first failure and report it with its output. Three steps are **stops
 
 7. **Stop: deploy the backend.** After Andres's go, follow "Deploy a SHA" in the Render runbook: `thoven-api` first, and only after it is live, `thoven-worker`, both on `<be-sha>`. The runbook's checks end the step: both services `live` on `<be-sha>`, `https://api.thoven.co/health` reporting a `revision.sha` that is a prefix of it, and `https://api.thoven.co/up` answering `200`. A refused or failed web deploy ends the whole path here, with the worker untouched. Read "When the deploy is refused" in the runbook.
 
-8. **Backend smoke.** From a backend checkout of `<be-sha>` (`git -C ~/thoven/backend worktree add --detach ~/thoven/backend-publish-<be-sha7> <be-sha>`, then `bundle install` in it), with a dogfood teacher's JWT. The dogfood accounts are THV-707's, never a real teacher. THV-707 creates them and names where they are stored. On 2026-09-24 no file in `~/thoven/.secrets/` held them. If `GHOST_TEACHER_EMAIL` is empty in your shell, the accounts are not loaded:
+8. **Backend smoke.** From the backend worktree of step 3 (`~/thoven/backend-publish-<be-sha7>`), with a dogfood teacher's JWT. The dogfood accounts are THV-707's, never a real teacher. Source their file:
 
    ```bash
-   export SMOKE_TEACHER_TOKEN=$(curl -s -D - -o /dev/null -X POST https://api.thoven.co/api/v1/auth/login \
-     -H 'Content-Type: application/json' \
-     -d "{\"user\":{\"email\":\"$GHOST_TEACHER_EMAIL\",\"password\":\"$GHOST_TEACHER_PASSWORD\"}}" \
+   set -a; . ~/thoven/.secrets/thoven-prod.env; set +a
+   test -n "$GHOST_TEACHER_EMAIL" && echo accounts-loaded
+   ```
+
+   **Stop: accounts missing.** No `accounts-loaded` line means the file does not hold the accounts yet (THV-707 Phase B creates them). Tell Andres. Continue to step 9 only after Andres's go that accepts a production release with no smoke and no ghost harness. With the accounts loaded:
+
+   ```bash
+   export SMOKE_TEACHER_TOKEN=$(jq -n --arg e "$GHOST_TEACHER_EMAIL" --arg p "$GHOST_TEACHER_PASSWORD" '{user:{email:$e,password:$p}}' \
+     | curl -s -D - -o /dev/null -X POST https://api.thoven.co/api/v1/auth/login -H 'Content-Type: application/json' -d @- \
      | awk 'tolower($1)=="authorization:"{print $3}' | tr -d '\r')
    SMOKE_HOST=https://api.thoven.co bundle exec rake deploy:smoke
    ```
 
-   Done when it exits 0. Without the accounts, the smoke did not run: name it at stop 9. A failure here is a rollback decision for Andres (section "Roll back").
+   Done when it exits 0. A failure here is a rollback decision for Andres (section "Roll back").
 
 9. **Stop: promote the frontend.** After Andres's go, from a detached checkout of `<fe-sha>`, so the pre-push check runs on the code being promoted:
 
@@ -75,7 +81,16 @@ Stop at the first failure and report it with its output. Three steps are **stops
     vercel ls thoven --prod
     ```
 
-    Done when `sha` equals `<fe-sha>` and `ref` is `release/2.0`. Re-run the curl each minute while the newest `vercel ls` row reads `Building`. A row reading `Error`, or the old SHA after 15 minutes, stops the path: report it to Andres with the `vercel ls` output. A newest row reading `Ready` while `/api/version` still shows the old SHA means an earlier rollback holds the domain (section "Roll back"): run `vercel promote <newest-ready-deployment-url> --yes`, which go 3 covers, then re-run the curl.
+    Done when `sha` equals `<fe-sha>` and `ref` is `release/2.0`. Re-run the curl each minute while the newest `vercel ls` row reads `Building`. A row reading `Error`, or the old SHA after 15 minutes, stops the path: report it to Andres with the `vercel ls` output. A newest row reading `Ready` while `/api/version` still shows the old SHA means an earlier rollback holds the domain (section "Roll back"). Go to step 10a.
+
+10a. **Stop: promote the new deployment.** Only when step 10 sent you here. Copy the URL of the newest `Ready` row of `vercel ls thoven --prod`, show Andres that exact URL and the command below, and wait for a fresh go:
+
+    ```bash
+    vercel promote <newest-ready-deployment-url> --yes
+    curl -s https://thoven.vercel.app/api/version
+    ```
+
+    Done when `sha` equals `<fe-sha>` and `ref` is `release/2.0`. The promote also turns Vercel's auto-assignment of the production domain back on.
 
 11. **Ghost harness.** From the frontend worktree of step 9 (the harness tests the remote sites, so any checkout of `<fe-sha>` works), with the THV-707 dogfood accounts loaded as in step 8 (`GHOST_PARENT_EMAIL` and the rest, as `e2e/ghost/target.ts` lists):
 
@@ -91,7 +106,7 @@ Stop at the first failure and report it with its output. Three steps are **stops
 
 Roll back a repo when its production deploy went live and then misbehaved. A refused or failed deploy needs no rollback: the previous deploy kept serving. Neither rollback moves `release/2.0`.
 
-- **Backend.** Follow "Roll back" in the Render runbook. It stops for Andres's go before the redeploy.
+- **Backend.** Follow "Roll back" in the Render runbook. It reads both services' deploy lists, stops when web and worker disagree, stops on any migration in the range, and stops for Andres's go before the redeploy.
 - **Frontend.** Roll it back only when it misbehaves itself, or when it calls backend code the backend rollback removed. After Andres's go:
 
   ```bash
@@ -100,7 +115,7 @@ Roll back a repo when its production deploy went live and then misbehaved. A ref
   curl -s https://thoven.vercel.app/api/version
   ```
 
-  Done when `sha` is the previous SHA. A rollback turns off Vercel's auto-assignment of the production domain, so later pushes to `release/2.0` build but do not go live. The next promote ends with `vercel promote <new-deployment-url> --yes`, which also turns auto-assignment back on.
+  Done when `sha` is the previous SHA. A rollback turns off Vercel's auto-assignment of the production domain, so later pushes to `release/2.0` build but do not go live. The next promote reaches step 10a, which turns auto-assignment back on.
 
 After either rollback, run steps 8 and 11 again against the rolled-back SHAs and report them. The fix goes into `feature/teacher-2.0` as a PR and reaches production through a normal promote.
 
