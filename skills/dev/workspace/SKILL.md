@@ -18,12 +18,14 @@ perform semantic feature reconciliation.
    evidence states, and ownership rules are binding.
 2. Resolve the current Linear Project from the named issue, session context, or cwd. If those
    disagree, report `CONTRADICTED`; do not guess.
-3. Fetch the Project's issues yourself, through the **Linear MCP connector**, then feed them to
+3. Fetch the Project's issues yourself, through whichever Linear MCP is loaded, then feed them to
    `map.js`. `map.js` never reaches for a Linear API key on its own.
 
-   - Use `mcp__claude_ai_Linear__list_issues` (and `mcp__claude_ai_Linear__list_projects` if you
-     need Project rows). That connector is authorized.
-   - Do **not** use `mcp__plugin_linear_linear__*`. That connector is unauthorized and will fail.
+   - Different clients load different connectors. In Claude Code, use the plugin connector:
+     `mcp__plugin_linear_linear__list_issues` (and `list_projects` if you need Project rows).
+   - Other clients (Cursor, Codex) may only have `mcp__claude_ai_Linear__list_issues` instead.
+   - Before declaring either one dead, call a read (`list_issues`) and check the exact tool name
+     that actually responds. Do not assume from this doc which connector is loaded.
    - Write the response to a file in the shape below, then:
 
    ```bash
@@ -39,9 +41,9 @@ perform semantic feature reconciliation.
    opt-in escape hatch that uses `LINEAR_API_KEY` or `~/.linear-api-key`; that key is dead, so do
    not reach for it. `--feature` and `--family` remain supported for the legacy tree views.
 
-   **The `--linear-json` shape.** One object with `issues` and optional `projects`. The
-   `mcp__claude_ai_Linear__list_issues` response drops in unchanged — save its `issues` array as-is.
-   The raw GraphQL envelope (`{"data": {"issues": {"nodes": [...]}}}`) is also accepted. Ask the
+   **The `--linear-json` shape.** One object with `issues` and optional `projects`. The loaded
+   connector's `list_issues` response drops in unchanged — save its `issues` array as-is. The raw
+   GraphQL envelope (`{"data": {"issues": {"nodes": [...]}}}`) is also accepted. Ask the
    connector for these `fields` so nothing the snapshot needs is missing:
 
    ```
