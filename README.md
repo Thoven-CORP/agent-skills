@@ -66,15 +66,15 @@ After **any** `npx skills add` or update, run:
 bash ~/thoven/agent-skills/scripts/apply-skill-visibility.sh
 ```
 
-It preserves every installed skill. The Pstack suite, `/qa-flow`, daily Thoven workflows, retained Better/Interface/Transitions/Emil design skills, and the Matt Pocock skills used routinely stay automatically discoverable. The rest move to `~/.agents/skills-on-demand/`, outside Codex’s discovery root, so they cannot exhaust its skills-context budget.
+Every skill stays where `npx skills` installed it, so `npx skills update` and the Claude Code links keep working. The Pstack suite, `/qa-flow`, daily Thoven workflows, retained Better/Interface/Transitions/Emil design skills, and the Matt Pocock skills used routinely stay visible to Codex. The script switches the rest off for Codex only, with a managed block of `[[skills.config]] enabled = false` entries in `~/.codex/config.toml`, so they cannot exhaust its skills-context budget. Entries outside the block's markers are left alone.
 
-To use a parked package, activate it globally and start a new Codex session:
+To use one of those skills in Codex, switch it on and start a new Codex session:
 
 ```bash
 bash ~/thoven/agent-skills/scripts/apply-skill-visibility.sh activate sentry-ruby-sdk
 ```
 
-It remains installed and source-managed. Park it again when finished with `deactivate sentry-ruby-sdk`, or run the normal `sync` command. This is a Codex limitation: the installed version indexes every folder under `~/.agents/skills` and ignores `disable-model-invocation` metadata.
+`deactivate sentry-ruby-sdk` switches it off again. Claude Code and Cursor see every installed skill either way.
 
 ### Pstack composition
 

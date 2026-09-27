@@ -51,7 +51,7 @@ the pane's first screen.
 - **Devin** drops a prompt whose first line is only a slash command. Put the task on the same line
   as `/poteto-mode`.
 - **Cursor** has no Linear MCP. Paste the ticket's Acceptance, Paths and Done when into the brief.
-- **Codex** reads skills from `~/.agents/skills`. A skill parked in `~/.agents/skills-on-demand`
-  needs `scripts/apply-skill-visibility.sh activate <name>` first.
+- **Codex** sees only the allowlisted skills. Any other skill needs
+  `~/thoven/agent-skills/scripts/apply-skill-visibility.sh activate <name>` and a new Codex session.
 - **Any CLI:** a skill with `disable-model-invocation` cannot be loaded by the agent. Tell the pane
   to read that skill's `SKILL.md` and follow it.
