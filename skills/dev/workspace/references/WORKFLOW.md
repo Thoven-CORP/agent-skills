@@ -523,6 +523,7 @@ truth; herdr makes parallelism visible.*
 | Feature / Linear **Project** | **Space** (`~Dashboard`, `~Business`, `~Onboarding`) | One Project and one ledger. Meta is optional. An audience is several spaces, not one. |
 | (none required) | **Work tab** | A prose unit Meta or Andres named (`notifications`, `upcoming`, `payments`). Independent items get their own tab. A checkbox on the fat card does not. |
 | Issue, when one exists | **Pane**. Label = milestone + job | `Design · Messages panel (THV-149)`. Andres creates the tab and pane. A pane can exist before a THV- does. Status words stay on Meta, not the pane name. |
+| Dispatched issue (`dispatch-work`) | **Tab** = the issue, **panes** = its sub-issues | Main creates them when it dispatches. Sub-issue panes run in parallel only when their Paths share no file. Andres ruling 2026-09-27. |
 | | Optional **Meta** tab in that space | An organizer for **this** Project when orchestration needs one. |
 
 A space may carry one **`Meta · <Project>`** tab. Meta is a convenience, not a prerequisite for

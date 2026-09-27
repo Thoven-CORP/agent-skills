@@ -1,0 +1,33 @@
+{
+  "skill_name": "dispatch-work",
+  "evals": [
+    {
+      "id": 1,
+      "name": "dispatch-fe-be-ticket-claude-main",
+      "prompt": "ok dispatch THV-862 into a pane, its the copy a catalog piece to a student slice for materials v3. you're main in claude code, I'm in herdr pane w18:p59. go",
+      "expected_output": "Tier 2 Opus 5.5 high on claude, bypass flag, a filled brief pointing at the ticket with Thoven moment skills, tab named for the issue, send.sh from a file, Linear to In Progress, watcher armed.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "stale-pane-overloaded",
+      "prompt": "the THV-862 pane went quiet like 20 min ago and nothing came back to you. what's going on, handle it. screen is in fixtures/stale-pane-screen.txt",
+      "expected_output": "Classifies as a provider overload error with the turn ended and no status line; waits then sends continue or restarts in same pane with last commit 4e1a9c2; asks for status line; one plain line to Andres; re-arms watcher; does not resend the whole brief blindly or mark anything done.",
+      "files": ["fixtures/stale-pane-screen.txt"]
+    },
+    {
+      "id": 3,
+      "name": "dispatch-hard-backend-codex-main",
+      "prompt": "you're running as main in codex cli this time. THV-859 needs to go out, catalog schema + mutopia import, it's gnarly. set it up",
+      "expected_output": "Tier 1 Asta high on codex (harness picks family), codex bypass flag, $poteto-mode prefix, Rails and migration skills at their moments, brief filled from the ticket.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "done-report-verify-and-close",
+      "prompt": "THV-862 pane just reported back, see fixtures/done-report.txt. take it from here",
+      "expected_output": "Moves ticket to Ready (not Done), runs working-if checks, opens a verifier on the other family with the verifier brief, flags the inferred acceptance line 3 for real evidence, waits for Andres before Done, files the StudentSelect empty state as a follow-up at close.",
+      "files": ["fixtures/done-report.txt"]
+    }
+  ]
+}

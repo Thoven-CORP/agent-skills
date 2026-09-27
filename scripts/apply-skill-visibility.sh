@@ -39,7 +39,7 @@ auto_skills=(
 
   # Product verification and daily Thoven work
   qa-flow control-cli control-ui find-skills preflight publish verify workspace
-  feature-ledger investigate-thoven doc-freshness
+  feature-ledger investigate-thoven doc-freshness dispatch-work
 
   # Official Cursor Team Kit (Cursor plugins, main)
   check-compiler-errors deslop fix-ci fix-merge-conflicts get-pr-comments
@@ -58,6 +58,10 @@ auto_skills=(
   # Matt Pocock and everyday stack skills
   code-review codebase-design diagnosing-bugs domain-modeling research
   resolving-merge-conflicts
+
+  # Official Vercel React diagnostics and browser QA
+  agent-browser vercel-composition-patterns vercel-react-best-practices
+  vercel-react-view-transitions
 )
 
 is_auto_skill() {
