@@ -620,8 +620,17 @@ Done when: <checkable outcome>
 - **Count a branch's own commits with `main..HEAD`.** A bare `--since` counts commits the branch
   inherited and reports dormant branches as busy.
 - **Take the log watermark from `git log -1 --format=%aI`,** not the date written inside an entry.
-- **Two Linear MCPs are installed.** The plugin one is unauthorized; the UUID connector works. Call
-  it before reporting Linear unreachable.
+- **Use whichever Linear MCP is actually loaded.** In Claude Code that is the plugin connector
+  (`mcp__plugin_linear_linear__*`); other clients may only load the UUID one
+  (`mcp__claude_ai_Linear__*`). Before declaring either dead, call a read (`list_issues`) and
+  check the exact tool name that responds.
+- **Moving a parent issue to Done can auto-close its sub-issues silently.** A Linear automation
+  closes open children when the parent goes Done (THV-848 to Done closed THV-850). Before moving a
+  parent to Done, list its children first (`list_issues` with `parentId=<id>`) with their state
+  and cycle. After the save, re-list and restore any child that moved: use `get_issue`
+  `stateHistory` to find its state before the move, and restore both state and cycle (a Backlog
+  child normally has cycle null). Adding a Backlog issue to the active cycle also moves it to Todo
+  silently, so the same check applies there.
 - **Linear's write tools are `save_issue` and `save_comment`,** not `create_*`. An unknown tool name
   reports as "failed to connect," not "unknown tool" — if reads work and a write "can't connect,"
   check the tool name before retrying.
