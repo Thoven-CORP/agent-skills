@@ -10,7 +10,7 @@ Each one that fails is a finding.
 
 - The pane opened by reading the ticket and restating what it would build.
 - A red run exists before the green one, for the proof the ticket names.
-- Type-check and single test files ran during the build. The full suite ran once, near the end.
+- Type-check and the touched test files ran during the build. No full suite or full lint ran.
 - Commits land on the named branch, by exact path, each ending in the ticket id.
 - `git diff --stat <base>..HEAD` touches the ticket's Paths, and every other file has a stated reason.
 - The report labels each claim measured, inferred or guess.

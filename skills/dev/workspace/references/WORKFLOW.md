@@ -254,8 +254,8 @@ Work happens in paired worktrees, one per feature, named for it: `frontend-<feat
 A vertical issue touches both repos, so it gets **the same branch name in each**:
 
 ```
-frontend-teacher-2.0    THV-42-notification-read-state
-backend-teacher-2.0     THV-42-notification-read-state
+frontend    teacher/thv-42-notification-read-state
+backend     teacher/thv-42-notification-read-state
 
 "THV-42"  in both commits. No `Fixes`. That word auto-closes Linear.
 ```
@@ -420,7 +420,7 @@ Records only. Status lives in Linear.
 # CONTINUE HERE — <feature>
 
 Linear: THV-42          a pointer, never a copy
-Branch: THV-42-slug
+Branch: teacher/thv-42-slug
 
 ## What I was doing
 ## What I tried that didn't work
@@ -496,11 +496,12 @@ BUILDING
 - Ship it into the worktree the moment it works. Visibly incomplete is fine.
 - Built means mounted. A file with no call sites is not done.
 
-BRANCHES — NO PULL REQUESTS
-- Branch from main, named THV-<id>-short-slug. Same name in both repos when
-  the issue touches both.
+BRANCHES AND PULL REQUESTS
+- 2.0 work branches from `origin/feature/teacher-2.0`, named `<area>/thv-<id>-short-slug`
+  (lowercase, no personal prefix). Same name in both repos when the issue touches both.
+- Open a held PR into `feature/teacher-2.0`. Andres merges it ("merge it"), backend first.
 - Put `THV-<id>` in the commit message with no magic word. `Fixes` auto-closes Linear. Merge does not own Done.
-- Andres merges locally. That is git. Write Ready if a surface still needs his eyes. Write Done when the job is finished.
+- Write Ready if a surface still needs his eyes. Write Done when the job is finished.
 - Pushing or merging to `main`: run `/loop-on-ci` and wait for green. It does not merge.
 - In the same comment, say what you did AND what you deliberately did not do.
 

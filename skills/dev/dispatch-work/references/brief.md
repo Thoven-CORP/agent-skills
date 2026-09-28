@@ -21,7 +21,7 @@ ACCESS     <the skill lines from skills.md this ticket reaches, each with its mo
            control-cli and control-ui for a running app, tier-4 subagents for wide reads.
 DONE WHEN  <the ticket's Done when, verbatim or by pointer>
            Seams: <where the tests sit>. Proof goes red before your change and green after it.
-           Type-check and single test files as you go. The full suite once, at the end.
+           Type-check and the touched test files as you go. No full suite, no full lint.
 
 STANDING
 - You and main run side by side. Main owns Linear, product calls and your review. You own
