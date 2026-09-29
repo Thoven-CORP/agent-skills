@@ -105,6 +105,9 @@ If the migration needs data populated: backfill in a **separate, idempotent, bat
 run **post-deploy** (after the schema column exists). **Never** backfill inside the schema migration.
 Prove the transform safe pre-cutover with the opt-in golden-master (step 5).
 
+A COPPA-related backfill must **never** overwrite existing consent evidence without preserving
+its history.
+
 **Done when:** any backfill is specified as a separate post-deploy step, or "no backfill needed" is
 stated.
 

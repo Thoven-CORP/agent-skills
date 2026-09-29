@@ -113,10 +113,10 @@ Mark task complete: `TaskUpdate: Step 3 → completed`
 
 ## Step 4: Rails-Specific Checks — CONDITIONAL (MANDATORY if triggered)
 
-**IF recent changes touch controllers, Devise config, or models with authentication, YOU MUST invoke `rails-expert`:**
+**IF recent changes touch controllers, Devise config, or models with authentication, YOU MUST load [references/rails.md](references/rails.md) and run it:**
 
-Dispatch the `rails-expert` agent for Rails-specific security review covering strong parameters, auth filters, serializer exposure, CORS, rate limiting (rack-attack), and mass assignment.
-See [references/prompt-templates.md](references/prompt-templates.md#rails-expert-review) for the full prompt template.
+Work its steps inline, or, when the review fans out, dispatch a `general-purpose` agent carrying that reference. It covers the scanners, the auth and SQL allowlists, and the controller/route, serializer, channel, webhook, job and auth branches.
+See [references/prompt-templates.md](references/prompt-templates.md#rails-check-review) for the dispatch template.
 
 **IF not triggered:** Mark as "N/A — no controller/auth changes".
 
@@ -133,7 +133,7 @@ Mark task complete: `TaskUpdate: Step 4 → completed`
 
 **Date:** YYYY-MM-DD
 **Scope:** [Files reviewed / Feature name]
-**Tools Used:** Brakeman, security-engineer, code-reviewer, [rails-expert if used]
+**Tools Used:** Brakeman, security-engineer, code-reviewer, [references/rails.md if used]
 
 ---
 
@@ -262,7 +262,7 @@ Mark gate complete after user responds: `TaskUpdate: GATE → completed`
 2. ✅ Run brakeman as first action
 3. ✅ Invoke `security-engineer` agent (always)
 4. ✅ Invoke `code-reviewer` agent in parallel (always)
-5. ✅ Invoke `rails-expert` if controllers/auth touched
+5. ✅ Run `references/rails.md` if controllers/auth touched
 6. ✅ Verify dual-auth patterns are not mixed
 7. ✅ Check COPPA compliance for student data
 8. ✅ Generate structured report with severity levels

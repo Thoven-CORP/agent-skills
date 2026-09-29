@@ -8,7 +8,7 @@ This file contains the full prompt templates dispatched to sub-agents during the
 
 - [Security-Engineer Review](#security-engineer-review) (Step 2)
 - [Code-Reviewer Review](#code-reviewer-review) (Step 3)
-- [Rails-Expert Review](#rails-expert-review) (Step 4)
+- [Rails Check Review](#rails-check-review) (Step 4)
 
 ---
 
@@ -109,16 +109,18 @@ Task tool:
 
 ---
 
-## Rails-Expert Review
+## Rails Check Review
 
 **Step:** 4
-**Agent:** `rails-expert`
+**Agent:** `general-purpose`, carrying [rails.md](rails.md)
 **Dispatch:** Conditional — MANDATORY if recent changes touch controllers, Devise config, or models with authentication
 
 ```
 Task tool:
-- subagent_type: "rails-expert"
-- prompt: "Rails-specific security review:
+- subagent_type: "general-purpose"
+- prompt: "Rails-specific security review. Read ~/.claude/skills/security-review/references/rails.md
+  first and run it whole; its steps and evidence standard are the bar for every finding.
+  The checks below are extra context, not a replacement for it:
 
   FILES CHANGED:
   [LIST CONTROLLER/MODEL/CONFIG FILES]

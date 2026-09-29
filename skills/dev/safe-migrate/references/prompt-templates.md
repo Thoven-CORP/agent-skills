@@ -7,7 +7,7 @@ skippable. Match the dispatch to the risk.
 | Migration shape | Dispatch |
 |-----------------|----------|
 | Trivial: add nullable column, add index on small table | **None** — analyze inline, skip the agent |
-| Non-trivial: destructive op, type change, FK, backfill, large table | **`rails-expert`** (correctness) |
+| Non-trivial: destructive op, type change, FK, backfill, large table | **`general-purpose`** (correctness) |
 | Performance: large table, lock-duration risk, backfill volume | **`postgres-pro`** (lock/rewrite analysis) |
 | Touches a sensitive table (`users`, `students`, `profiles`, `guardianships`, `payment_methods`, `simple_booking_requests`, `simple_booking_slots`) | **`security-engineer`** (in addition) |
 
@@ -16,13 +16,13 @@ is an advisor; production migrations run only inside the deploy (`/publish`).
 
 ---
 
-## Rails Expert Migration Review
+## Migration Correctness Review
 
-**Sub-agent:** `rails-expert` · **When:** non-trivial migration (see table above).
+**Sub-agent:** `general-purpose` · **When:** non-trivial migration (see table above).
 
 ```
 Task tool:
-- subagent_type: "rails-expert"
+- subagent_type: "general-purpose"
 - prompt: "Review these pending migration files for safety. ADVISORY ONLY — do not run any
   migration or database command; report findings.
 

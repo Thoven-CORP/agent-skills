@@ -86,7 +86,7 @@ Detect **type** and **complexity tier** from the user's request.
 | Agent | Task |
 |-------|------|
 | Codebase Scout | Search templates, history, memory, codebase patterns for related code and prior art |
-| Domain Expert | Use `rails-expert` or `master-backend-ai-rails` agent to gather domain-specific patterns, edge cases, existing conventions |
+| Domain Expert | Use a `general-purpose` agent carrying `/security-review`'s `references/rails.md`, or the `master-backend-ai-rails` agent, to gather domain-specific patterns, edge cases, existing conventions |
 | Architecture Analyst | Use `architecture-reviewer` agent to evaluate design implications, identify constraints, schema relationships |
 
 ### Phase 2c: Framework Selection
@@ -132,15 +132,15 @@ After classification, identify which existing skills AND agents the generated pr
 
 | Prompt Type | Pre-Work Agents | Post-Work Agents | Conditional Agents |
 |---|---|---|---|
-| Implementation | `rails-expert` (gather patterns, conventions) | `code-reviewer` (review implementation) | `security-engineer` (if auth/payment/student data), `master-backend-ai-rails` (if complex DB work) |
+| Implementation | `general-purpose` (gather patterns, conventions) | `code-reviewer` (review implementation) | `security-engineer` (if auth/payment/student data), `master-backend-ai-rails` (if complex DB work) |
 | Architecture | `architecture-reviewer` (evaluate design options) | `code-reviewer` (review final design) | `postgres-pro` (if heavy DB design), `performance-engineer` (if scale concerns) |
-| Research | `rails-expert` (codebase patterns), `architecture-reviewer` (tradeoff analysis) | — | `security-engineer` (if security research), `database-administrator` (if DB research) |
+| Research | `general-purpose` (codebase patterns), `architecture-reviewer` (tradeoff analysis) | — | `security-engineer` (if security research), `database-administrator` (if DB research) |
 | Audit | `security-engineer` (security audit), `performance-engineer` (perf audit) | `code-reviewer` (validate findings) | `postgres-pro` (N+1/query audit), `sql-pro` (complex query analysis) |
-| PRD/Spec | `api-designer` (API contract design) | `architecture-reviewer` (validate spec feasibility) | `rails-expert` (check existing patterns) |
-| Testing | `qa-expert` (test strategy), `test-automator` (test generation) | `code-reviewer` (review test quality) | `rails-expert` (Rails testing conventions) |
+| PRD/Spec | `api-designer` (API contract design) | `architecture-reviewer` (validate spec feasibility) | `general-purpose` (check existing patterns) |
+| Testing | `qa-expert` (test strategy), `test-automator` (test generation) | `code-reviewer` (review test quality) | `general-purpose` (Rails testing conventions) |
 | Migration | `master-backend-ai-rails` (migration safety), `postgres-pro` (PostgreSQL specifics) | `database-administrator` (verify migration) | `performance-engineer` (if large table migration) |
 | Cross-Codebase Handoff | `api-designer` (contract clarity) | — | `frontend-developer` (validate frontend can consume) |
-| General | `rails-expert` (default codebase expert) | `code-reviewer` (general review) | — |
+| General | `general-purpose` (default codebase expert) | `code-reviewer` (general review) | — |
 
 #### Domain-Conditional Agents (apply to ANY prompt type)
 
@@ -152,7 +152,7 @@ These agents activate when the prompt touches specific domains, regardless of ty
 | Payment/Stripe/credits | `security-engineer` + `backend-service-developer` | Prompt involves credit transactions, Stripe, wallet entries |
 | Student-facing features | `security-engineer` | COPPA compliance — any feature students interact with |
 | Database schema changes | `postgres-pro` + `master-backend-ai-rails` | New tables, columns, indexes, constraints |
-| Background jobs | `rails-expert` | Solid Queue jobs, async processing, retry logic |
+| Background jobs | `general-purpose` carrying `/security-review`'s `references/rails.md` | Solid Queue jobs, async processing, retry logic |
 | Email/SMS notifications | Use `/email` skill instead | Mailer creation, SendGrid, Twilio |
 | Real-time features | `websocket-engineer` | Action Cable channels, live updates |
 | External API integration | `backend-service-developer` | Google Calendar, Daily.co, Stripe webhooks |
@@ -162,7 +162,7 @@ These agents activate when the prompt touches specific domains, regardless of ty
 #### Mapping Rules
 
 1. **Only use what exists** — all skills and agents listed above are verified to exist in `.claude/skills/` and `.claude/agents/`
-2. **Pre-work** goes at the TOP of the generated prompt: "Before implementing, invoke `/grill-with-docs`" or "Launch the `rails-expert` agent to analyze existing patterns"
+2. **Pre-work** goes at the TOP of the generated prompt: "Before implementing, invoke `/grill-with-docs`" or "Launch a `general-purpose` agent to analyze existing patterns"
 3. **Post-work** goes at the BOTTOM of the generated prompt: "After completing, run `/verify`" or "Use the `code-reviewer` agent to review changes"
 4. **Max 2 pre + 2 post per category** (skills and agents each) — don't overwhelm the prompt
 5. **Conditional mappings** are included only when the domain trigger applies — add as "If this touches [domain], also invoke..."
@@ -176,7 +176,7 @@ These agents activate when the prompt touches specific domains, regardless of ty
 
 ### Before Starting
 - Invoke `/grill-with-docs` to validate design approach
-- Launch `rails-expert` agent to gather existing patterns for [domain]
+- Launch a `general-purpose` agent to gather existing patterns for [domain]
 
 ### After Completing
 - Run `/verify` to confirm all tests pass and implementation is correct

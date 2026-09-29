@@ -20,7 +20,7 @@ Before ANY other action, you MUST create a todo checklist:
 ```
 TaskCreate for each:
 - [ ] Step 1: Identify models to audit
-- [ ] Step 2: Invoke rails-expert agent for audit queries
+- [ ] Step 2: Invoke general-purpose agent for audit queries
 - [ ] Step 3: Run audit queries in production
 - [ ] Step 4: Generate completeness report
 - [ ] Step 5: Generate defensive code suggestions
@@ -50,16 +50,17 @@ Mark task complete: `TaskUpdate: Step 1 → completed`
 
 ---
 
-## Step 2: Invoke rails-expert Agent (REQUIRED)
+## Step 2: Invoke general-purpose Agent (REQUIRED)
 
-**YOU MUST use the `rails-expert` agent to generate audit queries.**
+**YOU MUST use a `general-purpose` agent to generate audit queries.**
 
-The rails-expert understands ActiveRecord associations, validations, scopes, and the dual-auth system.
+Point it at `~/.claude/skills/security-review/references/rails.md` for the backend's Rails conventions: the dual-auth scopes and the two soft-delete forms.
 
 ```
 Task tool:
-- subagent_type: "rails-expert"
-- prompt: "Generate production audit Rails runner scripts for these models: [MODEL_LIST].
+- subagent_type: "general-purpose"
+- prompt: "Read ~/.claude/skills/security-review/references/rails.md for the dual-auth scopes and soft-delete forms, then
+  generate production audit Rails runner scripts for these models: [MODEL_LIST].
 
   For EACH model, generate a script that checks:
   1. Total record count (include archived_at nil vs not nil if applicable)
@@ -105,7 +106,7 @@ Mark task complete: `TaskUpdate: Step 2 → completed`
 Run the generated scripts:
 
 ```bash
-RAILS_ENV=production rails runner "<script from rails-expert>"
+RAILS_ENV=production rails runner "<script from the general-purpose agent>"
 ```
 
 Capture ALL output. If any query fails, note the error and continue with remaining queries.
@@ -270,7 +271,7 @@ Mark gate complete after user responds: `TaskUpdate: GATE → completed`
 
 **YOU MUST:**
 1. ✅ Create todo checklist at start
-2. ✅ Use `rails-expert` agent to generate audit queries
+2. ✅ Use a `general-purpose` agent to generate audit queries
 3. ✅ Use `master-backend-ai-rails` for analytics tables
 4. ✅ Run queries in production (not development)
 5. ✅ Generate completeness report with risk levels
@@ -282,7 +283,7 @@ Mark gate complete after user responds: `TaskUpdate: GATE → completed`
 - ❌ Run audit in development (data differs from production)
 - ❌ Ignore fields with <80% population
 - ❌ Assume associations exist without checking
-- ❌ Generate audit queries without rails-expert agent
+- ❌ Generate audit queries without the general-purpose agent
 
 ---
 
