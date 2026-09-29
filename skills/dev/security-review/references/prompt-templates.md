@@ -136,7 +136,7 @@ Task tool:
      - `/api/v1/auth/students/login` throttled? (max 5 req/20s per IP — COPPA: stricter)
      - `/api/v1/auth/students/signup` throttled? (max 3 req/min per IP)
      - Password reset endpoints throttled?
-     - Global API throttle exists? (max 300 req/5min per IP)
+     - A new route has its own throttle? (`global/ip` is off under CACHE_QUOTA_MODE=free, so it covers nothing)
      - Stripe webhook endpoint whitelisted from throttling?
      - If ANY auth endpoint lacks throttling → HIGH severity
   6. Mass assignment — attr_accessible/strong params correct?
