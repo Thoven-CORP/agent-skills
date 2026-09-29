@@ -35,10 +35,8 @@ When two rows match equally, ask one question.
 
 | The request | Destination |
 |---|---|
-| Rails patterns, ActiveRecord, controllers, jobs | `/rails-expert` |
 | Query plans, indexes, Postgres behaviour | `/postgres-pro` |
 | A schema change or migration | `/safe-migrate` |
-| Whether a migration is safe for live data | `/thoven-db-migration-security` |
 | Find the specs covering a change | `/rspec-map` |
 | Smoke the running app | `/run-smoke-tests` |
 | What is actually in production data | `/production-data-audit` |
@@ -49,7 +47,6 @@ When two rows match equally, ask one question.
 | The request | Destination |
 |---|---|
 | A general security or auth review | `/security-review` |
-| Rails-specific security review | `/thoven-rails-security` |
 | Contracts the API must not break | `/thoven-security-contracts` |
 | COPPA, verifiable parental consent | `/thoven-coppa-vpc-contracts` |
 | Browser-side security | `/thoven-browser-security` |
@@ -79,7 +76,7 @@ When two rows match equally, ask one question.
 |---|---|
 | Idea to shipped feature | `/grill-with-docs` → `/architect` → `/feature-ledger` |
 | Bug report | `/investigate-thoven` → `/verify` |
-| Schema change | `/safe-migrate` → `/thoven-db-migration-security` → `/verify` |
+| Schema change | `/safe-migrate` → `/verify` |
 | Pre-commit | `/deslop` → `/no-comments` → `/code-review` → `/verify` |
 | Ship | `/verify` → `/publish` → `/loop-on-ci` |
 

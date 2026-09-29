@@ -23,8 +23,8 @@ pick the Thoven lines below that this ticket reaches.
 | A behaviour to pin test-first at a named seam | `/tdd` |
 | A user flow to prove end to end | `/qa-flow`, `/playwright-expert` |
 | An endpoint, payload or serializer changes | the `api-designer` subagent (Claude Code) |
-| Rails model, controller or job code | `/rails-expert`, then `/thoven-rails-security` |
-| A migration, index or backfill | `/safe-migrate`, then `/thoven-db-migration-security` |
+| Rails model, controller or job code | `/security-review` |
+| A migration, index or backfill | `/safe-migrate` |
 | Consent, minors' data or parent verification | `/thoven-coppa-vpc-contracts` |
 | A mailer or email template | `/thoven-email-system` |
 | Render services, env vars or deploys | `/render-cli` and the matching `render-*` skill |

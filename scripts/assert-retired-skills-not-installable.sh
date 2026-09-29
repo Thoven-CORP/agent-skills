@@ -11,6 +11,8 @@ must_not_exist=(
   "skills/dev/dev/SKILL.md"
   "skills/dev/codebase-memory/SKILL.md"
   "skills/dev/dialkit/SKILL.md"
+  "skills/dev/thoven-rails-security/SKILL.md"
+  "skills/dev/thoven-db-migration-security/SKILL.md"
 )
 
 echo "assert-retired-skills-not-installable"
