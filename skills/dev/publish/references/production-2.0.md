@@ -62,18 +62,21 @@ Its progress and done lines start with `== ` and show SHAs as their first 9 char
 
    It promotes Vercel's staged production build of `<fe-sha>`, or builds one first (about 4 minutes) when none is newer than the last production env change. Done when it prints `thoven.co serves <sha9>` or `thoven.co already serves <sha9>`. A `canceled` build means `vercel-ignore-build.sh` skipped a docs-only commit: tell Andres, and plan again with the last code commit.
 
-9. **Production harness.** From a detached frontend checkout of `<fe-sha>` (`git -C ~/thoven/frontend worktree add --detach ~/thoven/frontend-publish-<fe-sha7> <fe-sha>`, then `npm ci` in it), with `thoven-prod.env` loaded as in step 7. The harness's `ghost` target is production (`e2e/ghost/target.ts`):
+9. **Production harness.** From a detached frontend checkout of `<fe-sha>` (`git -C ~/thoven/frontend worktree add --detach ~/thoven/frontend-publish-<fe-sha7> <fe-sha>`, then `npm ci` in it), with `thoven-prod.env` loaded as in step 7. Use the read-only `production` target (`e2e/ghost/target.ts`: thoven.co and api.thoven.co, `writes: false`, which no env var can change). The retired `ghost` target refuses to run.
 
    ```bash
-   GHOST_TARGET=ghost npm run test:ghost
+   GHOST_TARGET=production npm run test:ghost
    ```
 
-   Done when `.stats.unexpected` is `0` and the skip diff below prints nothing. The only expected skips are the staging browser path's two tests (`seeded staging credentials exist on staging only`):
+   Done when `.stats.unexpected` is `0` and the skip diff below prints nothing. The expected skips are the staging browser path, the two retired record-write tests, the admin job probe (`production is read-only`) and the GCS round-trip:
 
    ```bash
    jq -r '.stats.unexpected' test-results/ghost.json
    diff <(jq -r '[.. | objects | select(has("specs")) | .specs[] | select(any(.tests[]; .status == "skipped")) | .title] | sort | .[]' test-results/ghost.json) - <<'SKIPS'
+GCS round-trip: mint, PUT, download byte-identical, purge
 a teacher signs in and the schedule loads upcoming lessons with zero CORS errors
+intro call booking is created, then reversed
+job: an admin probe is enqueued, then thoven-worker performs it
 the frontend serves without a Vercel login wall
 SKIPS
    ```

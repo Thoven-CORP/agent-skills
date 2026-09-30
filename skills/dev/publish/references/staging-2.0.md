@@ -73,7 +73,7 @@ Run each step in the repo it names. Steps 1 to 4 check each repo that changed. S
    GHOST_TARGET=staging npm run test:ghost
    ```
 
-   Done when `bin/dogfood-staging` exits 0, `deploy:smoke` exits 0, `.stats.unexpected` is `0`, and the skip diff below prints nothing. The only expected staging skips are the two tests that write against production only (skip reason `writes run against ghost prod only`):
+   Done when `bin/dogfood-staging` exits 0, `deploy:smoke` exits 0, `.stats.unexpected` is `0`, and the skip diff below prints nothing. The only expected staging skips are the two retired record-write tests (skip reason `record writes ran on ghost prod only, which is retired`):
 
    ```bash
    jq -r '.stats.unexpected' test-results/ghost.json
