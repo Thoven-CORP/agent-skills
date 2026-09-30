@@ -30,9 +30,7 @@ PROJECT = "docs/Platform/projects/platform-upgrade-and-hosting"
 SECTIONS = [
     ("2.0 on staging", "staging", "## Steps", "## Changelog"),
     ("2.0 to production", "production", "## Steps", "## Roll back"),
-    ("Deploy a SHA (Render)", "runbook", "## Deploy a SHA", "## When the deploy is refused"),
-    ("Roll back the 2.0 backend", "runbook", "## Roll back", None),
-    ("Roll back the 2.0 frontend", "production", "## Roll back", "## Changelog"),
+    ("Roll back 2.0 production", "production", "## Roll back", "## Changelog"),
     ("1.0 frontend hotfix", "hotfix-frontend", None, None),
     ("1.0 backend hotfix", "hotfix-backend", None, None),
 ]
@@ -42,7 +40,6 @@ SOURCE_NAMES = {
     "production": "production-2.0.md",
     "hotfix-frontend": "hotfix-1.0-frontend.md",
     "hotfix-backend": "hotfix-1.0-backend.md",
-    "runbook": "RUNBOOK_RENDER.md",
 }
 
 STEP_LABEL = re.compile(r"^(?:\d+[a-z]?\.\s+|-\s+)?\*\*([^*]+?)\*\*")
@@ -120,7 +117,6 @@ def main(skill_dir, fe_root, ref=None):
         "hotfix-backend": skill / "references/hotfix-1.0-backend.md",
     }
     texts = {key: path.read_text() for key, path in sources.items()}
-    texts["runbook"] = read_fe(f"{PROJECT}/RUNBOOK_RENDER.md")
     checklist = read_fe(f"{PROJECT}/PUBLISH_CHECKLIST.md")
     failed = False
     for heading, key, start, end in SECTIONS:

@@ -2,7 +2,7 @@
 
 Contents: Deployment Pipeline · MANDATORY First Action · Phase 0: Analyze · Phase 1: Decide · Phase 2: Update Changelog · Phase 3: Commit · Phase 4: Post-Commit Actions · Carry the Fix into 2.0 · Changelog State Lifecycle · Rules · References
 
-1.0 takes hotfixes only. Replit serves `release/1.0` (tag `thoven-1.0`) on thoven.co until cutover, and stays the rollback after it. Start the fix from `origin/release/1.0`:
+1.0 takes hotfixes only. Since the THV-767 cutover thoven.co serves 2.0. Replit keeps `release/1.0` (tag `thoven-1.0`) as the 1.0 rollback until THV-710 retires it. Start the fix from `origin/release/1.0`:
 
 ```bash
 git fetch origin release/1.0
@@ -445,16 +445,16 @@ After reset, verify the workspace matches what you're publishing: `git rev-parse
 
 ## Carry the Fix into 2.0
 
-A 1.0 fix that skips 2.0 comes back at cutover.
+A 1.0 fix that skips `main` is undone by the next 2.0 promote.
 
-1. **Carry the fix into `feature/teacher-2.0` the same day.** Open a PR of the fix into `feature/teacher-2.0`. Done when `gh pr create` prints the PR URL:
+1. **Carry the fix into `main` the same day.** Open a PR of the fix into `main`. Done when `gh pr create` prints the PR URL:
 
 ```bash
-git fetch origin feature/teacher-2.0
-git switch -c port/<slug> origin/feature/teacher-2.0
+git fetch origin main
+git switch -c port/<slug> origin/main
 git cherry-pick -x <fix-sha>...
 git push -u origin port/<slug>
-gh pr create --base feature/teacher-2.0 --title "<type>: port 1.0 hotfix <slug>" --body "Ports <fix-sha> from release/1.0."
+gh pr create --base main --title "<type>: port 1.0 hotfix <slug>" --body "Ports <fix-sha> from release/1.0."
 ```
 
 A conflict means 2.0 changed that code. Resolve it for 2.0's code and say so in the PR body. The PR is held for Andres like any other.

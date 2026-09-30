@@ -2,7 +2,7 @@
 
 Contents: MANDATORY First Action · Three-Environment Reference (CRITICAL: read once, then apply) · PRE-CHECK 0: Verify Neon Matches Last "Published" Marker (MANDATORY) · PRE-CHECK 1: Replit-Shell Migrate (MANDATORY when migrations exist) · Step 1: Find Last Published Commit (MANDATORY) · Step 2: List All Unpublished Commits (MANDATORY) · Step 3: Verify CHANGELOG Completeness (MANDATORY) · APPROVAL GATE (MANDATORY STOP) · Step 4: Determine Version Bump (MANDATORY) · Step 5: Update CHANGELOG.md (MANDATORY) · Step 5.5: Run Test Suite (MANDATORY) · Step 5.6: Verify Contract-Manifest Freshness (MANDATORY) · Step 5.7: Verify Slot Time-Rendering (run when a slot controller/serializer/model changed) · Step 6: Create Publish Commit (MANDATORY) · Step 6.5: Linear Ticket Cross-Check (MANDATORY) · Step 6.9: Pending Post-Publish Actions (MANDATORY) · Step 7: Remind to Deploy (MANDATORY) · Step 8: Carry the Fix into 2.0 (MANDATORY) · When NOT to Use · Common Mistakes
 
-1.0 takes hotfixes only. Replit serves `release/1.0` (tag `thoven-1.0`) until cutover, and stays the rollback after it. Start the fix from `origin/release/1.0`:
+1.0 takes hotfixes only. Since the THV-767 cutover the 2.0 API serves thoven.co. Replit keeps `release/1.0` (tag `thoven-1.0`) as the 1.0 rollback until THV-710 retires it. Start the fix from `origin/release/1.0`:
 
 ```bash
 git fetch origin release/1.0
@@ -545,16 +545,16 @@ Mark task complete: `TaskUpdate: Step 7 → completed`
 
 ## Step 8: Carry the Fix into 2.0 (MANDATORY)
 
-A 1.0 fix that skips 2.0 comes back at cutover.
+A 1.0 fix that skips `main` is undone by the next 2.0 promote.
 
-1. **Carry the fix into `feature/teacher-2.0` the same day.** Open a PR of the fix into `feature/teacher-2.0`. Done when `gh pr create` prints the PR URL:
+1. **Carry the fix into `main` the same day.** Open a PR of the fix into `main`. Done when `gh pr create` prints the PR URL:
 
 ```bash
-git fetch origin feature/teacher-2.0
-git switch -c port/<slug> origin/feature/teacher-2.0
+git fetch origin main
+git switch -c port/<slug> origin/main
 git cherry-pick -x <fix-sha>...
 git push -u origin port/<slug>
-gh pr create --base feature/teacher-2.0 --title "<type>: port 1.0 hotfix <slug>" --body "Ports <fix-sha> from release/1.0."
+gh pr create --base main --title "<type>: port 1.0 hotfix <slug>" --body "Ports <fix-sha> from release/1.0."
 ```
 
 A hotfix migration also needs its version in `config/migration-policy.yml` under `permitted`, or 2.0's `bin/controlled-migrate` refuses it. A conflict means 2.0 changed that code: resolve it for 2.0 and say so in the PR body. The PR is held for Andres like any other.

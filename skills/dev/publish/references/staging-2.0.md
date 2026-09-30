@@ -1,6 +1,6 @@
 # Publish: 2.0 staging
 
-Staging deploys itself. Merging a PR into `feature/teacher-2.0` rebuilds staging in both repos:
+Staging deploys itself. Merging a PR into `main` rebuilds staging in both repos:
 
 - frontend: Vercel project `thoven-staging` builds the new commit and serves staging.thoven.co,
 - backend: Render `thoven-api-staging` and `thoven-worker-staging` deploy the new commit. The web service runs `bin/controlled-migrate` before it goes live.
@@ -16,8 +16,8 @@ Run each step in the repo it names. Steps 1 to 4 check each repo that changed. S
 1. **Name the SHA.** In each repo that changed, with `<repo>` set to `~/thoven/backend` or `~/thoven/frontend`:
 
    ```bash
-   git -C <repo> fetch origin feature/teacher-2.0
-   git -C <repo> rev-parse origin/feature/teacher-2.0
+   git -C <repo> fetch origin main
+   git -C <repo> rev-parse origin/main
    ```
 
    Done when both commands exit 0 and you hold one full SHA per repo.
@@ -25,7 +25,7 @@ Run each step in the repo it names. Steps 1 to 4 check each repo that changed. S
 2. **CI is green on that SHA.**
 
    ```bash
-   gh run list --workflow CI --branch feature/teacher-2.0 --commit <sha> --json status,conclusion,url
+   gh run list --workflow CI --branch main --commit <sha> --json status,conclusion,url
    ```
 
    Done when a run shows `completed` and `success`. An empty list means CI has not started yet: wait 30 seconds and re-run, for up to 15 minutes. An empty list is never a failure and never green. `in_progress` means wait and re-run the command. `failure` stops the path.
@@ -48,7 +48,7 @@ Run each step in the repo it names. Steps 1 to 4 check each repo that changed. S
    curl -s https://staging.thoven.co/api/version
    ```
 
-   Done when `sha` equals the SHA and `ref` is `feature/teacher-2.0`.
+   Done when `sha` equals the SHA and `ref` is `main`.
 
 5. **Staging gates on the SHA.** From a backend checkout of the backend SHA (`git -C ~/thoven/backend worktree add --detach ~/thoven/backend-publish-<sha7> <sha>`, then `bundle install` in it). `bin/dogfood-staging` needs no environment. The smoke teacher's login lives in `~/thoven/.secrets/staging.env` as `STAGING_SMOKE_TEACHER_EMAIL` and `STAGING_SMOKE_TEACHER_PASSWORD`. Never print either value.
 
@@ -67,13 +67,13 @@ Run each step in the repo it names. Steps 1 to 4 check each repo that changed. S
    SMOKE_HOST=https://thoven-api-staging.onrender.com bundle exec rake deploy:smoke
    ```
 
-   From a frontend checkout of `origin/feature/teacher-2.0`, in the same shell so `staging.env` stays loaded. The harness tests the remote sites, so the local commit only supplies the tests:
+   From a frontend checkout of `origin/main`, in the same shell so `staging.env` stays loaded. The harness tests the remote sites, so the local commit only supplies the tests:
 
    ```bash
    GHOST_TARGET=staging npm run test:ghost
    ```
 
-   Done when `bin/dogfood-staging` exits 0, `deploy:smoke` exits 0, `.stats.unexpected` is `0`, and the skip diff below prints nothing. The only expected staging skips are the two tests that run against ghost prod only (`writes run against ghost prod only`):
+   Done when `bin/dogfood-staging` exits 0, `deploy:smoke` exits 0, `.stats.unexpected` is `0`, and the skip diff below prints nothing. The only expected staging skips are the two tests that write against production only (skip reason `writes run against ghost prod only`):
 
    ```bash
    jq -r '.stats.unexpected' test-results/ghost.json
@@ -89,13 +89,13 @@ SKIPS
 
 ## Changelog
 
-Staging stamps no version. Each PR into `feature/teacher-2.0` carries its own `[Unreleased]` entry.
+Staging stamps no version. Each PR into `main` carries its own `[Unreleased]` entry.
 
 ## The Render runbook
 
 From the frontend repo: `docs/Platform/projects/platform-upgrade-and-hosting/RUNBOOK_RENDER.md`. From the backend repo:
 
 ```bash
-git -C ~/thoven/frontend fetch origin feature/teacher-2.0
-git -C ~/thoven/frontend show origin/feature/teacher-2.0:docs/Platform/projects/platform-upgrade-and-hosting/RUNBOOK_RENDER.md
+git -C ~/thoven/frontend fetch origin main
+git -C ~/thoven/frontend show origin/main:docs/Platform/projects/platform-upgrade-and-hosting/RUNBOOK_RENDER.md
 ```
