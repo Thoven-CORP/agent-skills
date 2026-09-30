@@ -2,7 +2,8 @@
 # Blocks vitest --exclude, git clean/reset --hard, and stash/checkout/restore that could discard other sessions' work.
 # One guard for every harness. Claude and Codex send tool_input.command and read the default
 # output. Cursor's beforeShellExecution sends a top-level command and reads {"permission":"deny"}.
-# Devin sends no cwd (it sets DEVIN_PROJECT_DIR) and blocks only on exit 2.
+# Devin sends no cwd (it sets DEVIN_PROJECT_DIR and runs the hook in the project) and blocks only
+# on exit 2. Cursor's allow is an explicit {"permission":"allow"}, as in its sample hooks.
 #   thoven-guard-bash [--dialect claude|cursor|devin]
 set -o pipefail
 
@@ -11,12 +12,17 @@ dialect=claude
 
 payload="$(cat)"
 cwd="$(jq -r '.cwd // empty' <<<"$payload")"
-[ -n "$cwd" ] || cwd="${DEVIN_PROJECT_DIR:-}"
+[ -n "$cwd" ] || cwd="${DEVIN_PROJECT_DIR:-$PWD}"
+
+allow() {
+  [ "$dialect" = cursor ] && printf '{"permission":"allow"}\n'
+  exit 0
+}
 session_id="$(jq -r '.session_id // .conversation_id // empty' <<<"$payload")"
 
 case "$cwd" in
   "$HOME"/thoven/*|"$HOME"/.herdr/worktrees/*) ;;
-  *) exit 0 ;;
+  *) allow ;;
 esac
 
 state="/tmp/claude-thoven/${session_id:-unknown}"
@@ -25,7 +31,7 @@ mkdir -p "$state"
 edited_file="$state/edited"
 
 command="$(jq -r '.tool_input.command // .command // empty' <<<"$payload")"
-[ -n "$command" ] || exit 0
+[ -n "$command" ] || allow
 
 deny() {
   local reason="$1"
@@ -203,4 +209,4 @@ for sub in "${subcommands[@]}"; do
   fi
 done
 
-exit 0
+allow

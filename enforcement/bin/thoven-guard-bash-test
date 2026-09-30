@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Runs thoven-guard-bash in each dialect against a temp HOME, so the shared-worktree check
+# sees $HOME/thoven/... without touching the real trees.
+set -uo pipefail
+
+GUARD="$(cd "$(dirname "$0")/.." && pwd)/hooks/thoven-guard-bash"
+TMP="$(cd "$(mktemp -d)" && pwd -P)"
+SESSION="guard-test-$$"
+trap 'rm -rf "$TMP" "/tmp/claude-thoven/$SESSION"' EXIT
+export HOME="$TMP"
+WT="$TMP/thoven/frontend-thv-1"
+mkdir -p "$WT"
+unset DEVIN_PROJECT_DIR
+
+ok() { printf 'ok %s\n' "$1"; }
+fail() { printf 'FAIL %s: got %s\n' "$1" "$2"; exit 1; }
+expect() { if [ "$2" = "$3" ]; then ok "$1"; else fail "$1" "'$2' (want '$3')"; fi; }
+
+# run <dialect> <payload> [dir to run in]: prints "rc=<n> <stdout>"
+run() {
+  local out rc
+  out=$(cd "${3:-$TMP}" && printf '%s' "$2" | "$GUARD" --dialect "$1" 2>/dev/null); rc=$?
+  printf 'rc=%s %s' "$rc" "$(printf '%s' "$out" | jq -c . 2>/dev/null || printf '%s' "$out")"
+}
+claude_payload() { jq -nc --arg c "$1" --arg d "$2" --arg s "$SESSION" '{session_id:$s,cwd:$d,tool_input:{command:$c}}'; }
+cursor_payload() { jq -nc --arg c "$1" --arg d "$2" --arg s "$SESSION" '{command:$c,cwd:$d,conversation_id:$s}'; }
+devin_payload() { jq -nc --arg c "$1" --arg s "$SESSION" '{hook_event_name:"PreToolUse",tool_name:"exec",tool_input:{command:$c,shell_id:"main"},session_id:$s}'; }
+
+deny_reason=$(run claude "$(claude_payload "git stash push" "$WT")" | sed 's/^rc=0 //' | jq -r .hookSpecificOutput.permissionDecision)
+expect "claude denies git stash push" "$deny_reason" "deny"
+expect "claude allows git status silently" "$(run claude "$(claude_payload "git status" "$WT")")" "rc=0 "
+
+expect "cursor denies git stash push" "$(run cursor "$(cursor_payload "git stash push" "$WT")" | sed 's/^rc=0 //' | jq -r .permission)" "deny"
+expect "cursor allow is explicit" "$(run cursor "$(cursor_payload "git status" "$WT")")" 'rc=0 {"permission":"allow"}'
+expect "cursor allow outside ~/thoven is explicit" "$(run cursor "$(cursor_payload "git stash push" "/tmp")")" 'rc=0 {"permission":"allow"}'
+
+expect "devin with DEVIN_PROJECT_DIR blocks" "$(DEVIN_PROJECT_DIR="$WT" run devin "$(devin_payload "git stash push")")" "rc=2 "
+expect "devin without DEVIN_PROJECT_DIR judges from its working dir" "$(run devin "$(devin_payload "git stash push")" "$WT")" "rc=2 "
+expect "devin allows git status" "$(run devin "$(devin_payload "git status")" "$WT")" "rc=0 "
+
+echo "all passed"
