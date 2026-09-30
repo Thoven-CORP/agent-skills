@@ -141,6 +141,29 @@ generated name (a subagent's `bold-oak-a3f2`) gets a scratch worktree under
 `.claude/worktrees/` instead, so isolation keeps working. `bin/thoven-worktree-test`
 proves it on throwaway repos.
 
+`bootstrap` also moves a worktree up to `origin/main` when it has no commits and no
+edits of its own. Codex desktop cuts a detached worktree from the chosen branch's
+local HEAD, and on 2026-09-30 local main was 1430 (frontend) and 570 (backend)
+commits behind GitHub. A worktree with work in it is only told how far behind it is.
+
+A backend worktree gets its own test database, `neondb_test_<area>_thv<n>`, or
+`neondb_test_wt_<path hash>` off a ticket branch, and `bootstrap` runs
+`db:test:prepare` on it. Sessions sharing `neondb_test` truncated each other's data.
+The dev database stays shared, reached through `database.yml`'s fallback, because
+backend's THV-89 boot guard refuses a branch whose explicit `DATABASE_URL` names
+`thoven_development`. When `db/migrate` differs from `origin/main`, `bootstrap`
+copies `thoven_development` to `thoven_dev_<suffix>` and points `DATABASE_URL` at it.
+A live dev server blocks that copy, so rerun `bootstrap` after adding a migration
+with the server stopped. `remove <path>` drops both databases, and only after
+`git worktree remove` succeeds. `orphan-dbs` lists the local Thoven databases no
+worktree's `.env` names, and drops nothing.
+
+`bin/thoven-sync` fast-forwards `~/thoven/frontend` and `~/thoven/backend` from
+`origin/main` when each is on `main` and clean, and reports every other worktree's
+distance behind without touching it. Local main is never committed on, so it only
+ever fast-forwards. Nothing runs it on a schedule yet. Its trigger waits on a
+ruling under THV-974. `bin/thoven-sync-test` proves it on throwaway repos.
+
 ## Harness coverage
 
 `thoven-guard-bash` is one script with three output dialects, and every harness
