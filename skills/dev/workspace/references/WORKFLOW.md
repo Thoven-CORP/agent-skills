@@ -252,19 +252,21 @@ Build issue lands in the worktree the moment it works.
   M4 Review    issues do not              ──►  In Progress
 ```
 
-**There are no pull requests.** `Done` is finished work. `Ready` is come-look.
+**A merged PR does not move Linear.** `Done` is finished work. `Ready` is come-look.
 `THV-42` in a commit is a git reference. Do not write `Fixes`. That word auto-closes Linear.
 
 ### Branching across both repos
 
-Work happens in paired worktrees, one per feature, named for it: `frontend-<feature>` and
-`backend-<feature>`. Ownership and setup are in `docs/thoven2.0/WORKTREES.md`.
+Each issue gets one worktree per repo it touches, made by
+`~/thoven/agent-skills/enforcement/bin/thoven-worktree create <fe|be> <area> <n>`: branch
+`<area>/thv-<n>` off `origin/main`, at `<repo>-thv-<n>`. The branch, PR and worktree law is
+`~/thoven/agent-skills/enforcement/rules/thoven-law.md`.
 
 A vertical issue touches both repos, so it gets **the same branch name in each**:
 
 ```
-frontend    teacher/thv-42-notification-read-state
-backend     teacher/thv-42-notification-read-state
+frontend    teacher/thv-42
+backend     teacher/thv-42
 
 "THV-42"  in both commits. No `Fixes`. That word auto-closes Linear.
 ```
@@ -506,12 +508,12 @@ BUILDING
 - Built means mounted. A file with no call sites is not done.
 
 BRANCHES AND PULL REQUESTS
-- 2.0 work branches from `origin/feature/teacher-2.0`, named `<area>/thv-<id>-short-slug`
-  (lowercase, no personal prefix). Same name in both repos when the issue touches both.
-- Open a held PR into `feature/teacher-2.0`. Andres merges it ("merge it"), backend first.
+- Branch, PR and worktree rules: `~/thoven/agent-skills/enforcement/rules/thoven-law.md`.
+  `thoven-worktree create <fe|be> <area> <id>` gives `<area>/thv-<id>`, the same name in both repos.
+- Open a held PR into `main`. On Andres's "merge it", backend first: `gh pr merge --auto --squash`.
 - Put `THV-<id>` in the commit message with no magic word. `Fixes` auto-closes Linear. Merge does not own Done.
 - Write Ready if a surface still needs his eyes. Write Done when the job is finished.
-- Pushing or merging to `main`: run `/loop-on-ci` and wait for green. It does not merge.
+- `--auto` merges once the `CI` check passes. Run `/loop-on-ci` when CI goes red.
 - In the same comment, say what you did AND what you deliberately did not do.
 
 DEFERRING

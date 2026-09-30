@@ -42,8 +42,8 @@ edits the pane's code. Fixes go back to a pane.
 
 ### 1. Check the ticket is ready, then pick the agent
 
-A ticket is ready when every `Blocked by` issue has merged into the branch it builds on, and no
-pane already holds it. Check both: the blockers in Linear and `git log origin/<base>`, and
+A ticket is ready when every `Blocked by` issue has merged into `main`, and no
+pane already holds it. Check both: the blockers in Linear and `git log origin/main`, and
 `herdr agent list` plus the ticket's status for a live dispatch. A blocked ticket goes back to
 Andres with the blocker named. A ticket already in a pane gets a handover or a watcher, never a
 second pane on the same tree.
