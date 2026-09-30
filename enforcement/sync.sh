@@ -10,7 +10,9 @@
 #   ./sync.sh --apply  overwrite each harness copy from the repo
 #
 # It then checks the thoven-law block in each repo's CLAUDE.md through
-# install/law.py, over $THOVEN_LAW_REPOS if set, else law.py's defaults.
+# install/law.py, over $THOVEN_LAW_REPOS if set, else law.py's defaults. --apply writes the
+# block only into THOVEN_LAW_REPOS: the defaults are the main checkouts, which other sessions
+# share, so there the block arrives by merge and sync only reports.
 set -uo pipefail
 
 cd "$(dirname "$0")"
@@ -52,7 +54,7 @@ for pair in "${PAIRS[@]}"; do
 done
 
 law_args=()
-[ "$APPLY" -eq 1 ] && law_args+=(--apply)
+[ "$APPLY" -eq 1 ] && [ -n "${THOVEN_LAW_REPOS:-}" ] && law_args+=(--apply)
 # Unquoted on purpose: THOVEN_LAW_REPOS is a space-separated list of repo paths.
 # shellcheck disable=SC2086
 law_out="$(python3 install/law.py ${law_args[@]+"${law_args[@]}"} ${THOVEN_LAW_REPOS:-})"
