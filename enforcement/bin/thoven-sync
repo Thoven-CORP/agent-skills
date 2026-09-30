@@ -88,7 +88,7 @@ report() {
     emit "$main: $(sync_main "$main")"
     while IFS=$'\t' read -r path branch; do
       count="$(dirty_count "$path")"
-      [ "$count" -gt 0 ] && emit "$path ($branch): $count uncommitted file(s)"
+      if [ "$count" -gt 0 ]; then emit "$path ($branch): $count uncommitted file(s)"; fi
     done < <(worktrees "$main")
   done
 }
