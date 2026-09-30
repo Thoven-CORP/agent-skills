@@ -65,12 +65,12 @@ db_suffix() {
   fi
 }
 
-# set_env <file> <key> <value>: replace the key's line, or append one.
+# set_env <file> <key> <value>: replace the key's line, or append one. An empty value deletes it.
 set_env() {
   local file="$1" tmp
   tmp="$(mktemp)"
-  awk -v k="$2" -v v="$3" 'index($0, k "=") == 1 { if (!done) print k "=" v; done = 1; next }
-    { print } END { if (!done) print k "=" v }' "$file" > "$tmp"
+  awk -v k="$2" -v v="$3" 'index($0, k "=") == 1 { if (!done && v != "") print k "=" v; done = 1; next }
+    { print } END { if (!done && v != "") print k "=" v }' "$file" > "$tmp"
   cat "$tmp" > "$file"
   rm -f "$tmp"
 }
@@ -98,6 +98,13 @@ isolate_db() {
   suffix="$(db_suffix "$path")"
   set_env "$env" TEST_DATABASE_URL "postgresql://localhost/neondb_test_$suffix"
   log "TEST_DATABASE_URL points at neondb_test_$suffix"
+  # The dev database stays shared, but backend's THV-89 boot guard refuses a branch whose explicit
+  # DATABASE_URL names thoven_development. database.yml's fallback reaches the same database and
+  # the guard lets it boot.
+  if [ "$(env_db "$env" DATABASE_URL)" = thoven_development ]; then
+    set_env "$env" DATABASE_URL ""
+    log "dropped DATABASE_URL, so the shared thoven_development is reached through database.yml's fallback"
+  fi
   [ -n "$(git -C "$path" diff origin/main --name-only -- db/migrate)" ] || return 0
   dev_db="thoven_dev_$suffix"
   if local_dbs 2>/dev/null | grep -qxF "$dev_db" || createdb -T thoven_development "$dev_db" >&2; then

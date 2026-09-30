@@ -95,11 +95,14 @@ expect "be .env copied" "$(env_line "$BE/.env" Y)" "Y=1"
 expect "be gets its own test database" "$(env_line "$BE/.env" TEST_DATABASE_URL)" \
   "TEST_DATABASE_URL=postgresql://localhost/neondb_test_api_thv970"
 expect "be test database is set once" "$(grep -c '^TEST_DATABASE_URL=' "$BE/.env")" "1"
-expect "be without migrations keeps the shared dev database" "$(env_line "$BE/.env" DATABASE_URL)" \
-  "DATABASE_URL=postgresql://localhost/thoven_development"
+# backend's THV-89 boot guard refuses a branch whose explicit DATABASE_URL names thoven_development,
+# and allows database.yml's fallback to that same shared database.
+expect "be without migrations drops the explicit shared DATABASE_URL" "$(env_line "$BE/.env" DATABASE_URL)" ""
 expect "be without migrations copies no database" "$(dblog)" ""
 expect "main .env untouched" "$(env_line "$TMP/backend/.env" TEST_DATABASE_URL)" \
   "TEST_DATABASE_URL=postgresql://localhost/neondb_test"
+expect "main .env keeps its DATABASE_URL" "$(env_line "$TMP/backend/.env" DATABASE_URL)" \
+  "DATABASE_URL=postgresql://localhost/thoven_development"
 
 "$TOOL" create be live-lessons 973 >/dev/null 2>&1
 expect "hyphenated area becomes an identifier" "$(env_line "$TMP/backend-thv-973/.env" TEST_DATABASE_URL)" \
@@ -206,8 +209,7 @@ BUSY="$TMP/backend-thv-974"
 (cd "$BUSY" && touch db/migrate/20260930000001_other.rb && git add db/migrate && git commit -qm migration)
 CREATEDB_RC=1 "$TOOL" bootstrap "$BUSY" >/dev/null 2>&1; code=$?
 expect "a failed copy still bootstraps" "$code" 0
-expect "a failed copy leaves DATABASE_URL shared" "$(env_line "$BUSY/.env" DATABASE_URL)" \
-  "DATABASE_URL=postgresql://localhost/thoven_development"
+expect "a failed copy leaves the shared fallback" "$(env_line "$BUSY/.env" DATABASE_URL)" ""
 
 # orphan-dbs lists what no live worktree's .env names, and drops nothing.
 printf '%s\n' neondb_test neondb_test2 neondb_test_api_thv970 neondb_test_old thoven_development \
