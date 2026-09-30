@@ -150,8 +150,8 @@ Neon.
 2. bundle exec rspec                      # full suite green
 3. Add the version to `permitted` in `config/migration-policy.yml`, commit, open the PR
 4. Deploy with `/publish`. The branch picks the path:
-   2.0: merge to feature/teacher-2.0, staging preDeploy runs `bin/controlled-migrate`;
-        production follows `references/production-2.0.md`
+   2.0: merge to `main`, staging preDeploy runs `bin/controlled-migrate`; production runs
+        `promote.sh snapshot`, then `promote.sh backend` (publish's `references/production-2.0.md`)
    1.0 hotfix: `references/hotfix-1.0-backend.md` (Replit Publish migrates Neon)
 5. Verify BOTH environments (local + prod read-only `\d table`, rake deploy:verify)
 ```

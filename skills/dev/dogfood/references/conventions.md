@@ -20,7 +20,7 @@ If a page bounces to login mid-run, **pause and log in manually** — never fall
 The browser can lie ("Booked!" toast with no row written). For wallet + booking, confirm the backend truth. For everything else, UI is enough.
 
 **Run facts:**
-- **Prod base URL:** `https://thoven.co` (1.0 on Replit until cutover; 2.0 ghost prod is `https://thoven.vercel.app`), for all routes, marketing and app (marketplace, `/teacher/[id]`, dashboards). Confirm any subdomain nuance on calibration.
+- **Prod base URL:** `https://thoven.co` (2.0 since the THV-767 cutover), for all routes, marketing and app (marketplace, `/teacher/[id]`, dashboards). Confirm any subdomain nuance on calibration.
 - **Backend assertion query (read-only):** `set -a && source ~/thoven/backend/.env && set +a && psql "$PROD_DATABASE_URL" -c "SELECT …"`. `SELECT` only — never write. Resolve household IDs (`teacher_id` / `student_id` / parent `profile_id`) once on calibration by email lookup; store them in `household.local.json` so assertions don't re-resolve every run.
 
 ## Exact expected values

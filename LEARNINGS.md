@@ -241,7 +241,7 @@ gated skills as shipped in `45fc301`, always-loaded `CLAUDE.md` /
     loaded files name it.
 40. Branch names: `AGENTS.md` says `THV-<id>-short-slug`. Frontend
     `CLAUDE.md` says commit to `main` except large features. This
-    worktree is `feature/teacher-2.0`. Neither matches.
+    worktree is `feature/teacher-2.0` (deleted 2026-09-30). Neither matches.
 41. "Every `wireframe/<sprint>/` carries a `VERSIONS.md`" — 9 of 20 do.
     Live artifact moved to `app/dev/<feature>/page.tsx`.
 42. Rules 15–16 restated in four places (two CLAUDE.md files, Design

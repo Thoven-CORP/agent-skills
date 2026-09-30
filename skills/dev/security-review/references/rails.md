@@ -44,7 +44,7 @@ reason it is unreachable.
 ## 3. Allowlists
 
 These greps run over all of `app/`, whatever the diff. Each list below is the state of
-`origin/feature/teacher-2.0` on 2026-09-29, as `path:count` from `rg -c … | sort`. A new path, or a
+`feature/teacher-2.0` (deleted 2026-09-30, its code is on `main`) on 2026-09-29, as `path:count` from `rg -c … | sort`. A new path, or a
 count above the one listed, is a finding until the new site is reviewed and the list is updated in
 the same commit.
 
