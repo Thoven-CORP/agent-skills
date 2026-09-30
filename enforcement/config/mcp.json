@@ -1,0 +1,82 @@
+{
+  "servers": {
+    "agentation": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "agentation-mcp", "server"]
+    },
+    "playwright": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest", "--isolated", "--headless", "--block-service-workers"],
+      "env": {
+        "PLAYWRIGHT_MCP_ISOLATED": "1",
+        "PLAYWRIGHT_MCP_HEADLESS": "1",
+        "PLAYWRIGHT_MCP_BLOCK_SERVICE_WORKERS": "1"
+      }
+    },
+    "gws": {
+      "transport": "stdio",
+      "command": "/opt/homebrew/bin/gws",
+      "args": ["mcp", "-s", "calendar,gmail,drive", "--tool-mode", "compact"]
+    },
+    "notion": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@notionhq/notion-mcp-server@2.2.1"],
+      "env": {
+        "OPENAPI_MCP_HEADERS": "${OPENAPI_MCP_HEADERS}"
+      }
+    },
+    "obsidian": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "obsidian-mcp-server@2.0.7"],
+      "env": {
+        "OBSIDIAN_API_KEY": "${OBSIDIAN_API_KEY}",
+        "OBSIDIAN_BASE_URL": "https://127.0.0.1:27124",
+        "OBSIDIAN_VERIFY_SSL": "false"
+      }
+    },
+    "context_dev_api": {
+      "transport": "http",
+      "url": "https://context-dev.stlmcp.com",
+      "headers": {
+        "x-context-dev-api-key": "${CONTEXT_DEV_API_KEY}"
+      }
+    },
+    "github": {
+      "transport": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_PAT}"
+      }
+    },
+    "sentry": {
+      "transport": "http",
+      "url": "https://mcp.sentry.dev/mcp",
+      "headers": {
+        "Authorization": "Bearer ${SENTRY_ACCESS_TOKEN}"
+      }
+    },
+    "linear": {
+      "transport": "http",
+      "url": "https://mcp.linear.app/mcp"
+    },
+    "mixpanel": {
+      "transport": "http",
+      "url": "https://mcp.mixpanel.com/mcp"
+    },
+    "paper": {
+      "transport": "http",
+      "url": "http://127.0.0.1:29979/mcp"
+    },
+    "stilla": {
+      "transport": "http",
+      "url": "https://api.stilla.ai/mcp"
+    }
+  },
+  "unmanaged": {
+    "codex": ["node_repl", "computer-use"]
+  }
+}
