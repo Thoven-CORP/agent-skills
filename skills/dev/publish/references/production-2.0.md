@@ -1,14 +1,14 @@
 # Publish: 2.0 production ("deploy to production", a 2.0 hotfix, a rollback)
 
-Production moves only through `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh`, called `promote.sh` below. It is not on `PATH`: type the full path every time. Run it with no arguments for its usage. It moves thoven.co (Vercel `thoven`) and api.thoven.co (Render `thoven-api`, then `thoven-worker`) to SHAs already on `main`, and it holds the checks: the lock, the pinned SHAs, the migration policy, the Neon snapshot, the API health gate, and the build it promotes. Production shows exactly what staging already showed.
+Production moves only through `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh`, called `promote.sh` below. It is not on `PATH`: type the full path every time, including for the commands it prints. Run it with no arguments for its usage. It needs `render login` done, and `vercel`, `neonctl`, `jq` and `ruby` installed. A refusal about `autoAssignCustomDomains` is Andres's to fix in Vercel. It moves thoven.co (Vercel `thoven`) and api.thoven.co (Render `thoven-api`, then `thoven-worker`) to SHAs already on `main`, and it holds the checks: the lock, the pinned SHAs, the migration policy, the Neon snapshot, the API health gate, and the build it promotes. Production shows exactly what staging already showed.
 
 `plan` pins every SHA in a release file and prints a release ID. Every later step names that ID, so a go on a step binds exactly what `plan` printed. Only one release is open at a time.
 
-Any line starting `REFUSED:` or `FAILED at line` stops the path. Report it with its output. A refusal names its own undo when there is one. Nothing more runs until Andres decides, and `promote.sh abort <id>` closes the release without a tag when Andres drops it.
+Its progress and done lines start with `== ` and show SHAs as their first 9 characters. Any line starting `REFUSED:` or `FAILED at line` stops the path. Report it with its output. A refusal names its own undo when there is one. Nothing more runs until Andres decides, and `promote.sh abort <id>` (full path) closes the release without a tag when Andres drops it.
 
 ## Steps
 
-1. **Pick the SHAs.** A normal promote takes what staging runs now: `plan` with no `--be` or `--fe` reads it. A hotfix merges its PR into `main` first, then pins only the half that changed: `--be <sha> --fe keep`, or `--fe <sha> --be keep`. Done when you hold the exact `plan` command.
+1. **Pick the SHAs.** A normal promote takes what staging runs now: `plan` with no `--be` or `--fe` reads it. A hotfix merges its PR into `main` first (`references/staging-2.0.md` step 0, "Stop: merge the PR"), then pins only the half that changed: `--be <sha> --fe keep`, or `--fe <sha> --be keep`, where `<sha>` is the merge commit (`gh pr view <number> --json mergeCommit -q .mergeCommit.oid`). Pinning it also ships every unpromoted commit before it on `main`: list them in the plan with `git -C <repo> log --oneline <from>..<sha>`. Done when you hold the exact `plan` command.
 
 2. **Plan the release.** Run step 7's accounts check first (`accounts-loaded`), so a missing-accounts gap is in the plan. Then:
 
@@ -26,7 +26,7 @@ Any line starting `REFUSED:` or `FAILED at line` stops the path. Report it with 
 5. **Stop: take the snapshot.** Only when `plan` listed migrations. After Andres's go:
 
    ```bash
-   promote.sh snapshot <id>
+   ~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh snapshot <id>
    ```
 
    Done when it prints `snapshot <name> of <endpoint>`. `backend` refuses a snapshot older than two hours, so run it right before step 6.
@@ -34,10 +34,10 @@ Any line starting `REFUSED:` or `FAILED at line` stops the path. Report it with 
 6. **Stop: promote the backend.** After Andres's go, in the background, because it can wait 30 minutes:
 
    ```bash
-   promote.sh backend <id>
+   ~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh backend <id>
    ```
 
-   It deploys `thoven-api`, waits for api.thoven.co to report the SHA healthy, then deploys `thoven-worker`. Done when it prints `backend on <sha> (api healthy, worker live)`. An unchanged backend deploys nothing and only runs the health gate.
+   It deploys `thoven-api`, waits for api.thoven.co to report the SHA healthy, then deploys `thoven-worker`. Done when it prints `backend on <sha9> (api healthy, worker live)`. An unchanged backend deploys nothing and only runs the health gate.
 
 7. **Backend smoke.** From a detached backend checkout of `<be-sha>` (`git -C ~/thoven/backend worktree add --detach ~/thoven/backend-publish-<be-sha7> <be-sha>`, then `bundle install` in it), with a dogfood teacher's JWT. The dogfood accounts are THV-707's, never a real teacher:
 
@@ -57,10 +57,10 @@ Any line starting `REFUSED:` or `FAILED at line` stops the path. Report it with 
 8. **Stop: promote the frontend.** After Andres's go, in the background:
 
    ```bash
-   promote.sh frontend <id>
+   ~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh frontend <id>
    ```
 
-   It promotes Vercel's staged production build of `<fe-sha>`, or builds one first (about 4 minutes) when none is newer than the last production env change. Done when it prints `thoven.co serves <fe-sha>`. A `canceled` build means `vercel-ignore-build.sh` skipped a docs-only commit: tell Andres, and plan again with the last code commit.
+   It promotes Vercel's staged production build of `<fe-sha>`, or builds one first (about 4 minutes) when none is newer than the last production env change. Done when it prints `thoven.co serves <sha9>` or `thoven.co already serves <sha9>`. A `canceled` build means `vercel-ignore-build.sh` skipped a docs-only commit: tell Andres, and plan again with the last code commit.
 
 9. **Production harness.** From a detached frontend checkout of `<fe-sha>` (`git -C ~/thoven/frontend worktree add --detach ~/thoven/frontend-publish-<fe-sha7> <fe-sha>`, then `npm ci` in it), with `thoven-prod.env` loaded as in step 7. The harness's `ghost` target is production (`e2e/ghost/target.ts`):
 
@@ -83,7 +83,7 @@ SKIPS
 10. **Stop: tag the release.** After Andres's go:
 
    ```bash
-   promote.sh tag <id>
+   ~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh tag <id>
    ```
 
    It checks both services and thoven.co run the pinned SHAs, then pushes `prod/YYYY-MM-DD-N` to both repos and closes the release. Done when it prints `tagged prod/<date>-<n>; release <id> closed`. A rollback can only return to a SHA with a `prod/*` tag, so an untagged release is not a rollback target.
@@ -92,23 +92,23 @@ SKIPS
 
 ## Roll back
 
-Andres declares a rollback. An agent proposes one when production went live on a SHA and then misbehaved. A refused or failed step needs no rollback, because the previous deploy kept serving. The target is the last good SHA with a `prod/*` tag (`git -C <repo> ls-remote origin 'refs/tags/prod/*'`).
+Andres declares a rollback. An agent proposes one when production went live on a SHA and then misbehaved. A refused or failed step needs no rollback, because the previous deploy kept serving, unless its `REFUSED:` line names an undo: that undo is the rollback plan. The target is the SHA the bad release moved from, which its tag message names as `from -> to` (`git -C <repo> fetch origin --tags && git -C <repo> tag -n6 -l 'prod/*'`). Only a SHA with a `prod/*` tag qualifies.
 
 1. **Stop: plan the rollback.** Show Andres the command with the target filled in, and wait for the go:
 
    ```bash
-   promote.sh plan --rollback --fe <sha>|keep --be <sha>|keep
+   ~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh plan --rollback --fe <sha>|keep --be <sha>|keep
    ```
 
    Done when it prints the release ID with `(ROLLBACK: frontend first)`. It refuses when the backend range holds migrations. `--schema-stays` overrides that only when the older code runs on the newer schema, which is Andres's call: show Andres the migration list and wait.
 
-2. **Stop: roll back the frontend.** After Andres's go: `promote.sh frontend <id>`. Done when it prints `thoven.co serves <sha>`.
+2. **Stop: roll back the frontend.** After Andres's go: `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh frontend <id>`. Done when it prints `thoven.co serves <sha9>`.
 
-3. **Stop: roll back the backend.** After Andres's go: `promote.sh backend <id>`. Done when it prints `backend on <sha> (api healthy, worker live)`.
+3. **Stop: roll back the backend.** After Andres's go: `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh backend <id>`. Done when it prints `backend on <sha9> (api healthy, worker live)`.
 
 4. **Checks after the rollback.** Run the backend smoke of step 7 and the harness of step 9 again, each on a checkout of the SHA it now serves. Done when both pass.
 
-5. **Stop: tag the rollback.** After Andres's go: `promote.sh tag <id>`. Done when it prints `tagged prod/<date>-<n>; release <id> closed`.
+5. **Stop: tag the rollback.** After Andres's go: `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh tag <id>`. Done when it prints `tagged prod/<date>-<n>; release <id> closed`.
 
 The fix goes into `main` as a PR and reaches production through a normal promote.
 

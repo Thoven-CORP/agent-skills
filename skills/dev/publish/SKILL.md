@@ -12,9 +12,9 @@ description: Use when Andres asks to publish, deploy, release, promote, or hotfi
    | Andres says | Path | Read |
    |---|---|---|
    | "staging", "is it on staging", or a PR just merged into `main` | 2.0 staging | `references/staging-2.0.md` |
-   | "ship this", "deploy to production", "promote", "go live", "hotfix", "fix the live site" | 2.0 production | `references/production-2.0.md` |
+   | "ship this", "deploy to production", "promote", "go live", "hotfix" or "fix the live site" with no mention of 1.0 or Replit | 2.0 production | `references/production-2.0.md` |
    | "roll back", "revert production", or production misbehaves after a promote | 2.0 rollback | `references/production-2.0.md`, section "Roll back" |
-   | "Replit", "1.0 hotfix", or `release/1.0` | 1.0 hotfix | `references/hotfix-1.0-frontend.md` in the frontend repo, `references/hotfix-1.0-backend.md` in the backend repo |
+   | "Replit", "1.0 hotfix", or `release/1.0` | 1.0 hotfix | `references/hotfix-1.0-frontend.md` for a frontend fix, `references/hotfix-1.0-backend.md` for a backend fix |
    | "what is staging running", "which SHA is live" | site check | `references/site-sha.md` |
 
    A request that fits no row, or fits two, gets one question: "2.0 staging, 2.0 production, rollback, or a 1.0 hotfix on Replit?" Done when exactly one row fits.
