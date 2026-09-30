@@ -99,4 +99,28 @@ expect "non-worktree path exit" "$code" 1
 "$TOOL" >/dev/null 2>&1; code=$?
 expect "no args exit" "$code" 2
 
+STUB="$TMP/stubbin"
+mkdir -p "$STUB"
+# shellcheck disable=SC2016
+printf '#!/bin/sh\necho "npx $*" >> "$TMP/installs"\n' > "$STUB/npx"
+# shellcheck disable=SC2016
+printf '#!/bin/sh\n[ "$1" = check ] && exit "${BUNDLE_CHECK_RC:-1}"\necho "bundle $*" >> "$TMP/installs"\n' > "$STUB/bundle"
+chmod +x "$STUB/npx" "$STUB/bundle"
+installs() { cat "$TMP/installs" 2>/dev/null; }
+
+FE="$TMP/frontend-thv-969"
+mkdir -p "$TMP/elsewhere/node_modules"
+ln -s "$TMP/elsewhere/node_modules" "$FE/node_modules"
+env -u THOVEN_WORKTREE_SKIP_INSTALL PATH="$STUB:$PATH" TMP="$TMP" "$TOOL" bootstrap "$FE" >/dev/null 2>&1
+expect "rerun with node_modules symlink runs no npm ci" "$(installs)" ""
+expect "linked node_modules left intact" "$(readlink "$FE/node_modules")" "$TMP/elsewhere/node_modules"
+rm "$FE/node_modules"
+env -u THOVEN_WORKTREE_SKIP_INSTALL PATH="$STUB:$PATH" TMP="$TMP" "$TOOL" bootstrap "$FE" >/dev/null 2>&1
+expect "no node_modules runs npm ci" "$(installs)" "npx -y npm@10.9.9 ci"
+rm -f "$TMP/installs"
+env -u THOVEN_WORKTREE_SKIP_INSTALL PATH="$STUB:$PATH" TMP="$TMP" BUNDLE_CHECK_RC=0 "$TOOL" bootstrap "$BE" >/dev/null 2>&1
+expect "satisfied bundle runs no bundle install" "$(installs)" ""
+env -u THOVEN_WORKTREE_SKIP_INSTALL PATH="$STUB:$PATH" TMP="$TMP" BUNDLE_CHECK_RC=1 "$TOOL" bootstrap "$BE" >/dev/null 2>&1
+expect "unsatisfied bundle runs bundle install" "$(installs)" "bundle install"
+
 echo "all passed"

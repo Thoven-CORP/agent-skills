@@ -81,6 +81,17 @@ bootstrap() {
     return 0
   fi
 
+  # A rerun must not reinstall: a worktree's node_modules can be a symlink into another live
+  # tree, and npm ci deletes node_modules before it installs.
+  if [ "$kind" = fe ] && { [ -e "$path/node_modules" ] || [ -L "$path/node_modules" ]; }; then
+    log "node_modules already present, skipping npm ci"
+    return 0
+  fi
+  if [ "$kind" = be ] && (cd "$path" && bundle check >/dev/null 2>&1); then
+    log "bundle check passes, skipping bundle install"
+    return 0
+  fi
+
   if [ "$kind" = fe ]; then
     local version
     version="$(jq -r '.packageManager // empty' "$path/package.json" 2>/dev/null || true)"
