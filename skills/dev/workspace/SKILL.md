@@ -12,6 +12,22 @@ description: >-
 orientation, Linear lifecycle, capture, close, the derived Map, and the Project log. It does not
 perform semantic feature reconciliation.
 
+## Project setup and live context
+
+For a new Project or a proposed change to its brief, approach or sources, use `$linear-project`.
+Read the live [Project setup standard](https://linear.app/thoven/document/project-setup-standard-62e01c7c4f53)
+for those choices; it supersedes older setup assumptions in `references/WORKFLOW.md`.
+
+Before ongoing work, retrieve the current Project brief, relevant linked authoritative sources,
+native milestones and issues, and latest Project Update. Read the sources themselves; a snapshot
+of issues alone does not establish their content. Surface unavailable context explicitly. Maintain
+current Project purpose, scope and approach in the brief, field values and work status natively,
+and meaningful progress, risks and handoffs in Project Updates within the approved write set.
+When posting an Update, supply its health indicator. If the connected tool requires the lead
+to post the first Update, use a known resolved lead or report the gap; do not invent an owner.
+Local receipts retain their distinct evidence role; `$feature-ledger` keeps artifact and semantic
+reconciliation ownership.
+
 ## Recipe
 
 1. Read [`references/PROJECT_SNAPSHOT.md`](references/PROJECT_SNAPSHOT.md). Its source order,
@@ -21,9 +37,9 @@ perform semantic feature reconciliation.
 3. Fetch the Project's issues yourself, through the **Linear MCP connector**, then feed them to
    `map.js`. `map.js` never reaches for a Linear API key on its own.
 
-   - Use `mcp__claude_ai_Linear__list_issues` (and `mcp__claude_ai_Linear__list_projects` if you
-     need Project rows). That connector is authorized.
-   - Do **not** use `mcp__plugin_linear_linear__*`. That connector is unauthorized and will fail.
+   - Discover the available authorized Linear connector and verify it with a read. Use its
+     `list_issues` and, when needed, `list_projects` tools; prefixes vary by client. A working
+     read establishes the connector to use, rather than a historical tool-name allowlist.
    - Write the response to a file in the shape below, then:
 
    ```bash

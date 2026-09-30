@@ -1,6 +1,15 @@
 # WORKFLOW
 
-How work is tracked at Thoven. Linear holds state; the repos hold the thinking.
+How work is tracked at Thoven. Linear holds state; authoritative artifacts hold the thinking.
+
+**Project setup precedence (approved September 30, 2026).** For new Project setup or a scoped
+proposal to change an existing Project, use `$linear-project` and read the live
+[Project setup standard](https://linear.app/thoven/document/project-setup-standard-62e01c7c4f53).
+It supersedes this reference's fixed milestone lifecycle, `feature-ledger open` setup routing and
+repo-only document rule for those choices. Choose project-specific phases and link the actual
+authoritative artifacts, including native Linear documents when appropriate. Existing sources and
+tickets stay in place unless a scoped change is approved. Workspace owns ongoing native context
+and Project Updates; feature-ledger retains its artifact and reconciliation responsibilities.
 
 **A Linear issue links to a decision. It never restates one.**
 
