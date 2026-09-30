@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# Runs thoven-uncommitted in each dialect against two throwaway repos and a fake session edit log.
+set -uo pipefail
+
+HOOK="$(cd "$(dirname "$0")/.." && pwd)/hooks/thoven-uncommitted"
+T=$(mktemp -d /tmp/thv974.XXXXXX) || exit 1; case "$T" in /tmp/thv974.*) ;; *) exit 1;; esac
+SESSION="uncommitted-test-$$"
+STATE="/tmp/claude-thoven/$SESSION"
+case "$STATE" in /tmp/claude-thoven/uncommitted-test-[0-9]*) ;; *) exit 1;; esac
+trap 'rm -rf "$T" "$STATE" "$STATE-nolog"' EXIT
+TMP="$T"
+
+ok() { printf 'ok %s\n' "$1"; }
+fail() { printf 'FAIL %s: got %s\n' "$1" "$2"; exit 1; }
+expect() { if [ "$2" = "$3" ]; then ok "$1"; else fail "$1" "'$2' (want '$3')"; fi; }
+
+g() { git -c user.name=t -c user.email=t@t -c commit.gpgsign=false -c core.hooksPath=/dev/null "$@"; }
+
+A="$TMP/repo-a"
+B="$TMP/repo-b"
+for r in "$A" "$B"; do
+  mkdir -p "$r" && g -C "$r" init -q && g -C "$r" commit -q --allow-empty -m init
+done
+mkdir -p "$B/sub"
+echo a >"$A/a.txt"
+echo b >"$B/sub/b.txt"
+echo gone >"$A/gone.txt"
+g -C "$A" add gone.txt && g -C "$A" commit -q -m gone
+rm "$A/gone.txt"
+
+mkdir -p "$STATE"
+printf '%s\n' "$A/a.txt" "$B/sub/b.txt" "$A/gone.txt" "$A/never-existed.txt" >"$STATE/edited"
+
+MSG="You edited a.txt, gone.txt, sub/b.txt and they are uncommitted. Commit them by exact path, or say why they stay."
+BLOCK="$(jq -nc --arg r "$MSG" '{decision:"block",reason:$r}')"
+
+# run <dialect> <payload>: prints "rc=<n> <stdout>"
+run() {
+  local out rc
+  out=$(printf '%s' "$2" | "$HOOK" --dialect "$1" 2>/dev/null); rc=$?
+  printf 'rc=%s %s' "$rc" "$(printf '%s' "$out" | jq -c . 2>/dev/null || printf '%s' "$out")"
+}
+stop_payload() { jq -nc --arg s "${2:-$SESSION}" --argjson a "${1:-false}" '{session_id:$s,hook_event_name:"Stop",stop_hook_active:$a}'; }
+cursor_payload() { jq -nc --arg s "$SESSION" --argjson n "${1:-0}" --arg st "${2:-completed}" '{conversation_id:$s,hook_event_name:"stop",status:$st,loop_count:$n}'; }
+reset() { rm -f "$STATE/uncommitted-asked"; }
+
+reset
+expect "claude allows when stop_hook_active is true" "$(run claude "$(stop_payload true)")" "rc=0 "
+expect "claude blocks on uncommitted edits, repo-relative across two repos" "$(run claude "$(stop_payload)")" "rc=0 $BLOCK"
+expect "claude does not ask the same list twice" "$(run claude "$(stop_payload)")" "rc=0 "
+
+reset
+expect "codex blocks with the same message" "$(run codex "$(stop_payload)")" "rc=0 $BLOCK"
+reset
+expect "devin blocks with the same message" "$(run devin "$(stop_payload)")" "rc=0 $BLOCK"
+
+reset
+expect "cursor allows on loop_count > 0" "$(run cursor "$(cursor_payload 1)")" "rc=0 "
+expect "cursor allows an aborted stop" "$(run cursor "$(cursor_payload 0 aborted)")" "rc=0 "
+expect "cursor follows up" "$(run cursor "$(cursor_payload 0)")" "rc=0 $(jq -nc --arg r "$MSG" '{followup_message:$r}')"
+
+reset
+warn_err=$(stop_payload | "$HOOK" --dialect warn 2>&1 >/dev/null); warn_rc=$?
+expect "warn dialect exits 0" "$warn_rc" "0"
+expect "warn dialect prints the message to stderr" "$warn_err" "$MSG"
+
+reset
+expect "claude asks once" "$(run claude "$(stop_payload)")" "rc=0 $BLOCK"
+echo c >"$A/c.txt"
+echo "$A/c.txt" >>"$STATE/edited"
+MSG_C="You edited a.txt, c.txt, gone.txt, sub/b.txt and they are uncommitted. Commit them by exact path, or say why they stay."
+expect "a different path list is asked again" "$(run claude "$(stop_payload)")" "rc=0 $(jq -nc --arg r "$MSG_C" '{decision:"block",reason:$r}')"
+
+reset
+g -C "$A" add a.txt c.txt gone.txt && g -C "$A" commit -q -m a
+g -C "$B" add sub/b.txt && g -C "$B" commit -q -m b
+expect "committed paths are allowed" "$(run claude "$(stop_payload)")" "rc=0 "
+
+expect "no edit log is allowed" "$(run claude "$(stop_payload false "$SESSION-nolog")")" "rc=0 "
+[ -e "/tmp/claude-thoven/$SESSION-nolog" ] && fail "no log leaves no state" "a session dir"
+ok "no log leaves no state"
+
+echo "all passed"

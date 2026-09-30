@@ -26,7 +26,8 @@ TARGETS=("$HOME/.claude/hooks" "$HOME/.codex/hooks" "$HOME/.cursor/hooks"
   "$HOME/.config/devin/hooks" "$HOME/.config/opencode/hooks")
 
 # Files that are not hooks: "repo path|harness path", same only-if-present rule.
-PAIRS=("$PWD/opencode/thoven-guard.js|$HOME/.config/opencode/plugins/thoven-guard.js")
+PAIRS=("$PWD/opencode/thoven-guard.js|$HOME/.config/opencode/plugins/thoven-guard.js"
+  "$PWD/opencode/thoven-uncommitted.js|$HOME/.config/opencode/plugins/thoven-uncommitted.js")
 
 drift=0
 check() {

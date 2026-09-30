@@ -25,6 +25,7 @@ HOOK_SPECS = [
     ("thoven-guard-bash", "PreToolUse", "Bash", 10),
     ("thoven-track-edits", "PostToolUse", "Edit|Write|Bash", 10),
     ("thoven-require-evidence", "Stop", None, 10),
+    ("thoven-uncommitted", "Stop", None, 10),
 ]
 
 

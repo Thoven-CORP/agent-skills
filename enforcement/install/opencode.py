@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Installs the shell guard, its plugin adapter, and the deny list into OpenCode.
+"""Installs the shell guard, its plugin adapter, the uncommitted-edits plugin, and the deny list into OpenCode.
 
 OpenCode has no shell-hook config. A plugin's tool.execute.before runs the guard
 and throws to block (opencode.ai/docs/plugins). The deny list becomes
 permission.bash glob rules; the last matching rule wins, so they are appended
-(opencode.ai/docs/permissions). opencode.jsonc is only edited when it parses as
-plain JSON, because rewriting it would drop its comments.
+(opencode.ai/docs/permissions). thoven-uncommitted.js warns on session.idle, which
+cannot block, and is a no-op until something writes an OpenCode edit log.
+opencode.jsonc is only edited when it parses as plain JSON, because rewriting it
+would drop its comments.
 
 Dry run by default. Pass --apply to write.
 """
@@ -24,6 +26,8 @@ CONFIG = OPENCODE_DIR / "opencode.jsonc"
 FILES = [
     (GUARD, OPENCODE_DIR / "hooks" / "thoven-guard-bash", True),
     (ENFORCEMENT_DIR / "opencode" / "thoven-guard.js", OPENCODE_DIR / "plugins" / "thoven-guard.js", False),
+    (ENFORCEMENT_DIR / "hooks" / "thoven-uncommitted", OPENCODE_DIR / "hooks" / "thoven-uncommitted", True),
+    (ENFORCEMENT_DIR / "opencode" / "thoven-uncommitted.js", OPENCODE_DIR / "plugins" / "thoven-uncommitted.js", False),
 ]
 
 

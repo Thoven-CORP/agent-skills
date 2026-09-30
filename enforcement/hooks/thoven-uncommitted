@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# Asks once, at stop, about files this session edited that are still uncommitted.
+# Shared worktrees make an uncommitted edit look like someone else's work to the next session.
+# Reads the edit log thoven-track-edits writes, so it only fires where that runs (Claude, Codex).
+# Never stages, commits or modifies anything.
+#
+# Dialects, per each tool's Stop contract:
+#   claude, codex, devin  {"decision":"block","reason":...} on stdout; stop_hook_active=true
+#                         means a block already fired this turn (code.claude.com/docs/en/hooks,
+#                         codex-rs/hooks/src/schema.rs, docs.devin.ai/cli/extensibility/hooks)
+#   cursor                {"followup_message":...}; loop_count>0 means a follow-up already ran
+#                         (cursor.com/docs/hooks)
+#   warn                  message on stderr, exit 0, for tools whose stop cannot block (OpenCode)
+#   thoven-uncommitted [--dialect claude|codex|cursor|devin|warn]
+set -o pipefail
+
+dialect=claude
+[ "${1:-}" = "--dialect" ] && dialect="${2:-claude}"
+
+payload="$(cat)"
+session_id="$(jq -r '.session_id // .conversation_id // empty' <<<"$payload")"
+[ -n "$session_id" ] || exit 0
+
+state="/tmp/claude-thoven/$session_id"
+edited_file="$state/edited"
+[ -s "$edited_file" ] || exit 0
+
+[ "$(jq -r '.stop_hook_active // false' <<<"$payload")" = true ] && exit 0
+loop_count="$(jq -r '.loop_count // 0' <<<"$payload")"
+[[ "$loop_count" =~ ^[0-9]+$ ]] && [ "$loop_count" -gt 0 ] && exit 0
+# A user abort or an error is not the agent claiming it finished.
+cursor_status="$(jq -r '.status // "completed"' <<<"$payload")"
+[ "$dialect" = cursor ] && [ "$cursor_status" != completed ] && exit 0
+
+# One "relative<TAB>absolute" line per uncommitted path.
+found=()
+while IFS= read -r path; do
+  [ -n "$path" ] || continue
+  # A deleted file may have taken its directory with it; git runs from the nearest one left.
+  dir="$(dirname "$path")"
+  while [ ! -d "$dir" ] && [ "$dir" != / ]; do dir="$(dirname "$dir")"; done
+  tail="${path#"$dir"/}"
+  # --show-prefix instead of stripping --show-toplevel, which resolves symlinks the log kept.
+  prefix="$(git -C "$dir" rev-parse --show-prefix 2>/dev/null)" || continue
+  status="$(git --literal-pathspecs -C "$dir" status --porcelain --untracked-files=all -- "$tail" 2>/dev/null)"
+  [ -n "$status" ] || continue
+  found+=("$prefix$tail"$'\t'"$path")
+done <"$edited_file"
+
+[ "${#found[@]}" -gt 0 ] || exit 0
+
+sorted="$(printf '%s\n' "${found[@]}" | LC_ALL=C sort)"
+paths="$(cut -f1 <<<"$sorted" | paste -sd, - | sed 's/,/, /g')"
+# Keyed on absolute paths: two worktrees can hold the same relative path.
+key="$(cut -f2 <<<"$sorted" | paste -sd'|' -)"
+
+asked="$state/uncommitted-asked"
+[ -f "$asked" ] && grep -qxF "$key" "$asked" && exit 0
+printf '%s\n' "$key" >>"$asked"
+
+msg="You edited $paths and they are uncommitted. Commit them by exact path, or say why they stay."
+
+case "$dialect" in
+  claude|codex|devin) jq -n --arg r "$msg" '{decision:"block",reason:$r}' ;;
+  cursor) jq -n --arg r "$msg" '{followup_message:$r}' ;;
+  *) printf '%s\n' "$msg" >&2 ;;
+esac
+exit 0

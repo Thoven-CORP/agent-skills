@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Installs the enforcement agents, the shell guard, and the deny list into Cursor.
+"""Installs the enforcement agents, the shell guard, the uncommitted-edits stop hook, and the deny list into Cursor.
 
 The guard runs on Cursor's beforeShellExecution event, which the IDE and the
 cursor-agent CLI both fire (cursor.com/docs/hooks). The deny list goes into
 ~/.cursor/cli-config.json as Shell(command:args) tokens: Cursor matches
 Shell(x) against the first token only, and command:args globs the arguments
-(cursor.com/docs/cli/reference/permissions).
+(cursor.com/docs/cli/reference/permissions). thoven-uncommitted runs on `stop` and
+continues the agent with a followup_message (cursor.com/docs/hooks); it is a no-op
+until something writes a Cursor edit log.
 
 Dry run by default. Pass --apply to write.
 """
@@ -14,7 +16,7 @@ import copy
 import sys
 from pathlib import Path
 
-from common import ENFORCEMENT_DIR, GUARD, add_missing, copy_file, load_denies, needs_copy, read_json, write_json
+from common import ENFORCEMENT_DIR, add_missing, copy_file, load_denies, needs_copy, read_json, write_json
 
 CURSOR_DIR = Path.home() / ".cursor"
 CURSOR_AGENTS_DIR = CURSOR_DIR / "agents"
@@ -24,8 +26,11 @@ CLI_CONFIG = CURSOR_DIR / "cli-config.json"
 
 AGENT_FILES = ["verifier.md", "ui-builder.md", "explorer.md", "poteto-agent.md"]
 
-# (event, command, timeout)
-HOOK_ENTRY = ("beforeShellExecution", f"{HOOKS_DIR / 'thoven-guard-bash'} --dialect cursor", 10)
+# (script name, event, timeout); each runs as `<hooks dir>/<script> --dialect cursor`
+HOOK_ENTRIES = [
+    ("thoven-guard-bash", "beforeShellExecution", 10),
+    ("thoven-uncommitted", "stop", 10),
+]
 
 
 def deny_token(argv: list) -> str:
@@ -43,13 +48,15 @@ def main():
         dest = CURSOR_AGENTS_DIR / name
         plan.append((name, src, dest, needs_copy(src, dest)))
 
-    guard_dest = HOOKS_DIR / "thoven-guard-bash"
-    guard_copy = needs_copy(GUARD, guard_dest)
-
-    event, command, timeout = HOOK_ENTRY
     hooks_orig = read_json(HOOKS_JSON, {"version": 1, "hooks": {}})
     hooks_cfg = copy.deepcopy(hooks_orig)
-    hook_needed = not any(e.get("command") == command for e in hooks_cfg.get("hooks", {}).get(event, []))
+    hook_plan = []
+    for script_name, event, timeout in HOOK_ENTRIES:
+        src = ENFORCEMENT_DIR / "hooks" / script_name
+        dest = HOOKS_DIR / script_name
+        command = f"{dest} --dialect cursor"
+        hook_needed = not any(e.get("command") == command for e in hooks_cfg.get("hooks", {}).get(event, []))
+        hook_plan.append((src, dest, needs_copy(src, dest), event, command, timeout, hook_needed))
 
     cli_orig = read_json(CLI_CONFIG, {})
     cli_cfg = copy.deepcopy(cli_orig)
@@ -59,8 +66,9 @@ def main():
     print(f"Target agents dir: {CURSOR_AGENTS_DIR}")
     for name, src, dest, copy_needed in plan:
         print(f"- {name}: copy={'yes' if copy_needed else 'no (already matches)'}")
-    print(f"- {guard_dest}: copy={'yes' if guard_copy else 'no (already matches)'}")
-    print(f"- {HOOKS_JSON} hooks.{event}: {'add' if hook_needed else 'already present'} {command}")
+    for src, dest, copy_needed, event, command, timeout, hook_needed in hook_plan:
+        print(f"- {dest}: copy={'yes' if copy_needed else 'no (already matches)'}")
+        print(f"- {HOOKS_JSON} hooks.{event}: {'add' if hook_needed else 'already present'} {command}")
     for token in wanted_denies:
         print(f"- {CLI_CONFIG} permissions.deny {token}: {'add' if token in missing_denies else 'already present'}")
 
@@ -73,14 +81,14 @@ def main():
         if copy_needed:
             copy_file(src, dest)
             changed = True
-    if guard_copy:
-        copy_file(GUARD, guard_dest, executable=True)
-        changed = True
-
-    if hook_needed:
-        hooks_cfg.setdefault("version", 1)
-        hooks_cfg.setdefault("hooks", {}).setdefault(event, []).append({"command": command, "timeout": timeout})
-        print(f"Added hooks.{event} entry {command}")
+    for src, dest, copy_needed, event, command, timeout, hook_needed in hook_plan:
+        if copy_needed:
+            copy_file(src, dest, executable=True)
+            changed = True
+        if hook_needed:
+            hooks_cfg.setdefault("version", 1)
+            hooks_cfg.setdefault("hooks", {}).setdefault(event, []).append({"command": command, "timeout": timeout})
+            print(f"Added hooks.{event} entry {command}")
     if hooks_cfg != hooks_orig or not HOOKS_JSON.exists():
         write_json(HOOKS_JSON, hooks_cfg)
         changed = True
