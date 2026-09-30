@@ -68,7 +68,7 @@ Its progress and done lines start with `== ` and show SHAs as their first 9 char
    GHOST_TARGET=production npm run test:ghost
    ```
 
-   Done when `.stats.unexpected` is `0` and the skip diff below prints nothing. The expected skips are the staging browser path, the two retired record-write tests, the admin job probe (`production is read-only`) and the GCS round-trip:
+   Done when `.stats.unexpected` is `0` and the skip diff below prints nothing. The expected skips are the staging browser path's two tests, the two retired record-write tests and the admin job probe (`production is read-only`):
 
    ```bash
    jq -r '.stats.unexpected' test-results/ghost.json
@@ -105,7 +105,7 @@ Andres declares a rollback. An agent proposes one when production went live on a
 
    Done when it prints the release ID with `(ROLLBACK: frontend first)`. It refuses when the backend range holds migrations. `--schema-stays` overrides that only when the older code runs on the newer schema, which is Andres's call: show Andres the migration list and wait.
 
-2. **Stop: roll back the frontend.** After Andres's go: `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh frontend <id>`. Done when it prints `thoven.co serves <sha9>`.
+2. **Stop: roll back the frontend.** After Andres's go: `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh frontend <id>`. Done when it prints `thoven.co serves <sha9>`, or `thoven.co already serves <sha9>` when the frontend did not move.
 
 3. **Stop: roll back the backend.** After Andres's go: `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh backend <id>`. Done when it prints `backend on <sha9> (api healthy, worker live)`.
 

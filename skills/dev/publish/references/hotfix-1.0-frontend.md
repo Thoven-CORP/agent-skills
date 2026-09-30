@@ -2,7 +2,7 @@
 
 Contents: Deployment Pipeline · MANDATORY First Action · Phase 0: Analyze · Phase 1: Decide · Phase 2: Update Changelog · Phase 3: Commit · Phase 4: Post-Commit Actions · Carry the Fix into 2.0 · Changelog State Lifecycle · Rules · References
 
-1.0 takes hotfixes only. Since the THV-767 cutover thoven.co serves 2.0. Replit keeps `release/1.0` (tag `thoven-1.0`) as the 1.0 rollback until THV-710 retires it. Start the fix from `origin/release/1.0`:
+1.0 takes hotfixes only. Since the THV-767 cutover thoven.co serves 2.0. Replit keeps `release/1.0` (tag `thoven-1.0`) as the 1.0 rollback until THV-712 retires it. Start the fix from `origin/release/1.0`:
 
 ```bash
 git fetch origin release/1.0

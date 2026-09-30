@@ -2,7 +2,7 @@
 
 Contents: MANDATORY First Action · Three-Environment Reference (CRITICAL: read once, then apply) · PRE-CHECK 0: Verify Neon Matches Last "Published" Marker (MANDATORY) · PRE-CHECK 1: Replit-Shell Migrate (MANDATORY when migrations exist) · Step 1: Find Last Published Commit (MANDATORY) · Step 2: List All Unpublished Commits (MANDATORY) · Step 3: Verify CHANGELOG Completeness (MANDATORY) · APPROVAL GATE (MANDATORY STOP) · Step 4: Determine Version Bump (MANDATORY) · Step 5: Update CHANGELOG.md (MANDATORY) · Step 5.5: Run Test Suite (MANDATORY) · Step 5.6: Verify Contract-Manifest Freshness (MANDATORY) · Step 5.7: Verify Slot Time-Rendering (run when a slot controller/serializer/model changed) · Step 6: Create Publish Commit (MANDATORY) · Step 6.5: Linear Ticket Cross-Check (MANDATORY) · Step 6.9: Pending Post-Publish Actions (MANDATORY) · Step 7: Remind to Deploy (MANDATORY) · Step 8: Carry the Fix into 2.0 (MANDATORY) · When NOT to Use · Common Mistakes
 
-1.0 takes hotfixes only. Since the THV-767 cutover the 2.0 API serves thoven.co. Replit keeps `release/1.0` (tag `thoven-1.0`) as the 1.0 rollback until THV-710 retires it. Start the fix from `origin/release/1.0`:
+1.0 takes hotfixes only. Since the THV-767 cutover the 2.0 API serves thoven.co. Replit keeps `release/1.0` (tag `thoven-1.0`) as the 1.0 rollback until THV-712 retires it. Start the fix from `origin/release/1.0`:
 
 ```bash
 git fetch origin release/1.0

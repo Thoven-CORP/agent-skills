@@ -257,10 +257,8 @@ Build issue lands in the worktree the moment it works.
 
 ### Branching across both repos
 
-Each issue gets one worktree per repo it touches, made by
-`~/thoven/agent-skills/enforcement/bin/thoven-worktree create <fe|be> <area> <n>`: branch
-`<area>/thv-<n>` off `origin/main`, at `<repo>-thv-<n>`. The branch, PR and worktree law is
-`~/thoven/agent-skills/enforcement/rules/thoven-law.md`.
+Each issue gets one worktree per repo it touches, made by `thoven-worktree create`. How it names
+and bases them is the law: `~/thoven/agent-skills/enforcement/rules/thoven-law.md`.
 
 A vertical issue touches both repos, so it gets **the same branch name in each**:
 

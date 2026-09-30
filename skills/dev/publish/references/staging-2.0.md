@@ -73,17 +73,21 @@ Run each step in the repo it names. Steps 1 to 4 check each repo that changed. S
    GHOST_TARGET=staging npm run test:ghost
    ```
 
-   Done when `bin/dogfood-staging` exits 0, `deploy:smoke` exits 0, `.stats.unexpected` is `0`, and the skip diff below prints nothing. The only expected staging skips are the two retired record-write tests (skip reason `record writes ran on ghost prod only, which is retired`):
+   Done when `bin/dogfood-staging` exits 0, `deploy:smoke` exits 0, `.stats.unexpected` is `0`, and the skip diff below prints nothing. Staging has no `GHOST_*` dogfood accounts (they live only in `thoven-prod.env`, THV-707), so the six dogfood flows are the expected staging skips. Two of them are also the retired record-write tests:
 
    ```bash
    jq -r '.stats.unexpected' test-results/ghost.json
    diff <(jq -r '[.. | objects | select(has("specs")) | .specs[] | select(any(.tests[]; .status == "skipped")) | .title] | sort | .[]' test-results/ghost.json) - <<'SKIPS'
 GCS round-trip: mint, PUT, download byte-identical, purge
 intro call booking is created, then reversed
+parent login returns a JWT and a parent profile
+parent socket is welcomed and subscribed to ParentBookingRequestsChannel
+student login returns a JWT
+teacher login returns a JWT and a teacher profile
 SKIPS
    ```
 
-   **Stop: harness skipped a test.** Only when the diff prints a line, such as a skipped job round trip (missing `GHOST_ADMIN_*`) or skipped dogfood flows (missing account variables). Report each skip with its reason. A skipped test is not a pass.
+   **Stop: harness skipped a test.** Only when the diff prints a line, such as a skipped job round trip (missing `GHOST_ADMIN_*`) or any skip not in the list. Report each skip with its reason. A skipped test is not a pass.
 
 6. **Report.** One line per repo: SHA, CI run URL, the proof from steps 3 and 4, and each gate's result, with the tick list's items ticked. Say "staging-green" only when every step passed. Done when Andres has the report.
 

@@ -25,6 +25,7 @@ description: Use when Andres asks to publish, deploy, release, promote, or hotfi
    git -C ~/thoven/frontend fetch origin main
    python3 ~/thoven/agent-skills/scripts/check-publish-checklist.py ~/thoven/agent-skills/skills/dev/publish ~/thoven/frontend origin/main
    ```
+   While a skill change's checklist PR is still open, run it against that PR's worktree instead of `origin/main`.
 
    Done when it prints `checklist matches sources`. Any other output is a drift: show Andres the diff and follow the reference file, which is the source.
 4. Read only that one file, and follow it in order. Done when its last step reports.
@@ -45,6 +46,6 @@ description: Use when Andres asks to publish, deploy, release, promote, or hotfi
 | staging.thoven.co (Vercel `thoven-staging`), Render `thoven-api-staging` + `thoven-worker-staging` | the tip of `main` | every merge to `main` |
 | thoven.co (Vercel `thoven`) | the last promoted frontend SHA | `promote.sh frontend`. Every merge to `main` also builds a staged production deployment that never goes live by itself |
 | api.thoven.co (Render `thoven-api` + `thoven-worker`) | the last promoted backend SHA | `promote.sh backend`. Auto-deploy is off |
-| Replit 1.0 | `release/1.0` | Andres's Publish click. The 1.0 rollback until THV-710 retires it |
+| Replit 1.0 | `release/1.0` | Andres's Publish click. The 1.0 rollback until THV-712 retires it |
 
 Branch and worktree rules: `~/thoven/agent-skills/enforcement/rules/thoven-law.md`.
