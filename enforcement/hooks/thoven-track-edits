@@ -30,6 +30,16 @@ case "$tool_name" in
     fi
     ;;
   Bash)
+    # A verification command is the answer thoven-require-evidence asks for, so
+    # record it. That hook exits when $state/checks is non-empty, but before
+    # 2026-09-19 nothing ever wrote the file: the escape hatch never fired and it
+    # nudged even in sessions that had just run a check.
+    command="$(jq -r '.tool_input.command // empty' <<<"$payload")"
+    checks_regex='\b(tsc|rspec|vitest|jest|playwright|eslint|rubocop|contract-check|type-check|typecheck)\b|\b(npm|pnpm|yarn|bun)[[:space:]]+(run[[:space:]]+)?(test|lint|check)\b|\bnext[[:space:]]+lint\b|\brails[[:space:]]+(test|spec)\b'
+    if [ -n "$command" ] && grep -qE "$checks_regex" <<<"$command"; then
+      printf '%s\n' "$command" >> "$state/checks"
+    fi
+
     toplevel="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null)"
     if [ -n "$toplevel" ]; then
       touch "$edited_file"
