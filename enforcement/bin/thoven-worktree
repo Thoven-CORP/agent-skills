@@ -1,0 +1,189 @@
+#!/usr/bin/env bash
+# Makes Thoven worktrees at <repo>-thv-<n> on branch <area>/thv-<n>. Claude's --worktree would
+# otherwise create branch worktree-<name>, and git never carries .env files or installed
+# dependencies into a new worktree, so a fresh one cannot boot without this.
+set -euo pipefail
+
+THOVEN_ROOT="${THOVEN_ROOT:-$HOME/thoven}"
+DEFAULT_NPM_VERSION="10.9.9"
+NAME_HINT="name the worktree <area>-thv-<n>, e.g. claude --worktree tooling-thv-969"
+
+# kind -> "<repo dir> <env file>"
+repo_table() {
+  case "$1" in
+    fe) echo "frontend .env.local" ;;
+    be) echo "backend .env" ;;
+    *) return 1 ;;
+  esac
+}
+
+log() { printf 'thoven-worktree: %s\n' "$*" >&2; }
+die() { local code="$1"; shift; log "$*"; exit "$code"; }
+
+usage() {
+  cat >&2 <<'EOF'
+usage: thoven-worktree create <fe|be> <area> <n>
+       thoven-worktree bootstrap <path>
+       thoven-worktree hook            (Claude Code WorktreeCreate; JSON on stdin)
+EOF
+  exit 2
+}
+
+physical() { (cd "$1" 2>/dev/null && pwd -P); }
+
+bootstrap() {
+  local path="$1"
+  [ -d "$path" ] || die 1 "bootstrap: $path is not a directory"
+  path="$(cd "$path" && pwd)"
+
+  local main
+  main="$(git -C "$path" worktree list --porcelain | sed -n 's/^worktree //p' | head -n 1)"
+  [ -n "$main" ] || die 1 "bootstrap: $path is not inside a git worktree"
+
+  # Gemfile wins because a Rails app can grow a package.json; a frontend never grows a Gemfile.
+  local kind
+  if [ -f "$path/Gemfile" ]; then
+    kind=be
+  elif [ -f "$path/package.json" ]; then
+    kind=fe
+  else
+    die 1 "bootstrap: $path has neither package.json nor Gemfile"
+  fi
+
+  local env_file
+  env_file="$(repo_table "$kind" | cut -d' ' -f2)"
+  if [ -e "$path/$env_file" ]; then
+    log "$env_file already present, leaving it"
+  elif [ -f "$main/$env_file" ]; then
+    cp "$main/$env_file" "$path/$env_file"
+    log "copied $env_file from $main"
+  else
+    log "warning: $main has no $env_file to copy"
+  fi
+
+  if [ "$kind" = be ] && [ -d "$main/storage" ]; then
+    mkdir -p "$path/storage"
+    local entry name
+    for entry in "$main"/storage/* "$main"/storage/.[!.]*; do
+      [ -e "$entry" ] || [ -L "$entry" ] || continue
+      name="$(basename "$entry")"
+      [ "$name" = ".keep" ] && continue
+      if [ -e "$path/storage/$name" ] || [ -L "$path/storage/$name" ]; then
+        continue
+      fi
+      ln -s "$entry" "$path/storage/$name"
+    done
+    log "linked storage blobs from $main/storage"
+  fi
+
+  if [ "${THOVEN_WORKTREE_SKIP_INSTALL:-}" = 1 ]; then
+    log "THOVEN_WORKTREE_SKIP_INSTALL=1, skipping dependency install"
+    return 0
+  fi
+
+  if [ "$kind" = fe ]; then
+    local version
+    version="$(jq -r '.packageManager // empty' "$path/package.json" 2>/dev/null || true)"
+    case "$version" in
+      npm@*) version="${version#npm@}"; version="${version%%+*}" ;;
+      *) version="" ;;
+    esac
+    version="${version:-$DEFAULT_NPM_VERSION}"
+    log "npm@$version ci in $path"
+    (cd "$path" && npx -y "npm@$version" ci) >&2 || log "warning: npm ci failed; the worktree exists, rerun: cd $path && npx -y npm@$version ci"
+  else
+    log "bundle install in $path"
+    (cd "$path" && bundle install) >&2 || log "warning: bundle install failed; the worktree exists, rerun: cd $path && bundle install"
+  fi
+}
+
+create() {
+  local kind="${1:-}" area="${2:-}" n="${3:-}"
+  local row
+  row="$(repo_table "$kind")" || die 2 "repo must be fe or be, got '$kind'"
+  [[ "$area" =~ ^[a-z0-9][a-z0-9-]*$ ]] || die 2 "area must match ^[a-z0-9][a-z0-9-]*\$, got '$area'"
+  [[ "$n" =~ ^[0-9]+$ ]] || die 2 "n must be digits, got '$n'"
+
+  local repo="${row%% *}"
+  local root
+  root="$(cd "$THOVEN_ROOT" 2>/dev/null && pwd)" || die 1 "THOVEN_ROOT $THOVEN_ROOT does not exist"
+  local main="$root/$repo"
+  local path="$root/$repo-thv-$n"
+  local branch="$area/thv-$n"
+  git -C "$main" rev-parse --git-dir >/dev/null 2>&1 || die 1 "$main is not a git checkout"
+
+  if [ -e "$path" ]; then
+    local top current common main_common
+    top="$(git -C "$path" rev-parse --show-toplevel 2>/dev/null || true)"
+    current="$(git -C "$path" branch --show-current 2>/dev/null || true)"
+    common="$(cd "$path" && physical "$(git rev-parse --git-common-dir 2>/dev/null || echo /nonexistent)" || true)"
+    main_common="$(cd "$main" && physical "$(git rev-parse --git-common-dir)")"
+    if [ "$top" = "$(physical "$path")" ] && [ "$current" = "$branch" ] && [ "$common" = "$main_common" ]; then
+      log "$path already a $repo worktree on $branch, bootstrapping only"
+    else
+      die 1 "$path exists but is not a $repo worktree on $branch (branch: '${current:-none}')"
+    fi
+  else
+    log "fetching origin main in $main"
+    git -C "$main" fetch origin main >&2
+    git -C "$main" worktree add --no-track -b "$branch" "$path" origin/main >&2
+  fi
+
+  bootstrap "$path"
+  printf '%s\n' "$path"
+}
+
+# The hook also fires for subagent isolation worktrees, whose names are generated (bold-oak-a3f2).
+# Those are not tickets: give them Claude's default layout so isolation keeps working.
+scratch() {
+  local cwd="$1" name="$2"
+  [[ "$name" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] || die 2 "$NAME_HINT"
+  local top path
+  top="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null)" || die 2 "$cwd is not inside a git repo"
+  path="$top/.claude/worktrees/$name"
+  log "'$name' is not <area>-thv-<n>, so this is a scratch worktree on worktree-$name. $NAME_HINT for a ticket"
+  if [ ! -e "$path" ]; then
+    git -C "$top" worktree add -b "worktree-$name" "$path" HEAD >&2
+  fi
+  THOVEN_WORKTREE_SKIP_INSTALL=1 bootstrap "$path"
+  printf '%s\n' "$path"
+}
+
+hook() {
+  local input name cwd
+  input="$(cat)"
+  name="$(jq -r '.name // empty' <<<"$input")"
+  cwd="$(jq -r '.cwd // empty' <<<"$input")"
+
+  [ -n "$cwd" ] && [ -d "$cwd" ] || die 2 "hook cwd '$cwd' is not a directory"
+
+  local area n
+  if [[ "$name" =~ ^([a-z0-9][a-z0-9-]*)[-/]thv-([0-9]+)$ ]]; then
+    area="${BASH_REMATCH[1]}"
+    n="${BASH_REMATCH[2]}"
+  else
+    scratch "$cwd" "$name"
+    return
+  fi
+  local common owner
+  common="$(cd "$cwd" && git rev-parse --git-common-dir 2>/dev/null)" || die 2 "$cwd is not inside a git repo"
+  common="$(cd "$cwd" && physical "$common")"
+  owner="$(dirname "$common")"
+
+  local kind="" k
+  for k in fe be; do
+    if [ "$owner" = "$(physical "$THOVEN_ROOT/$(repo_table "$k" | cut -d' ' -f1)")" ]; then
+      kind="$k"
+    fi
+  done
+  [ -n "$kind" ] || die 2 "$cwd belongs to $owner, not $THOVEN_ROOT/frontend or $THOVEN_ROOT/backend"
+
+  create "$kind" "$area" "$n"
+}
+
+case "${1:-}" in
+  create) shift; [ $# -eq 3 ] || usage; create "$@" ;;
+  bootstrap) shift; [ $# -eq 1 ] || usage; bootstrap "$1" ;;
+  hook) hook ;;
+  *) usage ;;
+esac

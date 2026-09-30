@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# Exercises thoven-worktree against throwaway repos under a temp dir; never reads or writes
+# the real ~/thoven checkouts.
+set -uo pipefail
+
+TOOL="$(cd "$(dirname "$0")" && pwd)/thoven-worktree"
+TMP="$(cd "$(mktemp -d)" && pwd -P)"
+trap 'rm -rf "$TMP"' EXIT
+
+export THOVEN_ROOT="$TMP"
+export THOVEN_WORKTREE_SKIP_INSTALL=1
+export GIT_CONFIG_GLOBAL="$TMP/gitconfig"
+export GIT_CONFIG_NOSYSTEM=1
+git config --file "$GIT_CONFIG_GLOBAL" user.name test
+git config --file "$GIT_CONFIG_GLOBAL" user.email test@example.com
+git config --file "$GIT_CONFIG_GLOBAL" init.defaultBranch main
+
+ok() { printf 'ok %s\n' "$1"; }
+fail() { printf 'FAIL %s: got %s\n' "$1" "$2"; exit 1; }
+expect() { if [ "$2" = "$3" ]; then ok "$1"; else fail "$1" "'$2' (want '$3')"; fi; }
+
+# make_repo <name> <setup-fn>: bare origin with one commit on main, cloned to $TMP/<name>
+make_repo() {
+  local name="$1" seed="$TMP/seed-$1"
+  git init -q "$seed"
+  (cd "$seed" && "$2" && git add -A && git commit -qm init)
+  git clone -q --bare "$seed" "$TMP/origin-$name.git"
+  git clone -q "$TMP/origin-$name.git" "$TMP/$name"
+}
+seed_frontend() {
+  printf '{ "name": "fe", "packageManager": "npm@10.9.9" }\n' > package.json
+  printf '.env.local\n' > .gitignore
+}
+seed_backend() {
+  printf "source 'https://rubygems.org'\n" > Gemfile
+  mkdir storage && touch storage/.keep
+  printf '.env\nstorage/*\n!storage/.keep\n' > .gitignore
+}
+
+make_repo frontend seed_frontend
+printf 'X=1\n' > "$TMP/frontend/.env.local"
+make_repo backend seed_backend
+mkdir -p "$TMP/backend/storage/ab"
+printf 'blob\n' > "$TMP/backend/storage/ab/blob"
+printf 'Y=1\n' > "$TMP/backend/.env"
+
+FE="$TMP/frontend-thv-969"
+out="$("$TOOL" create fe tooling 969 2>/dev/null)"; code=$?
+expect "create fe exit" "$code" 0
+expect "create fe stdout is only the path" "$out" "$FE"
+expect "create fe last line" "$(printf '%s\n' "$out" | tail -n 1)" "$FE"
+expect "fe branch" "$(git -C "$FE" branch --show-current)" "tooling/thv-969"
+expect "fe HEAD is origin/main" "$(git -C "$FE" rev-parse HEAD)" "$(git -C "$TMP/origin-frontend.git" rev-parse main)"
+if up="$(git -C "$FE" rev-parse --abbrev-ref '@{u}' 2>/dev/null)"; then fail "fe has no upstream" "$up"; else ok "fe has no upstream"; fi
+expect "fe .env.local copied" "$(cat "$FE/.env.local")" "X=1"
+
+printf 'X=2\n' > "$FE/.env.local"
+out="$("$TOOL" create fe tooling 969 2>/dev/null)"; code=$?
+expect "second create exit" "$code" 0
+expect "second create same path" "$out" "$FE"
+expect "existing .env.local kept" "$(cat "$FE/.env.local")" "X=2"
+
+BE="$TMP/backend-thv-970"
+out="$("$TOOL" create be api 970 2>/dev/null)"; code=$?
+expect "create be exit" "$code" 0
+expect "create be path" "$out" "$BE"
+expect "be branch" "$(git -C "$BE" branch --show-current)" "api/thv-970"
+if [ -L "$BE/storage/ab" ]; then ok "be storage/ab is a symlink"; else fail "be storage/ab is a symlink" "$(ls -ld "$BE/storage/ab" 2>&1)"; fi
+expect "be storage/ab target" "$(readlink "$BE/storage/ab")" "$TMP/backend/storage/ab"
+if [ -e "$BE/storage/.keep" ] && [ ! -L "$BE/storage/.keep" ]; then ok "be .keep not linked"; else fail "be .keep not linked" "$(ls -ld "$BE/storage/.keep" 2>&1)"; fi
+expect "be .env copied" "$(cat "$BE/.env")" "Y=1"
+
+out="$(printf '{"name":"tooling-thv-971","cwd":"%s"}' "$TMP/frontend" | "$TOOL" hook 2>/dev/null; printf x)"
+out="${out%x}"
+expect "hook stdout exact" "$out" "$TMP/frontend-thv-971"$'\n'
+expect "hook branch" "$(git -C "$TMP/frontend-thv-971" branch --show-current)" "tooling/thv-971"
+
+out="$(printf '{"name":"api/thv-972","cwd":"%s"}' "$TMP/backend" | "$TOOL" hook 2>/dev/null)"
+expect "hook <area>/thv-<n> on backend" "$out" "$TMP/backend-thv-972"
+
+out="$(printf '{"name":"bold-oak-a3f2","cwd":"%s"}' "$TMP/frontend" | "$TOOL" hook 2>/dev/null)"; code=$?
+expect "hook generated name exit" "$code" 0
+expect "hook generated name is a scratch worktree" "$out" "$TMP/frontend/.claude/worktrees/bold-oak-a3f2"
+expect "scratch branch" "$(git -C "$out" branch --show-current)" "worktree-bold-oak-a3f2"
+expect "scratch .env.local copied" "$(cat "$out/.env.local")" "X=1"
+
+out="$(printf '{"name":"../escape","cwd":"%s"}' "$TMP/frontend" | "$TOOL" hook 2>/dev/null)"; code=$?
+expect "hook unsafe name exit" "$code" 2
+expect "hook unsafe name stdout empty" "$out" ""
+
+out="$("$TOOL" create fe BAD_area 1 2>/dev/null)"; code=$?
+expect "create bad area exit" "$code" 2
+expect "create bad area stdout empty" "$out" ""
+
+mkdir -p "$TMP/frontend-thv-5"
+"$TOOL" create fe tooling 5 >/dev/null 2>&1; code=$?
+expect "non-worktree path exit" "$code" 1
+
+"$TOOL" >/dev/null 2>&1; code=$?
+expect "no args exit" "$code" 2
+
+echo "all passed"
