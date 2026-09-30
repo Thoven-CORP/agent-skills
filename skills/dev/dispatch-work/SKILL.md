@@ -74,7 +74,10 @@ you cannot fill means the ticket is not ready. Fix the ticket in Linear, then co
    stdout line is the path. Record the base SHA there (`git -C <path> rev-parse HEAD`). Review
    diffs start there.
 2. `herdr worktree open --path <path>` for the issue's tab, or split a pane into it. Rename the
-   pane `Build · <title> (THV-x)`.
+   pane `Build · <title> (THV-x)`. herdr opens worktrees here and never creates them: its own create
+   (the new-worktree key or `herdr worktree create`) branches from the checkout's local HEAD, and
+   herdr 0.9.1 has no setting for a default base. If herdr must create one, run `git fetch origin`
+   and pass `--base origin/main`.
 3. Start the agent with its bypass flag from `agents.md`. Wait for `idle` before prompting.
 4. `scripts/send.sh <pane> $TMPDIR/dispatch/<THV-x>.md`. It fills main's pane id and sends from a
    file, so backticks and `$(...)` in the brief reach the pane as text.
