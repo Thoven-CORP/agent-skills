@@ -15,6 +15,25 @@ git config --file "$GIT_CONFIG_GLOBAL" user.name test
 git config --file "$GIT_CONFIG_GLOBAL" user.email test@example.com
 git config --file "$GIT_CONFIG_GLOBAL" init.defaultBranch main
 
+# Postgres and install stubs log to $TMP instead of touching a real server or registry.
+STUB="$TMP/stubbin"
+mkdir -p "$STUB"
+# shellcheck disable=SC2016
+printf '#!/bin/sh\necho "npx $*" >> "$TMP/installs"\n' > "$STUB/npx"
+# shellcheck disable=SC2016
+printf '#!/bin/sh\n[ "$1" = check ] && exit "${BUNDLE_CHECK_RC:-1}"\necho "bundle $*" >> "$TMP/installs"\n' > "$STUB/bundle"
+# shellcheck disable=SC2016
+printf '#!/bin/sh\necho "createdb $*" >> "$TMP/db.log"\nexit "${CREATEDB_RC:-0}"\n' > "$STUB/createdb"
+# shellcheck disable=SC2016
+printf '#!/bin/sh\necho "dropdb $*" >> "$TMP/db.log"\n' > "$STUB/dropdb"
+# shellcheck disable=SC2016
+printf '#!/bin/sh\ncat "$TMP/dbs" 2>/dev/null\n' > "$STUB/psql"
+chmod +x "$STUB"/*
+export TMP PATH="$STUB:$PATH"
+installs() { cat "$TMP/installs" 2>/dev/null; }
+dblog() { cat "$TMP/db.log" 2>/dev/null; }
+env_line() { grep "^$2=" "$1"; }
+
 ok() { printf 'ok %s\n' "$1"; }
 fail() { printf 'FAIL %s: got %s\n' "$1" "$2"; exit 1; }
 expect() { if [ "$2" = "$3" ]; then ok "$1"; else fail "$1" "'$2' (want '$3')"; fi; }
@@ -34,6 +53,10 @@ seed_frontend() {
 seed_backend() {
   printf "source 'https://rubygems.org'\n" > Gemfile
   mkdir storage && touch storage/.keep
+  mkdir -p bin db/migrate && touch db/migrate/.keep
+  # shellcheck disable=SC2016
+  printf '#!/bin/sh\necho "rails $* TEST_DATABASE_URL=$TEST_DATABASE_URL in $PWD" >> "$TMP/installs"\n' > bin/rails
+  chmod +x bin/rails
   printf '.env\nstorage/*\n!storage/.keep\n' > .gitignore
 }
 
@@ -42,7 +65,7 @@ printf 'X=1\n' > "$TMP/frontend/.env.local"
 make_repo backend seed_backend
 mkdir -p "$TMP/backend/storage/ab"
 printf 'blob\n' > "$TMP/backend/storage/ab/blob"
-printf 'Y=1\n' > "$TMP/backend/.env"
+printf 'Y=1\nDATABASE_URL=postgresql://localhost/thoven_development\nTEST_DATABASE_URL=postgresql://localhost/neondb_test\n' > "$TMP/backend/.env"
 
 FE="$TMP/frontend-thv-969"
 out="$("$TOOL" create fe tooling 969 2>/dev/null)"; code=$?
@@ -68,7 +91,19 @@ expect "be branch" "$(git -C "$BE" branch --show-current)" "api/thv-970"
 if [ -L "$BE/storage/ab" ]; then ok "be storage/ab is a symlink"; else fail "be storage/ab is a symlink" "$(ls -ld "$BE/storage/ab" 2>&1)"; fi
 expect "be storage/ab target" "$(readlink "$BE/storage/ab")" "$TMP/backend/storage/ab"
 if [ -e "$BE/storage/.keep" ] && [ ! -L "$BE/storage/.keep" ]; then ok "be .keep not linked"; else fail "be .keep not linked" "$(ls -ld "$BE/storage/.keep" 2>&1)"; fi
-expect "be .env copied" "$(cat "$BE/.env")" "Y=1"
+expect "be .env copied" "$(env_line "$BE/.env" Y)" "Y=1"
+expect "be gets its own test database" "$(env_line "$BE/.env" TEST_DATABASE_URL)" \
+  "TEST_DATABASE_URL=postgresql://localhost/neondb_test_api_thv970"
+expect "be test database is set once" "$(grep -c '^TEST_DATABASE_URL=' "$BE/.env")" "1"
+expect "be without migrations keeps the shared dev database" "$(env_line "$BE/.env" DATABASE_URL)" \
+  "DATABASE_URL=postgresql://localhost/thoven_development"
+expect "be without migrations copies no database" "$(dblog)" ""
+expect "main .env untouched" "$(env_line "$TMP/backend/.env" TEST_DATABASE_URL)" \
+  "TEST_DATABASE_URL=postgresql://localhost/neondb_test"
+
+"$TOOL" create be live-lessons 973 >/dev/null 2>&1
+expect "hyphenated area becomes an identifier" "$(env_line "$TMP/backend-thv-973/.env" TEST_DATABASE_URL)" \
+  "TEST_DATABASE_URL=postgresql://localhost/neondb_test_live_lessons_thv973"
 
 out="$(printf '{"name":"tooling-thv-971","cwd":"%s"}' "$TMP/frontend" | "$TOOL" hook 2>/dev/null; printf x)"
 out="${out%x}"
@@ -83,6 +118,9 @@ expect "hook generated name exit" "$code" 0
 expect "hook generated name is a scratch worktree" "$out" "$TMP/frontend/.claude/worktrees/bold-oak-a3f2"
 expect "scratch branch" "$(git -C "$out" branch --show-current)" "worktree-bold-oak-a3f2"
 expect "scratch .env.local copied" "$(cat "$out/.env.local")" "X=1"
+
+out="$(printf '{"name":"calm-fir-b1c2","cwd":"%s"}' "$TMP/backend" | "$TOOL" hook 2>/dev/null)"
+expect "backend scratch shares main's databases" "$(cat "$out/.env")" "$(cat "$TMP/backend/.env")"
 
 out="$(printf '{"name":"../escape","cwd":"%s"}' "$TMP/frontend" | "$TOOL" hook 2>/dev/null)"; code=$?
 expect "hook unsafe name exit" "$code" 2
@@ -99,28 +137,102 @@ expect "non-worktree path exit" "$code" 1
 "$TOOL" >/dev/null 2>&1; code=$?
 expect "no args exit" "$code" 2
 
-STUB="$TMP/stubbin"
-mkdir -p "$STUB"
-# shellcheck disable=SC2016
-printf '#!/bin/sh\necho "npx $*" >> "$TMP/installs"\n' > "$STUB/npx"
-# shellcheck disable=SC2016
-printf '#!/bin/sh\n[ "$1" = check ] && exit "${BUNDLE_CHECK_RC:-1}"\necho "bundle $*" >> "$TMP/installs"\n' > "$STUB/bundle"
-chmod +x "$STUB/npx" "$STUB/bundle"
-installs() { cat "$TMP/installs" 2>/dev/null; }
-
 FE="$TMP/frontend-thv-969"
 mkdir -p "$TMP/elsewhere/node_modules"
 ln -s "$TMP/elsewhere/node_modules" "$FE/node_modules"
-env -u THOVEN_WORKTREE_SKIP_INSTALL PATH="$STUB:$PATH" TMP="$TMP" "$TOOL" bootstrap "$FE" >/dev/null 2>&1
+env -u THOVEN_WORKTREE_SKIP_INSTALL "$TOOL" bootstrap "$FE" >/dev/null 2>&1
 expect "rerun with node_modules symlink runs no npm ci" "$(installs)" ""
 expect "linked node_modules left intact" "$(readlink "$FE/node_modules")" "$TMP/elsewhere/node_modules"
 rm "$FE/node_modules"
-env -u THOVEN_WORKTREE_SKIP_INSTALL PATH="$STUB:$PATH" TMP="$TMP" "$TOOL" bootstrap "$FE" >/dev/null 2>&1
+env -u THOVEN_WORKTREE_SKIP_INSTALL "$TOOL" bootstrap "$FE" >/dev/null 2>&1
 expect "no node_modules runs npm ci" "$(installs)" "npx -y npm@10.9.9 ci"
 rm -f "$TMP/installs"
-env -u THOVEN_WORKTREE_SKIP_INSTALL PATH="$STUB:$PATH" TMP="$TMP" BUNDLE_CHECK_RC=0 "$TOOL" bootstrap "$BE" >/dev/null 2>&1
-expect "satisfied bundle runs no bundle install" "$(installs)" ""
-env -u THOVEN_WORKTREE_SKIP_INSTALL PATH="$STUB:$PATH" TMP="$TMP" BUNDLE_CHECK_RC=1 "$TOOL" bootstrap "$BE" >/dev/null 2>&1
-expect "unsatisfied bundle runs bundle install" "$(installs)" "bundle install"
+env -u THOVEN_WORKTREE_SKIP_INSTALL BUNDLE_CHECK_RC=0 "$TOOL" bootstrap "$BE" >/dev/null 2>&1
+expect "satisfied bundle runs no bundle install, then prepares its own test database" "$(installs)" \
+  "rails db:test:prepare TEST_DATABASE_URL=postgresql://localhost/neondb_test_api_thv970 in $BE"
+rm -f "$TMP/installs"
+env -u THOVEN_WORKTREE_SKIP_INSTALL BUNDLE_CHECK_RC=1 "$TOOL" bootstrap "$BE" >/dev/null 2>&1
+expect "unsatisfied bundle runs bundle install" "$(installs | head -n 1)" "bundle install"
+
+# A Codex desktop worktree: detached at a stale local main, then its setup step runs bootstrap.
+git clone -q "$TMP/origin-backend.git" "$TMP/upstream-backend"
+push_upstream() {
+  (cd "$TMP/upstream-backend" && printf '%s\n' "$RANDOM" >> Gemfile && git commit -qam next && git push -q origin main)
+}
+STALE="$(git -C "$TMP/backend" rev-parse HEAD)"
+push_upstream
+CODEX="$TMP/codex/wt1/backend"
+git -C "$TMP/backend" worktree add -q --detach "$CODEX" "$STALE"
+"$TOOL" bootstrap "$CODEX" >/dev/null 2>&1; code=$?
+expect "codex bootstrap exit" "$code" 0
+expect "fresh behind worktree moves to origin/main" "$(git -C "$CODEX" rev-parse HEAD)" \
+  "$(git -C "$TMP/origin-backend.git" rev-parse main)"
+expect "local main is not moved by bootstrap" "$(git -C "$TMP/backend" rev-parse HEAD)" "$STALE"
+if [[ "$(env_line "$CODEX/.env" TEST_DATABASE_URL)" =~ ^TEST_DATABASE_URL=postgresql://localhost/neondb_test_wt_[0-9a-f]{8}$ ]]; then
+  ok "non-ticket worktree gets a test database named for its path"
+else
+  fail "non-ticket worktree gets a test database named for its path" "$(env_line "$CODEX/.env" TEST_DATABASE_URL)"
+fi
+
+OWN="$TMP/codex/wt2/backend"
+git -C "$TMP/backend" worktree add -q --detach "$OWN" "$STALE"
+(cd "$OWN" && printf 'x\n' > mine && git add mine && git commit -qm mine)
+OWN_HEAD="$(git -C "$OWN" rev-parse HEAD)"
+"$TOOL" bootstrap "$OWN" >/dev/null 2>&1
+expect "worktree with its own commit is not moved" "$(git -C "$OWN" rev-parse HEAD)" "$OWN_HEAD"
+
+DIRTY="$TMP/codex/wt3/backend"
+git -C "$TMP/backend" worktree add -q --detach "$DIRTY" "$STALE"
+printf 'edit\n' >> "$DIRTY/Gemfile"
+"$TOOL" bootstrap "$DIRTY" >/dev/null 2>&1
+expect "worktree with edits is not moved" "$(git -C "$DIRTY" rev-parse HEAD)" "$STALE"
+expect "worktree edits kept" "$(tail -n 1 "$DIRTY/Gemfile")" "edit"
+
+# A branch that adds a migration gets its own dev database, copied from thoven_development.
+(cd "$BE" && touch db/migrate/20260930000000_add_thing.rb && git add db/migrate && git commit -qm migration)
+rm -f "$TMP/db.log"
+"$TOOL" bootstrap "$BE" >/dev/null 2>&1
+expect "migration branch copies the dev database" "$(dblog)" "createdb -T thoven_development thoven_dev_api_thv970"
+expect "migration branch points DATABASE_URL at its copy" "$(env_line "$BE/.env" DATABASE_URL)" \
+  "DATABASE_URL=postgresql://localhost/thoven_dev_api_thv970"
+printf 'thoven_dev_api_thv970\n' > "$TMP/dbs"
+rm -f "$TMP/db.log"
+"$TOOL" bootstrap "$BE" >/dev/null 2>&1
+expect "an existing copy is reused" "$(dblog)" ""
+rm -f "$TMP/dbs"
+
+BUSY="$TMP/backend-thv-974"
+"$TOOL" create be busy 974 >/dev/null 2>&1
+(cd "$BUSY" && touch db/migrate/20260930000001_other.rb && git add db/migrate && git commit -qm migration)
+CREATEDB_RC=1 "$TOOL" bootstrap "$BUSY" >/dev/null 2>&1; code=$?
+expect "a failed copy still bootstraps" "$code" 0
+expect "a failed copy leaves DATABASE_URL shared" "$(env_line "$BUSY/.env" DATABASE_URL)" \
+  "DATABASE_URL=postgresql://localhost/thoven_development"
+
+# orphan-dbs lists what no live worktree's .env names, and drops nothing.
+printf '%s\n' neondb_test neondb_test2 neondb_test_api_thv970 neondb_test_old thoven_development \
+  thoven_dev_api_thv970 thoven_prod_rehearsal postgres > "$TMP/dbs"
+rm -f "$TMP/db.log"
+out="$("$TOOL" orphan-dbs 2>/dev/null)"; code=$?
+expect "orphan-dbs exit" "$code" 0
+expect "orphan-dbs lists only unreferenced Thoven databases" "$out" \
+  "$(printf '%s\n' neondb_test2 neondb_test_old thoven_prod_rehearsal)"
+expect "orphan-dbs drops nothing" "$(dblog)" ""
+
+# remove drops the worktree's own databases, never a shared one, and nothing when git refuses.
+printf 'edit\n' >> "$BUSY/Gemfile"
+"$TOOL" remove "$BUSY" >/dev/null 2>&1; code=$?
+expect "remove of an edited worktree fails" "$code" 1
+expect "failed remove drops nothing" "$(dblog)" ""
+if [ -d "$BUSY" ]; then ok "failed remove keeps the tree"; else fail "failed remove keeps the tree" "gone"; fi
+
+"$TOOL" remove "$TMP/backend" >/dev/null 2>&1; code=$?
+expect "remove refuses the main checkout" "$code" 1
+
+"$TOOL" remove "$BE" >/dev/null 2>&1; code=$?
+expect "remove exit" "$code" 0
+if [ -e "$BE" ]; then fail "remove deletes the tree" "still there"; else ok "remove deletes the tree"; fi
+expect "remove drops the worktree's own databases" "$(dblog)" \
+  "$(printf '%s\n' "dropdb --if-exists neondb_test_api_thv970" "dropdb --if-exists thoven_dev_api_thv970")"
 
 echo "all passed"
