@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+# Exercises thoven-sync against throwaway repos under a temp dir; never reads or writes the real
+# ~/thoven checkouts.
+set -uo pipefail
+
+TOOL="$(cd "$(dirname "$0")" && pwd)/thoven-sync"
+TMP="$(cd "$(mktemp -d)" && pwd -P)"
+trap 'rm -rf "$TMP"' EXIT
+
+export THOVEN_ROOT="$TMP"
+export TMPDIR="$TMP"
+export GIT_CONFIG_GLOBAL="$TMP/gitconfig"
+export GIT_CONFIG_NOSYSTEM=1
+git config --file "$GIT_CONFIG_GLOBAL" user.name test
+git config --file "$GIT_CONFIG_GLOBAL" user.email test@example.com
+git config --file "$GIT_CONFIG_GLOBAL" init.defaultBranch main
+unset DEVIN_PROJECT_DIR
+
+ok() { printf 'ok %s\n' "$1"; }
+fail() { printf 'FAIL %s: got %s\n' "$1" "$2"; exit 1; }
+expect() { if [ "$2" = "$3" ]; then ok "$1"; else fail "$1" "'$2' (want '$3')"; fi; }
+has_line() {
+  if printf '%s\n' "$2" | grep -qxF -- "$3"; then ok "$1"; else fail "$1" "'$2' (want a line '$3')"; fi
+}
+
+# make_repo <name>: bare origin with one commit on main, cloned to $TMP/<name>, plus an upstream
+# clone that later pushes new commits
+make_repo() {
+  local name="$1"
+  git init -q "$TMP/seed-$name"
+  (cd "$TMP/seed-$name" && printf 'a\n' > file && git add -A && git commit -qm init)
+  git clone -q --bare "$TMP/seed-$name" "$TMP/origin-$name.git"
+  git clone -q "$TMP/origin-$name.git" "$TMP/$name"
+  git clone -q "$TMP/origin-$name.git" "$TMP/upstream-$name"
+}
+# push_upstream <name>: lands one new commit on origin/main
+push_upstream() {
+  (cd "$TMP/upstream-$1" && printf '%s\n' "$RANDOM" >> file && git commit -qam next && git push -q origin main)
+}
+head_of() { git -C "$1" rev-parse HEAD; }
+origin_main() { git -C "$TMP/origin-$1.git" rev-parse main; }
+
+make_repo frontend
+make_repo backend
+git -C "$TMP/frontend" worktree add -q -b ui/thv-1 "$TMP/frontend-thv-1" main
+FE_WT_HEAD="$(head_of "$TMP/frontend-thv-1")"
+push_upstream frontend
+push_upstream frontend
+printf 'mine\n' >> "$TMP/backend/file"
+BE_HEAD="$(head_of "$TMP/backend")"
+push_upstream backend
+
+out="$("$TOOL" 2>/dev/null)"; code=$?
+expect "sync exit" "$code" 0
+expect "behind clean main fast-forwards" "$(head_of "$TMP/frontend")" "$(origin_main frontend)"
+has_line "fast-forward is reported" "$out" "$TMP/frontend: fast-forwarded 2 commit(s) to origin/main"
+expect "dirty main is not moved" "$(head_of "$TMP/backend")" "$BE_HEAD"
+expect "dirty main keeps its change" "$(tail -n 1 "$TMP/backend/file")" "mine"
+has_line "dirty main is skipped with a reason" "$out" "$TMP/backend: skipped, uncommitted changes"
+expect "other worktree is not moved" "$(head_of "$TMP/frontend-thv-1")" "$FE_WT_HEAD"
+has_line "other worktree hears how far behind it is" "$out" \
+  "$TMP/frontend-thv-1 (ui/thv-1): 2 behind origin/main, rebase when ready"
+
+out="$("$TOOL" 2>/dev/null)"
+has_line "a current main says so" "$out" "$TMP/frontend: at origin/main"
+
+git -C "$TMP/backend" checkout -q -- file
+printf 'scratch\n' > "$TMP/backend/untracked"
+out="$("$TOOL" 2>/dev/null)"
+expect "untracked file keeps main where it was" "$(head_of "$TMP/backend")" "$BE_HEAD"
+has_line "untracked file counts as unclean" "$out" "$TMP/backend: skipped, uncommitted changes"
+rm "$TMP/backend/untracked"
+
+git -C "$TMP/backend" checkout -q -b spike
+out="$("$TOOL" 2>/dev/null)"
+expect "off-main checkout is not moved" "$(head_of "$TMP/backend")" "$BE_HEAD"
+has_line "off-main checkout is skipped with a reason" "$out" "$TMP/backend: skipped, on 'spike', not main"
+git -C "$TMP/backend" checkout -q main
+
+(cd "$TMP/backend" && printf 'local\n' > other && git add other && git commit -qm local)
+AHEAD_HEAD="$(head_of "$TMP/backend")"
+out="$("$TOOL" 2>/dev/null)"
+expect "main with its own commit is not moved" "$(head_of "$TMP/backend")" "$AHEAD_HEAD"
+has_line "main with its own commit is skipped with a reason" "$out" \
+  "$TMP/backend: skipped, main has 1 commit(s) origin/main lacks; local main only fast-forwards, so move them to a branch by hand"
+
+push_upstream frontend
+WT="$TMP/frontend-thv-1"
+out="$(jq -nc --arg d "$WT/src" '{cwd:$d,source:"startup"}' | (mkdir -p "$WT/src" && "$TOOL" --hook 2>/dev/null))"; code=$?
+expect "hook exit" "$code" 0
+expect "hook syncs main too" "$(head_of "$TMP/frontend")" "$(origin_main frontend)"
+expect "hook names only the session's own worktree" "$out" \
+  "This worktree ($WT, ui/thv-1) is 3 commits behind origin/main. Rebase onto it when ready."
+
+out="$(jq -nc --arg d "$WT" '{workspace_roots:[$d],hook_event_name:"sessionStart"}' | "$TOOL" --hook --dialect cursor 2>/dev/null)"
+expect "cursor dialect answers additional_context" "$(jq -r .additional_context <<<"$out")" \
+  "This worktree ($WT, ui/thv-1) is 3 commits behind origin/main. Rebase onto it when ready."
+
+out="$(printf '{"source":"startup"}' | DEVIN_PROJECT_DIR="$WT" "$TOOL" --hook --dialect devin 2>/dev/null)"
+expect "devin dialect answers hookSpecificOutput" "$(jq -r .hookSpecificOutput.additionalContext <<<"$out")" \
+  "This worktree ($WT, ui/thv-1) is 3 commits behind origin/main. Rebase onto it when ready."
+
+out="$(jq -nc --arg d "$TMP/frontend" '{cwd:$d}' | "$TOOL" --hook 2>/dev/null)"
+expect "hook in a current main checkout is silent" "$out" ""
+
+out="$(jq -nc --arg d "$TMP/backend" '{cwd:$d}' | "$TOOL" --hook 2>/dev/null)"
+expect "hook in a skipped main checkout says why" "$out" \
+  "$TMP/backend was not synced: skipped, main has 1 commit(s) origin/main lacks; local main only fast-forwards, so move them to a branch by hand"
+
+out="$(jq -nc '{cwd:"/"}' | "$TOOL" --hook 2>/dev/null)"
+expect "hook outside Thoven is silent" "$out" ""
+
+sleep 30 & holder=$!
+mkdir "$TMP/thoven-sync.lock" && printf '%s\n' "$holder" > "$TMP/thoven-sync.lock/pid"
+push_upstream frontend
+BEFORE="$(head_of "$TMP/frontend")"
+out="$("$TOOL" 2>/dev/null)"; code=$?
+expect "held lock exit" "$code" 0
+expect "held lock leaves main alone" "$(head_of "$TMP/frontend")" "$BEFORE"
+has_line "held lock is reported" "$out" "another thoven-sync (pid $holder) is running, skipped"
+kill "$holder" 2>/dev/null; wait "$holder" 2>/dev/null
+out="$("$TOOL" 2>/dev/null)"
+expect "stale lock is taken over" "$(head_of "$TMP/frontend")" "$(origin_main frontend)"
+
+echo "all passed"
