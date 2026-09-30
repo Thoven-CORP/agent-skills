@@ -44,11 +44,11 @@ Preserve unrelated dirty files. Never stage broad paths.
    (via `node scripts/sync-llms-resources.mjs`). The hub card, `app/sitemap.ts` and
    `app/sitemap.test.ts` derive — do not edit them. Re-run the gate.
 6. Before merging locally, run focused checks for changed surfaces:
-   `npm run type-check`, `npm run test:run -- app/sitemap.test.ts`,
-   `npm run test:run -- lib/resource-articles.test.ts`, and
-   `npm run test:run -- .agents/skills/pr-seo-pr-inbox/scripts/pr-seo-pr-inbox-check.test.mjs`.
-   Never gate on `npm run lint` — it has ~700 pre-existing errors; use
-   `npx eslint <changed files>` instead.
+   `pnpm run type-check`, `pnpm run test:run app/sitemap.test.ts`,
+   `pnpm run test:run lib/resource-articles.test.ts`, and
+   `pnpm run test:run .agents/skills/pr-seo-pr-inbox/scripts/pr-seo-pr-inbox-check.test.mjs`.
+   Never gate on `pnpm run lint` — it has ~700 pre-existing errors; use
+   `pnpm exec eslint <changed files>` instead.
 7. Merge locally only after the PR branch is reviewed and green:
    `git switch main`, `git pull --ff-only origin main`,
    `git merge --no-ff origin/seo/<slug>`, then push `main`.

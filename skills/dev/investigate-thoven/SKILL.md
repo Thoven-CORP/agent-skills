@@ -478,7 +478,7 @@ Dimension 5 chose this at intake, where the bug's nature was known.
 
 | Evidence | Verify action |
 |---|---|
-| **Type-check** | `npm run type-check` inline, and name the result |
+| **Type-check** | `pnpm run type-check` inline, and name the result |
 | **Unit test** | Run the test that now passes, and name it |
 | **Browser screenshot** | Drive the surface and attach the frame |
 | **Recording** | Capture the sequence |

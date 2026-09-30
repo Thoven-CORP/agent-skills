@@ -125,14 +125,14 @@ Each task follows bite-sized granularity from `superpowers:writing-plans`.
 [Exact test code with file path]
 
 ### Step 2: Run test to verify failure
-Run: `npm run test -- __tests__/path/test.tsx`
+Run: `pnpm run test __tests__/path/test.tsx`
 Expected: FAIL
 
 ### Step 3: Implement minimal code
 [What to build, referencing reuse audit items, exact file paths]
 
 ### Step 4: Run test to verify pass
-Run: `npm run test -- __tests__/path/test.tsx`
+Run: `pnpm run test __tests__/path/test.tsx`
 Expected: PASS
 
 ### Step 5: Commit

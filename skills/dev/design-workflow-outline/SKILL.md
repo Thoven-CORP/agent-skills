@@ -136,7 +136,7 @@ only; the levels fill it as they run.
 ## Drafts & prototypes    ← links, and promoted or killed
 
 ## → Update log
-Apply to the repo-root DESIGN.md + docs/design/ on merge (then `npm run docs:design` to re-render the HTML view):
+Apply to the repo-root DESIGN.md + docs/design/ on merge (then `pnpm run docs:design` to re-render the HTML view):
 - [ ]
 ```
 

@@ -77,8 +77,8 @@ export const is<Key>Enabled = (): boolean => {
 Still update `.claude/docs/API_AND_AUTH.md` (local-flag count + row).
 
 ## Verify
-- `npm run type-check`
-- `npm run test:run -- lib/feature-flags.test.ts`
+- `pnpm run type-check`
+- `pnpm run test:run lib/feature-flags.test.ts`
 
 ## Then print the cross-repo reminder
 > ⚠️ `<key>` is inert until a backend `feature_flags` row with the same key exists. Run this skill in the Rails repo (`thoven/backend`) to create the row (+ any server-side gating). Backend checklist: `references/backend-contract.md`.

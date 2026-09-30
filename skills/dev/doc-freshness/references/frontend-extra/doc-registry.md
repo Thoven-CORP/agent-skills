@@ -42,7 +42,7 @@ These are loaded into Claude context regularly. Staleness here directly degrades
 - **Content verification**:
   - There is **no `tailwind.config.ts`** — Tailwind 4 is CSS-first, so read the `@theme inline` block in `app/globals.css`
   - Enforced locks: every `lib/*-tokens.ts` with a matching `.test.ts` must appear in DESIGN.md §3
-  - Rendered view: run `npm run docs:design` — a non-empty diff means the doc has drifted from the tokens
+  - Rendered view: run `pnpm run docs:design` — a non-empty diff means the doc has drifted from the tokens
   - `__tests__/design-system-doc.test.ts` enforces the button values; if it fails, the doc is wrong, not the test
 - **Update strategy**: the token modules are the authority. Fix the doc to match `lib/`, never the reverse. Anything decided here should leave as a token module **plus a test**.
 - **Key sections to check**: §3 enforced locks (complete?), §4 known divergence (still accurate?), the palette (amber-500 never orange-500), the heading rule (Fredoka stops at h2)
@@ -76,7 +76,7 @@ These are loaded into Claude context regularly. Staleness here directly degrades
 - **Content verification**:
   - Every row in the `Docs — Read When Triggered` table points at a path that exists on disk
   - Commands in the `The Repo` bash block still exist in `package.json` scripts
-  - The `~700 pre-existing errors` lint claim still holds: `npm run lint 2>&1 | grep -c error` — if it's near zero, the "can't be the gate" carve-out is stale and should be removed
+  - The `~700 pre-existing errors` lint claim still holds: `pnpm run lint 2>&1 | grep -c error` — if it's near zero, the "can't be the gate" carve-out is stale and should be removed
   - Paths named in prose still exist: `.env.local`, `~/thoven/.workspace`, `.github/workflows/pre-publish-validation.yml`, `checkpoint.sh`
 - **Update strategy**: Surgical only. Do NOT re-expand into more sections, and do NOT re-add skill/agent inventory tables.
 

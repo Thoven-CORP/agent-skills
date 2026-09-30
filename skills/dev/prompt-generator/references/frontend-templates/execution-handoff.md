@@ -35,7 +35,7 @@ each completed task that updates `TODO.md` (mark completed items, note progress)
 criteria checkboxes — this keeps all project docs in sync as work progresses per our
 feature protocol. The documentation subagent should also update `CLAUDE.md` if the task
 changes any documented surface (feature flags, API modules, component structure, etc.).
-After all tasks complete, run `npm run type-check && npm run lint && npx vitest run` as
+After all tasks complete, run `pnpm run type-check && pnpm run lint && pnpm exec vitest run` as
 a final gate before declaring the phase done. Source-of-truth docs:
 {COMMA_SEPARATED_DOC_PATHS}. Commit after each task with descriptive messages, never
 batch multiple tasks into one commit, and ensure every new file has test coverage meeting

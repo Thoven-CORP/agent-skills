@@ -83,7 +83,7 @@ Prefer structural. Reach for a test only for what structure can't cover.
 **A generated doc region beats a checked one.** The button section is produced by
 `tools/build-design-system.mjs`, which bundles the token module with esbuild and imports it, and
 parses the component's literal class tables from source. No value is retyped, so the doc cannot
-disagree — as opposed to being *checked* for disagreeing. Rebuild with `npm run docs:design`.
+disagree — as opposed to being *checked* for disagreeing. Rebuild with `pnpm run docs:design`.
 
 ### Palettes (added 2026-07-28, phase 4b)
 

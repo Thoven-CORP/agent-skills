@@ -8,5 +8,5 @@ maxTurns: 80
 
 The binding design layer is `lib/*-tokens.ts` and `app/globals.css`. Read the real paths there before quoting any value.
 Build only the named surface. Leave the surrounding layout as is.
-Run `npx playwright test <spec>` for the spec covering the surface.
+Run `pnpm exec playwright test <spec>` for the spec covering the surface.
 Report the path to `test-results/results.json` and the per-test status, then stop.

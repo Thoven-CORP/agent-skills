@@ -43,7 +43,7 @@ Run detection across selected tiers. Read `references/doc-registry.md` for the c
 2. **Content verification** — for critical docs, cross-check doc content against live code:
    - ARCHITECTURE.md: count route pages, component dirs, hooks, contexts vs documented numbers
    - API_AND_AUTH.md: count `lib/*-api.ts` files vs documented "N API modules"
-   - DESIGN.md: check colour tokens, the enforced-lock table, and `npm run docs:design` for a clean diff
+   - DESIGN.md: check colour tokens, the enforced-lock table, and `pnpm run docs:design` for a clean diff
    - DEBUGGING.md: verify tech debt cross-references still exist
    - CLAUDE.md: verify Docs table paths exist, bash commands match `package.json` scripts, three-section structure intact (skill/agent tables must NOT reappear here)
    - `.claude/docs/SKILL_AND_AGENT_ROUTING.md`: verify every skill/agent row still exists on disk

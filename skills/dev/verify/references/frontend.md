@@ -51,9 +51,9 @@ Run TypeScript type-checking and ESLint.
 
 ### Steps
 
-1. **Type Check**: Run `timeout 60 npm run type-check` and capture output
-2. **Lint**: Run `npm run lint` and capture output
-3. **Contract Check**: Run `npm run contract-check` and capture output (FE↔BE contract parity — fast, static; blocks if an API caller drifts from the committed manifest)
+1. **Type Check**: Run `timeout 60 pnpm run type-check` and capture output
+2. **Lint**: Run `pnpm run lint` and capture output
+3. **Contract Check**: Run `pnpm run contract-check` and capture output (FE↔BE contract parity — fast, static; blocks if an API caller drifts from the committed manifest)
 4. **Report**: Summarize results
 
 ### Output Format
