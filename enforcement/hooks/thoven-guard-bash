@@ -53,7 +53,8 @@ deny() {
 
 # extract the inner text of every top-level $( ... ) in a string
 extract_parens() {
-  local s="$1" i=0 len=${#s} depth j start
+  local s="$1"
+  local i=0 len=${#s} depth j start
   while [ "$i" -lt "$len" ]; do
     if [ "${s:$i:2}" = '$(' ]; then
       depth=1
@@ -83,21 +84,13 @@ split_subcommands() {
   printf '%s\n' "$s"
 }
 
-resolve_path() {
-  local p="$1"
-  case "$p" in
-    /*) printf '%s\n' "$p" ;;
-    *) printf '%s\n' "$cwd/$p" ;;
-  esac
-}
-
 paths_all_edited() {
   local paths=("$@")
   [ "${#paths[@]}" -gt 0 ] || return 1
   [ -f "$edited_file" ] || return 1
   local p abs
   for p in "${paths[@]}"; do
-    abs="$(resolve_path "$p")"
+    abs="$(resolve_in "$git_dir" "$p")"
     grep -qxF "$abs" "$edited_file" || return 1
   done
   return 0
@@ -178,19 +171,29 @@ for sub in "${subcommands[@]}"; do
   read -r -a words <<<"$sub"
   w0="${words[0]:-}"
   w1="${words[1]:-}"
-  w2="${words[2]:-}"
+
+  # A leading ( opens a subshell: `(cd repo && git branch -D x)`.
+  if [ "${w0#(}" = "cd" ] && [ -n "$w1" ]; then
+    work_cwd="$(resolve_in "$work_cwd" "$w1")"
+  fi
 
   # Matched at command position, so a doc or script that merely names these stays allowed.
-  if [ "$w0" = "git" ] && { [ "$w1" = "clean" ] || { [ "$w1" = "reset" ] && [[ " ${words[*]} " == *" --hard "* ]]; }; }; then
+  # Read past git's global options, so `git -C <tree> reset --hard` is judged like `git reset --hard`.
+  [ "${w0#(}" = "git" ] || continue
+  parse_git "$work_cwd" "${words[@]:1}"
+  g1="${git_args[0]:-}"
+  g2="${git_args[1]:-}"
+
+  if [ "$g1" = "clean" ] || { [ "$g1" = "reset" ] && [[ " ${git_args[*]} " == *" --hard "* ]]; }; then
     deny "This tree is shared with other sessions. That command discards work you did not write. Undo your own files by path instead."
   fi
 
-  if [ "$w0" = "git" ] && [ "$w1" = "stash" ]; then
-    case "$w2" in
+  if [ "$g1" = "stash" ]; then
+    case "$g2" in
       list|pop|apply|show|drop|clear|branch) : ;;
       *)
-        rest=("${words[@]:2}")
-        [ "$w2" = "push" ] || [ "$w2" = "save" ] && rest=("${words[@]:3}")
+        rest=("${git_args[@]:1}")
+        [ "$g2" = "push" ] || [ "$g2" = "save" ] && rest=("${git_args[@]:2}")
         paths=()
         seen_dashdash=0
         for a in "${rest[@]}"; do
@@ -212,11 +215,11 @@ for sub in "${subcommands[@]}"; do
     esac
   fi
 
-  if [ "$w0" = "git" ] && [ "$w1" = "checkout" ]; then
-    if [[ " ${words[*]} " == *" -- "* ]]; then
+  if [ "$g1" = "checkout" ]; then
+    if [[ " ${git_args[*]} " == *" -- "* ]]; then
       paths=()
       seen_dashdash=0
-      for a in "${words[@]:2}"; do
+      for a in "${git_args[@]:1}"; do
         if [ "$seen_dashdash" -eq 1 ]; then
           paths+=("$a")
         elif [ "$a" = "--" ]; then
@@ -229,11 +232,11 @@ for sub in "${subcommands[@]}"; do
     fi
   fi
 
-  if [ "$w0" = "git" ] && [ "$w1" = "restore" ]; then
+  if [ "$g1" = "restore" ]; then
     if [[ "$sub" != *"--staged"* ]]; then
       paths=()
       seen_dashdash=0
-      for a in "${words[@]:2}"; do
+      for a in "${git_args[@]:1}"; do
         if [ "$seen_dashdash" -eq 1 ]; then
           paths+=("$a")
         elif [ "$a" = "--" ]; then
@@ -247,70 +250,59 @@ for sub in "${subcommands[@]}"; do
       fi
     fi
   fi
-  # A leading ( opens a subshell: `(cd repo && git branch -D x)`.
-  if [ "${w0#(}" = "cd" ] && [ -n "$w1" ]; then
-    work_cwd="$(resolve_in "$work_cwd" "$w1")"
-  fi
-
-  if [ "${w0#(}" = "git" ]; then
-    parse_git "$work_cwd" "${words[@]:1}"
-    g1="${git_args[0]:-}"
-    g2="${git_args[1]:-}"
-
-    if [ "$g1" = "worktree" ] && [ "$g2" = "remove" ]; then
-      force=0
-      target=""
-      for a in "${git_args[@]:2}"; do
-        case "$a" in
-          --force|--forc|--for|--fo) force=1 ;;
-          --*) ;;
-          -*f*) force=1 ;;
-          -*) ;;
-          *) target="${a%)}" ;;
-        esac
-      done
-      tree="$(resolve_in "$git_dir" "$target")"
-      if [ "$force" -eq 1 ] && [ -n "$target" ] && git -C "$tree" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-        dirty="$(git -C "$tree" status --porcelain --untracked-files=all 2>/dev/null | wc -l | tr -d '[:space:]')"
-        ahead="$(unpushed_count "$tree" HEAD)"
-        if [ "${dirty:-0}" -gt 0 ] || [ "${ahead:-0}" -gt 0 ]; then
-          deny "$target holds work that is not on origin (uncommitted or untracked files: $dirty, unpushed commits: $ahead), which a forced remove destroys; commit and push it, then run git worktree remove $target."
-        fi
+  if [ "$g1" = "worktree" ] && [ "$g2" = "remove" ]; then
+    force=0
+    target=""
+    for a in "${git_args[@]:2}"; do
+      case "$a" in
+        --force|--forc|--for|--fo) force=1 ;;
+        --*) ;;
+        -*f*) force=1 ;;
+        -*) ;;
+        *) target="${a%)}" ;;
+      esac
+    done
+    tree="$(resolve_in "$git_dir" "$target")"
+    if [ "$force" -eq 1 ] && [ -n "$target" ] && git -C "$tree" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+      dirty="$(git -C "$tree" status --porcelain --untracked-files=all 2>/dev/null | wc -l | tr -d '[:space:]')"
+      ahead="$(unpushed_count "$tree" HEAD)"
+      if [ "${dirty:-0}" -gt 0 ] || [ "${ahead:-0}" -gt 0 ]; then
+        deny "$target holds work that is not on origin (uncommitted or untracked files: $dirty, unpushed commits: $ahead), which a forced remove destroys; commit and push it, then run git worktree remove $target."
       fi
     fi
+  fi
 
-    if [ "$g1" = "branch" ]; then
-      delete=0
-      force=0
-      remote=0
-      branches=()
-      for a in "${git_args[@]:1}"; do
-        a="${a//[\"\']/}"
-        a="${a%)}"
-        # git accepts any unambiguous prefix of a long option
-        case "$a" in
-          --delete|--delet|--dele|--del|--de) delete=1 ;;
-          --force|--forc|--for|--fo) force=1 ;;
-          --remotes|--remote|--remot|--remo|--rem) remote=1 ;;
-          --*) ;;
-          -*)
-            [[ "$a" == *D* ]] && { delete=1; force=1; }
-            [[ "$a" == *d* ]] && delete=1
-            [[ "$a" == *f* ]] && force=1
-            [[ "$a" == *r* ]] && remote=1
-            ;;
-          *) branches+=("$a") ;;
-        esac
+  if [ "$g1" = "branch" ]; then
+    delete=0
+    force=0
+    remote=0
+    branches=()
+    for a in "${git_args[@]:1}"; do
+      a="${a//[\"\']/}"
+      a="${a%)}"
+      # git accepts any unambiguous prefix of a long option
+      case "$a" in
+        --delete|--delet|--dele|--del|--de) delete=1 ;;
+        --force|--forc|--for|--fo) force=1 ;;
+        --remotes|--remote|--remot|--remo|--rem) remote=1 ;;
+        --*) ;;
+        -*)
+          [[ "$a" == *D* ]] && { delete=1; force=1; }
+          [[ "$a" == *d* ]] && delete=1
+          [[ "$a" == *f* ]] && force=1
+          [[ "$a" == *r* ]] && remote=1
+          ;;
+        *) branches+=("$a") ;;
+      esac
+    done
+    if [ "$delete" -eq 1 ] && [ "$force" -eq 1 ] && [ "$remote" -eq 0 ]; then
+      for b in "${branches[@]}"; do
+        git -C "$git_dir" rev-parse --verify -q "refs/heads/$b" >/dev/null || continue
+        ahead="$(unpushed_count "$git_dir" "refs/heads/$b")"
+        if [ "${ahead:-0}" -gt 0 ]; then
+          deny "Branch $b holds work that is not on origin (unpushed commits: $ahead), which git branch -D destroys; push it with git push origin $b first, or use git branch -d if it is merged."
+        fi
       done
-      if [ "$delete" -eq 1 ] && [ "$force" -eq 1 ] && [ "$remote" -eq 0 ]; then
-        for b in "${branches[@]}"; do
-          git -C "$git_dir" rev-parse --verify -q "refs/heads/$b" >/dev/null || continue
-          ahead="$(unpushed_count "$git_dir" "refs/heads/$b")"
-          if [ "${ahead:-0}" -gt 0 ]; then
-            deny "Branch $b holds work that is not on origin (unpushed commits: $ahead), which git branch -D destroys; push it with git push origin $b first, or use git branch -d if it is merged."
-          fi
-        done
-      fi
     fi
   fi
 done
