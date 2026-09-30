@@ -1,10 +1,18 @@
 #!/usr/bin/env bash
 # Blocks vitest --exclude, git clean/reset --hard, and stash/checkout/restore that could discard other sessions' work.
+# One guard for every harness. Claude and Codex send tool_input.command and read the default
+# output. Cursor's beforeShellExecution sends a top-level command and reads {"permission":"deny"}.
+# Devin sends no cwd (it sets DEVIN_PROJECT_DIR) and blocks only on exit 2.
+#   thoven-guard-bash [--dialect claude|cursor|devin]
 set -o pipefail
+
+dialect=claude
+[ "${1:-}" = "--dialect" ] && dialect="${2:-claude}"
 
 payload="$(cat)"
 cwd="$(jq -r '.cwd // empty' <<<"$payload")"
-session_id="$(jq -r '.session_id // empty' <<<"$payload")"
+[ -n "$cwd" ] || cwd="${DEVIN_PROJECT_DIR:-}"
+session_id="$(jq -r '.session_id // .conversation_id // empty' <<<"$payload")"
 
 case "$cwd" in
   "$HOME"/thoven/*|"$HOME"/.herdr/worktrees/*) ;;
@@ -16,12 +24,23 @@ mkdir -p "$state"
 [ -f "$state/started" ] || touch "$state/started"
 edited_file="$state/edited"
 
-command="$(jq -r '.tool_input.command // empty' <<<"$payload")"
+command="$(jq -r '.tool_input.command // .command // empty' <<<"$payload")"
 [ -n "$command" ] || exit 0
 
 deny() {
   local reason="$1"
-  jq -n --arg reason "$reason" '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$reason}}'
+  case "$dialect" in
+    cursor)
+      jq -n --arg reason "$reason" '{permission:"deny",user_message:$reason,agent_message:$reason}'
+      ;;
+    devin)
+      printf '%s\n' "$reason" >&2
+      exit 2
+      ;;
+    *)
+      jq -n --arg reason "$reason" '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$reason}}'
+      ;;
+  esac
   exit 0
 }
 
