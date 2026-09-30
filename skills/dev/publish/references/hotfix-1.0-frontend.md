@@ -2,7 +2,7 @@
 
 Contents: Deployment Pipeline · MANDATORY First Action · Phase 0: Analyze · Phase 1: Decide · Phase 2: Update Changelog · Phase 3: Commit · Phase 4: Post-Commit Actions · Carry the Fix into 2.0 · Changelog State Lifecycle · Rules · References
 
-1.0 takes hotfixes only. Since the THV-767 cutover thoven.co serves 2.0. Replit keeps `release/1.0` (tag `thoven-1.0`) as the 1.0 rollback until THV-712 retires it. Start the fix from `origin/release/1.0`:
+1.0 takes hotfixes only. Since the THV-767 cutover thoven.co serves 2.0, and 1.0 production is the Replit deployment at `https://v-0-thoven-frontend-andres234.replit.app`. Replit keeps `release/1.0` (tag `thoven-1.0`) as the 1.0 rollback until THV-712 retires it. Start the fix from `origin/release/1.0`:
 
 ```bash
 git fetch origin release/1.0
@@ -25,7 +25,7 @@ Local (Warp)  →  GitHub (source of truth)  →  Replit workspace (staging)  �
 
 - **GitHub** is the source of truth for code. Multiple sessions push here frequently.
 - **Replit workspace** is the staging environment. Pull from GitHub when ready to test or deploy. A pull always takes everything on `release/1.0`.
-- **Replit Publish** deploys the workspace snapshot to production at thoven.co.
+- **Replit Publish** deploys the workspace snapshot to 1.0 production on Replit.
 
 ## MANDATORY First Action
 
@@ -41,7 +41,7 @@ TaskCreate for each:
 - [ ] Step 6: Create commit with proper format (HEREDOC)
 - [ ] Step 7: Execute post-commit actions per decision (push / push+pull / push+pull+publish)
 - [ ] Step 7.5 (Publish only): Check docs/deployment/PUBLISH_REMINDERS.md for pending post-publish actions
-- [ ] Step 8 (Publish only): After the Publish click, run `npm run verify:prod` — only stamp the changelog `Published` once it exits 0
+- [ ] Step 8 (Publish only): After the Publish click, run `verify:prod` against Replit (see *Post-Publish Verification*) — only stamp the changelog `Published` once it exits 0
 - [ ] Step 8.5 (Publish only): Once `verify:prod` exits 0, tag the release SHA with `git tag -a vX.X.X` (see *Git Tag*)
 - [ ] Step 8.6 (Publish only): Land the stamp PR that flips `Publishing` to `Published` (see *Stamp the Release*)
 - [ ] Step 9: Carry the fix into 2.0 the same day (see *Carry the Fix into 2.0*)
@@ -93,7 +93,7 @@ B) Testing  — commit & push & pull into Replit workspace
    Ready to test in Replit's staging environment.
 
 C) Publish  — commit & push & pull & Publish in Replit
-   Ship to production at thoven.co.
+   Ship to 1.0 production on Replit.
 ```
 
 ### Decision Criteria
@@ -157,7 +157,7 @@ This signals that everything in `[Unreleased]` has been pulled into the Replit w
    - Minor = new features
    - Major = breaking changes
 
-2. **Rename Unreleased section to versioned.** The date line reads `Publishing` until `npm run verify:prod` exits 0 (see *Post-Publish Verification*):
+2. **Rename Unreleased section to versioned.** The date line reads `Publishing` until `verify:prod` exits 0 (see *Post-Publish Verification*):
    ```markdown
    ## [1.12.3] - 2026-03-12 - Publishing
    ```
@@ -303,7 +303,7 @@ CI runs on a pull request into `release/1.0`, never on a push to it. The hotfix 
    1. Resync the Replit workspace. **Do NOT blind `git pull`** (see *Replit Workspace Divergence Trap* below): `git fetch origin release/1.0 --tags` → `git log origin/release/1.0..HEAD --stat` → if local commits are only empty `Published your App` markers, `git reset --hard origin/release/1.0`
    2. Verify `git rev-parse HEAD` equals the release SHA
    3. Click **Publish** in the Replit Deployments tab to deploy to production
-   4. Come back and confirm the click happened — then run `npm run verify:prod` (see *Post-Publish Verification* below)"
+   4. Come back and confirm the click happened — then run the `verify:prod` command in *Post-Publish Verification* below"
    - Cross-repo releases (FE + BE both have unreleased changes): deploy the **backend first**, confirm healthy, then publish the frontend — FE code that calls new BE contracts will 500 if FE ships first.
 4. If `docs/deployment/PUBLISH_REMINDERS.md` had open items (Step 7.5), append their numbered steps to this reminder now. Right after the Publish click is the moment they need to happen.
 5. **Stop: Andres clicks Publish.** Only Andres clicks Publish in Replit. Wait until Andres confirms the click.
@@ -325,10 +325,11 @@ found only when Andres opened the student dashboard and the feature wasn't there
 After Andres confirms the Publish click:
 
 ```bash
-npm run verify:prod
+npm run verify:prod -- --base https://v-0-thoven-frontend-andres234.replit.app
 ```
 
-It fetches the live production bundles and asserts that strings introduced by the
+The script's default base is thoven.co, which serves 2.0 and fails the 1.0 markers, so
+always pass `--base`. It fetches the live production bundles and asserts that strings introduced by the
 release are being served and strings deleted by it are gone.
 
 | Exit | Meaning | Action |
@@ -343,7 +344,7 @@ release commit must carry the version header, leave the date line as
 `- Publishing` and correct it to the real deploy date in a follow-up commit once
 verified.
 
-1. **Production serves the release.** Run `npm run verify:prod`. Done when it exits 0.
+1. **Production serves the release.** Run the `verify:prod` command above. Done when it exits 0.
 
 **Adding a release to the check:** add a `SURFACES` entry in
 `scripts/verify-prod-release.mjs` with `expectPresent` (strings the release
@@ -353,7 +354,7 @@ loudly instead of passing vacuously.
 
 ### Git Tag (Publish Only)
 
-1. **The release is tagged.** After `npm run verify:prod` exits 0, tag the release SHA (`git fetch origin release/1.0` first, so the tag lands on the merged commit). Done when `git ls-remote --tags origin vX.X.X` prints the tag:
+1. **The release is tagged.** After `verify:prod` exits 0, tag the release SHA (`git fetch origin release/1.0` first, so the tag lands on the merged commit). Done when `git ls-remote --tags origin vX.X.X` prints the tag:
 
    ```bash
    git tag -a vX.X.X -m "vX.X.X: Brief summary" <release-sha>
@@ -364,7 +365,7 @@ The tag checkpoints every production release: `git checkout v1.22.0` shows exact
 
 ### Stamp the Release (Publish Only)
 
-1. **The release is stamped Published.** Only after `npm run verify:prod` exits 0. On a branch from `origin/release/1.0`, change the CHANGELOG line `- Publishing` to `- Published YYYY-MM-DD`, the deploy date. Commit it with the trailer `Publication Status: Published - YYYY-MM-DD HH:MM UTC`. Land it like the hotfix: a PR into `release/1.0`, then `gh pr checks --watch`. It needs no Publish click, because it changes only `CHANGELOG.md`.
+1. **The release is stamped Published.** Only after `verify:prod` exits 0. On a branch from `origin/release/1.0`, change the CHANGELOG line `- Publishing` to `- Published YYYY-MM-DD`, the deploy date. Commit it with the trailer `Publication Status: Published - YYYY-MM-DD HH:MM UTC`. Land it like the hotfix: a PR into `release/1.0`, then `gh pr checks --watch`. It needs no Publish click, because it changes only `CHANGELOG.md`.
 
    **Stop: merge the stamp PR.** Andres merges it ("merge it" for this PR). Done when the stamp PR is merged.
 
@@ -407,7 +408,7 @@ evidence: no frontend events for the new release SHA after a deploy.
 Replit Workspace (staging)          Replit Deployment (production)
 ──────────────────────────          ──────────────────────────────
 - git pull lands code here          - Separate cloud container
-- Run dev server for testing        - Serves live users at thoven.co
+- Run dev server for testing        - Serves 1.0 at its replit.app URL
 - Changes are instant here          - Only updates on "Publish" click
 ```
 
@@ -491,7 +492,7 @@ A conflict means 2.0 changed that code. Resolve it for 2.0's code and say so in 
 - ALWAYS include `Co-Authored-By: Claude <noreply@anthropic.com>`
 - ALWAYS verify git status after commit
 - ALWAYS tag the release SHA with `git tag -a vX.X.X` once `verify:prod` exits 0
-- ALWAYS run `npm run verify:prod` after the Publish click, and NEVER write the changelog `Published` stamp until it exits 0 — a stamp written before the deploy is a lie the repo will keep telling (see *Post-Publish Verification*)
+- ALWAYS run `verify:prod` against Replit after the Publish click, and NEVER write the changelog `Published` stamp until it exits 0 — a stamp written before the deploy is a lie the repo will keep telling (see *Post-Publish Verification*)
 - Publish commits MUST use `release:` prefix and include `Publication Status: Publishing`. The `Published` trailer rides only the stamp commit, after `verify:prod` exits 0 (see *Stamp the Release*)
 
 ---
