@@ -4,8 +4,8 @@
 OpenCode has no shell-hook config. A plugin's tool.execute.before runs the guard
 and throws to block (opencode.ai/docs/plugins). The deny list becomes
 permission.bash glob rules; the last matching rule wins, so they are appended
-(opencode.ai/docs/permissions). thoven-uncommitted.js warns on session.idle, which
-cannot block, and is a no-op until something writes an OpenCode edit log.
+(opencode.ai/docs/permissions). thoven-uncommitted.js feeds thoven-track-edits from
+tool.execute.after and warns on session.idle, which cannot block.
 opencode.jsonc is only edited when it parses as plain JSON, because rewriting it
 would drop its comments.
 
@@ -26,6 +26,7 @@ CONFIG = OPENCODE_DIR / "opencode.jsonc"
 FILES = [
     (GUARD, OPENCODE_DIR / "hooks" / "thoven-guard-bash", True),
     (ENFORCEMENT_DIR / "opencode" / "thoven-guard.js", OPENCODE_DIR / "plugins" / "thoven-guard.js", False),
+    (ENFORCEMENT_DIR / "hooks" / "thoven-track-edits", OPENCODE_DIR / "hooks" / "thoven-track-edits", True),
     (ENFORCEMENT_DIR / "hooks" / "thoven-uncommitted", OPENCODE_DIR / "hooks" / "thoven-uncommitted", True),
     (ENFORCEMENT_DIR / "opencode" / "thoven-uncommitted.js", OPENCODE_DIR / "plugins" / "thoven-uncommitted.js", False),
 ]

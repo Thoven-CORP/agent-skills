@@ -177,8 +177,9 @@ main checkouts. `git maintenance` was left out because its prefetch never moves
 `thoven-uncommitted` runs at stop. It reads the paths this session edited from
 `thoven-track-edits`'s log and asks once, by blocking, about any still
 uncommitted. It never stages or commits. OpenCode's `session.idle` cannot block, so
-there it warns. Only Claude and Codex write an edit log, so in Cursor, Devin and
-OpenCode it is silent for now.
+there it warns. Every tool writes the edit log: Cursor on `afterFileEdit` and
+`afterShellExecution`, Devin on `PostToolUse`, OpenCode from the plugin's
+`tool.execute.after`.
 
 ## Harness coverage
 
@@ -205,10 +206,9 @@ OpenCode has no shell-hook format. `opencode/thoven-guard.js` is a plugin whose
 deny. If the guard fails to run, the command proceeds, as it does in every other
 harness when a hook errors. `install/opencode.py` installs both.
 
-Only the guard crosses to Cursor, Devin and OpenCode. The edit tracker and the
-evidence question stay Claude and Codex only. Without the tracker the guard
-cannot tell a session's own files from another's, so in those three it refuses
-a path-scoped stash, checkout or restore too. Commit is the way out there.
+The guard and the edit tracker cross to Cursor, Devin and OpenCode, so the guard
+tells a session's own files from another's in all five. The evidence question
+stays Claude and Codex only.
 
 The two unconditional denies, `git clean` and `git reset --hard`, are also
 written into each harness's own permission file, so they hold even where a

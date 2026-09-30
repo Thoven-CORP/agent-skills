@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Installs the enforcement agents, the shell guard, the uncommitted-edits stop hook, and the deny list into Cursor.
+"""Installs the enforcement agents, the shell guard, the edit tracker, the uncommitted-edits stop hook, and the deny list into Cursor.
 
 The guard runs on Cursor's beforeShellExecution event, which the IDE and the
 cursor-agent CLI both fire (cursor.com/docs/hooks). The deny list goes into
 ~/.cursor/cli-config.json as Shell(command:args) tokens: Cursor matches
 Shell(x) against the first token only, and command:args globs the arguments
-(cursor.com/docs/cli/reference/permissions). thoven-uncommitted runs on `stop` and
-continues the agent with a followup_message (cursor.com/docs/hooks); it is a no-op
-until something writes a Cursor edit log.
+(cursor.com/docs/cli/reference/permissions). thoven-track-edits writes the session's
+edit log on afterFileEdit and afterShellExecution, and thoven-uncommitted reads it on
+`stop` and continues the agent with a followup_message (cursor.com/docs/hooks).
 
 Dry run by default. Pass --apply to write.
 """
@@ -29,6 +29,8 @@ AGENT_FILES = ["verifier.md", "ui-builder.md", "explorer.md", "poteto-agent.md"]
 # (script name, event, timeout); each runs as `<hooks dir>/<script> --dialect cursor`
 HOOK_ENTRIES = [
     ("thoven-guard-bash", "beforeShellExecution", 10),
+    ("thoven-track-edits", "afterFileEdit", 10),
+    ("thoven-track-edits", "afterShellExecution", 10),
     ("thoven-uncommitted", "stop", 10),
 ]
 

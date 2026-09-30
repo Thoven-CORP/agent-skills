@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Asks once, at stop, about files this session edited that are still uncommitted.
 # Shared worktrees make an uncommitted edit look like someone else's work to the next session.
-# Reads the edit log thoven-track-edits writes, so it only fires where that runs (Claude, Codex).
+# Reads the edit log thoven-track-edits writes, which every tool here runs after its edits.
 # Never stages, commits or modifies anything.
 #
 # Dialects, per each tool's Stop contract:

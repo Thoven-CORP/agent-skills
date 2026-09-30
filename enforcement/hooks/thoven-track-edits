@@ -1,11 +1,52 @@
 #!/usr/bin/env bash
 # Records edited files (Edit|Write file_path, or Bash's git-dirty paths since session start) and nudges the UI rule once.
+# Each dialect's payload is read into one shape: session_id, cwd, and an Edit (file_path) or a Bash (command).
+#   claude, codex  PostToolUse; tool_name Edit|Write|Bash, cwd in the payload
+#   cursor         afterFileEdit (file_path) and afterShellExecution (command); keyed on conversation_id,
+#                  no cwd, so the first workspace root (cursor.com/docs/hooks)
+#   devin          PostToolUse; tool_name edit|write|notebook_edit carry tool_input.file_path, exec and
+#                  apply_patch are scanned; no cwd, so DEVIN_PROJECT_DIR (docs.devin.ai/cli/extensibility/hooks)
+#   OpenCode's plugin sends the claude shape (opencode/thoven-uncommitted.js).
+#   thoven-track-edits [--dialect claude|cursor|devin]
 set -o pipefail
 
+dialect=claude
+[ "${1:-}" = "--dialect" ] && dialect="${2:-claude}"
+
 payload="$(cat)"
-cwd="$(jq -r '.cwd // empty' <<<"$payload")"
-session_id="$(jq -r '.session_id // empty' <<<"$payload")"
-tool_name="$(jq -r '.tool_name // empty' <<<"$payload")"
+case "$dialect" in
+  cursor)
+    session_id="$(jq -r '.conversation_id // empty' <<<"$payload")"
+    cwd="$(jq -r '.cwd // .workspace_roots[0] // empty' <<<"$payload")"
+    [ -n "$cwd" ] || cwd="${CURSOR_PROJECT_DIR:-$PWD}"
+    case "$(jq -r '.hook_event_name // empty' <<<"$payload")" in
+      afterFileEdit) tool_name=Edit ;;
+      afterShellExecution) tool_name=Bash ;;
+      *) tool_name="" ;;
+    esac
+    file_path="$(jq -r '.file_path // empty' <<<"$payload")"
+    command="$(jq -r '.command // empty' <<<"$payload")"
+    ;;
+  devin)
+    session_id="$(jq -r '.session_id // empty' <<<"$payload")"
+    cwd="$(jq -r '.cwd // empty' <<<"$payload")"
+    [ -n "$cwd" ] || cwd="${DEVIN_PROJECT_DIR:-$PWD}"
+    case "$(jq -r '.tool_name // empty' <<<"$payload")" in
+      edit|write|notebook_edit) tool_name=Edit ;;
+      exec|apply_patch) tool_name=Bash ;;
+      *) tool_name="" ;;
+    esac
+    file_path="$(jq -r '.tool_input.file_path // empty' <<<"$payload")"
+    command="$(jq -r '.tool_input.command // empty' <<<"$payload")"
+    ;;
+  *)
+    session_id="$(jq -r '.session_id // empty' <<<"$payload")"
+    cwd="$(jq -r '.cwd // empty' <<<"$payload")"
+    tool_name="$(jq -r '.tool_name // empty' <<<"$payload")"
+    file_path="$(jq -r '.tool_input.file_path // empty' <<<"$payload")"
+    command="$(jq -r '.tool_input.command // empty' <<<"$payload")"
+    ;;
+esac
 
 case "$cwd" in
   "$HOME"/thoven/*|"$HOME"/.herdr/worktrees/*) ;;
@@ -22,7 +63,6 @@ edited_file="$state/edited"
 
 case "$tool_name" in
   Edit|Write)
-    file_path="$(jq -r '.tool_input.file_path // empty' <<<"$payload")"
     if [ -n "$file_path" ]; then
       touch "$edited_file"
       grep -qxF "$file_path" "$edited_file" || echo "$file_path" >> "$edited_file"
@@ -34,7 +74,6 @@ case "$tool_name" in
     # record it. That hook exits when $state/checks is non-empty, but before
     # 2026-09-19 nothing ever wrote the file: the escape hatch never fired and it
     # nudged even in sessions that had just run a check.
-    command="$(jq -r '.tool_input.command // empty' <<<"$payload")"
     checks_regex='\b(tsc|rspec|vitest|jest|playwright|eslint|rubocop|contract-check|type-check|typecheck)\b|\b(npm|pnpm|yarn|bun)[[:space:]]+(run[[:space:]]+)?(test|lint|check)\b|\bnext[[:space:]]+lint\b|\brails[[:space:]]+(test|spec)\b'
     if [ -n "$command" ] && grep -qE "$checks_regex" <<<"$command"; then
       printf '%s\n' "$command" >> "$state/checks"
@@ -61,7 +100,7 @@ case "$tool_name" in
         touch "$state/last-edit"
       done < <(git -C "$cwd" status --porcelain --untracked-files=all 2>/dev/null)
 
-      if [ ! -f "$state/ui-rule-shown" ]; then
+      if [ "$dialect" = claude ] && [ ! -f "$state/ui-rule-shown" ]; then
         match=0
         for p in "${newly[@]:-}"; do
           [ -n "$p" ] || continue

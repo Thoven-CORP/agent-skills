@@ -11,9 +11,9 @@ check `git diff --cached --name-only` before committing. Product files dirty on 
 your branch's work, so stage them too. Leave scratch, probes and screenshots unstaged. To undo,
 name your own paths: `git restore <your paths>`, `git stash push -- <your paths>`. The
 `thoven-guard-bash` hook refuses the whole-tree forms (`git stash push` with no paths,
-`git clean`, `git reset --hard`) and says why when it fires. It allows a path-scoped undo only for
-files it saw this session edit, and only Claude and Codex record edits, so in Cursor, Devin and
-OpenCode commit instead. A stash whose message is not yours
+`git clean`, `git reset --hard`) and a forced `git worktree remove` or `git branch -D` of work not
+on origin, and says why when it fires. It allows a path-scoped undo only for files it saw this
+session edit. A stash whose message is not yours
 belongs to another session: leave it and name it in your hand-off. (2026-08-23: a stash before
 a rebase ate a day of the onboarding prototype.)
 

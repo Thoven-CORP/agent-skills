@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
-# Runs thoven-uncommitted in each dialect against two throwaway repos and a fake session edit log.
+# Runs thoven-uncommitted in each dialect against two throwaway repos and a fake session edit log,
+# then end to end per tool: thoven-track-edits writes the log from that tool's own payload.
 set -uo pipefail
 
-HOOK="$(cd "$(dirname "$0")/.." && pwd)/hooks/thoven-uncommitted"
+ENF="$(cd "$(dirname "$0")/.." && pwd)"
+HOOK="$ENF/hooks/thoven-uncommitted"
+TRACK="$ENF/hooks/thoven-track-edits"
 T=$(mktemp -d /tmp/thv974.XXXXXX) || exit 1; case "$T" in /tmp/thv974.*) ;; *) exit 1;; esac
 SESSION="uncommitted-test-$$"
 STATE="/tmp/claude-thoven/$SESSION"
 case "$STATE" in /tmp/claude-thoven/uncommitted-test-[0-9]*) ;; *) exit 1;; esac
-trap 'rm -rf "$T" "$STATE" "$STATE-nolog"' EXIT
+trap 'rm -rf "$T" "$STATE" "$STATE-nolog" "$STATE-cursor" "$STATE-devin" "$STATE-opencode" "$STATE-claude"' EXIT
 TMP="$T"
 
 ok() { printf 'ok %s\n' "$1"; }
@@ -79,5 +82,51 @@ expect "committed paths are allowed" "$(run claude "$(stop_payload)")" "rc=0 "
 expect "no edit log is allowed" "$(run claude "$(stop_payload false "$SESSION-nolog")")" "rc=0 "
 [ -e "/tmp/claude-thoven/$SESSION-nolog" ] && fail "no log leaves no state" "a session dir"
 ok "no log leaves no state"
+
+# End to end. The tracker only records under $HOME/thoven, so these repos live under a fake HOME.
+mkdir -p "$TMP/home/thoven/frontend-thv-1"
+# Canonical, as a real ~/thoven path is: the scan records git's resolved toplevel.
+E2E="$(cd "$TMP/home/thoven/frontend-thv-1" && pwd -P)"
+g -C "$E2E" init -q && g -C "$E2E" commit -q --allow-empty -m init
+e2e_msg() { printf 'You edited %s and they are uncommitted. Commit them by exact path, or say why they stay.' "$1"; }
+track() { printf '%s' "$2" | HOME="$(cd "$TMP/home" && pwd -P)" "$TRACK" --dialect "$1" >/dev/null 2>&1; }
+
+S="$SESSION-cursor"
+echo x >"$E2E/edited.tsx"
+track cursor "$(jq -nc --arg s "$S" --arg f "$E2E/edited.tsx" --arg w "$E2E" '{conversation_id:$s,hook_event_name:"afterFileEdit",workspace_roots:[$w],file_path:$f,edits:[]}')"
+echo x >"$E2E/shell.txt"
+track cursor "$(jq -nc --arg s "$S" --arg w "$E2E" '{conversation_id:$s,hook_event_name:"afterShellExecution",workspace_roots:[$w],command:"echo x > shell.txt",output:"",duration:1}')"
+expect "cursor: afterFileEdit and afterShellExecution feed the stop follow-up" \
+  "$(run cursor "$(jq -nc --arg s "$S" '{conversation_id:$s,hook_event_name:"stop",status:"completed",loop_count:0}')")" \
+  "rc=0 $(jq -nc --arg r "$(e2e_msg "edited.tsx, shell.txt")" '{followup_message:$r}')"
+
+S="$SESSION-devin"
+echo y >"$E2E/devin.rb"
+DEVIN_PROJECT_DIR="$E2E" track devin "$(jq -nc --arg s "$S" --arg f "$E2E/devin.rb" '{session_id:$s,hook_event_name:"PostToolUse",tool_name:"edit",tool_input:{file_path:$f},tool_response:{success:true}}')"
+expect "devin: a PostToolUse edit feeds the stop block" \
+  "$(run devin "$(jq -nc --arg s "$S" '{session_id:$s,hook_event_name:"Stop",stop_hook_active:false}')")" \
+  "rc=0 $(jq -nc --arg r "$(e2e_msg "devin.rb")" '{decision:"block",reason:$r}')"
+
+S="$SESSION-opencode"
+echo z >"$E2E/opencode.ts"
+oc_err=$(HOME="$(cd "$TMP/home" && pwd -P)" node --no-warnings --input-type=module -e '
+const { ThovenUncommittedPlugin } = await import(process.argv[1]);
+const hooks = await ThovenUncommittedPlugin({ directory: process.argv[2] });
+await hooks["tool.execute.after"]({ tool: "edit", sessionID: process.argv[3], callID: "c1", args: { filePath: "opencode.ts" } }, { title: "", output: "", metadata: {} });
+await hooks.event({ event: { type: "session.idle", properties: { sessionID: process.argv[3] } } });
+' "$ENF/opencode/thoven-uncommitted.js" "$E2E" "$S" 2>&1 >/dev/null)
+expect "opencode: tool.execute.after on edit feeds the session.idle warning" "$oc_err" "$(e2e_msg "opencode.ts")"
+
+S="$SESSION-claude"
+HOMEP="$(cd "$TMP/home" && pwd -P)"
+C="$HOMEP/thoven/backend-thv-2"
+mkdir -p "$C/components" && g -C "$C" init -q && g -C "$C" commit -q --allow-empty -m init
+jq -nc --arg s "$S" --arg d "$C" '{session_id:$s,cwd:$d,tool_name:"Bash",tool_input:{command:"true"}}' | HOME="$HOMEP" "$TRACK" >/dev/null
+echo w >"$C/components/Badge.tsx"
+nudge=$(jq -nc --arg s "$S" --arg d "$C" '{session_id:$s,cwd:$d,tool_name:"Bash",tool_input:{command:"cat > components/Badge.tsx"}}' | HOME="$HOMEP" "$TRACK" | jq -r .hookSpecificOutput.hookEventName)
+expect "claude: a Bash-written component still gets the UI rule" "$nudge" "PostToolUse"
+expect "claude: the Bash scan feeds the stop block" \
+  "$(run claude "$(stop_payload false "$S")")" \
+  "rc=0 $(jq -nc --arg r "$(e2e_msg "components/Badge.tsx")" '{decision:"block",reason:$r}')"
 
 echo "all passed"
