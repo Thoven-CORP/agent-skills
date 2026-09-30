@@ -221,9 +221,9 @@ install_deps() {
   local path="$1" kind="$2"
 
   # A rerun must not reinstall: a worktree's node_modules can be a symlink into another live
-  # tree, and npm ci deletes node_modules before it installs.
+  # tree, and npm ci and pnpm install both replace node_modules.
   if [ "$kind" = fe ] && { [ -e "$path/node_modules" ] || [ -L "$path/node_modules" ]; }; then
-    log "node_modules already present, skipping npm ci"
+    log "node_modules already present, skipping install"
     return 0
   fi
   if [ "$kind" = be ] && (cd "$path" && bundle check >/dev/null 2>&1); then
@@ -231,7 +231,12 @@ install_deps() {
     return 0
   fi
 
-  if [ "$kind" = fe ]; then
+  # The lockfile picks the installer, so a branch cut before THV-973 still installs with npm.
+  if [ "$kind" = fe ] && [ -f "$path/pnpm-lock.yaml" ]; then
+    log "pnpm install --frozen-lockfile in $path"
+    (cd "$path" && pnpm install --frozen-lockfile) >&2 ||
+      log "warning: pnpm install failed; the worktree exists, rerun: cd $path && pnpm install --frozen-lockfile"
+  elif [ "$kind" = fe ]; then
     local version
     version="$(jq -r '.packageManager // empty' "$path/package.json" 2>/dev/null || true)"
     case "$version" in
