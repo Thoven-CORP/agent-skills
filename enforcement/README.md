@@ -158,11 +158,27 @@ with the server stopped. `remove <path>` drops both databases, and only after
 `git worktree remove` succeeds. `orphan-dbs` lists the local Thoven databases no
 worktree's `.env` names, and drops nothing.
 
-`bin/thoven-sync` fast-forwards `~/thoven/frontend` and `~/thoven/backend` from
-`origin/main` when each is on `main` and clean, and reports every other worktree's
-distance behind without touching it. Local main is never committed on, so it only
-ever fast-forwards. Nothing runs it on a schedule yet. Its trigger waits on a
-ruling under THV-974. `bin/thoven-sync-test` proves it on throwaway repos.
+`thoven-worktree post-checkout` is each repo's lefthook `post-checkout` step. It
+fires after `git worktree add` from any tool, including a herdr create that did not
+go through `thoven-worktree`, and warns when the new HEAD is behind `origin/main`
+with no commits of its own. A hook at that point cannot block.
+
+`bin/thoven-sync` runs every 30 minutes from the launchd agent `co.thoven.sync`,
+installed by `install/launchd.py`. It runs `git fetch --prune` in both main
+checkouts and fast-forwards each one only when it is on `main` and clean. Local main
+is never committed on, so it only ever fast-forwards. It lists worktrees with
+uncommitted files in `~/.thoven/sync.log` and never touches them. A session-start
+trigger was rejected: it fires in every session in any directory, and none fires
+before herdr or the Codex app pick their base. `install/gitconfig.py` sets
+`fetch.prune`, `push.autoSetupRemote` and `branch.autoSetupMerge=simple` in both
+main checkouts. `git maintenance` was left out because its prefetch never moves
+`origin/*`.
+
+`thoven-uncommitted` runs at stop. It reads the paths this session edited from
+`thoven-track-edits`'s log and asks once, by blocking, about any still
+uncommitted. It never stages or commits. OpenCode's `session.idle` cannot block, so
+there it warns. Only Claude and Codex write an edit log, so in Cursor, Devin and
+OpenCode it is silent for now.
 
 ## Harness coverage
 

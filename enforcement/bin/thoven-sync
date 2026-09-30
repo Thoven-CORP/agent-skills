@@ -1,36 +1,42 @@
 #!/usr/bin/env bash
 # Keeps ~/thoven/frontend and ~/thoven/backend at origin/main. Local main is never merged into or
 # committed on, so it only ever fast-forwards, and only when it is on main and clean. Every other
-# worktree is reported, never touched. herdr and Codex desktop cut new worktrees from the local
-# checkout's HEAD, so a stale local main made them start days behind GitHub.
-#   thoven-sync                                   sync, then report every checkout
-#   thoven-sync --hook [--dialect claude|cursor|devin]
-#       session start: sync, then say only what concerns the session's own checkout
+# worktree is only read: one with uncommitted work is reported. herdr and Codex desktop cut new
+# worktrees from the local checkout's HEAD, so a stale local main made them start days behind GitHub.
+# Every line also goes, timestamped, to $THOVEN_SYNC_LOG (default ~/.thoven/sync.log).
 set -uo pipefail
 
 THOVEN_ROOT="${THOVEN_ROOT:-$HOME/thoven}"
 REPOS=(frontend backend)
 LOCK="${TMPDIR:-/tmp}/thoven-sync.lock"
+LOG="${THOVEN_SYNC_LOG:-$HOME/.thoven/sync.log}"
+mkdir -p "$(dirname "$LOG")" 2>/dev/null
 
-# Two panes starting at once would race on the same fetch and ref locks.
+emit() {
+  printf '%s\n' "$1"
+  printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$1" >> "$LOG" 2>/dev/null
+}
+
+# Two runs at once would race on the same fetch and ref locks.
 take_lock() {
   mkdir "$LOCK" 2>/dev/null && { echo $$ > "$LOCK/pid"; return 0; }
   local pid
   pid="$(cat "$LOCK/pid" 2>/dev/null)"
   if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
-    echo "another thoven-sync (pid $pid) is running, skipped"
+    emit "another thoven-sync (pid $pid) is running, skipped"
     return 1
   fi
   rm -rf "$LOCK"
   mkdir "$LOCK" 2>/dev/null && { echo $$ > "$LOCK/pid"; return 0; }
-  echo "another thoven-sync took the lock, skipped"
+  emit "another thoven-sync took the lock, skipped"
   return 1
 }
 
 # sync_main <checkout>: fast-forward if safe. Prints what happened, without the path.
 sync_main() {
   local main="$1" branch ahead behind
-  git -C "$main" fetch --quiet origin || { echo "skipped, git fetch origin failed"; return; }
+  git -C "$main" fetch --quiet --prune origin || { echo "skipped, git fetch --prune origin failed"; return; }
+  git -C "$main" rev-parse --verify --quiet origin/main >/dev/null || { echo "skipped, no origin/main"; return; }
   branch="$(git -C "$main" symbolic-ref --quiet --short HEAD)"
   [ "$branch" = main ] || { echo "skipped, on '${branch:-detached HEAD}', not main"; return; }
   [ -z "$(git -C "$main" status --porcelain)" ] || { echo "skipped, uncommitted changes"; return; }
@@ -48,81 +54,50 @@ sync_main() {
   fi
 }
 
-# worktrees <checkout>: "<path>\t<branch or detached>\t<behind>" for every other live worktree.
-# Counts come from the shared refs, so no worktree is entered.
+# worktrees <checkout>: "<path>\t<branch or detached>" for every other live worktree.
 worktrees() {
   local main="$1" path="" head="" branch="" line seen=0
   while IFS= read -r line; do
     case "$line" in
-      "worktree "*) path="${line#worktree }"; head=""; branch="" ;;
+      "worktree "*) path="${line#worktree }" ;;
       "HEAD "*) head="${line#HEAD }" ;;
       "branch "*) branch="${line#branch refs/heads/}" ;;
       "")
         # git lists the main worktree first
         seen=$((seen + 1))
         if [ "$seen" -gt 1 ] && [ -n "$head" ] && [ -d "$path" ]; then
-          printf '%s\t%s\t%s\n' "$path" "${branch:-detached}" "$(git -C "$main" rev-list --count "$head..origin/main")"
+          printf '%s\t%s\n' "$path" "${branch:-detached}"
         fi
+        path="" head="" branch=""
         ;;
     esac
   done < <(git -C "$main" worktree list --porcelain; echo)
 }
 
+# --no-optional-locks keeps status from refreshing, and so writing, another session's index.
+dirty_count() {
+  git --no-optional-locks -C "$1" status --porcelain 2>/dev/null | wc -l | tr -d ' '
+}
+
 report() {
-  local repo main result
-  take_lock || return 0
-  trap 'rm -rf "$LOCK"' EXIT
+  local repo main path branch count
   for repo in "${REPOS[@]}"; do
     main="$THOVEN_ROOT/$repo"
-    git -C "$main" rev-parse --git-dir >/dev/null 2>&1 || { echo "$main: not a git checkout, skipped"; continue; }
+    git -C "$main" rev-parse --git-dir >/dev/null 2>&1 || { emit "$main: not a git checkout, skipped"; continue; }
     main="$(cd "$main" && pwd -P)"
-    result="$(sync_main "$main")"
-    echo "$main: $result"
-    worktrees "$main" | while IFS=$'\t' read -r path branch behind; do
-      [ "$behind" -gt 0 ] && echo "$path ($branch): $behind behind origin/main, rebase when ready"
-    done
-  done
-}
-
-# say <dialect> <text>: hand the session one line of context in its tool's dialect.
-say() {
-  case "$1" in
-    cursor) jq -nc --arg t "$2" '{additional_context:$t}' ;;
-    devin) jq -nc --arg t "$2" '{hookSpecificOutput:{hookEventName:"SessionStart",additionalContext:$t}}' ;;
-    *) printf '%s\n' "$2" ;;
-  esac
-}
-
-hook() {
-  local dialect="$1" payload cwd top out repo main line path branch behind
-  payload="$(cat)"
-  cwd="$(jq -r '.cwd // .workspace_roots[0] // empty' <<<"$payload" 2>/dev/null)"
-  [ -n "$cwd" ] || cwd="${DEVIN_PROJECT_DIR:-$PWD}"
-  out="$(report)"
-  top="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null)" || return 0
-  top="$(cd "$top" && pwd -P)"
-  for repo in "${REPOS[@]}"; do
-    main="$(cd "$THOVEN_ROOT/$repo" 2>/dev/null && pwd -P)" || continue
-    if [ "$top" = "$main" ]; then
-      line="$(grep -F "$main: skipped" <<<"$out" | head -n 1)"
-      [ -n "$line" ] && say "$dialect" "$main was not synced: ${line#"$main: "}"
-      return 0
-    fi
-    while IFS=$'\t' read -r path branch behind; do
-      if [ "$path" = "$top" ] && [ "$behind" -gt 0 ]; then
-        say "$dialect" "This worktree ($path, $branch) is $behind commits behind origin/main. Rebase onto it when ready."
-        return 0
-      fi
+    emit "$main: $(sync_main "$main")"
+    while IFS=$'\t' read -r path branch; do
+      count="$(dirty_count "$path")"
+      [ "$count" -gt 0 ] && emit "$path ($branch): $count uncommitted file(s)"
     done < <(worktrees "$main")
   done
 }
 
 case "${1:-}" in
-  "") report ;;
-  --hook)
-    dialect=claude
-    [ "${2:-}" = "--dialect" ] && dialect="${3:-claude}"
-    hook "$dialect"
+  "")
+    take_lock || exit 0
+    trap 'rm -rf "$LOCK"' EXIT
+    report
     ;;
-  *) echo "usage: thoven-sync [--hook [--dialect claude|cursor|devin]]" >&2; exit 2 ;;
+  *) echo "usage: thoven-sync" >&2; exit 2 ;;
 esac

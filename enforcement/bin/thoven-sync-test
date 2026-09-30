@@ -4,8 +4,10 @@
 set -uo pipefail
 
 TOOL="$(cd "$(dirname "$0")" && pwd)/thoven-sync"
-TMP="$(cd "$(mktemp -d)" && pwd -P)"
-trap 'rm -rf "$TMP"' EXIT
+T=$(mktemp -d /tmp/thv974.XXXXXX) || exit 1
+case "$T" in /tmp/thv974.*) ;; *) exit 1 ;; esac
+trap 'rm -rf "$T"' EXIT
+TMP="$(cd "$T" && pwd -P)"
 
 export THOVEN_ROOT="$TMP"
 export TMPDIR="$TMP"
@@ -14,7 +16,7 @@ export GIT_CONFIG_NOSYSTEM=1
 git config --file "$GIT_CONFIG_GLOBAL" user.name test
 git config --file "$GIT_CONFIG_GLOBAL" user.email test@example.com
 git config --file "$GIT_CONFIG_GLOBAL" init.defaultBranch main
-unset DEVIN_PROJECT_DIR
+export THOVEN_SYNC_LOG="$TMP/logs/sync.log"
 
 ok() { printf 'ok %s\n' "$1"; }
 fail() { printf 'FAIL %s: got %s\n' "$1" "$2"; exit 1; }
@@ -22,6 +24,10 @@ expect() { if [ "$2" = "$3" ]; then ok "$1"; else fail "$1" "'$2' (want '$3')"; 
 has_line() {
   if printf '%s\n' "$2" | grep -qxF -- "$3"; then ok "$1"; else fail "$1" "'$2' (want a line '$3')"; fi
 }
+no_line_about() {
+  if printf '%s\n' "$2" | grep -qF -- "$3"; then fail "$1" "'$2' (want no line naming '$3')"; else ok "$1"; fi
+}
+index_sum() { cksum < "$(git -C "$1" rev-parse --path-format=absolute --git-path index)"; }
 
 # make_repo <name>: bare origin with one commit on main, cloned to $TMP/<name>, plus an upstream
 # clone that later pushes new commits
@@ -44,6 +50,18 @@ make_repo frontend
 make_repo backend
 git -C "$TMP/frontend" worktree add -q -b ui/thv-1 "$TMP/frontend-thv-1" main
 FE_WT_HEAD="$(head_of "$TMP/frontend-thv-1")"
+DIRTY="$TMP/frontend-thv-2"
+git -C "$TMP/frontend" worktree add -q -b ui/thv-2 "$DIRTY" main
+printf 'edit\n' >> "$DIRTY/file"
+printf 'new\n' > "$DIRTY/untracked"
+(cd "$DIRTY" && printf 'same\n' > kept && git add kept && git commit -qm kept)
+DIRTY_HEAD="$(head_of "$DIRTY")"
+# A stale stat entry: a plain git status would refresh and rewrite this worktree's index.
+touch -t 202001010000 "$DIRTY/kept"
+DIRTY_INDEX="$(index_sum "$DIRTY")"
+DETACHED="$TMP/frontend-detached"
+git -C "$TMP/frontend" worktree add -q --detach "$DETACHED" main
+printf 'edit\n' >> "$DETACHED/file"
 push_upstream frontend
 push_upstream frontend
 printf 'mine\n' >> "$TMP/backend/file"
@@ -58,8 +76,20 @@ expect "dirty main is not moved" "$(head_of "$TMP/backend")" "$BE_HEAD"
 expect "dirty main keeps its change" "$(tail -n 1 "$TMP/backend/file")" "mine"
 has_line "dirty main is skipped with a reason" "$out" "$TMP/backend: skipped, uncommitted changes"
 expect "other worktree is not moved" "$(head_of "$TMP/frontend-thv-1")" "$FE_WT_HEAD"
-has_line "other worktree hears how far behind it is" "$out" \
-  "$TMP/frontend-thv-1 (ui/thv-1): 2 behind origin/main, rebase when ready"
+no_line_about "a clean behind worktree is not reported" "$out" "$TMP/frontend-thv-1"
+has_line "a dirty worktree is reported" "$out" "$DIRTY (ui/thv-2): 2 uncommitted file(s)"
+expect "a dirty worktree is reported once" "$(grep -cxF "$DIRTY (ui/thv-2): 2 uncommitted file(s)" <<<"$out")" 1
+expect "one line per main checkout and per dirty worktree" "$(wc -l <<<"$out" | tr -d ' ')" 4
+no_line_about "a repo with only its main checkout reports no worktree" "$out" "$TMP/backend ("
+has_line "a dirty detached worktree is reported" "$out" "$DETACHED (detached): 1 uncommitted file(s)"
+expect "dirty worktree is not moved" "$(head_of "$DIRTY")" "$DIRTY_HEAD"
+expect "dirty worktree keeps its edit" "$(tail -n 1 "$DIRTY/file")" "edit"
+expect "dirty worktree keeps its untracked file" "$(cat "$DIRTY/untracked")" "new"
+expect "dirty worktree's index is not rewritten" "$(index_sum "$DIRTY")" "$DIRTY_INDEX"
+
+stamp='^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z '
+expect "every log line is timestamped" "$(grep -cvE "$stamp" "$THOVEN_SYNC_LOG")" 0
+expect "the log holds stdout's lines" "$(sed -E "s/$stamp//" "$THOVEN_SYNC_LOG")" "$out"
 
 out="$("$TOOL" 2>/dev/null)"
 has_line "a current main says so" "$out" "$TMP/frontend: at origin/main"
@@ -84,31 +114,21 @@ expect "main with its own commit is not moved" "$(head_of "$TMP/backend")" "$AHE
 has_line "main with its own commit is skipped with a reason" "$out" \
   "$TMP/backend: skipped, main has 1 commit(s) origin/main lacks; local main only fast-forwards, so move them to a branch by hand"
 
-push_upstream frontend
-WT="$TMP/frontend-thv-1"
-out="$(jq -nc --arg d "$WT/src" '{cwd:$d,source:"startup"}' | (mkdir -p "$WT/src" && "$TOOL" --hook 2>/dev/null))"; code=$?
-expect "hook exit" "$code" 0
-expect "hook syncs main too" "$(head_of "$TMP/frontend")" "$(origin_main frontend)"
-expect "hook names only the session's own worktree" "$out" \
-  "This worktree ($WT, ui/thv-1) is 3 commits behind origin/main. Rebase onto it when ready."
+(cd "$TMP/upstream-frontend" && git push -q origin main:gone)
+"$TOOL" >/dev/null 2>&1
+expect "a remote branch is fetched" "$(git -C "$TMP/frontend" rev-parse --verify --quiet refs/remotes/origin/gone >/dev/null; echo $?)" 0
+git -C "$TMP/upstream-frontend" push -q origin --delete gone
+"$TOOL" >/dev/null 2>&1
+expect "a deleted remote branch is pruned" "$(git -C "$TMP/frontend" rev-parse --verify --quiet refs/remotes/origin/gone >/dev/null; echo $?)" 1
 
-out="$(jq -nc --arg d "$WT" '{workspace_roots:[$d],hook_event_name:"sessionStart"}' | "$TOOL" --hook --dialect cursor 2>/dev/null)"
-expect "cursor dialect answers additional_context" "$(jq -r .additional_context <<<"$out")" \
-  "This worktree ($WT, ui/thv-1) is 3 commits behind origin/main. Rebase onto it when ready."
+git -C "$TMP/frontend" remote set-url origin "$TMP/origin-empty.git"
+git init -q --bare "$TMP/origin-empty.git"
+out="$("$TOOL" 2>/dev/null)"
+has_line "a remote without main is skipped" "$out" "$TMP/frontend: skipped, no origin/main"
+git -C "$TMP/frontend" remote set-url origin "$TMP/origin-frontend.git"
 
-out="$(printf '{"source":"startup"}' | DEVIN_PROJECT_DIR="$WT" "$TOOL" --hook --dialect devin 2>/dev/null)"
-expect "devin dialect answers hookSpecificOutput" "$(jq -r .hookSpecificOutput.additionalContext <<<"$out")" \
-  "This worktree ($WT, ui/thv-1) is 3 commits behind origin/main. Rebase onto it when ready."
-
-out="$(jq -nc --arg d "$TMP/frontend" '{cwd:$d}' | "$TOOL" --hook 2>/dev/null)"
-expect "hook in a current main checkout is silent" "$out" ""
-
-out="$(jq -nc --arg d "$TMP/backend" '{cwd:$d}' | "$TOOL" --hook 2>/dev/null)"
-expect "hook in a skipped main checkout says why" "$out" \
-  "$TMP/backend was not synced: skipped, main has 1 commit(s) origin/main lacks; local main only fast-forwards, so move them to a branch by hand"
-
-out="$(jq -nc '{cwd:"/"}' | "$TOOL" --hook 2>/dev/null)"
-expect "hook outside Thoven is silent" "$out" ""
+"$TOOL" --hook </dev/null >/dev/null 2>&1; code=$?
+expect "--hook is gone" "$code" 2
 
 sleep 30 & holder=$!
 mkdir "$TMP/thoven-sync.lock" && printf '%s\n' "$holder" > "$TMP/thoven-sync.lock/pid"

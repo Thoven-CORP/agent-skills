@@ -4,8 +4,10 @@
 set -uo pipefail
 
 TOOL="$(cd "$(dirname "$0")" && pwd)/thoven-worktree"
-TMP="$(cd "$(mktemp -d)" && pwd -P)"
-trap 'rm -rf "$TMP"' EXIT
+T=$(mktemp -d /tmp/thv974.XXXXXX) || exit 1
+case "$T" in /tmp/thv974.*) ;; *) exit 1 ;; esac
+trap 'rm -rf "$T"' EXIT
+TMP="$(cd "$T" && pwd -P)"
 
 export THOVEN_ROOT="$TMP"
 export THOVEN_WORKTREE_SKIP_INSTALL=1
@@ -37,6 +39,14 @@ env_line() { grep "^$2=" "$1"; }
 ok() { printf 'ok %s\n' "$1"; }
 fail() { printf 'FAIL %s: got %s\n' "$1" "$2"; exit 1; }
 expect() { if [ "$2" = "$3" ]; then ok "$1"; else fail "$1" "'$2' (want '$3')"; fi; }
+has_line() {
+  if printf '%s\n' "$2" | grep -qxF -- "$3"; then ok "$1"; else fail "$1" "'$2' (want a line '$3')"; fi
+}
+BANG_LINE='^!{20,}$'
+loud() {
+  if printf '%s\n' "$2" | grep -qE "$BANG_LINE" && printf '%s\n' "$2" | grep -qxF -- "$3" &&
+    printf '%s\n' "$2" | grep -qxF -- "$4"; then ok "$1"; else fail "$1" "'$2' (want a line of ! then '$3' and '$4')"; fi
+}
 
 # make_repo <name> <setup-fn>: bare origin with one commit on main, cloned to $TMP/<name>
 make_repo() {
@@ -181,15 +191,39 @@ OWN="$TMP/codex/wt2/backend"
 git -C "$TMP/backend" worktree add -q --detach "$OWN" "$STALE"
 (cd "$OWN" && printf 'x\n' > mine && git add mine && git commit -qm mine)
 OWN_HEAD="$(git -C "$OWN" rev-parse HEAD)"
-"$TOOL" bootstrap "$OWN" >/dev/null 2>&1
+err="$("$TOOL" bootstrap "$OWN" 2>&1 >/dev/null)"
 expect "worktree with its own commit is not moved" "$(git -C "$OWN" rev-parse HEAD)" "$OWN_HEAD"
+loud "worktree with its own commit gets a loud warning" "$err" \
+  "WARNING: $OWN is 1 commits behind origin/main" "Rebase onto origin/main before you build on it."
 
 DIRTY="$TMP/codex/wt3/backend"
 git -C "$TMP/backend" worktree add -q --detach "$DIRTY" "$STALE"
 printf 'edit\n' >> "$DIRTY/Gemfile"
-"$TOOL" bootstrap "$DIRTY" >/dev/null 2>&1
+err="$("$TOOL" bootstrap "$DIRTY" 2>&1 >/dev/null)"
 expect "worktree with edits is not moved" "$(git -C "$DIRTY" rev-parse HEAD)" "$STALE"
 expect "worktree edits kept" "$(tail -n 1 "$DIRTY/Gemfile")" "edit"
+loud "worktree with edits gets a loud warning" "$err" \
+  "WARNING: $DIRTY is 1 commits behind origin/main" "Rebase onto origin/main before you build on it."
+
+# post-checkout runs from lefthook inside the checked-out tree; it can only warn.
+post_checkout() { (cd "$1" && "$TOOL" post-checkout 0000000 "$(git rev-parse HEAD)" "$2" >/dev/null) 2>&1; }
+PC="$TMP/codex/wt4/backend"
+git -C "$TMP/backend" worktree add -q --detach "$PC" "$STALE"
+err="$(post_checkout "$PC" 1)"; code=$?
+expect "post-checkout on a stale tree exit" "$code" 0
+loud "post-checkout on a stale tree warns loudly" "$err" \
+  "WARNING: $PC is 1 commits behind origin/main" "Run: git merge --ff-only origin/main"
+err="$(post_checkout "$PC" 0)"; code=$?
+expect "post-checkout of a file exit" "$code" 0
+expect "post-checkout of a file is silent" "$err" ""
+err="$(post_checkout "$CODEX" 1)"; code=$?
+expect "post-checkout on a current tree exit" "$code" 0
+expect "post-checkout on a current tree is silent" "$err" ""
+err="$(post_checkout "$OWN" 1)"; code=$?
+expect "post-checkout on a tree with its own commits exit" "$code" 0
+expect "post-checkout on a tree with its own commits is silent" "$err" ""
+err="$(cd "$TMP" && "$TOOL" post-checkout 2>&1 >/dev/null)"; code=$?
+expect "post-checkout outside a repo, without args, exit" "$code" 0
 
 # A branch that adds a migration gets its own dev database, copied from thoven_development.
 (cd "$BE" && touch db/migrate/20260930000000_add_thing.rb && git add db/migrate && git commit -qm migration)
@@ -198,7 +232,8 @@ rm -f "$TMP/db.log"
 expect "migration branch copies the dev database" "$(dblog)" "createdb -T thoven_development thoven_dev_api_thv970"
 expect "migration branch points DATABASE_URL at its copy" "$(env_line "$BE/.env" DATABASE_URL)" \
   "DATABASE_URL=postgresql://localhost/thoven_dev_api_thv970"
-printf 'thoven_dev_api_thv970\n' > "$TMP/dbs"
+# The match comes first and the list is long, so a grep -q that quits early would SIGPIPE psql.
+{ printf 'thoven_dev_api_thv970\n'; seq 1 50000 | sed 's/^/filler_/'; } > "$TMP/dbs"
 rm -f "$TMP/db.log"
 "$TOOL" bootstrap "$BE" >/dev/null 2>&1
 expect "an existing copy is reused" "$(dblog)" ""
@@ -211,6 +246,28 @@ CREATEDB_RC=1 "$TOOL" bootstrap "$BUSY" >/dev/null 2>&1; code=$?
 expect "a failed copy still bootstraps" "$code" 0
 expect "a failed copy leaves the shared fallback" "$(env_line "$BUSY/.env" DATABASE_URL)" ""
 
+OWNDB="$TMP/backend-thv-976"
+"$TOOL" create be owndb 976 >/dev/null 2>&1
+(cd "$OWNDB" && touch db/migrate/20260930000002_mine.rb && git add db/migrate && git commit -qm migration)
+printf 'DATABASE_URL=postgresql://localhost/my_own_db\n' >> "$OWNDB/.env"
+rm -f "$TMP/db.log"
+"$TOOL" bootstrap "$OWNDB" >/dev/null 2>&1
+expect "a migration branch keeps a DATABASE_URL it chose" "$(env_line "$OWNDB/.env" DATABASE_URL)" \
+  "DATABASE_URL=postgresql://localhost/my_own_db"
+expect "a migration branch with its own DATABASE_URL copies nothing" "$(dblog)" ""
+
+LINKED="$TMP/codex/wt5/backend"
+git -C "$TMP/backend" worktree add -q --detach "$LINKED" "$(git -C "$TMP/origin-backend.git" rev-parse main)"
+ln -s "$TMP/backend/.env" "$LINKED/.env"
+MAIN_ENV="$(cat "$TMP/backend/.env")"
+err="$("$TOOL" bootstrap "$LINKED" 2>&1 >/dev/null)"
+expect "a symlinked .env leaves main's .env alone" "$(cat "$TMP/backend/.env")" "$MAIN_ENV"
+if [ -L "$LINKED/.env" ]; then ok "a symlinked .env stays a symlink"; else fail "a symlinked .env stays a symlink" "$(ls -l "$LINKED/.env")"; fi
+has_line "a symlinked .env is reported" "$err" "thoven-worktree: leaving it, .env is a symlink (shared)"
+rm -f "$TMP/installs"
+env -u THOVEN_WORKTREE_SKIP_INSTALL BUNDLE_CHECK_RC=0 "$TOOL" bootstrap "$LINKED" >/dev/null 2>&1
+expect "a symlinked .env never reaches db:test:prepare" "$(installs)" ""
+
 # orphan-dbs lists what no live worktree's .env names, and drops nothing.
 printf '%s\n' neondb_test neondb_test2 neondb_test_api_thv970 neondb_test_old thoven_development \
   thoven_dev_api_thv970 thoven_prod_rehearsal postgres > "$TMP/dbs"
@@ -221,6 +278,14 @@ expect "orphan-dbs lists only unreferenced Thoven databases" "$out" \
   "$(printf '%s\n' neondb_test2 neondb_test_old thoven_prod_rehearsal)"
 expect "orphan-dbs drops nothing" "$(dblog)" ""
 
+# The shared databases are reached through database.yml's fallback, so no .env need name them.
+mkdir -p "$TMP/bare-root" && git init -q "$TMP/bare-root/backend"
+printf '%s\n' neondb_test thoven_development neondb_test_old > "$TMP/dbs"
+out="$(THOVEN_ROOT="$TMP/bare-root" "$TOOL" orphan-dbs 2>/dev/null)"
+expect "orphan-dbs never lists the shared databases" "$out" "neondb_test_old"
+printf '%s\n' neondb_test neondb_test2 neondb_test_api_thv970 neondb_test_old thoven_development \
+  thoven_dev_api_thv970 thoven_prod_rehearsal postgres > "$TMP/dbs"
+
 # remove drops the worktree's own databases, never a shared one, and nothing when git refuses.
 printf 'edit\n' >> "$BUSY/Gemfile"
 "$TOOL" remove "$BUSY" >/dev/null 2>&1; code=$?
@@ -230,6 +295,14 @@ if [ -d "$BUSY" ]; then ok "failed remove keeps the tree"; else fail "failed rem
 
 "$TOOL" remove "$TMP/backend" >/dev/null 2>&1; code=$?
 expect "remove refuses the main checkout" "$code" 1
+
+FOREIGN="$TMP/backend-thv-975"
+"$TOOL" create be foreign 975 >/dev/null 2>&1
+printf 'TEST_DATABASE_URL=postgresql://localhost/neondb_test_someone_thv1\n' >> "$FOREIGN/.env"
+rm -f "$TMP/db.log"
+"$TOOL" remove "$FOREIGN" >/dev/null 2>&1; code=$?
+expect "remove of a worktree naming another's database exit" "$code" 0
+expect "remove drops no database named for another worktree" "$(dblog)" ""
 
 "$TOOL" remove "$BE" >/dev/null 2>&1; code=$?
 expect "remove exit" "$code" 0

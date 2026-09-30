@@ -27,6 +27,8 @@ usage: thoven-worktree create <fe|be> <area> <n>
        thoven-worktree remove <path>   (also drops the worktree's own databases)
        thoven-worktree orphan-dbs      (lists local databases no worktree uses; drops nothing)
        thoven-worktree hook            (Claude Code WorktreeCreate; JSON on stdin)
+       thoven-worktree post-checkout <prev> <new> <flag>
+                                       (git post-checkout; warns when a checkout lands behind origin/main)
 EOF
   exit 2
 }
@@ -35,9 +37,15 @@ physical() { (cd "$1" 2>/dev/null && pwd -P); }
 
 main_of() { git -C "$1" worktree list --porcelain | sed -n 's/^worktree //p' | head -n 1; }
 
+# warn_behind <path> <behind> <reason> <remedy>: a one-line log scrolls past unread.
+warn_behind() {
+  local bangs='!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+  printf '%s\nWARNING: %s is %s commits behind origin/main\n%s\n%s\n%s\n' "$bangs" "$1" "$2" "$3" "$4" "$bangs" >&2
+}
+
 # Codex desktop cuts a detached worktree from the chosen branch's local HEAD, which can be days
 # behind GitHub. A tree with no commits of its own and no edits moves up to origin/main; any
-# other tree only hears how far behind it is.
+# other tree is warned.
 freshen() {
   local path="$1" behind
   git -C "$path" fetch --quiet origin main || log "warning: git fetch origin main failed, using the last fetched origin/main"
@@ -45,15 +53,30 @@ freshen() {
   behind="$(git -C "$path" rev-list --count HEAD..origin/main)"
   [ "$behind" -gt 0 ] || return 0
   if [ -n "$(git -C "$path" rev-list -n 1 HEAD --not origin/main)" ]; then
-    log "$behind behind origin/main with commits of its own, rebase when ready"
+    warn_behind "$path" "$behind" "It has commits of its own, so it was left where it is." \
+      "Rebase onto origin/main before you build on it."
   elif [ -n "$(git -C "$path" status --porcelain)" ]; then
-    log "$behind behind origin/main with uncommitted changes, left where it is"
+    warn_behind "$path" "$behind" "It has uncommitted changes, so it was left where it is." \
+      "Rebase onto origin/main before you build on it."
   elif git -C "$path" merge --ff-only --quiet origin/main >&2; then
     log "moved $behind commit(s) forward to origin/main"
   fi
 }
 
 # <area>_thv<n> on a ticket branch, else a hash of the path, so every worktree names its own.
+# post_checkout <prev> <new> <flag>: runs inside the checked-out tree. A hook cannot block the
+# checkout, and it must not fetch, so it only compares against the last fetched origin/main.
+post_checkout() {
+  local top behind
+  [ "${3:-}" = 1 ] || return 0
+  top="$(git rev-parse --show-toplevel 2>/dev/null)" || return 0
+  git rev-parse --verify --quiet origin/main >/dev/null || return 0
+  behind="$(git rev-list --count HEAD..origin/main 2>/dev/null)" || return 0
+  [ "${behind:-0}" -gt 0 ] || return 0
+  [ -z "$(git rev-list -n 1 HEAD --not origin/main 2>/dev/null)" ] || return 0
+  warn_behind "$top" "$behind" "It has no commits of its own, so it can move up." "Run: git merge --ff-only origin/main"
+}
+
 db_suffix() {
   local path="$1" branch area
   branch="$(git -C "$path" branch --show-current)"
@@ -93,8 +116,10 @@ referenced_dbs() {
 
 # Two sessions running rspec on one shared neondb_test truncate each other's data.
 isolate_db() {
-  local path="$1" env="$1/.env" suffix dev_db
+  local path="$1" env="$1/.env" suffix dev_db current all
   [ -f "$env" ] || { log "no .env, so no database of its own"; return 0; }
+  # set_env would write through the link into the checkout it points at.
+  [ -L "$env" ] && { log "leaving it, .env is a symlink (shared)"; return 0; }
   suffix="$(db_suffix "$path")"
   set_env "$env" TEST_DATABASE_URL "postgresql://localhost/neondb_test_$suffix"
   log "TEST_DATABASE_URL points at neondb_test_$suffix"
@@ -107,7 +132,14 @@ isolate_db() {
   fi
   [ -n "$(git -C "$path" diff origin/main --name-only -- db/migrate)" ] || return 0
   dev_db="thoven_dev_$suffix"
-  if local_dbs 2>/dev/null | grep -qxF "$dev_db" || createdb -T thoven_development "$dev_db" >&2; then
+  current="$(env_db "$env" DATABASE_URL)"
+  case "$current" in
+    "" | thoven_development | "$dev_db") ;;
+    *) log "db/migrate differs from origin/main, but DATABASE_URL names $current, leaving it"; return 0 ;;
+  esac
+  # Captured first: grep -q quits early, and under pipefail psql's SIGPIPE would fail the test.
+  all="$(local_dbs 2>/dev/null)" || true
+  if grep -qxF "$dev_db" <<<"$all" || createdb -T thoven_development "$dev_db" >&2; then
     set_env "$env" DATABASE_URL "postgresql://localhost/$dev_db"
     log "db/migrate differs from origin/main, so DATABASE_URL points at $dev_db, a copy of thoven_development"
   else
@@ -171,7 +203,8 @@ bootstrap() {
     return 0
   fi
   install_deps "$path" "$kind"
-  if [ "$kind" = be ] && [ "$own" = 1 ] && [ -f "$path/.env" ]; then
+  # A symlinked .env names the shared test database, and db:test:prepare purges it.
+  if [ "$kind" = be ] && [ "$own" = 1 ] && [ -f "$path/.env" ] && [ ! -L "$path/.env" ]; then
     local test_url
     test_url="$(sed -n 's/^TEST_DATABASE_URL=//p' "$path/.env" | tail -n 1)"
     log "bin/rails db:test:prepare on $(env_db "$path/.env" TEST_DATABASE_URL)"
@@ -247,16 +280,18 @@ create() {
 }
 
 remove() {
-  local path main db key dbs=()
+  local path main db key suffix dbs=()
   path="$(physical "$1")" || die 1 "remove: $1 is not a directory"
   [ "$(physical "$(git -C "$path" rev-parse --show-toplevel 2>/dev/null)")" = "$path" ] ||
     die 1 "remove: $path is not the top of a git worktree"
   main="$(physical "$(main_of "$path")")"
   [ "$path" != "$main" ] || die 1 "remove: $path is the main checkout"
+  # Only the names bootstrap gives this tree: a .env copied from another tree names that tree's.
+  suffix="$(db_suffix "$path")"
   if [ -f "$path/.env" ]; then
     for key in TEST_DATABASE_URL DATABASE_URL; do
       db="$(env_db "$path/.env" "$key")"
-      [[ "$db" =~ ^(neondb_test|thoven_dev)_[a-z0-9_]+$ ]] && dbs+=("$db")
+      { [ "$db" = "neondb_test_$suffix" ] || [ "$db" = "thoven_dev_$suffix" ]; } && dbs+=("$db")
     done
   fi
   git -C "$main" worktree remove "$path" >&2 || die 1 "git worktree remove $path failed, so no database was dropped"
@@ -279,7 +314,8 @@ orphan_dbs() {
   local main="$THOVEN_ROOT/backend" all referenced
   git -C "$main" rev-parse --git-dir >/dev/null 2>&1 || die 1 "$main is not a git checkout"
   all="$(local_dbs)" || die 1 "psql could not list the local databases"
-  referenced="$(referenced_dbs "$main")"
+  # Shared by design: worktrees reach them through database.yml's fallback, so no .env names them.
+  referenced="$(referenced_dbs "$main"; printf '%s\n' thoven_development neondb_test)"
   grep -E '^(neondb|thoven)_' <<<"$all" | LC_ALL=C sort | grep -vxF -f <(printf '%s\n' "$referenced") || true
   log "these are not dropped. Drop by hand after checking: dropdb <name>"
 }
@@ -338,5 +374,6 @@ case "${1:-}" in
   remove) shift; [ $# -eq 1 ] || usage; remove "$1" ;;
   orphan-dbs) orphan_dbs ;;
   hook) hook ;;
+  post-checkout) shift; post_checkout "$@" || true; exit 0 ;;
   *) usage ;;
 esac
