@@ -38,4 +38,38 @@ expect "devin with DEVIN_PROJECT_DIR blocks" "$(DEVIN_PROJECT_DIR="$WT" run devi
 expect "devin without DEVIN_PROJECT_DIR judges from its working dir" "$(run devin "$(devin_payload "git stash push")" "$WT")" "rc=2 "
 expect "devin allows git status" "$(run devin "$(devin_payload "git status")" "$WT")" "rc=0 "
 
+g() { git -c user.name=t -c user.email=t@t -c commit.gpgsign=false -c core.hooksPath=/dev/null "$@"; }
+ORIGIN="$TMP/origin.git"
+REPO="$TMP/thoven/backend"
+g init -q --bare "$ORIGIN"
+g init -q -b main "$REPO"
+g -C "$REPO" commit -q --allow-empty -m init
+g -C "$REPO" remote add origin "$ORIGIN"
+g -C "$REPO" push -q -u origin main
+g -C "$REPO" branch pushed && g -C "$REPO" push -q origin pushed
+g -C "$REPO" branch local-only && g -C "$REPO" worktree add -q "$TMP/thoven/wt-dirty" pushed
+g -C "$REPO" worktree add -q "$TMP/thoven/wt-clean" -b clean-pushed main && g -C "$REPO" push -q origin clean-pushed
+g -C "$REPO" worktree add -q "$TMP/thoven/wt-ahead" -b ahead main
+g -C "$TMP/thoven/wt-ahead" commit -q --allow-empty -m "not pushed"
+echo scratch >"$TMP/thoven/wt-dirty/notes.md"
+g -C "$REPO" branch unpushed-commit ahead
+decision() {
+  local out
+  out=$(run "$1" "$(claude_payload "$2" "${3:-$REPO}")" | sed 's/^rc=0 //')
+  [ -n "$out" ] && jq -r .hookSpecificOutput.permissionDecision <<<"$out" || echo allow
+}
+
+expect "worktree remove --force refuses untracked files" "$(decision claude "git worktree remove --force ../wt-dirty")" "deny"
+expect "worktree remove -f refuses commits not on origin" "$(decision claude "git worktree remove -f $TMP/thoven/wt-ahead")" "deny"
+expect "worktree remove --force allows a clean, pushed tree" "$(decision claude "git worktree remove --force ../wt-clean")" "allow"
+expect "plain worktree remove of a clean, pushed tree is allowed" "$(decision claude "git worktree remove ../wt-clean")" "allow"
+expect "branch -D refuses commits not on origin" "$(decision claude "git branch -D unpushed-commit")" "deny"
+expect "branch --delete --force refuses commits not on origin" "$(decision claude "git branch --delete --force unpushed-commit")" "deny"
+expect "git -C <repo> branch -D is judged in that repo" "$(decision claude "git -C $REPO branch -D unpushed-commit" "$WT")" "deny"
+expect "cd <repo> && git branch -D is judged in that repo" "$(decision claude "cd $REPO && git branch -D unpushed-commit" "$WT")" "deny"
+expect "branch -D allows a branch whose commits are on origin" "$(decision claude "git branch -D pushed local-only")" "allow"
+expect "branch -d is left to git's own merged check" "$(decision claude "git branch -d unpushed-commit")" "allow"
+expect "cursor denies branch -D of unpushed work" "$(run cursor "$(cursor_payload "git branch -D unpushed-commit" "$REPO")" | sed 's/^rc=0 //' | jq -r .permission)" "deny"
+expect "devin blocks worktree remove --force of a dirty tree" "$(run devin "$(devin_payload "git worktree remove --force ../wt-dirty")" "$REPO")" "rc=2 "
+
 echo "all passed"

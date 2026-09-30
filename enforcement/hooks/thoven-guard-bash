@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Blocks vitest --exclude, git clean/reset --hard, and stash/checkout/restore that could discard other sessions' work.
+# Blocks vitest --exclude, git clean/reset --hard, stash/checkout/restore that could discard other sessions' work,
+# and a forced worktree remove or branch -D of work that is not on origin.
 # One guard for every harness. Claude and Codex send tool_input.command and read the default
 # output. Cursor's beforeShellExecution sends a top-level command and reads {"permission":"deny"}.
 # Devin sends no cwd (it sets DEVIN_PROJECT_DIR and runs the hook in the project) and blocks only
@@ -101,6 +102,43 @@ paths_all_edited() {
   done
   return 0
 }
+
+# resolve a path against a directory, expanding a leading ~ and dropping quotes
+resolve_in() {
+  local dir="$1" p="${2//[\"\']/}"
+  case "$p" in
+    "~") p="$HOME" ;;
+    "~/"*) p="$HOME/${p#"~/"}" ;;
+  esac
+  case "$p" in
+    /*) printf '%s\n' "$p" ;;
+    *) printf '%s\n' "$dir/$p" ;;
+  esac
+}
+
+# commits reachable from a ref in a repo that no origin ref contains
+unpushed_count() {
+  git -C "$1" rev-list --count "$2" --not --remotes=origin 2>/dev/null || echo 0
+}
+
+# git's own arguments after its global options, with the repo dir -C points at
+parse_git() {
+  local dir="$1"; shift
+  git_args=()
+  git_dir="$dir"
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      -C) git_dir="$(resolve_in "$git_dir" "${2:-.}")"; shift 2 ;;
+      -c) shift 2 ;;
+      -*) shift ;;
+      *) break ;;
+    esac
+  done
+  git_args=("$@")
+}
+
+# work_cwd follows `cd <dir>` across the chain, so `cd repo && git branch -D x` is judged in repo
+work_cwd="$cwd"
 
 # gather every subcommand, expanding $( ... ) recursively
 declare -a queue=("$command")
@@ -204,6 +242,66 @@ for sub in "${subcommands[@]}"; do
       done
       if ! paths_all_edited "${paths[@]}"; then
         deny "git restore with no paths, or with a path you did not edit this session, takes other sessions' work with it. Undo only your files: git restore <paths you edited>."
+      fi
+    fi
+  fi
+  if [ "$w0" = "cd" ] && [ -n "$w1" ]; then
+    work_cwd="$(resolve_in "$work_cwd" "$w1")"
+  fi
+
+  if [ "$w0" = "git" ]; then
+    parse_git "$work_cwd" "${words[@]:1}"
+    g1="${git_args[0]:-}"
+    g2="${git_args[1]:-}"
+
+    if [ "$g1" = "worktree" ] && [ "$g2" = "remove" ]; then
+      force=0
+      target=""
+      for a in "${git_args[@]:2}"; do
+        case "$a" in
+          -f|--force) force=1 ;;
+          -*) ;;
+          *) target="$a" ;;
+        esac
+      done
+      tree="$(resolve_in "$git_dir" "$target")"
+      if [ "$force" -eq 1 ] && [ -n "$target" ] && git -C "$tree" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        dirty="$(git -C "$tree" status --porcelain --untracked-files=all 2>/dev/null | wc -l | tr -d '[:space:]')"
+        ahead="$(unpushed_count "$tree" HEAD)"
+        if [ "${dirty:-0}" -gt 0 ] || [ "${ahead:-0}" -gt 0 ]; then
+          deny "$target holds work that is not on origin (uncommitted or untracked files: $dirty, unpushed commits: $ahead), which a forced remove destroys; commit and push it, then run git worktree remove $target."
+        fi
+      fi
+    fi
+
+    if [ "$g1" = "branch" ]; then
+      delete=0
+      force=0
+      remote=0
+      branches=()
+      for a in "${git_args[@]:1}"; do
+        case "$a" in
+          --delete) delete=1 ;;
+          --force) force=1 ;;
+          --remotes) remote=1 ;;
+          --*) ;;
+          -*)
+            [[ "$a" == *D* ]] && { delete=1; force=1; }
+            [[ "$a" == *d* ]] && delete=1
+            [[ "$a" == *f* ]] && force=1
+            [[ "$a" == *r* ]] && remote=1
+            ;;
+          *) branches+=("$a") ;;
+        esac
+      done
+      if [ "$delete" -eq 1 ] && [ "$force" -eq 1 ] && [ "$remote" -eq 0 ]; then
+        for b in "${branches[@]}"; do
+          git -C "$git_dir" rev-parse --verify -q "refs/heads/$b" >/dev/null || continue
+          ahead="$(unpushed_count "$git_dir" "refs/heads/$b")"
+          if [ "${ahead:-0}" -gt 0 ]; then
+            deny "Branch $b holds work that is not on origin (unpushed commits: $ahead), which git branch -D destroys; push it with git push origin $b first, or use git branch -d if it is merged."
+          fi
+        done
       fi
     fi
   fi
