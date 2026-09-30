@@ -10,7 +10,7 @@ T=$(mktemp -d /tmp/thv974.XXXXXX) || exit 1; case "$T" in /tmp/thv974.*) ;; *) e
 SESSION="uncommitted-test-$$"
 STATE="/tmp/claude-thoven/$SESSION"
 case "$STATE" in /tmp/claude-thoven/uncommitted-test-[0-9]*) ;; *) exit 1;; esac
-trap 'rm -rf "$T" "$STATE" "$STATE-nolog" "$STATE-cursor" "$STATE-devin" "$STATE-opencode" "$STATE-claude"' EXIT
+trap 'rm -rf "$T" "$STATE" "$STATE-nolog" "$STATE-cursor" "$STATE-devin" "$STATE-opencode" "$STATE-claude" "/tmp/thv984-escape-track-$$"' EXIT
 TMP="$T"
 
 ok() { printf 'ok %s\n' "$1"; }
@@ -128,5 +128,10 @@ expect "claude: a Bash-written component still gets the UI rule" "$nudge" "PostT
 expect "claude: the Bash scan feeds the stop block" \
   "$(run claude "$(stop_payload false "$S")")" \
   "rc=0 $(jq -nc --arg r "$(e2e_msg "components/Badge.tsx")" '{decision:"block",reason:$r}')"
+
+ESC="thv984-escape-track-$$"
+jq -nc --arg s "../../../tmp/$ESC" --arg d "$C" '{session_id:$s,cwd:$d,tool_name:"Edit",tool_input:{file_path:($d+"/x")}}' | HOME="$HOMEP" "$TRACK" >/dev/null
+if [ -e "/tmp/$ESC" ]; then fail "a session id with ../ writes nothing outside /tmp/claude-thoven" "/tmp/$ESC exists"; fi
+ok "a session id with ../ writes nothing outside /tmp/claude-thoven"
 
 echo "all passed"

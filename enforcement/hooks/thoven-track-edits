@@ -54,6 +54,8 @@ case "$cwd" in
 esac
 
 [ -n "$session_id" ] || exit 0
+# The id names a directory under /tmp/claude-thoven; one that could climb out of it is ignored.
+case "$session_id" in */*|.*) exit 0 ;; esac
 
 state="/tmp/claude-thoven/$session_id"
 mkdir -p "$state"

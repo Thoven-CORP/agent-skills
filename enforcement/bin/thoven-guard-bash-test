@@ -6,7 +6,7 @@ set -uo pipefail
 GUARD="$(cd "$(dirname "$0")/.." && pwd)/hooks/thoven-guard-bash"
 TMP="$(cd "$(mktemp -d)" && pwd -P)"
 SESSION="guard-test-$$"
-trap 'rm -rf "$TMP" "/tmp/claude-thoven/$SESSION"' EXIT
+trap 'rm -rf "$TMP" "/tmp/claude-thoven/$SESSION" "/tmp/thv984-escape-$$"' EXIT
 export HOME="$TMP"
 WT="$TMP/thoven/frontend-thv-1"
 mkdir -p "$WT"
@@ -90,6 +90,29 @@ expect "cd <path> then git restore <edited path> is allowed" "$(decision claude 
 expect "git -C <path> checkout -- <edited path> is allowed" "$(decision claude "git -C $TMP/thoven/wt-dirty checkout -- notes.md" "$WT")" "allow"
 expect "git -C <path> restore --staged is allowed" "$(decision claude "git -C $TMP/thoven/wt-dirty restore --staged notes.md" "$WT")" "allow"
 expect "git -C <path> stash list is allowed" "$(decision claude "git -C $TMP/thoven/wt-clean stash list" "$WT")" "allow"
+
+# fast <command>: the verdict from $REPO, or "hang" when the guard runs past 5s
+fast() {
+  local out rc
+  out=$(claude_payload "$1" "$REPO" | perl -e 'alarm 5; exec @ARGV' "$GUARD" --dialect claude 2>/dev/null); rc=$?
+  [ "$rc" -ge 128 ] && { echo hang; return; }
+  [ -n "$out" ] && jq -r .hookSpecificOutput.permissionDecision <<<"$out" || echo allow
+}
+expect "git -C with no directory returns and allows" "$(fast "git -C")" "allow"
+expect "git -c with no setting returns and allows" "$(fast "git -c")" "allow"
+
+expect "~/thoven itself is guarded: reset --hard" "$(decision claude "git reset --hard" "$TMP/thoven")" "deny"
+expect "~/thoven itself is guarded: worktree remove -f" "$(decision claude "git worktree remove -f wt-dirty" "$TMP/thoven")" "deny"
+
+ESC="thv984-escape-$$"
+esc_payload=$(jq -nc --arg c "git stash" --arg d "$WT" --arg s "../../../tmp/$ESC" '{session_id:$s,cwd:$d,tool_input:{command:$c}}')
+expect "a session id with ../ is still guarded" "$(run claude "$esc_payload" | sed 's/^rc=0 //' | jq -r .hookSpecificOutput.permissionDecision)" "deny"
+if [ -e "/tmp/$ESC" ]; then fail "a session id with ../ writes nothing outside /tmp/claude-thoven" "/tmp/$ESC exists"; else ok "a session id with ../ writes nothing outside /tmp/claude-thoven"; fi
+
+expect "a for loop's do does not hide branch -D" "$(decision claude "for b in x; do git branch -D unpushed-commit; done")" "deny"
+expect "branch -D of a variable the guard cannot resolve is refused" "$(decision claude 'for b in x y; do git branch -D $b; done')" "deny"
+expect "then does not hide reset --hard" "$(decision claude "if true; then git reset --hard; fi")" "deny"
+expect "a loop of harmless git stays allowed" "$(decision claude "for b in x; do git status; done")" "allow"
 
 [ "$failed" -eq 0 ] || exit 1
 echo "all passed"

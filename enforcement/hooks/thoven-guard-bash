@@ -20,9 +20,11 @@ allow() {
   exit 0
 }
 session_id="$(jq -r '.session_id // .conversation_id // empty' <<<"$payload")"
+# The id names a directory under /tmp/claude-thoven; one that could climb out of it keeps no state.
+case "$session_id" in */*|.*) session_id="" ;; esac
 
 case "$cwd" in
-  "$HOME"/thoven/*|"$HOME"/.herdr/worktrees/*) ;;
+  "$HOME"/thoven|"$HOME"/thoven/*|"$HOME"/.herdr/worktrees/*) ;;
   *) allow ;;
 esac
 
@@ -123,8 +125,12 @@ parse_git() {
   git_dir="$dir"
   while [ "$#" -gt 0 ]; do
     case "$1" in
-      -C) git_dir="$(resolve_in "$git_dir" "${2:-.}")"; shift 2 ;;
-      -c) shift 2 ;;
+      -C)
+        [ "$#" -ge 2 ] || break
+        git_dir="$(resolve_in "$git_dir" "$2")"; shift 2 ;;
+      -c)
+        [ "$#" -ge 2 ] || break
+        shift 2 ;;
       -*) shift ;;
       *) break ;;
     esac
@@ -169,6 +175,8 @@ for sub in "${subcommands[@]}"; do
   fi
 
   read -r -a words <<<"$sub"
+  # The ; split leaves a loop or if body behind its keyword: `for b in x; do git branch -D $b; done`.
+  case "${words[0]:-}" in do|then|else|elif) words=("${words[@]:1}") ;; esac
   w0="${words[0]:-}"
   w1="${words[1]:-}"
 
@@ -297,6 +305,9 @@ for sub in "${subcommands[@]}"; do
     done
     if [ "$delete" -eq 1 ] && [ "$force" -eq 1 ] && [ "$remote" -eq 0 ]; then
       for b in "${branches[@]}"; do
+        case "$b" in
+          *'$'*|*'`'*) deny "Branch $b is a variable the guard cannot resolve, and git branch -D destroys commits that are not on origin; name the branch, or use git branch -d." ;;
+        esac
         git -C "$git_dir" rev-parse --verify -q "refs/heads/$b" >/dev/null || continue
         ahead="$(unpushed_count "$git_dir" "refs/heads/$b")"
         if [ "${ahead:-0}" -gt 0 ]; then
