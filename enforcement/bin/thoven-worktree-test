@@ -205,6 +205,15 @@ expect "worktree edits kept" "$(tail -n 1 "$DIRTY/Gemfile")" "edit"
 loud "worktree with edits gets a loud warning" "$err" \
   "WARNING: $DIRTY is 1 commits behind origin/main" "Rebase onto origin/main before you build on it."
 
+SHARED="$TMP/codex/shared/backend"
+git -C "$TMP/backend" push -q origin "$STALE:refs/heads/shared"
+git -C "$TMP/backend" fetch -q origin shared:refs/remotes/origin/shared
+git -C "$TMP/backend" worktree add -q -b shared "$SHARED" origin/shared
+err="$("$TOOL" bootstrap "$SHARED" 2>&1 >/dev/null)"
+expect "branch that exists on origin is not moved" "$(git -C "$SHARED" rev-parse HEAD)" "$STALE"
+loud "branch that exists on origin gets a loud warning" "$err" \
+  "WARNING: $SHARED is 1 commits behind origin/main" "Rebase onto origin/main before you build on it."
+
 # post-checkout runs from lefthook inside the checked-out tree; it can only warn.
 post_checkout() { (cd "$1" && "$TOOL" post-checkout 0000000 "$(git rev-parse HEAD)" "$2" >/dev/null) 2>&1; }
 PC="$TMP/codex/wt4/backend"

@@ -44,10 +44,10 @@ warn_behind() {
 }
 
 # Codex desktop cuts a detached worktree from the chosen branch's local HEAD, which can be days
-# behind GitHub. A tree with no commits of its own and no edits moves up to origin/main; any
-# other tree is warned.
+# behind GitHub. A tree with no commits of its own, no edits and no branch on origin moves up to
+# origin/main; any other tree is warned, because moving a shared branch rewrites what others pull.
 freshen() {
-  local path="$1" behind
+  local path="$1" behind branch
   git -C "$path" fetch --quiet origin main || log "warning: git fetch origin main failed, using the last fetched origin/main"
   git -C "$path" rev-parse --verify --quiet origin/main >/dev/null || return 0
   behind="$(git -C "$path" rev-list --count HEAD..origin/main)"
@@ -57,6 +57,10 @@ freshen() {
       "Rebase onto origin/main before you build on it."
   elif [ -n "$(git -C "$path" status --porcelain)" ]; then
     warn_behind "$path" "$behind" "It has uncommitted changes, so it was left where it is." \
+      "Rebase onto origin/main before you build on it."
+  elif branch="$(git -C "$path" symbolic-ref --quiet --short HEAD)" &&
+    git -C "$path" rev-parse --verify --quiet "refs/remotes/origin/$branch" >/dev/null; then
+    warn_behind "$path" "$behind" "Its branch $branch also exists on origin, so it was left where it is." \
       "Rebase onto origin/main before you build on it."
   elif git -C "$path" merge --ff-only --quiet origin/main >&2; then
     log "moved $behind commit(s) forward to origin/main"
