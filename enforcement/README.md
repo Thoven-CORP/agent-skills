@@ -2,7 +2,8 @@
 
 Hooks, agent definitions and the config that drives them, tracked here and
 copied out to each harness. This directory is the source of truth. Everything
-under `~/.claude/`, `~/.codex/` and `~/.cursor/` is a copy.
+under `~/.claude/`, `~/.codex/`, `~/.cursor/` and `~/.config/{devin,opencode}/`
+is a copy.
 
 ## Why the repo is the source
 
@@ -96,6 +97,12 @@ what keeps the always-loaded description list small. All 344 skills unblocked
 costs roughly 34,800 tokens of descriptions every turn. The current list costs
 roughly 8,500.
 
+`config/deny.json` lists the guard's unconditional denies. Each installer renders
+it into its harness's permission file, and Codex gets it as `rules/thoven.rules`.
+
+`rules/thoven-law.md` is the cross-repo law. `install/law.py` writes it between
+markers into each repo's `CLAUDE.md`, and `sync.sh` reports when a copy is stale.
+
 `skill-overrides/<slug>.SKILL.md` replaces that skill's file in every tree
 whenever upstream's copy returns. Use it for a rewrite that a string patch cannot
 restore.
@@ -122,9 +129,49 @@ changes to upstream skills live here, as a string patch in
 `reapply-skill-patches.py`, a whole-file `skill-overrides/` entry, or a line in
 `config/skills-invocable.txt`. Never in a forked copy.
 
+## Worktrees
+
+`bin/thoven-worktree create <fe|be> <area> <n>` is the one way a ticket worktree
+gets made: `~/thoven/<repo>-thv-<n>` on `<area>/thv-<n>` from `origin/main`, with
+the env file copied, dependencies installed and backend storage blobs linked. Git
+carries none of those into a new worktree, and Claude's own `--worktree` names
+the branch `worktree-<name>`, so both repos wire `hook` mode as Claude's
+`WorktreeCreate` and `bootstrap` as Cursor's and the Codex app's setup step. A
+generated name (a subagent's `bold-oak-a3f2`) gets a scratch worktree under
+`.claude/worktrees/` instead, so isolation keeps working. `bin/thoven-worktree-test`
+proves it on throwaway repos.
+
 ## Harness coverage
 
-Claude Code and Codex both run these hooks from their own copies, kept in step by
-`sync.sh`. Cursor runs one unrelated `sessionStart` hook and has never run these.
-Devin has no hook configuration. Codex's hook schema is identical to Claude
-Code's. Cursor's differs, which is why the hook half stays unwired there.
+`thoven-guard-bash` is one script with three output dialects, and every harness
+here runs it from its own copy, kept in step by `sync.sh`.
+
+Claude Code and Codex run it on `PreToolUse` for `Bash` in the default dialect,
+installed by `install/claude.py` and `install/codex.py`, and they run the other
+hooks too. Codex's hook schema is identical to Claude Code's.
+
+Cursor runs it on `beforeShellExecution` with `--dialect cursor`, which reads the
+top-level `command` and answers `{"permission":"deny"}`. Cursor staff say the
+`cursor-agent` CLI fires that event too (forum, 2026-04-12); the docs do not.
+`install/cursor.py` wires it into `~/.cursor/hooks.json` beside the orca and herdr entries.
+
+Devin runs it on `PreToolUse` with matcher `^exec$` and `--dialect devin`. Devin
+sends no `cwd`, so the guard falls back to `DEVIN_PROJECT_DIR`, and Devin blocks
+only on exit 2. Its config sets `read_config_from.claude=false`, so it never sees
+Claude's entries; `install/devin.py` writes its own into
+`~/.config/devin/config.json`.
+
+OpenCode has no shell-hook format. `opencode/thoven-guard.js` is a plugin whose
+`tool.execute.before` feeds the guard a Claude-dialect payload and throws on a
+deny. If the guard fails to run, the command proceeds, as it does in every other
+harness when a hook errors. `install/opencode.py` installs both.
+
+Only the guard crosses to Cursor, Devin and OpenCode. The edit tracker and the
+evidence question stay Claude and Codex only. Without the tracker the guard
+cannot tell a session's own files from another's, so in those three it refuses
+a path-scoped stash, checkout or restore too. Commit is the way out there.
+
+The two unconditional denies, `git clean` and `git reset --hard`, are also
+written into each harness's own permission file, so they hold even where a
+hook is skipped. The path-conditional ones need the session's edit record and
+stay hook-only.
