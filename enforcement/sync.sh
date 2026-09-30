@@ -8,6 +8,9 @@
 #
 #   ./sync.sh          report drift, write nothing
 #   ./sync.sh --apply  overwrite each harness copy from the repo
+#
+# It then checks the thoven-law block in each repo's CLAUDE.md through
+# install/law.py, over $THOVEN_LAW_REPOS if set, else law.py's defaults.
 set -uo pipefail
 
 cd "$(dirname "$0")"
@@ -17,27 +20,47 @@ APPLY=0
 
 # Only harnesses that already reference a hook get one. This never installs a
 # hook into a harness that was not already running it.
-TARGETS=("$HOME/.claude/hooks" "$HOME/.codex/hooks")
+TARGETS=("$HOME/.claude/hooks" "$HOME/.codex/hooks" "$HOME/.cursor/hooks"
+  "$HOME/.config/devin/hooks" "$HOME/.config/opencode/hooks")
+
+# Files that are not hooks: "repo path|harness path", same only-if-present rule.
+PAIRS=("$PWD/opencode/thoven-guard.js|$HOME/.config/opencode/plugins/thoven-guard.js")
 
 drift=0
+check() {
+  local src="$1" dst="$2" mode="$3"
+  [ -f "$dst" ] || return 0                 # not wired here, leave it alone
+  diff -q "$src" "$dst" >/dev/null 2>&1 && return 0
+  drift=$((drift + 1))
+  if [ "$APPLY" -eq 1 ]; then
+    cp "$src" "$dst" && { [ -z "$mode" ] || chmod "$mode" "$dst"; }
+    printf 'updated  %s\n' "${dst/#$HOME/~}"
+  else
+    printf 'DRIFT    %s  (repo %sL, harness %sL)\n' "${dst/#$HOME/~}" \
+      "$(wc -l <"$src" | tr -d ' ')" "$(wc -l <"$dst" | tr -d ' ')"
+  fi
+}
+
 for dest in "${TARGETS[@]}"; do
   [ -d "$dest" ] || continue
   for src in "$SRC"/*; do
-    name="$(basename "$src")"
-    [ -f "$dest/$name" ] || continue        # not wired here, leave it alone
-    if diff -q "$src" "$dest/$name" >/dev/null 2>&1; then
-      continue
-    fi
-    drift=$((drift + 1))
-    if [ "$APPLY" -eq 1 ]; then
-      cp "$src" "$dest/$name" && chmod +x "$dest/$name"
-      printf 'updated  %s\n' "${dest/#$HOME/~}/$name"
-    else
-      printf 'DRIFT    %s  (repo %sL, harness %sL)\n' "${dest/#$HOME/~}/$name" \
-        "$(wc -l <"$src" | tr -d ' ')" "$(wc -l <"$dest/$name" | tr -d ' ')"
-    fi
+    check "$src" "$dest/$(basename "$src")" +x
   done
 done
+for pair in "${PAIRS[@]}"; do
+  check "${pair%%|*}" "${pair#*|}" ""
+done
+
+law_args=()
+[ "$APPLY" -eq 1 ] && law_args+=(--apply)
+# Unquoted on purpose: THOVEN_LAW_REPOS is a space-separated list of repo paths.
+# shellcheck disable=SC2086
+law_out="$(python3 install/law.py ${law_args[@]+"${law_args[@]}"} ${THOVEN_LAW_REPOS:-})"
+law_rc=$?
+[ -n "$law_out" ] && printf '%s\n' "$law_out"
+if [ "$law_rc" -ne 0 ] || [ -n "$law_out" ]; then
+  drift=$((drift + 1))
+fi
 
 if [ "$drift" -eq 0 ]; then
   echo "every harness copy matches the repo"

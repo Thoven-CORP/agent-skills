@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Installs the enforcement hooks into Claude Code's settings.json.
+"""Installs the enforcement hooks and the deny list into Claude Code's settings.json.
 
 Dry run by default. Pass --apply to write. Do not run --apply against a
 live settings.json unless you mean to touch it: these hooks are already
@@ -7,13 +7,13 @@ wired on this machine, so the normal use of this script is proof, not
 install.
 """
 import argparse
+import copy
 import json
-import shutil
-import stat
 import sys
 from pathlib import Path
 
-ENFORCEMENT_DIR = Path(__file__).resolve().parent.parent
+from common import ENFORCEMENT_DIR, add_missing, copy_file, load_denies, needs_copy, read_json, write_json
+
 CLAUDE_DIR = Path.home() / ".claude"
 HOOKS_DIR = CLAUDE_DIR / "hooks"
 SETTINGS = CLAUDE_DIR / "settings.json"
@@ -24,6 +24,10 @@ HOOK_SPECS = [
     ("thoven-track-edits", "PostToolUse", "Edit|Write|Bash", 10),
     ("thoven-require-evidence", "Stop", None, 10),
 ]
+
+
+def deny_token(argv: list) -> str:
+    return f"Bash({' '.join(argv)}:*)"
 
 
 def command_for(script_name: str) -> str:
@@ -52,48 +56,48 @@ def main():
     parser.add_argument("--apply", action="store_true", help="write changes; default is dry run")
     args = parser.parse_args()
 
-    settings = json.loads(SETTINGS.read_text()) if SETTINGS.exists() else {}
+    original = read_json(SETTINGS, {})
+    settings = copy.deepcopy(original)
 
     plan = []
     for script_name, event, matcher, timeout in HOOK_SPECS:
         command = command_for(script_name)
         src = ENFORCEMENT_DIR / "hooks" / script_name
-        copy_needed = not (HOOKS_DIR / script_name).exists() or (
-            (HOOKS_DIR / script_name).read_bytes() != src.read_bytes()
-        )
+        copy_needed = needs_copy(src, HOOKS_DIR / script_name)
         settings_needed = not hook_already_present(settings, event, command)
         plan.append((script_name, event, matcher, timeout, command, copy_needed, settings_needed))
+
+    wanted_denies = [deny_token(d["argv"]) for d in load_denies()]
+    missing_denies = [t for t in wanted_denies if t not in settings.get("permissions", {}).get("deny", [])]
 
     print(f"Target settings file: {SETTINGS}")
     print(f"Target hooks dir: {HOOKS_DIR}")
     for script_name, event, matcher, timeout, command, copy_needed, settings_needed in plan:
         print(f"- {script_name}: copy={'yes' if copy_needed else 'no (already matches)'} "
               f"settings_entry[{event}/{matcher or '-'}]={'add' if settings_needed else 'already present'}")
+    for token in wanted_denies:
+        print(f"- permissions.deny {token}: {'add' if token in missing_denies else 'already present'}")
 
     if not args.apply:
         print("\nDry run only. Re-run with --apply to write.")
         return
 
-    if SETTINGS.exists():
-        backup = SETTINGS.with_suffix(SETTINGS.suffix + ".bak")
-        if not backup.exists():
-            shutil.copy2(SETTINGS, backup)
-            print(f"Backed up {SETTINGS} to {backup}")
-
-    HOOKS_DIR.mkdir(parents=True, exist_ok=True)
+    changed = False
     for script_name, event, matcher, timeout, command, copy_needed, settings_needed in plan:
         if copy_needed:
-            src = ENFORCEMENT_DIR / "hooks" / script_name
-            dest = HOOKS_DIR / script_name
-            shutil.copy2(src, dest)
-            dest.chmod(dest.stat().st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)
-            print(f"Copied {src} -> {dest}")
+            copy_file(ENFORCEMENT_DIR / "hooks" / script_name, HOOKS_DIR / script_name, executable=True)
+            changed = True
         if settings_needed:
             add_hook(settings, event, matcher, command, timeout)
             print(f"Added {event}/{matcher or '-'} entry for {script_name}")
+    for token in add_missing(settings.setdefault("permissions", {}).setdefault("deny", []), wanted_denies):
+        print(f"Added permissions.deny {token}")
 
-    SETTINGS.write_text(json.dumps(settings, indent=2) + "\n")
-    print(f"Wrote {SETTINGS}")
+    if settings != original:
+        write_json(SETTINGS, settings)
+        changed = True
+    if not changed:
+        print("No changes.")
 
 
 if __name__ == "__main__":

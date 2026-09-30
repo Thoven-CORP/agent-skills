@@ -1,0 +1,12 @@
+{
+  "commands": [
+    {
+      "argv": ["git", "clean"],
+      "why": "This tree is shared with other sessions. git clean deletes untracked files you did not write. Remove your own files by path instead."
+    },
+    {
+      "argv": ["git", "reset", "--hard"],
+      "why": "This tree is shared with other sessions. git reset --hard discards work you did not write. Undo your own files by path instead."
+    }
+  ]
+}
