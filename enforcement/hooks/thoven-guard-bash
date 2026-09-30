@@ -103,12 +103,14 @@ paths_all_edited() {
   return 0
 }
 
-# resolve a path against a directory, expanding a leading ~ and dropping quotes
+# resolve a path against a directory, expanding a leading ~ or $HOME and dropping quotes
 resolve_in() {
   local dir="$1" p="${2//[\"\']/}"
   case "$p" in
-    "~") p="$HOME" ;;
+    "~"|'$HOME'|'${HOME}') p="$HOME" ;;
     "~/"*) p="$HOME/${p#"~/"}" ;;
+    '$HOME/'*) p="$HOME/${p#'$HOME/'}" ;;
+    '${HOME}/'*) p="$HOME/${p#'${HOME}/'}" ;;
   esac
   case "$p" in
     /*) printf '%s\n' "$p" ;;
@@ -245,11 +247,12 @@ for sub in "${subcommands[@]}"; do
       fi
     fi
   fi
-  if [ "$w0" = "cd" ] && [ -n "$w1" ]; then
+  # A leading ( opens a subshell: `(cd repo && git branch -D x)`.
+  if [ "${w0#(}" = "cd" ] && [ -n "$w1" ]; then
     work_cwd="$(resolve_in "$work_cwd" "$w1")"
   fi
 
-  if [ "$w0" = "git" ]; then
+  if [ "${w0#(}" = "git" ]; then
     parse_git "$work_cwd" "${words[@]:1}"
     g1="${git_args[0]:-}"
     g2="${git_args[1]:-}"
@@ -259,9 +262,11 @@ for sub in "${subcommands[@]}"; do
       target=""
       for a in "${git_args[@]:2}"; do
         case "$a" in
-          -f|--force) force=1 ;;
+          --force|--forc|--for|--fo) force=1 ;;
+          --*) ;;
+          -*f*) force=1 ;;
           -*) ;;
-          *) target="$a" ;;
+          *) target="${a%)}" ;;
         esac
       done
       tree="$(resolve_in "$git_dir" "$target")"
@@ -280,10 +285,13 @@ for sub in "${subcommands[@]}"; do
       remote=0
       branches=()
       for a in "${git_args[@]:1}"; do
+        a="${a//[\"\']/}"
+        a="${a%)}"
+        # git accepts any unambiguous prefix of a long option
         case "$a" in
-          --delete) delete=1 ;;
-          --force) force=1 ;;
-          --remotes) remote=1 ;;
+          --delete|--delet|--dele|--del|--de) delete=1 ;;
+          --force|--forc|--for|--fo) force=1 ;;
+          --remotes|--remote|--remot|--remo|--rem) remote=1 ;;
           --*) ;;
           -*)
             [[ "$a" == *D* ]] && { delete=1; force=1; }
