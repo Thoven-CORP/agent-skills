@@ -175,6 +175,13 @@ rm -f "$TMP/installs"
 "$TOOL" >/dev/null 2>&1
 expect "a fast-forward that leaves the lockfile alone installs nothing" "$(installs)" ""
 
+printf '%s\n' "  4243 /bin/zsh -l" > "$TMP/ps"
+printf '%s\n' "$FE" > "$TMP/cwd-4243"
+lockfile v1b
+rm -f "$TMP/installs"
+"$TOOL" >/dev/null 2>&1
+expect "a shell sitting in the tree does not skip the install" "$(installs)" "pnpm install --frozen-lockfile in $FE"
+
 printf '%s\n' "  4242 node $FE/node_modules/.bin/next dev --port 3000" "  4243 /bin/zsh -l" > "$TMP/ps"
 printf '%s\n' "$FE" > "$TMP/cwd-4242"
 printf '%s\n' "$FE" > "$TMP/cwd-4243"
