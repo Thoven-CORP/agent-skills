@@ -32,9 +32,49 @@ take_lock() {
   return 1
 }
 
+# install_after <checkout> <old HEAD>: a fast-forward that changes pnpm-lock.yaml leaves
+# node_modules behind it, so imports fail. pnpm install replaces packages under a running dev
+# server, so a dev server on these packages skips it. Prints "; <what happened>" or nothing.
+install_after() {
+  local main="$1" before="$2" pid
+  [ -f "$main/pnpm-lock.yaml" ] || return 0
+  git -C "$main" diff --quiet "$before" HEAD -- pnpm-lock.yaml && return 0
+  if pid="$(dev_server "$main")"; then
+    printf "; pnpm-lock.yaml changed, pnpm install skipped: dev server pid %s uses this tree's node_modules. Stop it, then run: cd %s && pnpm install --frozen-lockfile" "$pid" "$main"
+  elif (cd "$main" && pnpm install --frozen-lockfile) >/dev/null 2>&1; then
+    printf '; pnpm-lock.yaml changed, ran pnpm install --frozen-lockfile'
+  else
+    printf '; pnpm-lock.yaml changed, but pnpm install --frozen-lockfile failed. Run: cd %s && pnpm install --frozen-lockfile' "$main"
+  fi
+}
+
+# package_trees <checkout>: the checkout and every worktree whose node_modules links into its own.
+package_trees() {
+  local main="$1" path branch
+  printf '%s\n' "$main"
+  while IFS=$'\t' read -r path branch; do
+    [ "$(cd "$path/node_modules" 2>/dev/null && pwd -P)" = "$main/node_modules" ] &&
+      (cd "$path" && pwd -P)
+  done < <(worktrees "$main")
+}
+
+# dev_server <checkout>: the pid of a dev server (next, vite) working in a tree on its packages.
+dev_server() {
+  local trees pid cwd tree
+  trees="$(package_trees "$1")"
+  while read -r pid _; do
+    cwd="$(lsof -a -p "$pid" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p')"
+    [ -n "$cwd" ] || continue
+    while IFS= read -r tree; do
+      case "$cwd/" in "$tree"/*) echo "$pid"; return 0 ;; esac
+    done <<<"$trees"
+  done < <(ps -axo pid=,command= | awk '/next dev|next-server|vite/ && !/awk/')
+  return 1
+}
+
 # sync_main <checkout>: fast-forward if safe. Prints what happened, without the path.
 sync_main() {
-  local main="$1" branch ahead behind
+  local main="$1" branch ahead behind before
   git -C "$main" fetch --quiet --prune origin || { echo "skipped, git fetch --prune origin failed"; return; }
   git -C "$main" rev-parse --verify --quiet origin/main >/dev/null || { echo "skipped, no origin/main"; return; }
   branch="$(git -C "$main" symbolic-ref --quiet --short HEAD)"
@@ -47,8 +87,9 @@ sync_main() {
   fi
   behind="$(git -C "$main" rev-list --count HEAD..origin/main)"
   [ "$behind" -gt 0 ] || { echo "at origin/main"; return; }
+  before="$(git -C "$main" rev-parse HEAD)"
   if git -C "$main" merge --ff-only --quiet origin/main >/dev/null 2>&1; then
-    echo "fast-forwarded $behind commit(s) to origin/main"
+    echo "fast-forwarded $behind commit(s) to origin/main$(install_after "$main" "$before")"
   else
     echo "skipped, git merge --ff-only origin/main failed"
   fi
