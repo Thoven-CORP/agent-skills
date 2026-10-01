@@ -151,11 +151,16 @@ A backend worktree gets its own test database, `neondb_test_<area>_thv<n>`, or
 `db:test:prepare` on it. Sessions sharing `neondb_test` truncated each other's data.
 The dev database stays shared, reached through `database.yml`'s fallback, because
 backend's THV-89 boot guard refuses a branch whose explicit `DATABASE_URL` names
-`thoven_development`. When `db/migrate` differs from `origin/main`, `bootstrap`
-copies `thoven_development` to `thoven_dev_<suffix>` and points `DATABASE_URL` at it.
+`thoven_development`. When the branch adds a migration (committed against
+`origin/main`, or untracked, counted as backend's `worktree_db_guard.rb` counts
+them), `bootstrap` copies `thoven_development` to `thoven_dev_<suffix>` and points
+`DATABASE_URL` at it. A plain diff would also count the migrations `main` gained
+since a stale branch was cut.
 A live dev server blocks that copy, so rerun `bootstrap` after adding a migration
-with the server stopped. `remove <path>` drops both databases, and only after
-`git worktree remove` succeeds. `orphan-dbs` lists the local Thoven databases no
+with the server stopped. `remove <path>` first copies the tree's gitignored docs
+(`.md`, `.mdx`, `.markdown`, `.txt`, `.html`; never `node_modules` or build output)
+to `~/thoven/archive/<tree>-<date>/`, because those plans and notes exist nowhere
+else. It drops both databases, and only after `git worktree remove` succeeds. `orphan-dbs` lists the local Thoven databases no
 worktree's `.env` names, and drops nothing.
 
 `thoven-worktree post-checkout` is each repo's lefthook `post-checkout` step. It
@@ -165,7 +170,10 @@ with no commits of its own. A hook at that point cannot block.
 
 `bin/thoven-sync` runs every 30 minutes from the launchd agent `co.thoven.sync`,
 installed by `install/launchd.py`. It runs `git fetch --prune` in both main
-checkouts and fast-forwards each one only when it is on `main` and clean. Local main
+checkouts and fast-forwards each one only when it is on `main` and clean. When a
+fast-forward changes `pnpm-lock.yaml`, it runs `pnpm install --frozen-lockfile`,
+unless a dev server (`next`, `vite`) works in that tree or in a worktree whose
+`node_modules` links into it; the log line then names the pid and the command. Local main
 is never committed on, so it only ever fast-forwards. It lists worktrees with
 uncommitted files in `~/.thoven/sync.log` and never touches them. A session-start
 trigger was rejected: it fires in every session in any directory, and none fires

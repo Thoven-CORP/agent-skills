@@ -18,6 +18,20 @@ git config --file "$GIT_CONFIG_GLOBAL" user.email test@example.com
 git config --file "$GIT_CONFIG_GLOBAL" init.defaultBranch main
 export THOVEN_SYNC_LOG="$TMP/logs/sync.log"
 
+# pnpm, ps and lsof stubs: installs log to $TMP/installs; $TMP/ps is the process table and
+# $TMP/cwd-<pid> each listed process's working directory.
+STUB="$TMP/stubbin"
+mkdir -p "$STUB"
+# shellcheck disable=SC2016
+printf '#!/bin/sh\necho "pnpm $* in $PWD" >> "$TMP/installs"\n' > "$STUB/pnpm"
+# shellcheck disable=SC2016
+printf '#!/bin/sh\ncat "$TMP/ps" 2>/dev/null\n' > "$STUB/ps"
+# shellcheck disable=SC2016
+printf '#!/bin/sh\nwhile [ $# -gt 0 ]; do [ "$1" = -p ] && pid="$2"; shift; done\n[ -f "$TMP/cwd-$pid" ] && printf "p%%s\\nfcwd\\nn%%s\\n" "$pid" "$(cat "$TMP/cwd-$pid")"\nexit 0\n' > "$STUB/lsof"
+chmod +x "$STUB"/*
+export TMP PATH="$STUB:$PATH"
+installs() { cat "$TMP/installs" 2>/dev/null; }
+
 ok() { printf 'ok %s\n' "$1"; }
 fail() { printf 'FAIL %s: got %s\n' "$1" "$2"; exit 1; }
 expect() { if [ "$2" = "$3" ]; then ok "$1"; else fail "$1" "'$2' (want '$3')"; fi; }
@@ -141,5 +155,57 @@ has_line "held lock is reported" "$out" "another thoven-sync (pid $holder) is ru
 kill "$holder" 2>/dev/null; wait "$holder" 2>/dev/null
 out="$("$TOOL" 2>/dev/null)"
 expect "stale lock is taken over" "$(head_of "$TMP/frontend")" "$(origin_main frontend)"
+
+# A fast-forward that changes pnpm-lock.yaml installs, unless a dev server holds the tree.
+FE="$TMP/frontend"
+# lockfile <content>: lands a pnpm-lock.yaml change on origin/main
+lockfile() {
+  (cd "$TMP/upstream-frontend" && git pull -q && printf '%s\n' "$1" > pnpm-lock.yaml &&
+    printf 'node_modules\n' > .gitignore && git add -A && git commit -qm lock && git push -q origin main)
+}
+lockfile v1
+rm -f "$TMP/installs"
+out="$("$TOOL" 2>/dev/null)"
+expect "a changed lockfile runs pnpm install" "$(installs)" "pnpm install --frozen-lockfile in $FE"
+has_line "the install is reported on the main checkout's line" "$out" \
+  "$FE: fast-forwarded 1 commit(s) to origin/main; pnpm-lock.yaml changed, ran pnpm install --frozen-lockfile"
+
+push_upstream frontend
+rm -f "$TMP/installs"
+"$TOOL" >/dev/null 2>&1
+expect "a fast-forward that leaves the lockfile alone installs nothing" "$(installs)" ""
+
+printf '%s\n' "  4243 /bin/zsh -l" > "$TMP/ps"
+printf '%s\n' "$FE" > "$TMP/cwd-4243"
+lockfile v1b
+rm -f "$TMP/installs"
+"$TOOL" >/dev/null 2>&1
+expect "a shell sitting in the tree does not skip the install" "$(installs)" "pnpm install --frozen-lockfile in $FE"
+
+printf '%s\n' "  4242 node $FE/node_modules/.bin/next dev --port 3000" "  4243 /bin/zsh -l" > "$TMP/ps"
+printf '%s\n' "$FE" > "$TMP/cwd-4242"
+printf '%s\n' "$FE" > "$TMP/cwd-4243"
+lockfile v2
+rm -f "$TMP/installs"
+out="$("$TOOL" 2>/dev/null)"
+expect "a dev server in the tree skips the install" "$(installs)" ""
+expect "the skipped install still fast-forwards" "$(head_of "$FE")" "$(origin_main frontend)"
+has_line "a skipped install names the dev server and the command to run" "$out" \
+  "$FE: fast-forwarded 1 commit(s) to origin/main; pnpm-lock.yaml changed, pnpm install skipped: dev server pid 4242 uses this tree's node_modules. Stop it, then run: cd $FE && pnpm install --frozen-lockfile"
+
+# A worktree whose node_modules links into the main checkout's runs on the same packages.
+LINKED="$TMP/frontend-thv-3"
+git -C "$FE" worktree add -q -b ui/thv-3 "$LINKED" main
+mkdir -p "$FE/node_modules"
+ln -s "$FE/node_modules" "$LINKED/node_modules"
+printf '%s\n' "  5151 next-server (v15.0.0)" > "$TMP/ps"
+printf '%s\n' "$LINKED/src" > "$TMP/cwd-5151"
+lockfile v3
+rm -f "$TMP/installs"
+out="$("$TOOL" 2>/dev/null)"
+expect "a dev server in a worktree sharing node_modules skips the install" "$(installs)" ""
+has_line "that skip names the dev server" "$out" \
+  "$FE: fast-forwarded 1 commit(s) to origin/main; pnpm-lock.yaml changed, pnpm install skipped: dev server pid 5151 uses this tree's node_modules. Stop it, then run: cd $FE && pnpm install --frozen-lockfile"
+rm -f "$TMP/ps"
 
 echo "all passed"

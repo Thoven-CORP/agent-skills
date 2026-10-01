@@ -24,7 +24,8 @@ usage() {
   cat >&2 <<'EOF'
 usage: thoven-worktree create <fe|be> <area> <n>
        thoven-worktree bootstrap <path>
-       thoven-worktree remove <path>   (also drops the worktree's own databases)
+       thoven-worktree remove <path>   (archives its gitignored docs to ~/thoven/archive first,
+                                       and drops the worktree's own databases)
        thoven-worktree orphan-dbs      (lists local databases no worktree uses; drops nothing)
        thoven-worktree hook            (Claude Code WorktreeCreate; JSON on stdin)
        thoven-worktree post-checkout <prev> <new> <flag>
@@ -118,6 +119,15 @@ referenced_dbs() {
   done | sort -u
 }
 
+# branch_migrations <path>: db/migrate files the branch adds, counted as backend's
+# lib/worktree_db_guard.rb counts them. A plain diff against origin/main also lists, as deletions,
+# the migrations main gained since a stale branch was cut. --no-renames: a new migration similar to
+# one main gained would read as a rename. Untracked ones count: `rails g migration` then migrate.
+branch_migrations() {
+  git -C "$1" diff --name-only --no-renames --diff-filter=A origin/main -- db/migrate 2>/dev/null
+  git -C "$1" ls-files --others --exclude-standard -- db/migrate
+}
+
 # Two sessions running rspec on one shared neondb_test truncate each other's data.
 isolate_db() {
   local path="$1" env="$1/.env" suffix dev_db current all
@@ -134,18 +144,18 @@ isolate_db() {
     set_env "$env" DATABASE_URL ""
     log "dropped DATABASE_URL, so the shared thoven_development is reached through database.yml's fallback"
   fi
-  [ -n "$(git -C "$path" diff origin/main --name-only -- db/migrate)" ] || return 0
+  [ -n "$(branch_migrations "$path")" ] || return 0
   dev_db="thoven_dev_$suffix"
   current="$(env_db "$env" DATABASE_URL)"
   case "$current" in
     "" | thoven_development | "$dev_db") ;;
-    *) log "db/migrate differs from origin/main, but DATABASE_URL names $current, leaving it"; return 0 ;;
+    *) log "the branch adds a migration, but DATABASE_URL names $current, leaving it"; return 0 ;;
   esac
   # Captured first: grep -q quits early, and under pipefail psql's SIGPIPE would fail the test.
   all="$(local_dbs 2>/dev/null)" || true
   if grep -qxF "$dev_db" <<<"$all" || createdb -T thoven_development "$dev_db" >&2; then
     set_env "$env" DATABASE_URL "postgresql://localhost/$dev_db"
-    log "db/migrate differs from origin/main, so DATABASE_URL points at $dev_db, a copy of thoven_development"
+    log "the branch adds a migration, so DATABASE_URL points at $dev_db, a copy of thoven_development"
   else
     log "warning: createdb -T thoven_development $dev_db failed; a live connection to thoven_development (a dev server) blocks the copy. DATABASE_URL still points at the shared database. Stop the server and rerun: thoven-worktree bootstrap $path"
   fi
@@ -288,6 +298,44 @@ create() {
   printf '%s\n' "$path"
 }
 
+# Gitignored notes (plans, specs, review reports) live only in their tree, and git worktree remove
+# deletes them with it. Installed packages, build output and nested worktrees can be rebuilt, so
+# they are never walked.
+ARCHIVE_PRUNE=(.git node_modules .pnpm-store .next '.next-*' .turbo build dist out coverage tmp log storage vendor
+  playwright-report test-results .worktrees graphify-out)
+ARCHIVE_DOCS=(md mdx markdown txt html)
+
+# archive_docs <path>: copies <path>'s gitignored docs, keeping their paths, to
+# $THOVEN_ROOT/archive/<tree name>-<date>/. Tracked files are never listed by check-ignore.
+archive_docs() {
+  local path="$1" dest name prune=() docs=() f n=0 found ignored rc
+  for name in "${ARCHIVE_PRUNE[@]}"; do prune+=(-name "$name" -o); done
+  for name in "${ARCHIVE_DOCS[@]}"; do docs+=(-name "*.$name" -o); done
+  dest="$THOVEN_ROOT/archive/$(basename "$path")-$(date +%Y-%m-%d)"
+  [ -e "$dest" ] && dest="$dest-$(date +%H%M%S)"
+  # Listed to files first: check-ignore exits 1 when nothing matches, and anything above 1 means the
+  # list is incomplete, so the tree must not be removed on the strength of it.
+  found="$(mktemp)" && ignored="$(mktemp)" || return 1
+  (cd "$path" && find . \( "${prune[@]}" -path ./.claude/worktrees \) -prune -o \
+    -type f \( "${docs[@]}" -false \) -print0) >"$found" || { rm -f "$found" "$ignored"; return 1; }
+  (cd "$path" && git check-ignore -z --stdin) <"$found" >"$ignored"
+  rc=$?
+  rm -f "$found"
+  [ "$rc" -le 1 ] || { rm -f "$ignored"; return 1; }
+  rc=0
+  while IFS= read -r -d '' f; do
+    if ! { mkdir -p "$dest/$(dirname "$f")" && cp -p "$path/$f" "$dest/$f"; }; then rc=1; break; fi
+    n=$((n + 1))
+  done <"$ignored"
+  rm -f "$ignored"
+  [ "$rc" -eq 0 ] || return 1
+  if [ "$n" -gt 0 ]; then
+    log "archived $n gitignored doc(s) to $dest"
+  else
+    log "no gitignored docs to archive"
+  fi
+}
+
 remove() {
   local path main db key suffix dbs=()
   path="$(physical "$1")" || die 1 "remove: $1 is not a directory"
@@ -295,6 +343,10 @@ remove() {
     die 1 "remove: $path is not the top of a git worktree"
   main="$(physical "$(main_of "$path")")"
   [ "$path" != "$main" ] || die 1 "remove: $path is the main checkout"
+  # git refuses a tree with edits or untracked files, and a refused remove should leave no archive.
+  if [ -z "$(git -C "$path" status --porcelain)" ]; then
+    archive_docs "$path" || die 1 "remove: archiving $path's gitignored docs failed, so nothing was removed"
+  fi
   # Only the names bootstrap gives this tree: a .env copied from another tree names that tree's.
   suffix="$(db_suffix "$path")"
   if [ -f "$path/.env" ]; then

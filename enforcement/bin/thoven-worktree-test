@@ -60,7 +60,8 @@ make_repo() {
 }
 seed_frontend() {
   printf '{ "name": "fe", "packageManager": "npm@10.9.9" }\n' > package.json
-  printf '.env.local\n' > .gitignore
+  printf '# fe\n' > README.md
+  printf '.env.local\n.planning/\n*.local.md\n.next/\nnode_modules\ntmp/\n.worktrees/\n' > .gitignore
 }
 seed_backend() {
   printf "source 'https://rubygems.org'\n" > Gemfile
@@ -273,6 +274,28 @@ expect "a migration branch keeps a DATABASE_URL it chose" "$(env_line "$OWNDB/.e
   "DATABASE_URL=postgresql://localhost/my_own_db"
 expect "a migration branch with its own DATABASE_URL copies nothing" "$(dblog)" ""
 
+# "Adds a migration" means files the branch adds, as backend's worktree_db_guard counts them: a
+# stale branch's plain diff against origin/main also lists the migrations main gained since.
+STALEMIG="$TMP/backend-thv-977"
+"$TOOL" create be stalemig 977 >/dev/null 2>&1
+(cd "$STALEMIG" && printf 'x\n' > mine && git add mine && git commit -qm mine)
+(cd "$TMP/upstream-backend" && git pull -q && touch db/migrate/20260930000003_mains.rb &&
+  git add db/migrate && git commit -qm mains && git push -q origin main)
+rm -f "$TMP/db.log"
+"$TOOL" bootstrap "$STALEMIG" >/dev/null 2>&1
+expect "a stale branch without a migration of its own copies nothing" "$(dblog)" ""
+expect "a stale branch without a migration of its own keeps the shared fallback" \
+  "$(env_line "$STALEMIG/.env" DATABASE_URL)" ""
+
+UNTRACKED="$TMP/backend-thv-978"
+"$TOOL" create be untracked 978 >/dev/null 2>&1
+touch "$UNTRACKED/db/migrate/20260930000004_generated.rb"
+rm -f "$TMP/db.log"
+"$TOOL" bootstrap "$UNTRACKED" >/dev/null 2>&1
+expect "an untracked migration copies the dev database" "$(dblog)" \
+  "createdb -T thoven_development thoven_dev_untracked_thv978"
+rm "$UNTRACKED/db/migrate/20260930000004_generated.rb"
+
 LINKED="$TMP/codex/wt5/backend"
 git -C "$TMP/backend" worktree add -q --detach "$LINKED" "$(git -C "$TMP/origin-backend.git" rev-parse main)"
 ln -s "$TMP/backend/.env" "$LINKED/.env"
@@ -326,5 +349,47 @@ expect "remove exit" "$code" 0
 if [ -e "$BE" ]; then fail "remove deletes the tree" "still there"; else ok "remove deletes the tree"; fi
 expect "remove drops the worktree's own databases" "$(dblog)" \
   "$(printf '%s\n' "dropdb --if-exists neondb_test_api_thv970" "dropdb --if-exists thoven_dev_api_thv970")"
+
+# remove copies the tree's gitignored docs to $THOVEN_ROOT/archive first; build output, installed
+# packages, tracked files and non-doc files stay behind.
+FE="$TMP/frontend-thv-969"
+ARCH="$TMP/archive/frontend-thv-969-$(date +%Y-%m-%d)"
+mkdir -p "$FE/.planning/sub" "$FE/node_modules/pkg" "$FE/.next"
+printf 'plan\n' > "$FE/.planning/plan.md"
+printf 'deep\n' > "$FE/.planning/sub/deep.md"
+printf '{}\n' > "$FE/.planning/data.json"
+printf 'note\n' > "$FE/notes.local.md"
+printf 'pkg\n' > "$FE/node_modules/pkg/README.md"
+printf 'built\n' > "$FE/.next/out.md"
+mkdir -p "$FE/tmp" "$FE/.worktrees/other"
+printf 'secret\n' > "$FE/tmp/local_secret.txt"
+printf 'nested\n' > "$FE/.worktrees/other/notes.md"
+printf 'stray\n' > "$FE/untracked.md"
+"$TOOL" remove "$FE" >/dev/null 2>&1; code=$?
+expect "remove of a tree with an untracked file fails" "$code" 1
+if [ -e "$ARCH" ]; then fail "a refused remove archives nothing" "$(ls -R "$ARCH")"; else ok "a refused remove archives nothing"; fi
+rm "$FE/untracked.md"
+# A git that dies inside check-ignore leaves the doc list incomplete, so nothing may be removed.
+SHIM="$TMP/shim"; mkdir -p "$SHIM"
+# shellcheck disable=SC2016
+printf '#!/usr/bin/env bash\nfor a in "$@"; do [ "$a" = check-ignore ] && exit 128; done\nexec %s "$@"\n' "$(command -v git)" > "$SHIM/git"
+chmod +x "$SHIM/git"
+PATH="$SHIM:$PATH" "$TOOL" remove "$FE" >/dev/null 2>&1; code=$?
+expect "a failed doc listing refuses the remove" "$code" 1
+if [ -e "$FE/.planning/plan.md" ]; then ok "a failed doc listing keeps the tree"; else fail "a failed doc listing keeps the tree" "deleted"; fi
+rm -rf "$ARCH"
+err="$("$TOOL" remove "$FE" 2>&1 >/dev/null)"; code=$?
+expect "remove with gitignored docs exit" "$code" 0
+if [ -e "$FE" ]; then fail "remove with gitignored docs deletes the tree" "still there"; else ok "remove with gitignored docs deletes the tree"; fi
+expect "remove archives only the gitignored docs" "$(cd "$ARCH" 2>/dev/null && find . -type f | LC_ALL=C sort)" \
+  "$(printf '%s\n' ./.planning/plan.md ./.planning/sub/deep.md ./notes.local.md)"
+expect "archived docs keep their content" "$(cat "$ARCH/.planning/sub/deep.md" 2>/dev/null)" "deep"
+has_line "remove reports the archive" "$err" "thoven-worktree: archived 3 gitignored doc(s) to $ARCH"
+
+NODOCS="$TMP/frontend-thv-979"
+"$TOOL" create fe nodocs 979 >/dev/null 2>&1
+"$TOOL" remove "$NODOCS" >/dev/null 2>&1; code=$?
+expect "remove without docs exit" "$code" 0
+if [ -e "$TMP/archive/frontend-thv-979-$(date +%Y-%m-%d)" ]; then fail "no docs, no archive folder" "made one"; else ok "no docs, no archive folder"; fi
 
 echo "all passed"
