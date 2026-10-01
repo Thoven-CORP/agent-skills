@@ -301,23 +301,34 @@ create() {
 # Gitignored notes (plans, specs, review reports) live only in their tree, and git worktree remove
 # deletes them with it. Installed packages, build output and nested worktrees can be rebuilt, so
 # they are never walked.
-ARCHIVE_PRUNE=(.git node_modules .pnpm-store .next .turbo build dist out coverage tmp log storage vendor
-  playwright-report test-results)
+ARCHIVE_PRUNE=(.git node_modules .pnpm-store .next '.next-*' .turbo build dist out coverage tmp log storage vendor
+  playwright-report test-results .worktrees graphify-out)
 ARCHIVE_DOCS=(md mdx markdown txt html)
 
 # archive_docs <path>: copies <path>'s gitignored docs, keeping their paths, to
 # $THOVEN_ROOT/archive/<tree name>-<date>/. Tracked files are never listed by check-ignore.
 archive_docs() {
-  local path="$1" dest name prune=() docs=() f n=0
+  local path="$1" dest name prune=() docs=() f n=0 found ignored rc
   for name in "${ARCHIVE_PRUNE[@]}"; do prune+=(-name "$name" -o); done
   for name in "${ARCHIVE_DOCS[@]}"; do docs+=(-name "*.$name" -o); done
   dest="$THOVEN_ROOT/archive/$(basename "$path")-$(date +%Y-%m-%d)"
   [ -e "$dest" ] && dest="$dest-$(date +%H%M%S)"
+  # Listed to files first: check-ignore exits 1 when nothing matches, and anything above 1 means the
+  # list is incomplete, so the tree must not be removed on the strength of it.
+  found="$(mktemp)" && ignored="$(mktemp)" || return 1
+  (cd "$path" && find . \( "${prune[@]}" -path ./.claude/worktrees \) -prune -o \
+    -type f \( "${docs[@]}" -false \) -print0) >"$found" || { rm -f "$found" "$ignored"; return 1; }
+  (cd "$path" && git check-ignore -z --stdin) <"$found" >"$ignored"
+  rc=$?
+  rm -f "$found"
+  [ "$rc" -le 1 ] || { rm -f "$ignored"; return 1; }
+  rc=0
   while IFS= read -r -d '' f; do
-    mkdir -p "$dest/$(dirname "$f")" && cp -p "$path/$f" "$dest/$f" || return 1
+    if ! { mkdir -p "$dest/$(dirname "$f")" && cp -p "$path/$f" "$dest/$f"; }; then rc=1; break; fi
     n=$((n + 1))
-  done < <(cd "$path" && find . \( "${prune[@]}" -path ./.claude/worktrees \) -prune -o \
-    -type f \( "${docs[@]}" -false \) -print0 | git check-ignore -z --stdin || true)
+  done <"$ignored"
+  rm -f "$ignored"
+  [ "$rc" -eq 0 ] || return 1
   if [ "$n" -gt 0 ]; then
     log "archived $n gitignored doc(s) to $dest"
   else
