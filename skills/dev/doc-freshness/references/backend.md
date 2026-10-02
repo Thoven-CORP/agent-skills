@@ -29,9 +29,9 @@ Run detection across all four tiers. Read `references/doc-registry.md` for the c
 
 2. **Content verification** — for critical docs, cross-check doc content against live code:
    - API_ROUTES.md: run `rails routes --expanded` and diff against documented routes
-   - ARCHITECTURE.md: check `db/schema.rb` for tables/columns not in doc
+   - ARCHITECTURE.md: check `db/structure.sql` for tables/columns not in doc
    - BACKGROUND_JOBS.md: scan `app/jobs/**/*.rb` and `app/mailers/**/*.rb` for undocumented classes
-   - DATA_MODEL.md: compare documented schema against `db/schema.rb`
+   - DATA_MODEL.md: compare documented schema against `db/structure.sql`
 
 3. **Semantic check** — read recent git log for the watched dirs and check if changes are doc-worthy:
    ```bash
@@ -63,7 +63,7 @@ Present findings as a structured report. Group by severity, show evidence.
   Evidence: NewFeatureJob added, not in doc
 
 ### INFO (note only)
-- DEPLOYMENT.md — 1 commit behind (Procfile whitespace change)
+- COMMON_ERRORS.md — 1 commit behind (comment-only change in a watched file)
 
 ### Up to date
 - ARCHITECTURE.md, COMMON_ERRORS.md
