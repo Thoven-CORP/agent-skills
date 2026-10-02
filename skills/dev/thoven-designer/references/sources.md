@@ -84,8 +84,7 @@ In order, and stop at the first hit:
    Before grepping for component copies or imports at all, `graphify query` the component node —
    missing-import edges surface hand-rolls that grep cannot see.
 3. **The library tables before hand-rolling** - Magic UI, React Bits, Aceternity, Kokonut, Fancy,
-   Canvas UI, Rare UI, Interior. Full table with caveats in
-   `design-workflow-outline/design-system-guide.md`. The first seven give you a *look* that then
+   Canvas UI, Rare UI, Interior. The first seven give you a *look* that then
    needs a token pass; **Interior** ([interior.dev](https://www.interior.dev/), MIT, dep is the
    `motion` we already run) gives you a headless `useX()` hook that touches no class names - reach
    for it when what is missing is the interaction's *state machine* (abandonment paths, reserved
@@ -121,7 +120,6 @@ Route to the narrow skill, not the broad one.
 | **Building a new surface end to end** | **`building-components`** |
 | Building a prototype | `prototype` |
 | Motion: naming / finding / building / checking | `animation-vocabulary` · `find-animation-opportunities` · `improve-animations` · `review-animations` |
-| Structuring a whole design sprint | `design-workflow-outline` |
 | Critiquing a **whole surface** | `impeccable` - surface level only, never a single concern |
 
 ## Common mistakes

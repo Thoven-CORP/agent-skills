@@ -33,7 +33,7 @@ pick the Thoven lines below that this ticket reaches.
 
 ## Skills the agent cannot load
 
-`/blast-radius`, `/test-master`, `/building-thoven-ui` and, in Claude Code, `/typescript-best-practices`
+`/blast-radius`, `/test-master` and, in Claude Code, `/typescript-best-practices`
 set `disable-model-invocation`. When a ticket needs one, tell the pane to read
 `~/.claude/skills/<name>/SKILL.md` and follow it.
 
