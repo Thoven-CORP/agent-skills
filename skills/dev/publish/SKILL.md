@@ -33,6 +33,9 @@ description: Use when Andres asks to publish, deploy, release, promote, or hotfi
 ## Rules on every path
 
 - Production moves only through `scripts/promote.sh`.
+- Every other look at a host goes through that host's skill, invoked before its first command:
+  - **Vercel** (an env var's value or change time, a build's state or commit, a staged build's bundle, deployment logs): `/vercel-cli`. Target `--project thoven` or `thoven-staging` with `--scope andres-3203s-projects`. Read an env change from `vercel env ls <env> --json` `updatedAt`, since the table's "ago" column is the creation time. Read a protected build with `vercel curl --deployment <url>`.
+  - **Render** (a service's deploy status, logs, health, metrics, a one-off job's output): `/render-monitor`.
 - A label that starts with "Stop" waits. Show Andres the exact command, or the blocker, and wait for Andres's "go". A go covers only the command shown with it.
 - A go given before the command was shown covers nothing: "you have my go, don't wait" still stops at the first Stop.
 - An unreachable Andres gives no go. Keep the report current and wait.
