@@ -57,14 +57,6 @@ These are loaded into Claude context regularly. Staleness here directly degrades
 - **Update strategy**: Add new error patterns when bugs are found and fixed. Update tech debt cross-references. Update build config documentation. DO NOT remove historical errors — they prevent regressions.
 - **Key sections to check**: Common errors table, Alex Rodriguez bug, build config, deployment notes, tech debt cross-refs
 
-### PLUGIN_GUIDE.md
-- **Path**: `.claude/docs/PLUGIN_GUIDE.md`
-- **Watches**: `.claude/plugins/`, `.mcp.json`
-- **Content verification**:
-  - List installed plugins: check `.claude/plugins/` or settings
-  - Check MCP config: read `.mcp.json` for configured servers
-- **Update strategy**: Add new plugins or MCP servers. Update configuration examples.
-
 ---
 
 ## Tier 2: Reference Docs (root level)
@@ -72,11 +64,10 @@ These are loaded into Claude context regularly. Staleness here directly degrades
 ### CLAUDE.md
 - **Path**: `CLAUDE.md`
 - **Watches**: `.claude/docs/*`, `lib/*-api.ts`, `app/`, `components/`
-- **Structure**: three sections only — `## How We Work`, `## The Repo`, `## Docs — Read When Triggered`. Skill/agent routing lives in `.claude/docs/SKILL_AND_AGENT_ROUTING.md`, NOT here. If skill or agent tables reappear in CLAUDE.md, flag it — they were deliberately moved out (2026-07-26) because Claude Code already injects that inventory every session.
+- **Structure**: three sections only — `## Thoven law`, `## Project map`, `## How we work`. Skill/agent routing lives in `.claude/docs/SKILL_AND_AGENT_ROUTING.md`, NOT here. If skill or agent tables reappear in CLAUDE.md, flag it — they were deliberately moved out (2026-07-26) because Claude Code already injects that inventory every session.
 - **Content verification**:
-  - Every row in the `Docs — Read When Triggered` table points at a path that exists on disk
-  - Commands in the `The Repo` bash block still exist in `package.json` scripts
-  - The `~700 pre-existing errors` lint claim still holds: `pnpm run lint 2>&1 | grep -c error` — if it's near zero, the "can't be the gate" carve-out is stale and should be removed
+  - Every row in the docs table points at a path that exists on disk
+  - Commands in the bash block still exist in `package.json` scripts
   - Paths named in prose still exist: `.env.local`, `~/thoven/.workspace`, `.github/workflows/pre-publish-validation.yml`, `checkpoint.sh`
 - **Update strategy**: Surgical only. Do NOT re-expand into more sections, and do NOT re-add skill/agent inventory tables.
 

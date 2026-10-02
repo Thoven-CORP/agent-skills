@@ -8,9 +8,9 @@ These are loaded into Claude context regularly. Staleness here directly degrades
 
 ### ARCHITECTURE.md
 - **Path**: `.claude/docs/ARCHITECTURE.md`
-- **Watches**: `db/migrate/`, `app/models/`, `db/schema.rb`
+- **Watches**: `db/migrate/`, `app/models/`, `db/structure.sql`
 - **Content verification**:
-  - Count tables in `db/schema.rb` (`grep -c 'create_table'`) vs doc's "N tables" claim
+  - Count tables in `db/structure.sql` (`grep -c '^CREATE TABLE public\.'`) vs doc's "N tables" claim
   - List all model files (`ls app/models/**/*.rb`) vs documented models
   - Check for new DB extensions in schema vs doc's extensions list
   - Verify enum definitions in models match doc
@@ -33,8 +33,8 @@ These are loaded into Claude context regularly. Staleness here directly degrades
 - **Content verification**:
   - List all job classes: `ls app/jobs/` vs documented jobs
   - List all mailer classes: `ls app/mailers/` vs documented mailers
-  - Check scheduled jobs in `config/recurring.yml` or equivalent
-  - Check queue definitions in `config/solid_queue.yml` or equivalent
+  - Check scheduled jobs in `config/recurring.yml` (the `production:` block)
+  - Check queue definitions in `config/queue.yml`
 - **Update strategy**: Add new jobs/mailers to appropriate section. Document queue assignment, retry policy, and triggering conditions for new jobs. Update counts.
 - **Key sections to check**: Job count, mailer count, queue assignments, scheduled job list
 
@@ -48,16 +48,6 @@ These are loaded into Claude context regularly. Staleness here directly degrades
 - **Update strategy**: Add new error patterns when bugs are found and fixed. DO NOT remove historical errors — they're learning material. Add "Resolved" status if a pattern was eliminated. Update "DO NOT TOUCH" sections only if the protected code actually changed.
 - **Key sections to check**: DO NOT TOUCH sections (verify code still matches), error pattern count
 
-### DEPLOYMENT.md
-- **Path**: `.claude/docs/DEPLOYMENT.md`
-- **Watches**: `.replit`, `replit.nix`, `Procfile`, `config/deploy/`
-- **Content verification**:
-  - Compare documented deploy config vs actual `.replit` file
-  - Check if Procfile commands match doc
-  - Verify environment variable list matches current `.env.example` or code references
-- **Update strategy**: Update deployment steps if config changed. Update env var documentation. Preserve troubleshooting history.
-- **Key sections to check**: Deploy commands, env vars, SSL workaround, migration strategy
-
 ---
 
 ## Tier 2: Reference Docs
@@ -65,11 +55,11 @@ These are loaded into Claude context regularly. Staleness here directly degrades
 ### CLAUDE.md (root)
 - **Path**: `CLAUDE.md`
 - **Watches**: `.claude/docs/*`, `app/models/`, `config/routes.rb`, `app/jobs/`, `app/services/`
-- **Structure**: three sections only — `## How We Work`, `## The Repo`, `## Docs — Read When Triggered`. Skill/agent routing lives in `.claude/docs/SKILL_AND_AGENT_ROUTING.md`, NOT here. If skill or agent inventory tables reappear in CLAUDE.md, flag it — they were deliberately moved out (2026-07-26) because Claude Code already injects that inventory every session.
+- **Structure**: three sections only — `## Thoven law`, `## Project map`, `## How we work`. Skill/agent routing lives in `.claude/docs/SKILL_AND_AGENT_ROUTING.md`, NOT here. If skill or agent inventory tables reappear in CLAUDE.md, flag it — they were deliberately moved out (2026-07-26) because Claude Code already injects that inventory every session.
 - **Content verification**:
-  - Cross-reference `The Repo` stack numbers: "~119 tables", "~506 endpoints", "115 service classes", "72 jobs" (`ls app/services/**/*.rb | wc -l`)
-  - Every row in the `Docs — Read When Triggered` table points at a path that exists on disk
-  - The hard action-gate callout at the top of `How We Work` still names all four gates (prod deploys, Neon migrations, cohort/email sends, money/COPPA) and the `RAILS_ENV=production rails db:migrate` prohibition — **never** let these get trimmed or relocated to a loaded-on-demand doc
+  - Cross-reference the stack numbers in `Project map` (tables, endpoints, service classes, jobs) against the Quick Audit Commands below
+  - Every row in the docs table points at a path that exists on disk
+  - The hard action-gate callout at the top still names all four gates (prod deploys, Neon migrations, cohort/email sends, money/COPPA) and the `RAILS_ENV=production rails db:migrate` prohibition — **never** let these get trimmed or relocated to a loaded-on-demand doc
   - Paths named in prose still exist: `.env`, `~/thoven/.workspace`, `solid_queue_embedded.rb`, `config/initializers/cors.rb`
 - **Update strategy**: Surgical only. Do NOT re-expand into more sections, and do NOT re-add skill/agent inventory tables.
 
@@ -85,9 +75,9 @@ These are loaded into Claude context regularly. Staleness here directly degrades
 
 ### docs/reference/DATA_MODEL.md
 - **Path**: `docs/reference/DATA_MODEL.md`
-- **Watches**: `db/schema.rb`, `db/migrate/`, `app/models/`
+- **Watches**: `db/structure.sql`, `db/migrate/`, `app/models/`
 - **Content verification**:
-  - Compare documented tables against `db/schema.rb`
+  - Compare documented tables against `db/structure.sql`
   - Check for new associations in models not reflected in doc
 - **Update strategy**: Add new tables with columns. Update association descriptions. Reflect new indexes.
 
@@ -125,14 +115,14 @@ These are loaded into Claude context regularly. Staleness here directly degrades
 
 ## Tier 3: Architecture Docs (`docs/architecture/`)
 
-All watch: `db/schema.rb`, `app/models/`, `app/services/`, `config/`
+All watch: `db/structure.sql`, `app/models/`, `app/services/`, `config/`
 
 | Doc | Focus | Key Verification |
 |-----|-------|-----------------|
 | `01-EXECUTIVE-SUMMARY.md` | High-level overview | Tech stack versions, system scale numbers |
 | `02-SYSTEM-CHARACTERISTICS.md` | System properties | Performance characteristics, constraints |
 | `03-ARCHITECTURE-DIAGRAMS.md` | Visual architecture | New subsystems reflected in diagrams |
-| `04-DATA-MODEL.md` | Schema breakdown | Tables match `db/schema.rb` |
+| `04-DATA-MODEL.md` | Schema breakdown | Tables match `db/structure.sql` |
 | `05-STACK-DEPENDENCIES.md` | Dependencies | Gemfile/package.json versions |
 | `06-OPERATIONAL-INSIGHTS.md` | Operations | Monitoring, alerting, scaling |
 
@@ -179,7 +169,7 @@ Use these to quickly assess staleness without reading every file:
 
 ```bash
 # Count tables in schema vs documented
-grep -c 'create_table' db/schema.rb
+grep -c '^CREATE TABLE public\.' db/structure.sql
 
 # Count service classes
 find app/services -name '*.rb' -not -name '*_spec*' | wc -l
