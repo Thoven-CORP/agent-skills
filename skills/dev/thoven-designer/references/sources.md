@@ -18,8 +18,9 @@ Everything below Tier 0 is derived.
 
 ## The map
 
-Verified 2026-08-16 against `~/thoven/frontend`. Read the binding source **first**; reach for the
-deep reference only for intent and rationale.
+Base map verified 2026-08-16 against `~/thoven/frontend`; async ownership re-verified 2026-09-22
+against `~/thoven/frontend-teacher-2.0`. Read the binding source **first**; reach for the deep
+reference only for intent and rationale.
 
 | Question | Binding source (Tier 0) | Deep reference |
 |---|---|---|
@@ -28,6 +29,7 @@ deep reference only for intent and rationale.
 | Buttons, ledges, variants | `thovenButtonTokens` in `lib/live-lesson-tokens.ts:53`; `components/ui/thoven-button.tsx`; `__tests__/design-system-doc.test.ts` | `docs/design/buttons.md` |
 | Icons, the two tiers, K2 | `lib/icon-tokens.ts`; `__tests__/icon-tier-scan.test.ts`, `__tests__/icon-tokens.test.ts`, `__tests__/openmoji-icon-map.test.ts` | `docs/design/icons.md` |
 | Motion, springs, reduced motion | `lib/motion-config.ts` | `docs/design/motion.md` |
+| Async loading, unavailable, degraded, action, field-error, and empty states | `lib/loading-tokens.ts`; `components/ui/shimmer-text.tsx`; `components/shared/RowSkeleton.tsx`; `components/ui/thoven-button.tsx`; the owning feature component listed below | `docs/design/async-states.md` |
 | Layout, viewport, spacing | *(no token module)* | `docs/design/layout.md` |
 | What a thing is **called** | *(no token module)* | `design-system/lexicon/LEXICON.md` in `thoven2.0` - LIVING, not frozen |
 | Does a component exist? | `components/ui/` (primitives only) | [Does it already exist](#does-it-already-exist) |
@@ -37,6 +39,31 @@ deep reference only for intent and rationale.
 ```bash
 ls lib/*-tokens.ts && ls lib/*.test.ts __tests__/*.test.ts
 ```
+
+### Async-state ownership
+
+Loading appearance is shared, but async behavior remains owned by the feature that can explain
+and recover from it. Do not introduce one global state union or one component that guesses every
+consumer's retry policy.
+
+| State | Use | Authority |
+|---|---|---|
+| Known collection shape | Reserved row skeletons | `components/shared/RowSkeleton.tsx` backed by `lib/loading-tokens.ts` |
+| Unknown Material collection size | Text shimmer | `components/ui/shimmer-text.tsx` backed by `lib/loading-tokens.ts` |
+| Held action and success feedback | The canonical button states | `components/ui/thoven-button.tsx` |
+| Notification feed unusable | Inline recovery inside the rows region | `components/teacher/NotificationsPanel/NotificationsUnavailableState.tsx` |
+| Notification refresh degraded while usable rows remain | One warning toast per failure episode; content stays mounted | `components/teacher/dashboard/TeacherDashboardNotificationsCoordinator.tsx`; `components/teacher/NotificationsPanel/notifications-toast.ts` |
+| Disconnected Business Overview before earnings exist | Passive empty state with no Stripe action | `components/teacher/dashboard/BusinessOverviewEmptyState.tsx` |
+| Material copy lifecycle | Copying shimmer, wrapped failure reason, code-owned retry eligibility, and visible dismiss | `components/teacher/library/GhostMaterialCard.tsx` |
+| Form validation | Field-local message connected to the invalid control; available but not yet adopted by a production Teacher 2.0 form | `components/ui/datefield.tsx`; `components/ui/field.tsx` |
+| Teacher payment action failure | Action-local retry without replacing the surrounding request | `components/teacher/payments/TeacherPaymentRequestActions.tsx` |
+
+`app/dev/async-ui-states/page.tsx` is a review surface. It mounts deterministic states from the
+real components, but it owns no product behavior and does not count as production adoption.
+
+Retry eligibility is domain behavior, not a visual token. The consumer maps known failure codes to
+retryable or permanent outcomes. A global error primitive may own appearance and accessibility,
+but it must not invent retry, reload, dismissal, or empty-state semantics.
 
 ## Answering a design-system question
 
@@ -137,4 +164,3 @@ Route to the narrow skill, not the broad one.
 | Writing a token test for a value still in Design | The proto holds it until Build |
 | Leaving his browser at a viewport you set | Restore it. He reviews through that window |
 | Reviewing at a viewport you chose | His. The shell was fitted to it |
-
