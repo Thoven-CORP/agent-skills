@@ -13,6 +13,10 @@ must_not_exist=(
   "skills/dev/dialkit/SKILL.md"
   "skills/dev/thoven-rails-security/SKILL.md"
   "skills/dev/thoven-db-migration-security/SKILL.md"
+  "skills/dev/herdr/SKILL.md"
+  "skills/dev/feature-orchestrator/SKILL.md"
+  "skills/dev/design-workflow-outline/SKILL.md"
+  "skills/dev/building-thoven-ui/SKILL.md"
 )
 
 echo "assert-retired-skills-not-installable"

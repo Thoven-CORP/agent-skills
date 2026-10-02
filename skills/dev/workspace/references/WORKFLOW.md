@@ -59,9 +59,7 @@ screen. The unit of claiming and the unit of shipping.
 **Unit shape by phase.** A Build-phase Issue is a vertical slice cut from a finished spec.
 
 PRD and Design work is one **fat card** per stage. Surfaces and sweeps are ledger checkboxes
-or Work-tab names, not Issues. `/design-workflow-outline` is optional. Reach for it on a
-greenfield Feature that needs a long design walk and persistence. Skip it when the proto
-path is enough.
+or Work-tab names, not Issues.
 
 ### States
 
@@ -133,7 +131,7 @@ it closes.
 | Milestone | Skills |
 |---|---|
 | **PRD + Architecture** | `/grill-with-docs` · `/architect` · `/to-spec` · `/writing-plans` |
-| **Design** | Proto at the path the fat card names. `/design-workflow-outline` on a greenfield Feature that needs a long design walk. Skip it when the proto path is enough. `thoven-designer` for a single component. |
+| **Design** | Proto at the path the fat card names. `thoven-designer` for a single component. |
 | **Build** | `/to-tickets` cut the plan into vertical issues · `/verify` before Ready · `/blast-radius` when a small diff might break the other repo |
 | **Review** | `/qa-flow` · the feature's `WALKTHROUGH_V*.md` |
 
