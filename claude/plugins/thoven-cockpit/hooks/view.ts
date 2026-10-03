@@ -72,7 +72,7 @@ export function drawCockpit(el: El, board: Board | undefined, ui: PaneUi, column
       Box({
         flexDirection: 'row',
         columnGap: 2,
-        children: [Text({ bold: true, children: [board.space.label] }), Text({ dimColor: true, children: [board.project === undefined ? 'no project' : 'Linear project'] })],
+        children: [Text({ bold: true, children: [board.space.label] }), Text({ dimColor: true, children: [board.project ?? 'no project'] })],
       }),
       Box({ flexDirection: 'row', columnGap: 3, children: [tab('work', 'Work', '1'), tab('prs', 'PRs', '2')] }),
       ...healthLines(board.health).map((line) => Text({ color: 'yellow', children: [line] })),
