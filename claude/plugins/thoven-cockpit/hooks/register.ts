@@ -153,7 +153,7 @@ async function resolveMe($: Api, sid: SessionId): Promise<void> {
     me = { k: 'inert' }
     return
   }
-  const claim = claimHeldBy(await loadFacts($, 'main'), pane)
+  const claim = claimHeldBy((await loadFacts($, 'main')).facts, pane)
   if (!claim) {
     stopHeartbeat()
     me = { k: 'pane', pane, sid, engagements: me.k === 'pane' ? me.engagements : [] }
@@ -213,11 +213,11 @@ async function tick($: Api): Promise<void> {
   try {
     const main: Main = me
     const t0 = await $.clock.now()
-    const facts = await loadFacts($)
+    const { facts, reads } = await loadFacts($)
     const readMs = (await $.clock.now()) - t0
     if (!isStoreTimed || readMs > STORE_SLOW_MS) {
       isStoreTimed = true
-      $.ui.log(`cockpit store: keys() and ${facts.length} facts read in ${readMs} ms`, { to: 'debug' })
+      $.ui.log(`cockpit store: keys() and ${reads} gets in ${readMs} ms`, { to: 'debug' })
     }
 
     if (claimOf(facts, main.space)?.pane !== main.pane) {
@@ -275,13 +275,13 @@ async function perform($: Api, req: Req): Promise<Resp> {
 }
 
 /** Every `cockpit:` fact, or only one kind's. Values that do not validate are skipped, never thrown on. */
-async function loadFacts($: Api, only?: FactKind): Promise<Fact[]> {
+async function loadFacts($: Api, only?: FactKind): Promise<{ facts: Fact[]; reads: number }> {
   const infos = (await $.store.keys()).flatMap((key) => {
     const info = parseKey(key)
     return info && (only === undefined || info.kind === only) ? [{ key, info }] : []
   })
   const values = await Promise.all(infos.map(({ key }) => $.store.get(key)))
-  return infos.flatMap(({ info }, i) => parseFact(info, values[i]) ?? [])
+  return { facts: infos.flatMap(({ info }, i) => parseFact(info, values[i]) ?? []), reads: infos.length }
 }
 
 /** Whole value, writer-owned key: never get-then-set. */
