@@ -114,5 +114,18 @@ expect "branch -D of a variable the guard cannot resolve is refused" "$(decision
 expect "then does not hide reset --hard" "$(decision claude "if true; then git reset --hard; fi")" "deny"
 expect "a loop of harmless git stays allowed" "$(decision claude "for b in x; do git status; done")" "allow"
 
+# Whole-suite runs (THV-1047)
+expect "pnpm vitest run with no path is refused" "$(decision claude "pnpm vitest run")" "deny"
+expect "npx vitest with no path is refused" "$(decision claude "npx vitest")" "deny"
+expect "pnpm run test:run with no path is refused" "$(decision claude "pnpm run test:run")" "deny"
+expect "pnpm test:coverage is refused" "$(decision claude "pnpm test:coverage")" "deny"
+expect "bundle exec rspec with no path is refused" "$(decision claude "bundle exec rspec")" "deny"
+expect "bin/rspec after cd is refused" "$(decision claude "cd backend && bin/rspec --fail-fast")" "deny"
+expect "vitest run on a file is allowed" "$(decision claude "pnpm vitest run __tests__/route-list.test.ts")" "allow"
+expect "test:run with a path is allowed" "$(decision claude "pnpm run test:run __tests__/a.test.ts")" "allow"
+expect "rspec on a spec is allowed" "$(decision claude "bundle exec rspec spec/models/user_spec.rb")" "allow"
+expect "THOVEN_FULL_SUITE=1 allows the full suite" "$(decision claude "THOVEN_FULL_SUITE=1 bundle exec rspec")" "allow"
+expect "prose naming vitest run stays allowed" "$(decision claude "echo pnpm vitest run")" "allow"
+
 [ "$failed" -eq 0 ] || exit 1
 echo "all passed"

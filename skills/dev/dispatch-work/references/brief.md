@@ -34,12 +34,18 @@ STANDING
   destructive step, prod or a secret value, a product call, or a ticket so wrong every path is a
   guess.
 - Leave no files behind outside the repo. Evidence goes in your report.
+- Browser: drive agent-browser from this pane only, never from a subagent. Close it when you are
+  done. Send Escape in-page (dispatchEvent of a keydown), never with agent-browser press Escape,
+  which pins the renderer. A renderer near 100% CPU means start a fresh browser; it is not a
+  product bug unless a normal browser reproduces it.
 
 REPORT
 Send exactly one message to main when you finish or need main, with
 ~/.local/bin/herdr agent prompt {{MAIN_PANE}} and the message as one quoted argument.
 It starts with STATUS THV-<id>, where STATUS is DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT
-or BLOCKED. Write it to a temp file, send "$(cat report.txt)" so backticks stay text, then delete it.
+or BLOCKED. Write it to $TMPDIR/dispatch/out/THV-<id>.md and send
+"$(cat $TMPDIR/dispatch/out/THV-<id>.md)" so backticks stay text. Delete the file only after
+the send succeeds. If it fails, leave the file: that folder is main's inbox.
 Then the ASCII block:
   Acceptance   one row per line: ✓/✗, evidence (file:line, command → result)
   Proof        command, red before, green after

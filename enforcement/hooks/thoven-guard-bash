@@ -174,6 +174,44 @@ for sub in "${subcommands[@]}"; do
     deny "That flag replaces the config's exclude array and reports failures that do not exist. Run the failing files by path instead."
   fi
 
+  # A whole suite pins the machine every pane shares (retro 2026-10-03, THV-1047). Judged at command
+  # position: vitest run, the package test:run / test:coverage scripts, and rspec, each with no path.
+  # THOVEN_FULL_SUITE=1, as a prefix or in the environment, is the sanctioned full run.
+  fwords=("${vwords[@]}")
+  full_ok="${THOVEN_FULL_SUITE:-}"
+  while [ "${#fwords[@]}" -gt 0 ] && [[ "${fwords[0]}" == [A-Za-z_]*=* ]]; do
+    [ "${fwords[0]}" = "THOVEN_FULL_SUITE=1" ] && full_ok=1
+    fwords=("${fwords[@]:1}")
+  done
+  suite=""
+  rest=()
+  case "${fwords[0]:-}" in
+    npx|pnpm|yarn|bun|npm)
+      i=1
+      while [ "$i" -lt "${#fwords[@]}" ]; do
+        case "${fwords[$i]}" in run|exec|dlx|-*) i=$((i + 1)) ;; *) break ;; esac
+      done
+      case "${fwords[$i]:-}" in
+        vitest|*/vitest) suite="vitest"; rest=("${fwords[@]:$((i + 1))}") ;;
+        test:run|test:coverage) suite="${fwords[$i]}"; rest=("${fwords[@]:$((i + 1))}") ;;
+      esac
+      ;;
+    vitest|*/vitest) suite="vitest"; rest=("${fwords[@]:1}") ;;
+    bundle)
+      [ "${fwords[1]:-}" = "exec" ] && case "${fwords[2]:-}" in rspec|bin/rspec) suite="rspec"; rest=("${fwords[@]:3}") ;; esac
+      ;;
+    rspec|bin/rspec|*/bin/rspec) suite="rspec"; rest=("${fwords[@]:1}") ;;
+  esac
+  if [ -n "$suite" ] && [ "$full_ok" != 1 ]; then
+    has_path=""
+    for fw in "${rest[@]}"; do
+      case "$fw" in run|watch|--|-*) ;; *) has_path=1; break ;; esac
+    done
+    if [ -z "$has_path" ]; then
+      deny "That runs the whole $suite suite, which pins the machine every pane shares. Run the spec or test files you changed by path. Main or the integration session can run the full suite with THOVEN_FULL_SUITE=1 in front of the command."
+    fi
+  fi
+
   read -r -a words <<<"$sub"
   # The ; split leaves a loop or if body behind its keyword: `for b in x; do git branch -D $b; done`.
   case "${words[0]:-}" in do|then|else|elif) words=("${words[@]:1}") ;; esac

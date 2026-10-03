@@ -80,15 +80,20 @@ you cannot fill means the ticket is not ready. Fix the ticket in Linear, then co
    and pass `--base origin/main`.
 3. Start the agent with its bypass flag from `agents.md`. Wait for `idle` before prompting.
 4. `scripts/send.sh <pane> $TMPDIR/dispatch/<THV-x>.md`. It fills main's pane id and sends from a
-   file, so backticks and `$(...)` in the brief reach the pane as text.
-5. Move the ticket to **In Progress** and read it back.
+   file, so backticks and `$(...)` in the brief reach the pane as text. It refuses a pane that is
+   not `idle` or `done` and prints its screen, so an update prompt or trust dialog never swallows
+   the brief. Clear the dialog, then send again.
+5. Move the ticket to **In Progress** with
+   `node ~/.agents/skills/workspace/tools/set-status.js "In Progress" THV-x`. It prints the state it
+   read back in one line. A status-only `save_issue` through the Linear MCP echoes the whole issue.
 
 **Done when:** `herdr agent get <pane>` shows `working` and the ticket reads In Progress.
 
 ### 4. Watch
 
-Arm `scripts/watch.sh <pane> [<pane>...]` as a background command. It exits on the first thing
-main must look at, and prints why. Keep doing main's own work meanwhile. Every exit wakes main.
+Arm `scripts/watch.sh <pane> [<pane>...]` with the Monitor tool, or as a background command. It
+exits on the first thing main must look at, and prints why. The watcher is the only poll: a
+`sleep` loop in main's shell costs a turn per tick and the harness refuses long ones. Keep doing main's own work meanwhile. Every exit wakes main.
 Every wake ends with one plain-English line to Andres saying what happened and what main did,
 then the watcher re-armed on every pane still live.
 

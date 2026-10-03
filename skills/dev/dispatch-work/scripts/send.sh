@@ -22,5 +22,19 @@ if grep -qE '<[a-z][^<>]*>' <<<"$text"; then
   exit 2
 fi
 
+# Preflight: a pane that is not at its input box swallows the prompt (a Codex update prompt, a
+# trust dialog, an agent that exited and left a shell). Only idle and done take a brief.
+status=$("$herdr" agent get "$target" 2>&1 | jq -r '.result.agent.agent_status // .error.code // "unknown"' 2>/dev/null || true)
+status=${status:-unknown}
+case "$status" in
+  idle|done) ;;
+  *)
+    echo "refusing to send: $target is '$status', not idle or done. Its screen:" >&2
+    "$herdr" agent read "$target" --source recent-unwrapped --lines 20 2>/dev/null | grep -v '^[[:space:]]*$' | tail -15 >&2 || true
+    echo "Clear the dialog or restart the agent, then send again." >&2
+    exit 3
+    ;;
+esac
+
 "$herdr" agent prompt "$target" "$text" --wait --until working --until blocked --timeout 60000
 echo "sent $(wc -c <"$brief" | tr -d ' ') bytes to $target, reply address $main"

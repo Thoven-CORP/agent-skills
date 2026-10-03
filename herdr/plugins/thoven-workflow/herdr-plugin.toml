@@ -1,0 +1,68 @@
+id = "thoven.workflow"
+name = "Thoven workflow"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "Done-verifier, CPU watchdog, Linear click-to-dispatch and an HTML status board for Thoven's pane-per-ticket workflow (THV-1047)."
+platforms = ["macos", "linux"]
+
+# Shared: the orchestrator pane that receives reports and escalations.
+[[actions]]
+id = "mark-main"
+title = "Mark this pane as main"
+contexts = ["pane"]
+command = ["bash", "lib/mark-main.sh"]
+
+# 1. done-verifier
+[[events]]
+on = "pane.agent_status_changed"
+command = ["python3", "verify/done_verifier.py", "--event"]
+
+[[actions]]
+id = "verify"
+title = "Verify this pane now"
+contexts = ["pane"]
+command = ["python3", "verify/done_verifier.py", "--manual"]
+
+# 2. cpu-watchdog: the startup hook spawns a detached sweep loop (startup hooks are one-shot).
+[[startup]]
+command = ["python3", "watchdog/watchdog.py", "--ensure-daemon"]
+
+[[actions]]
+id = "watchdog-start"
+title = "Start the CPU watchdog"
+contexts = ["workspace"]
+command = ["python3", "watchdog/watchdog.py", "--ensure-daemon"]
+
+[[actions]]
+id = "kill-hot"
+title = "Kill this pane's hot child process"
+contexts = ["pane"]
+command = ["python3", "watchdog/watchdog.py", "--kill-hot"]
+
+# 3. linear-dispatch
+[[actions]]
+id = "dispatch-link"
+title = "Dispatch a Linear ticket to a new pane"
+contexts = ["workspace"]
+command = ["bash", "dispatch/link-click.sh"]
+
+[[panes]]
+id = "dispatch-picker"
+title = "Dispatch THV ticket"
+placement = "popup"
+width = 64
+height = 18
+command = ["bash", "dispatch/picker.sh"]
+
+[[link_handlers]]
+id = "linear-issue"
+title = "Dispatch Linear ticket"
+pattern = "^https://linear\\.app/thoven/issue/THV-[0-9]+"
+action = "dispatch-link"
+
+# 4. status-board
+[[actions]]
+id = "board"
+title = "Open the HTML status board"
+contexts = ["workspace"]
+command = ["python3", "board/board.py"]
