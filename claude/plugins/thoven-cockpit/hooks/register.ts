@@ -20,7 +20,7 @@
 
 import type { EngineInterface, Register } from 'claude-code'
 import { project } from './board.ts'
-import { isVerdict, isWorthReading, readPrompt, sendCalls } from './dispatch.ts'
+import { isVerdict, readPrompt, sendCalls } from './dispatch.ts'
 import { findMe, focusReq, parseSnapshot, snapshotReq, spaceOfPane } from './herdr.ts'
 import type { Board, Fact, FactKind, Intent, Main, Me, Ms, PaneId, PaneUi, Polled, SessionId, SourceId, Sources, SourceValues, World } from './model.ts'
 import { HEARTBEAT_MS, SOURCES, due, settle, type Listing, type PolledId, type Req, type Resp, type Source } from './sources.ts'
@@ -331,7 +331,7 @@ async function loadFacts($: Api, only?: FactKind): Promise<{ facts: Fact[]; read
  * session (outside herdr) has no pane to tie, so it records only reports and verdicts (synthesis B2).
  */
 async function observePrompt($: Api, text: unknown): Promise<void> {
-  if (typeof text !== 'string' || !isWorthReading(text)) return
+  if (typeof text !== 'string') return
   const { briefs, lines, concerns } = readPrompt(text)
   if (briefs.length === 0 && lines.length === 0) return
   const sid = me.k === 'inert' ? ((await $.session.id()) as SessionId) : me.sid

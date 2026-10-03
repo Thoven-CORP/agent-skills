@@ -88,13 +88,9 @@ export function branchTicket(branch: string): Ticket | undefined {
 
 /**
  * The one regex a session that is neither main nor engaged runs per prompt: could this text hold
- * a status line or a brief? Everything below runs only when it says yes.
+ * a status line or a brief? `readPrompt` reads further only when it says yes.
  */
 const WORTH_READING = /^[ \t]*(?:DONE|NEEDS_CONTEXT|BLOCKED|VERIFIED|FINDINGS|FIX ROUND|[/$]poteto-mode[ \t]|Verify[ \t]+THV-)/m
-
-export function isWorthReading(text: string): boolean {
-  return WORTH_READING.test(text)
-}
 
 /** herdr's `agent prompt` arrives pasted: `<pasted_content id="f722">` … `</pasted_content id="f722">`. */
 export function unwrapPasted(text: string): string {
@@ -149,20 +145,16 @@ export function briefOf(text: string): Brief | undefined {
 /** An Acceptance row the report marks unmet: `[~]`, `[ ]`, `[!]`, `✗` or `~`. */
 const UNMET_ROW = /^[ \t]*(?:\[[ ~!-]\]|✗|~)[ \t]/gm
 
-/** How many Acceptance rows a report leaves unmet. */
-export function concernsOf(text: string): number {
-  return [...unwrapPasted(text).matchAll(UNMET_ROW)].length
-}
-
 /**
  * What one prompt says. A brief is never also a report: the status lines it quotes (a verifier
  * brief pastes the builder's `DONE THV-n`) are its content, not a hand-back.
  */
 export function readPrompt(text: string): { briefs: Brief[]; lines: StatusLine[]; concerns: number } {
+  if (!WORTH_READING.test(text)) return { briefs: [], lines: [], concerns: 0 }
   const brief = briefOf(text)
   if (brief) return { briefs: [brief], lines: [], concerns: 0 }
   const lines = statusLines(text)
-  return { briefs: [], lines, concerns: lines.some((l) => l.word === 'DONE_WITH_CONCERNS') ? concernsOf(text) : 0 }
+  return { briefs: [], lines, concerns: lines.some((l) => l.word === 'DONE_WITH_CONCERNS') ? [...unwrapPasted(text).matchAll(UNMET_ROW)].length : 0 }
 }
 
 export function isVerdict(word: StatusWord): word is Verdict {

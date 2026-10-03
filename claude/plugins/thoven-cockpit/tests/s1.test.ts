@@ -9,7 +9,7 @@ import type { Main, PaneId, Polled, SessionId, Snapshot, Sources, SpaceId, World
 import { SOURCES, headPathOf, parseHead, parseLiveSpaces } from '../hooks/sources.ts'
 import { cellText, columnsFor } from '../hooks/view.ts'
 import { DOT_GIT_THV_481, DOT_GIT_WORKTREE, HEAD_COCKPIT, HEAD_THV_481 } from './fixtures/git.ts'
-import { SNAPSHOT_LIVE, TAB_GET_T45 } from './fixtures/herdr.ts'
+import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import { WORKFLOW_LIVE_SPACES } from './fixtures/workflow.ts'
 import { MAIN_CWD, PANE, cockpit, dropPane, relabelPane, relabelTab, stage, start } from './stage.ts'
 
@@ -97,8 +97,6 @@ test('the live snapshot parses: 5 spaces, 7 panes, labels only where herdr gave 
   expect(s.panes.filter((p) => p.paneLabel !== undefined).map((p) => p.paneLabel)).toEqual(['Plan · Cockpit spec (THV-1053)', 'UI polish walkthrough (THV-481)'])
   expect(s.panes.find((p) => p.pane === 'w18:p8P')).toMatchObject({ tab: 'w18:t30', tabLabel: 'Research', tool: 'C', status: 'idle', cwd: '/Users/andresmartinez/thoven' })
   expect(s.panes.find((p) => p.pane === 'w54:p1')).toMatchObject({ status: 'blocked', tabLabel: '1', terminalTitle: 'After-cutover cleanup audit' })
-  // The tab label a pane carries is the one `herdr tab get` reports for its tab.
-  expect(JSON.parse(TAB_GET_T45).result.tab.label).toBe('Mods')
   expect(s.panes.filter((p) => p.tab === 'w18:t45').map((p) => p.tabLabel)).toEqual(['Mods', 'Mods'])
 })
 

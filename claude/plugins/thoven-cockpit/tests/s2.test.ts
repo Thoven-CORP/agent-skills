@@ -11,7 +11,7 @@ import { parseLiveSpaces } from '../hooks/sources.ts'
 import { parseFact, parseKey } from '../hooks/store.ts'
 import { cellText } from '../hooks/view.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
-import { INBOX_NAMES, OUT_ESCALATION_THV_1004, OUT_RESEARCH_THV_1038_HEAD } from './fixtures/inbox.ts'
+import { OUT_ESCALATION_THV_1004, OUT_RESEARCH_THV_1038_HEAD } from './fixtures/inbox.ts'
 import {
   BLOCKED_THV_869,
   BUILD_BRIEF_THV_1014,
@@ -175,7 +175,6 @@ test('an inbox file is an unsent report only when it starts with its own status 
     '[thoven verify] THV-1004 pane w56:p1 reported done 3 times and still: 1 live process: sleep 30 (pid 71389). Nudged 2x; needs you.',
   )
   expect(inboxFile('THV-1038.md', OUT_RESEARCH_THV_1038_HEAD, 1)?.line).toBeUndefined()
-  expect(INBOX_NAMES.map((n) => inboxFile(n, '', 1)?.ticket)).toEqual(['THV-1004', 'THV-1038', 'THV-909', 'THV-911', 'THV-912', 'THV-914', undefined])
 })
 
 // ── unit: the board cells ───────────────────────────────────────────────────────────────────

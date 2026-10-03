@@ -6,13 +6,13 @@ Nothing here is hand-made; a case that needs a shape no log holds is an open gap
 
 | File | Constants | Source |
 |---|---|---|
-| `herdr.ts` | `SNAPSHOT_LIVE`, `PANE_GET_P8W`, `TAB_GET_T45` | `/tmp/cockpit-fixtures/herdr/{snapshot-live,pane-get-sample,tab-get-sample}.json` |
+| `herdr.ts` | `SNAPSHOT_LIVE`, `PANE_GET_P8W` | `/tmp/cockpit-fixtures/herdr/{snapshot-live,pane-get-sample}.json` |
 | `workflow.ts` | `WORKFLOW_LIVE_SPACES` | `~/.agents/skills/workspace/references/WORKFLOW.md`, `### Live spaces` section |
 | `git.ts` | `DOT_GIT_WORKTREE`, `HEAD_COCKPIT`, `DOT_GIT_THV_481`, `HEAD_THV_481`, `CONFIG_FRONTEND`, `CONFIG_BACKEND`, `CONFIG_AGENT_SKILLS` | the `.git` file and HEAD of the `agent-skills-thv-1058` and `frontend-thv-481` worktrees; the `.git/config` of `~/thoven/{frontend,backend,agent-skills}` |
 | `github.ts` | `GH_FRONTEND`, `GH_BACKEND`, `GH_AGENT_SKILLS` | `/tmp/cockpit-fixtures/gh/{frontend-remote,backend-remote,agent-skills}.json` (`gh pr list --json`, 10 PRs each) |
 | `reports.ts` | `PASTED_CONCERNS_THV_1041`, `PASTED_DONE_FIX_ROUND_THV_1041`, `BUILD_BRIEF_THV_1014`, `FIX_ROUND_3_THV_1015`, and six from `status-lines/` | transcript lines named above each constant, and `/tmp/cockpit-fixtures/status-lines/*.txt` |
 | `send.ts` | `SEND_FIX2_THV_1004`, `SEND_1` to `SEND_6` | a main session's Bash `tool_use` (line named in the file), and `/tmp/cockpit-fixtures/send/*.txt` |
-| `inbox.ts` | `INBOX_NAMES`, `OUT_ESCALATION_THV_1004`, `OUT_RESEARCH_THV_1038_HEAD` | `/tmp/cockpit-fixtures/dispatch-out/`, and the head of `$TMPDIR/dispatch/out/THV-1038.md` |
+| `inbox.ts` | `OUT_ESCALATION_THV_1004`, `OUT_RESEARCH_THV_1038_HEAD` | `/tmp/cockpit-fixtures/dispatch-out/`, and the head of `$TMPDIR/dispatch/out/THV-1038.md` |
 
 Two test inputs are derived from these, not copied, and say so where they are built
 (`tests/stage.ts`): `relabelTab` renames one tab of `SNAPSHOT_LIVE` to a label `label.sh` writes,
