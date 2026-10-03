@@ -1,19 +1,20 @@
 #!/usr/bin/env bash
 # Lists live instructions that still describe the pre-THV-968 branch and deploy model:
 # release/2.0 as the prod branch, feature/teacher-2.0 or integrate/2.0 as the 2.0 line,
-# thoven.vercel.app as prod. History (archives, changelogs, dated plans, audits, decision
-# logs) is exempt: it records what was true then.
+# thoven.vercel.app as prod. Since THV-1038 it also lists any path into the retired thoven2.0
+# workspace. History (archives, changelogs, dated plans, audits, decision logs) is exempt: it
+# records what was true then.
 #
-#   thoven-stale-refs            one line per hit, then a count per root; exit 1 on any hit
-#   thoven-stale-refs --count    the counts only
+#   thoven-stale-refs                   one line per hit, then a count per root; exit 1 on any hit
+#   thoven-stale-refs --count           the counts only
+#   thoven-stale-refs [--count] DIR...  scan DIRs instead of the default roots
 set -uo pipefail
 
-PATTERN='release/2\.0|feature/teacher-2\.0|integrate/2\.0|thoven\.vercel\.app'
+PATTERN='release/2\.0|feature/teacher-2\.0|integrate/2\.0|thoven\.vercel\.app|thoven2\.0'
 ROOTS=(
   "$HOME/thoven/frontend"
   "$HOME/thoven/backend"
   "$HOME/thoven/agent-skills"
-  "$HOME/thoven/thoven2.0"
   "$HOME/thoven/.workspace"
   "$HOME/thoven/CI_CD.md"
 )
@@ -24,7 +25,8 @@ EXEMPT='/(archive|_archive|audit|audits|history|node_modules|\.git|\.next|covera
 ALLOW='retired|deleted|superseded|no longer|formerly|stale-ok'
 
 count_only=0
-[ "${1:-}" = --count ] && count_only=1
+[ "${1:-}" = --count ] && { count_only=1; shift; }
+[ $# -gt 0 ] && ROOTS=("$@")
 total=0
 for root in "${ROOTS[@]}"; do
   [ -e "$root" ] || continue
