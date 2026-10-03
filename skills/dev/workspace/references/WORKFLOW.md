@@ -284,7 +284,7 @@ components app --include=*.tsx` returns a call site outside app/dev/.
 A spec issue's is shorter, because `Writes to:` already names the artifact:
 
 ```
-Writes to: thoven2.0/teacher-2.0/projects/02-dashboard/decisions/api.md
+Writes to: backend/docs/api/teacher-settings-decisions.md
 Done when: that file names every field this Feature reads, and each row says
 whether the backend emits it today.
 ```
@@ -396,7 +396,7 @@ The body stamp is §8 Location stamp (`Sits in:` · `Ledger:` · `herdr:` · `Wr
 Every issue whose output is a document carries a literal line:
 
 ```
-Writes to: thoven2.0/teacher-2.0/projects/02-dashboard/decisions/api.md
+Writes to: backend/docs/api/teacher-settings-decisions.md
 ```
 
 **Done when** = the document at that path passes **its own `Done when` block**. Every template
@@ -408,7 +408,7 @@ An issue may carry more than one `Writes to:` line when its output genuinely lan
 a Design issue's does: the proto route and the `DESIGN_<PROJECT>.md` row that points at it. Every listed path
 must resolve. The agent writes to the paths its issue names and never invents one.
 
-Paths point at `thoven2.0/<feature>/` for 2.0 work and `docs/<Surface>/` for everything else. A
+Paths point at `docs/<Surface>/` in the repo that owns the artifact. A
 hotfix gets an issue and a CHANGELOG line, no folder. New top-level folders are Andres's call.
 
 ### Plans
@@ -551,25 +551,9 @@ when a space is opened for a Project.
 
 ### Ledger bind
 
-One space, one folder. Meta writes ledger rows only under that Project folder. Project `STATE.md`
-is the only current state file Meta may update after approval; audience and global state remain
-compatibility inputs.
-
-| Space | Folder |
-|---|---|
-| `~Business` | `thoven2.0/teacher-2.0/projects/business` |
-| `~Settings` | `thoven2.0/teacher-2.0/projects/settings` |
-| `~Schedule` | `thoven2.0/teacher-2.0/projects/schedule` |
-| `~Parent2.0` | `thoven2.0/parent-2.0` |
-
-**Updated 2026-08-27.** `~Dashboard` and `~Onboarding` are retired: both Projects shipped through
-Teacher 2.0 Part 1, and their folders are evidence now, not work surfaces, at
-`teacher-2.0/archive/legacy-projects/`. The three rows above were promoted out of that same archive
-directory on the same day — they were filed there by THV-200's consolidation while still carrying
-live locks (`D181` · `D194` · `D196` · `D183`), which is the vocabulary failure rule 8 warns about.
-A folder under `archive/` must not bind anything.
-
-Run `meta/tools/scope.js` before a ledger write. Exit 1 means the path is outside the bind.
+Retired by THV-1038 (2026-10-03), with the Teacher 2.0 and Parent 2.0 Project folders it bound.
+No space binds a folder now. Meta writes only for the Project it was opened for, and Project state
+is Linear's.
 
 ### Two ladders, one board
 

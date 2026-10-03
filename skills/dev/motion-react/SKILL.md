@@ -18,7 +18,7 @@ import { springs, staggers, cardHover, subtleHover, getTransition } from '@/lib/
 - **getTransition(springs.x)** → returns `{ duration: 0 }` under `prefers-reduced-motion`. Wrap transitions with it.
 
 **If none of them fit, do not invent a number in the component.** The route is
-`design-system/STACK.md` → **REFERENCE** (transitions.dev) → `dialkit` on the real component →
+frontend `design/STACK.md` → **REFERENCE** (transitions.dev) → `dialkit` on the real component →
 a token module with a test → import it here like any other preset. A value that never makes that
 trip is a value the next person will guess at again.
 

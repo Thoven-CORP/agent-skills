@@ -35,7 +35,7 @@ workspace owns Linear/Map/Log.
 
 **What changed.** Reconcile table gained **liveness**. Workspace was not edited. The install
 recipe (knip, owners_spec, e2e-no-dev, dependency-cruiser) stays in
-`thoven2.0/teacher-2.0/plans/2026-08-28-consolidation-milestone.md` § Move-safety.
+backend `docs/architecture/2026-08-28-consolidation-milestone.md` § Move-safety.
 
 ---
 
