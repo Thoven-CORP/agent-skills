@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Dispatch worker: for each repo, a worktree, a new tab in the space you clicked from (never a new
-# space, THV-1064), an agent in its shell pane, and the self-brief. picker.sh starts this detached so the session-modal popup can close while a
+# Dispatch worker: the worktree(s), one new tab in the space you clicked from (never a new space,
+# THV-1064), one agent that reaches every chosen repo (THV-1065), and the self-brief. picker.sh starts this detached so the session-modal popup can close while a
 # fresh worktree installs dependencies.
 #
 #   run.sh <n> <fe|be|both> <claude|codex|devin> <area> [url]
@@ -48,102 +48,107 @@ export TW_REPORT_TO="$report_to"
 setv() { printf -v "$1_$2" '%s' "$3"; }
 getv() { local v="$1_$2"; printf '%s' "${!v:-}"; }
 
-# Step 1, per repo: the worktree. thoven-worktree's path is deterministic, so an existing tree at
-# that path is reused as it is, whatever branch it carries (thoven-worktree would refuse it).
+# Step 1: the worktrees, in parallel (THV-1065). thoven-worktree's path is deterministic, so an
+# existing tree at that path is reused as it is, whatever branch it carries.
+tmp="$(mktemp -d)"
 for r in "${repos[@]}"; do
   path="$THOVEN_ROOT/$(repo_dir "$r")-thv-$n"
   if [ -d "$path" ] && git -C "$path" rev-parse --show-toplevel >/dev/null 2>&1; then
     log "$r: reusing existing worktree $path on $(git -C "$path" branch --show-current 2>/dev/null || echo '?')"
+    printf '%s\n' "$path" > "$tmp/$r"
   elif [ "$dry" = 1 ]; then
     show "$WORKTREE_BIN" create "$r" "$area" "$n"
+    printf '%s\n' "$path" > "$tmp/$r"
   else
     log "$r: $WORKTREE_BIN create $r $area $n"
-    out="$("$WORKTREE_BIN" create "$r" "$area" "$n")" || { fail "$r: thoven-worktree create failed (see $TW_STATE/dispatch logs)"; continue; }
-    path="$(printf '%s\n' "$out" | tail -n 1)"
+    ( out="$("$WORKTREE_BIN" create "$r" "$area" "$n")" && printf '%s\n' "$out" | tail -n 1 > "$tmp/$r" ) &
   fi
-  setv path "$r" "$path"
 done
+wait
+for r in "${repos[@]}"; do
+  if [ -s "$tmp/$r" ]; then setv path "$r" "$(cat "$tmp/$r")"; else fail "$r: thoven-worktree create failed (see this log)"; fi
+done
+rm -rf "$tmp"
 
-# Step 2, per repo: a tab in the current space, its shell pane, the agent.
+# One pane for the ticket, even across both repos: frontend is home and the backend is added
+# (THV-1065). A feature spans both repos, so one agent works across them.
+home="" other=""
 for r in "${repos[@]}"; do
   [ -n "$(getv path "$r")" ] || continue
-  path="$(getv path "$r")"
-  name="thv-$n-$r"
-  label="$ticket $r"
-  setv label "$r" "$label"
+  if [ -z "$home" ]; then home="$r"; else other="$r"; fi
+done
+[ -n "$home" ] || exit 1
+path="$(getv path "$home")"
+other_path=""; [ -n "$other" ] && other_path="$(getv path "$other")"
+name="thv-$n"
+label="$ticket"
+if [ -n "$other" ]; then
+  label="$ticket $home+$other"
+  # Claude and Codex take a second writable directory; Devin in dangerous mode already reaches any path.
+  case "$kind" in claude | codex) flags+=(--add-dir "$other_path") ;; esac
+fi
 
-  if [ "$dry" != 1 ] && "$TW_HERDR" agent get "$name" >/dev/null 2>&1; then
-    fail "$r: an agent named $name is already live; not starting a second one"
-    continue
-  fi
+# Step 2: a tab in the current space, its shell pane, the agent.
+if [ "$dry" != 1 ] && "$TW_HERDR" agent get "$name" >/dev/null 2>&1; then
+  fail "an agent named $name is already live; not starting a second one"
+  exit 1
+fi
+if [ "$dry" = 1 ]; then
+  show "$TW_HERDR" tab create --workspace "$space" --cwd "$path" --label "$label" --no-focus
+  pane="<root_pane of tab '$label'>"
+else
+  created="$("$TW_HERDR" tab create --workspace "$space" --cwd "$path" --label "$label" --no-focus)" || { fail "tab create in $space failed"; exit 1; }
+  pane="$(jq -r '.result.root_pane.pane_id' <<<"$created")"
+  [ -n "$pane" ] && [ "$pane" != null ] || { fail "tab create returned no root pane"; exit 1; }
+  # The verifier and tw_tell_main read this to route the pane's escalations back to the dispatcher.
+  jq -nc --arg d "$dispatcher" --arg w "$space" --arg t "$ticket" '{dispatcher:$d,workspace:$w,ticket:$t}' \
+    > "$TW_STATE/dispatch/by-pane/$(tw_key "$pane").json"
+  # agent start needs the shell at its prompt; wait until the shell has drawn something.
+  "$TW_HERDR" pane wait-output "$pane" --regex '\S' --timeout 15000 >/dev/null 2>&1 || true
+  sleep 1
+fi
 
-  if [ "$dry" = 1 ]; then
-    show "$TW_HERDR" tab create --workspace "$space" --cwd "$path" --label "$label" --no-focus
-    pane="<root_pane of tab '$label'>"
-  else
-    created="$("$TW_HERDR" tab create --workspace "$space" --cwd "$path" --label "$label" --no-focus)" || { fail "$r: tab create in $space failed"; continue; }
-    pane="$(jq -r '.result.root_pane.pane_id' <<<"$created")"
-    [ -n "$pane" ] && [ "$pane" != null ] || { fail "$r: tab create returned no root pane"; continue; }
-    # The verifier and tw_tell_main read this to route the pane's escalations back to the dispatcher.
-    jq -nc --arg d "$dispatcher" --arg w "$space" --arg t "$ticket" '{dispatcher:$d,workspace:$w,ticket:$t}' \
-      > "$TW_STATE/dispatch/by-pane/$(tw_key "$pane").json"
-    # agent start needs the shell at its prompt; wait until the shell has drawn something.
-    "$TW_HERDR" pane wait-output "$pane" --regex '\S' --timeout 15000 >/dev/null 2>&1 || true
-    sleep 1
-  fi
-  setv pane "$r" "$pane"
-
-  if [ "$dry" = 1 ]; then
-    show "$TW_HERDR" agent start "$name" --kind "$kind" --pane "$pane" --timeout 120000 -- "${flags[@]}"
-  else
-    log "$r: agent start $name --kind $kind --pane $pane -- ${flags[*]}"
-    if ! started="$("$TW_HERDR" agent start "$name" --kind "$kind" --pane "$pane" --timeout 120000 -- "${flags[@]}" 2>&1)"; then
-      # blocked at startup (a trust or bypass dialog) returns agent_not_ready; a human answers it.
-      if grep -q agent_not_ready <<<"$started"; then
-        log "$r: $name is blocked at startup, waiting up to 120s for idle"
-        "$TW_HERDR" agent wait "$name" --until idle --until done --timeout 120000 >/dev/null 2>&1 ||
-          { fail "$r: $name in $pane is blocked at startup (dialog needs an answer); brief not sent"; continue; }
-      else
-        fail "$r: agent start failed in $pane: $(tail -n 1 <<<"$started")"
-        continue
-      fi
+if [ "$dry" = 1 ]; then
+  show "$TW_HERDR" agent start "$name" --kind "$kind" --pane "$pane" --timeout 120000 -- "${flags[@]}"
+else
+  log "agent start $name --kind $kind --pane $pane -- ${flags[*]}"
+  if ! started="$("$TW_HERDR" agent start "$name" --kind "$kind" --pane "$pane" --timeout 120000 -- "${flags[@]}" 2>&1)"; then
+    # blocked at startup (a trust or bypass dialog) returns agent_not_ready; a human answers it.
+    if grep -q agent_not_ready <<<"$started"; then
+      log "$name is blocked at startup, waiting up to 120s for idle"
+      "$TW_HERDR" agent wait "$name" --until idle --until done --timeout 120000 >/dev/null 2>&1 ||
+        { fail "$name in $pane is blocked at startup (dialog needs an answer); brief not sent"; exit 1; }
+    else
+      fail "agent start failed in $pane: $(tail -n 1 <<<"$started")"
+      exit 1
     fi
   fi
-done
+fi
 
-# Step 3: the brief, once every pane exists so each brief can name its sibling.
-dispatched=()
-for r in "${repos[@]}"; do
-  [ -n "$(getv pane "$r")" ] || continue
-  path="$(getv path "$r")"
-  name="thv-$n-$r"
-  sibling=""
-  for o in "${repos[@]}"; do
-    if [ "$o" != "$r" ] && [ -n "$(getv pane "$o")" ]; then
-      sibling="$(getv pane "$o") (agent thv-$n-$o, $(repo_dir "$o") at $(getv path "$o"))"
-    fi
-  done
-  branch="$(git -C "$path" branch --show-current 2>/dev/null || true)"
-  base="$(git -C "$path" rev-parse --short HEAD 2>/dev/null || true)"
-  [ -n "$branch" ] || branch="$area/thv-$n (created by thoven-worktree)"
-  [ -n "$base" ] || base="origin/main at creation"
-  ctx="$(jq -nc --arg ticket "$ticket" --arg url "$url" --arg path "$path" --arg repo "$(repo_dir "$r")" \
-    --arg branch "$branch" --arg base "$base"  --arg main "$report_to" --arg pane "$(getv pane "$r")" --arg inbox "$TW_INBOX/$ticket.md" \
-    --arg sibling "$sibling" \
-    '{ticket:$ticket,url:$url,path:$path,repo:$repo,branch:$branch,base:$base,main_pane:$main,inbox_file:$inbox,sibling:$sibling,pane:$pane}')"
-  brief="$(python3 "$HERE/compose.py" brief "$cli" "$ctx")"
-  if [ "$dry" = 1 ]; then
-    show "$TW_HERDR" agent prompt "$name" "<self-brief below>"
-    printf -- '----- self-brief for %s -----\n%s\n----- end -----\n' "$name" "$brief"
-  else
-    "$TW_HERDR" agent prompt "$name" "$brief" >/dev/null || { fail "$r: agent prompt to $name failed"; continue; }
-  fi
-  dispatched+=("$r")
-done
+# Step 3: the self-brief.
+branch="$(git -C "$path" branch --show-current 2>/dev/null || true)"
+base="$(git -C "$path" rev-parse --short HEAD 2>/dev/null || true)"
+[ -n "$branch" ] || branch="$area/thv-$n (created by thoven-worktree)"
+[ -n "$base" ] || base="origin/main at creation"
+other_desc=""
+if [ -n "$other" ]; then
+  ob="$(git -C "$other_path" branch --show-current 2>/dev/null || echo "$area/thv-$n")"
+  obase="$(git -C "$other_path" rev-parse --short HEAD 2>/dev/null || echo "origin/main")"
+  other_desc="$other_path ($(repo_dir "$other")), branch $ob, base $obase"
+fi
+ctx="$(jq -nc --arg ticket "$ticket" --arg url "$url" --arg path "$path" --arg repo "$(repo_dir "$home")" \
+  --arg branch "$branch" --arg base "$base" --arg main "$report_to" --arg pane "$pane" \
+  --arg inbox "$TW_INBOX/$ticket.md" --arg other "$other_desc" \
+  '{ticket:$ticket,url:$url,path:$path,repo:$repo,branch:$branch,base:$base,main_pane:$main,inbox_file:$inbox,other_repo:$other,pane:$pane}')"
+brief="$(python3 "$HERE/compose.py" brief "$cli" "$ctx")"
+if [ "$dry" = 1 ]; then
+  show "$TW_HERDR" agent prompt "$name" "<self-brief below>"
+  printf -- '----- self-brief for %s -----\n%s\n----- end -----\n' "$name" "$brief"
+else
+  "$TW_HERDR" agent prompt "$name" "$brief" >/dev/null || { fail "agent prompt to $name failed"; exit 1; }
+fi
 
-[ "${#dispatched[@]}" -gt 0 ] || exit 1
-where=""
-for r in "${dispatched[@]}"; do where="${where:+$where, }$(getv label "$r") ($(getv pane "$r"))"; done
+where="$label ($pane)"
 mut "$TW_HERDR" notification show "$ticket dispatched: $cli_label in $where" --sound done
 if [ "$dry" = 1 ]; then
   show tw_tell_main "$ticket-dispatch" "DISPATCHED $ticket: $cli_label ($model) in $where"
