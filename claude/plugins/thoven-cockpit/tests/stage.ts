@@ -102,9 +102,9 @@ function paneGetFrom(snapshot: string, pane: string): string {
  * What a fake `ask` answers: process stdout by its argv joined with spaces, file text and folder
  * entries by path. Anything not in the table throws, as a missing file does.
  */
-export type AskTable = { proc?: Record<string, string>; read?: Record<string, string>; list?: Record<string, Listing> }
+export type AskTable = { proc?: Record<string, string>; read?: Record<string, string>; list?: Record<string, Listing>; linear?: string }
 
-/** A source's `ask` with no kit under it. `asked` records each read in the order asked: `read <path>`, `list <path>`, or the argv. */
+/** A source's `ask` with no kit under it. `asked` records each read in the order asked: `read <path>`, `list <path>`, the argv, or `linear <body JSON>`. */
 export function fakeAsk(table: AskTable): Ask & { asked: string[] } {
   const asked: string[] = []
   const answer = <T>(what: string, value: T | undefined): Promise<T> => {
@@ -116,6 +116,7 @@ export function fakeAsk(table: AskTable): Ask & { asked: string[] } {
     proc: (req) => answer(req.argv.join(' '), table.proc?.[req.argv.join(' ')]),
     read: (path) => answer(`read ${path}`, table.read?.[path]),
     list: (path) => answer(`list ${path}`, table.list?.[path]),
+    linear: (body) => answer(`linear ${JSON.stringify(body)}`, table.linear),
   }
 }
 
@@ -148,6 +149,8 @@ export type Stage = {
   setKeys: string[]
   /** Set to make the Bash tool beneath the cockpit throw, as a crashed tool does. */
   bashThrows: string | undefined
+  /** What the Bash tool beneath the cockpit prints, such as a set-status.js read-back. */
+  bashStdout: string
   /** Every `$.fs` call, in order: `read <path>`, `list <path>` or `exists <path>`. */
   fsCalls: string[]
   /** What the Skill tool answers (S3): core's `{ result, text }`, with `isReadOnly` when a test sets it. */
@@ -181,6 +184,7 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
     bashThrows: undefined,
     skillInside: undefined,
     skillResult: { result: { success: true, commandName: 'verify-this' }, text: 'Launching skill: verify-this' },
+    bashStdout: '',
     snapshots: () => ranTimes(s, COMMANDS['herdr api snapshot']()),
     paneGets: () => s.argvs.filter((a) => a[1] === 'pane' && a[2] === 'get').map((a) => a[3] ?? ''),
   }
@@ -249,7 +253,7 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
       return s.skillResult
     }
     if (s.bashThrows !== undefined) throw new Error(s.bashThrows)
-    return { result: { stdout: '', stderr: '', interrupted: false } }
+    return { result: { stdout: s.bashStdout, stderr: '', interrupted: false } }
   })
   on('session.start', () => ({ cwd: MAIN_CWD }))
   on('classic.SessionStart', () => ({}))

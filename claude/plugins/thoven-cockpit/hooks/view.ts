@@ -8,6 +8,7 @@
 import type { Elements, RenderElement } from 'claude-code'
 import type { DoctorReport } from './doctor.ts'
 import { ciCell } from './cells.ts'
+import { pendingOf } from './linear.ts'
 import { AGENT_SKILLS, BACKEND, FRONTEND } from './github.ts'
 import { LETTERS } from './model.ts'
 import type { Board, Cells, CiCell, Group, Health, Intent, Letter, Light, Ms, LivePane, OtherItem, PaneStatus, PaneUi, Pr, PrCell, PrItem, ReportStatus, Row } from './model.ts'
@@ -24,7 +25,7 @@ const KIND_WIDTH = 9
 type Drawn = { text: string; color?: string | undefined; parts?: ReadonlyArray<{ text: string; color?: string | undefined; dim?: boolean }> }
 
 /** One Work-tab column after Work. While its `source` is stale the column keeps its last answer, dimmed and uncoloured. */
-type Column = { heading: string; width: number; draw(row: Row): Drawn; shownIf?: (board: Board) => boolean; source?: keyof Health; wrap?: 'wrap' }
+type Column = { heading: string; width: number; draw(row: Row): Drawn; shownIf?: (board: Board) => boolean; source?: keyof Health; wrap?: 'wrap'; press?: (row: Row) => { key: string; intent: Intent } | undefined }
 
 /** The Work tab's columns after Work, in order. Report fits `blocked` and a space before Fix. */
 const COLUMNS = {
@@ -35,7 +36,7 @@ const COLUMNS = {
   review: { heading: 'Review', width: 9, draw: (r) => reviewDrawn(r.cells.review) },
   pr: { heading: 'PR', width: 9, source: 'github', draw: (r) => prDrawn(r.cells.pr) },
   ci: { heading: 'CI', width: 6, source: 'github', draw: (r) => ciDrawn(r.cells.ci) },
-  linear: { heading: 'Linear', width: 7, shownIf: (b) => b.project !== undefined, draw: (r) => ({ text: linearText(r.cells.linear) }) },
+  linear: { heading: 'Linear', width: 7, source: 'linear', shownIf: (b) => b.project !== undefined, draw: (r) => linearDrawn(r.cells.linear), press: linearPress },
 } satisfies Record<string, Column>
 export type ColumnId = keyof typeof COLUMNS
 
@@ -61,6 +62,7 @@ const HEALTH_WORDS: Record<keyof Health, { name: string; down: string }> = {
   github: { name: 'gh', down: 'stale' },
   inbox: { name: 'dispatch inbox', down: 'stale' },
   codex: { name: 'Codex rollouts', down: 'stale' },
+  linear: { name: 'Linear', down: 'stale' },
 }
 
 export function drawCockpit(el: El, board: Board | undefined, ui: PaneUi, columns: number, act: Act): RenderElement {
@@ -114,7 +116,10 @@ function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): 
             Text({ dimColor: true, children: [subtitle] }),
           ],
         }),
-        ...shown.map((c) => cell(el, c.width, c.draw(row), isStale(c), c.wrap)),
+        ...shown.map((c) => {
+          const press = c.press?.(row)
+          return press ? Box({ width: c.width, flexShrink: 0, children: [Button({ key: press.key, label: c.draw(row).text, plain: true, onPress: () => act(press.intent) })] }) : cell(el, c.width, c.draw(row), isStale(c), c.wrap)
+        }),
       ],
     })
   }
@@ -132,12 +137,20 @@ function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): 
         : [headingRow, ...board.build.flatMap((g) => (g.k === 'single' ? [buildRow(g.row)] : [parentLine(g), ...g.children.map(buildRow)]))],
       board.other.length === 0 ? null : [Text({ children: [' '] }), Text({ dimColor: true, children: ['OTHER'] }), ...board.other.map((o) => otherLine(el, o, columns))],
       Text({ children: [' '] }),
-      Button({
-        key: 'focus-row',
-        label: 'focus row',
-        hotkey: 'f',
-        plain: true,
-        onPress: () => (focusTarget === undefined ? undefined : act({ k: 'focus-pane', pane: focusTarget })),
+      Box({
+        flexDirection: 'row',
+        columnGap: 3,
+        children: [
+          Button({
+            key: 'focus-row',
+            label: 'focus row',
+            hotkey: 'f',
+            plain: true,
+            onPress: () => (focusTarget === undefined ? undefined : act({ k: 'focus-pane', pane: focusTarget })),
+          }),
+          // `u` sends every pending event in one `/workspace update` (ADR5); with none it is not offered.
+          board.pending.length === 0 ? null : Button({ key: 'update-all', label: 'update all ↻', hotkey: 'u', plain: true, onPress: () => act({ k: 'update', pending: board.pending }) }),
+        ],
       }),
     ],
   })
@@ -305,17 +318,24 @@ function ciDrawn(c: CiCell): Drawn {
   }
 }
 
-function linearText(l: Cells['linear']): string {
+/** The mock's Linear copy: ✓ up to date, ↻ to send `/workspace update`. A read-back error keeps the ↻ and adds `!`. */
+function linearDrawn(l: Cells['linear']): Drawn {
   switch (l.k) {
     case 'none':
-      return DASH
+      return { text: DASH }
     case 'ok':
-      return '✓'
+      return { text: '✓', color: 'green' }
     case 'pending':
-      return '↻'
+      return { text: '↻', color: 'blue' }
     case 'error':
-      return '↻ !'
+      return { text: '↻ !', color: 'red' }
   }
+}
+
+/** ↻ on a row with pending events hands exactly those to `/workspace update`. */
+function linearPress(row: Row): { key: string; intent: Intent } | undefined {
+  const pending = pendingOf(row.cells.linear)
+  return pending.length === 0 ? undefined : { key: `linear-${row.ticket}`, intent: { k: 'update', pending } }
 }
 
 function healthLines(health: Health): string[] {

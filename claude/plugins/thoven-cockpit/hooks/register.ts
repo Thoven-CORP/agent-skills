@@ -23,13 +23,14 @@ import type { EngineInterface, Register, RenderElement } from 'claude-code'
 import { project } from './board.ts'
 import { CHECKPOINT_FRESH_MS, briefPath, briefsSent, builderTickets, checkpointOf, checkpointText, isWatching, labelRecords, recordKey, rulingsFrom, sentLines, statusWarning, watcherWarning, type BackgroundTasks } from './background.ts'
 import { readPrompt, sendCalls } from './dispatch.ts'
-import { answerSeen, bashSeen, promptSeen, skillSeen, type Observer } from './observe.ts'
+import { answerSeen, bashSeen, promptSeen, readbackSeen, skillSeen, type Observer } from './observe.ts'
 import { reviewSkill } from './review.ts'
+import { LINEAR_URL, readbacks, updateArgs, type StateQuery } from './linear.ts'
 import { claimHeldBy, claimOf } from './facts.ts'
 import { COMMANDS, type Req } from './commands.ts'
 import { findMe, parseSnapshot, spaceOfPane } from './herdr.ts'
-import { isPaneId, isSessionId, type Board, type Fact, type FactKind, type FactOf, type Intent, type Main, type Me, type Ms, type PaneId, type PaneUi, type SessionId, type SourceId, type Snapshot, type Sources, type SourceValues, type World } from './model.ts'
-import { BY_ID, HEARTBEAT_MS, STAGES, due, settle, unpolled, valueOf, type Ask, type Listing } from './sources.ts'
+import { isPaneId, isSessionId, type Board, type Fact, type FactKind, type FactOf, type Intent, type Main, type Me, type Ms, type PaneId, type PaneUi, type Pending, type SessionId, type SourceId, type Snapshot, type Sources, type SourceValues, type World } from './model.ts'
+import { BY_ID, HEARTBEAT_MS, STAGES, due, settle, unpolled, valueOf, type Ask, type Listing, type Seen } from './sources.ts'
 import { isCockpitKey, isFactKey, keyOf, parseFact } from './store.ts'
 import { doctorText, drawCockpit } from './view.ts'
 import { doctor } from './doctor.ts'
@@ -142,6 +143,11 @@ async function passThenObserve<E, R>($: Api, where: string, e: E, next: (e: E) =
 async function endTurn<E extends { answer: string; reason: string; agentId?: string }, R extends { text: string }>($: Api, e: E, next: (e: E) => Promise<R>): Promise<R> {
   const r = await next(e)
   if (e.agentId !== undefined) return r
+  try {
+    await noteReadbacks($, e.answer)
+  } catch (err) {
+    await debug($, 'turn.complete', err)
+  }
   const stop = stopped
   stopped = undefined
   let warning: string | undefined
@@ -299,7 +305,7 @@ async function tick($: Api): Promise<void> {
     }
     const now = await $.clock.now()
     for (const stage of STAGES) {
-      const ids = due(m.lastRun, now).filter((id) => stage.includes(id) && !m.polling.has(id))
+      const ids = due(m.lastRun, now, seenOf(m, now)).filter((id) => stage.includes(id) && !m.polling.has(id))
       await Promise.all(ids.map((id) => poll($, m, id, now)))
     }
     await draw($, m)
@@ -438,7 +444,7 @@ async function poll<K extends SourceId>($: Api, m: MainState, id: K, now: Ms): P
   let value: SourceValues[K] | undefined
   let error = 'unreadable answer'
   try {
-    value = await source.run({ me: m.who, sources: m.sources }, askOf($))
+    value = await source.run(seenOf(m, now), askOf($))
   } catch (err) {
     error = messageOf(err)
   }
@@ -453,7 +459,23 @@ function askOf($: Api): Ask {
     proc: (req) => runProc($, req),
     read: (path) => readFile($, path),
     list: (path) => listDir($, path),
+    linear: (body, key) => postLinear($, body, key),
   }
+}
+
+/**
+ * `$.http.fetch` appears only here, and only with the body linear.ts builds. The key rides the
+ * header and nothing else: no error message, fact or log line carries it.
+ */
+async function postLinear($: Api, body: StateQuery, key: string): Promise<string> {
+  let r: Awaited<ReturnType<Api['http']['fetch']>>
+  try {
+    r = await $.http.fetch(LINEAR_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: key }, body: JSON.stringify(body) })
+  } catch (err) {
+    throw new Error(`Linear unreachable: ${messageOf(err).split(key).join('[key]')}`)
+  }
+  if (!r.ok) throw new Error(`Linear API ${r.status}`)
+  return r.text
 }
 
 /** `$.process.run` appears only here. A process that exits non-zero or truncates its output throws. */
@@ -500,11 +522,22 @@ async function loadFacts($: Api, only?: FactKind): Promise<Fact[]> {
 async function notePrompt($: Api, text: unknown): Promise<void> {
   const read = typeof text === 'string' ? readPrompt(text) : undefined
   if (read) await record($, promptSeen, read)
+  await noteReadbacks($, text)
+}
+
+/** Read-back lines main saw. Only main hands events to `/workspace update`, so no other session reads for them. */
+async function noteReadbacks($: Api, text: unknown): Promise<void> {
+  if (me.k !== 'main' || typeof text !== 'string') return
+  const lines = readbacks(text)
+  if (lines.length > 0) await record($, readbackSeen, lines)
 }
 
 /** A Bash command this session ran. A refused or failed call sent nothing. */
 async function noteBash($: Api, r: object, command: unknown): Promise<void> {
-  if (('deny' in r && r.deny !== undefined) || ('isError' in r && r.isError === true) || typeof command !== 'string') return
+  if ('deny' in r && r.deny !== undefined) return
+  // set-status.js prints its read-back and exits 1 on an ERROR line, so stdout is read before isError.
+  if ('result' in r && typeof r.result === 'object' && r.result !== null && 'stdout' in r.result) await noteReadbacks($, r.result.stdout)
+  if (('isError' in r && r.isError === true) || typeof command !== 'string') return
   const calls = sendCalls(command)
   if (calls.length > 0) await record($, bashSeen, calls)
 }
@@ -577,11 +610,33 @@ async function act($: Api, intent: Intent): Promise<void> {
         ui = { ...ui, checks: ui.checks === intent.pr ? undefined : intent.pr }
         $.ui.invalidate('ui.render')
         return
+      case 'update': {
+        const args = updateArgs(intent.pending)
+        if (args === undefined) return
+        // ADR5: a press handler is inside a hook the turn may wait on, so the call runs from a timer.
+        $.clock.after(0, () => {
+          void sendUpdate($, args, intent.pending)
+        })
+        return
+      }
       default:
         return intent satisfies never
     }
   } catch (err) {
     await debug($, 'act', err)
+  }
+}
+
+/** Hand the events to `/workspace update`, then record each as sent. It queues while a turn runs and resolves once submitted. */
+async function sendUpdate($: Api, args: string, pending: readonly Pending[]): Promise<void> {
+  try {
+    await $.command.run({ command: 'workspace', args })
+    const at = await $.clock.now()
+    for (const p of pending) await writeFact($, { kind: 'update', ticket: p.ticket, event: p.id, at })
+    const m = main
+    if (m) await draw($, m)
+  } catch (err) {
+    await debug($, 'update', err)
   }
 }
 
@@ -591,6 +646,11 @@ async function focusPane($: Api, req: Req): Promise<void> {
   } catch (err) {
     await debug($, 'focus', err)
   }
+}
+
+/** What a source reads: main, the sources, the time, and the board last drawn, which names the tickets on screen. */
+function seenOf(m: MainState, now: Ms): Seen {
+  return { now, me: m.who, sources: m.sources, board: m.board }
 }
 
 function worldOf(m: MainState, now: Ms, facts: Fact[]): World {
