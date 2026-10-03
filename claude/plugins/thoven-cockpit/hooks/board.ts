@@ -9,12 +9,14 @@
 //      label, terminal title. A label naming several tickets gives one row per ticket, sharing
 //      the pane.
 //   3. A Build or Fix label, or an older label that names a ticket and no Kind, is a Build row.
-//      A Review pane whose ticket has a Build row is that row's verifier. Everything else is an
-//      Other item; a pane with neither a label nor an agent (a plain shell) is not shown.
+//      A second pane on the same ticket joins that row's Pane cell. A Review pane is the verifier
+//      of each of its tickets' Build rows; a ticket it names with no Build row gets a Review row
+//      on that pane. Everything else is an Other item; a pane with neither a label nor an agent
+//      (a plain shell) is not shown.
 //   4. Main's own branch ticket, when no row has it yet, is the "this session" row.
 
 import { branchTicket, pickLabel } from './dispatch.ts'
-import type { Board, Health, Kind, Label, OtherItem, Pane, PaneCell, Polled, Row, SourceId, Sources, Ticket, World } from './model.ts'
+import type { Board, Health, Kind, Label, OtherItem, Pane, PaneCell, Polled, Row, SourceId, Sources, SpaceMap, Ticket, World } from './model.ts'
 import { valueOf } from './sources.ts'
 
 const BUILD_KINDS: ReadonlyArray<Kind | undefined> = ['Build', 'Fix', undefined]
@@ -24,7 +26,7 @@ export function project(world: World): Board {
   const snap = valueOf(world.sources.herdr)
   const labels = valueOf(world.sources.labels)?.byPane
   const space = snap?.spaces.find((s) => s.space === me.space) ?? { space: me.space, label: me.space }
-  const projectName = valueOf(world.sources.spaces)?.get(space.label)
+  const projectName = projectOf(valueOf(world.sources.spaces), space.label)
 
   const panes = (snap?.panes ?? []).filter((p) => p.space === me.space && p.pane !== me.pane)
   const labelled = panes.map((p) => ({ p, label: pickLabel([p.paneLabel ?? labels?.get(p.pane), p.tabLabel, p.terminalTitle], undefined) }))
@@ -32,15 +34,20 @@ export function project(world: World): Board {
   const rows = new Map<Ticket, Row>()
   for (const { p, label } of labelled) {
     if (!label || !BUILD_KINDS.includes(label.kind)) continue
-    for (const t of label.tickets) if (!rows.has(t)) rows.set(t, row(t, label, 'label', live(p), projectName))
+    for (const t of label.tickets) {
+      const r = rows.get(t)
+      rows.set(t, r ? { ...r, extraPanes: [...r.extraPanes, live(p)] } : row(t, label, 'label', live(p), projectName))
+    }
+  }
+
+  for (const { p, label } of labelled) {
+    if (label?.kind !== 'Review') continue
+    for (const t of label.tickets) rows.set(t, { ...(rows.get(t) ?? row(t, label, 'label', live(p), projectName)), verifierPane: live(p) })
   }
 
   const other: OtherItem[] = []
   for (const { p, label } of labelled) {
-    if (label && BUILD_KINDS.includes(label.kind) && label.tickets.length > 0) continue
-    const verified = label?.kind === 'Review' ? label.tickets.flatMap((t) => rows.get(t) ?? []) : []
-    for (const r of verified) rows.set(r.ticket, { ...r, verifierPane: live(p) })
-    if (verified.length > 0) continue
+    if (label && (BUILD_KINDS.includes(label.kind) || label.kind === 'Review') && label.tickets.length > 0) continue
     if (label) other.push({ label: label.title, kind: label.kind, ticket: label.tickets[0], pane: live(p), note: undefined })
     else if (p.agent) other.push({ label: `tab "${p.tabLabel ?? p.tab}"`, kind: undefined, ticket: undefined, pane: live(p), note: 'unlabelled' })
   }
@@ -78,6 +85,7 @@ function row(ticket: Ticket, label: Label, origin: Row['origin'], pane: PaneCell
     kind: label.kind,
     origin,
     pane,
+    extraPanes: [],
     verifierPane: { k: 'none' },
     report: { k: 'none' },
     fix: { k: 'none' },
@@ -88,7 +96,14 @@ function row(ticket: Ticket, label: Label, origin: Row['origin'], pane: PaneCell
   }
 }
 
-const live = (p: Pane): PaneCell => ({ k: 'live', status: p.status, tool: p.tool, pane: p.pane })
+/** herdr's space label and WORKFLOW.md's `COPPA` differ in case (`Coppa`), so the match ignores it. */
+function projectOf(spaces: SpaceMap | undefined, label: string): string | undefined {
+  const want = label.toLowerCase()
+  for (const [space, name] of spaces ?? []) if (space.toLowerCase() === want) return name
+  return undefined
+}
+
+const live = (p: Pane): Extract<PaneCell, { k: 'live' }> => ({ k: 'live', status: p.status, tool: p.tool, pane: p.pane })
 
 function health(sources: Sources): Health {
   const of = (p: Polled<unknown>): Health[SourceId] =>

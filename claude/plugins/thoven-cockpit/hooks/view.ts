@@ -133,7 +133,7 @@ export function drawPrs(el: El, _board: Board, _columns: number, _act: Act): Ren
 /** Cell glyphs live here and nowhere else. */
 export function cellText(row: Row): Record<'pane' | 'report' | 'fix' | 'review' | 'pr' | 'ci' | 'linear', string> {
   return {
-    pane: paneText(row.pane),
+    pane: [row.pane, ...row.extraPanes].map(paneText).join(' '),
     report: reportText(row.report),
     fix: row.fix.k === 'round' ? `${row.fix.round}/${row.fix.of}` : DASH,
     review: reviewText(row.review),

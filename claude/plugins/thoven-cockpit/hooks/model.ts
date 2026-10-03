@@ -287,6 +287,8 @@ export type Row = {
   /** `label`: a pane's label names the ticket. `this-session`: main's own branch does. */
   origin: 'dispatch' | 'this-session' | 'label'
   pane: PaneCell
+  /** Further panes whose label names this ticket as Build work, in snapshot order. The Pane cell lists them after `pane`. */
+  extraPanes: Array<Extract<PaneCell, { k: 'live' }>>
   verifierPane: PaneCell
   report: ReportCell
   fix: FixCell

@@ -11,7 +11,7 @@ import { cellText, columnsFor } from '../hooks/view.ts'
 import { DOT_GIT_WORKTREE, HEAD_COCKPIT } from './fixtures/git.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import { WORKFLOW_LIVE_SPACES } from './fixtures/workflow.ts'
-import { MAIN_CWD, PANE, cockpit, relabelTab, stage, start } from './stage.ts'
+import { MAIN_CWD, PANE, cockpit, relabelPane, relabelTab, stage, start } from './stage.ts'
 
 const CONSENT = 'Build · Consent evidence hardening (THV-1045)'
 /** w18 with its `Mods` tab named the way label.sh names a build tab. p8V sits in it with no pane label. */
@@ -114,6 +114,7 @@ test("w18 with a Build tab: p8V is the THV-1045 row, main's own labelled pane is
         kind: 'Build',
         origin: 'label',
         pane: { k: 'live', status: 'idle', tool: 'C', pane: 'w18:p8V' },
+        extraPanes: [],
         linear: { k: 'hidden' },
         ...NO_LATER_CELLS,
       },
@@ -143,6 +144,7 @@ test('this-session row: main on cockpit/thv-1058 with no dispatch shows one row 
         kind: undefined,
         origin: 'this-session',
         pane: { k: 'live', status: 'working', tool: 'C', pane: 'w18:p8W' },
+        extraPanes: [],
         linear: { k: 'hidden' },
         ...NO_LATER_CELLS,
       },
@@ -157,6 +159,48 @@ test('an unlabelled tab goes under Other as unlabelled', async () => {
     { label: 'tab "Research"', kind: undefined, ticket: undefined, pane: { k: 'live', status: 'idle', tool: 'C', pane: 'w18:p8P' }, note: 'unlabelled' },
     { label: 'tab "Mods"', kind: undefined, ticket: undefined, pane: { k: 'live', status: 'idle', tool: 'C', pane: 'w18:p8V' }, note: 'unlabelled' },
   ])
+})
+
+test('a multi-ticket pane gives three Build rows that share the pane', async () => {
+  const board = project(worldOf(mainOf('w18', 'w18:p8W'), snap(relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Book Lessons follow-ups (THV-843 847 851)'))))
+  const p8V = { k: 'live', status: 'idle', tool: 'C', pane: 'w18:p8V' }
+  const shared = { title: 'Book Lessons follow-ups', kind: undefined, origin: 'label', pane: p8V, extraPanes: [], linear: { k: 'hidden' }, ...NO_LATER_CELLS }
+  expect(board.build).toEqual([
+    { k: 'single', row: { ticket: 'THV-843', ...shared } },
+    { k: 'single', row: { ticket: 'THV-847', ...shared } },
+    { k: 'single', row: { ticket: 'THV-851', ...shared } },
+  ])
+})
+
+test("Live spaces match the space's label in any case: Coppa is COPPA's Project", async () => {
+  const board = project(worldOf(mainOf('w56', 'w18:p8W'), snap(SNAPSHOT_LIVE)))
+  expect(board.space).toEqual({ space: 'w56', label: 'Coppa' })
+  expect(board.project).toBe('COPPA and Data Compliance Audit')
+  expect(board.build.map((g) => (g.k === 'single' ? [g.row.ticket, g.row.title, g.row.linear.k] : []))).toEqual([['THV-1004', "children's media URL expiry", 'none']])
+})
+
+test('two Build panes on one ticket give one row whose Pane cell lists both', async () => {
+  // p8W loses its own label, so both panes of the THV-1045 tab read the tab's Build label.
+  const json = relabelPane(SNAPSHOT_W18_BUILD, 'w18:p8W', undefined)
+  const board = project(worldOf(mainOf('w18', 'w18:p8P'), snap(json)))
+  expect(board.build.map((g) => (g.k === 'single' ? [g.row.ticket, g.row.pane, g.row.extraPanes] : []))).toEqual([
+    ['THV-1045', { k: 'live', status: 'idle', tool: 'C', pane: 'w18:p8V' }, [{ k: 'live', status: 'working', tool: 'C', pane: 'w18:p8W' }]],
+  ])
+  const g = board.build[0]
+  if (g?.k !== 'single') throw new Error('expected one row')
+  expect(cellText(g.row).pane).toBe('○ C ◐ C')
+})
+
+test('a Review pane naming two tickets verifies the one with a Build row and gives the other its own row', async () => {
+  const json = relabelPane(SNAPSHOT_W18_BUILD, 'w18:p8W', 'Review · Consent evidence hardening (THV-1045 1004)')
+  const board = project(worldOf(mainOf('w18', 'w18:p8P'), snap(json)))
+  const p8V = { k: 'live', status: 'idle', tool: 'C', pane: 'w18:p8V' }
+  const p8W = { k: 'live', status: 'working', tool: 'C', pane: 'w18:p8W' }
+  expect(board.build.map((g) => (g.k === 'single' ? [g.row.ticket, g.row.kind, g.row.title, g.row.pane, g.row.verifierPane] : []))).toEqual([
+    ['THV-1045', 'Build', 'Consent evidence hardening', p8V, p8W],
+    ['THV-1004', 'Review', 'Consent evidence hardening', p8W, p8W],
+  ])
+  expect(board.other).toEqual([])
 })
 
 // ── unit: view.ts glyphs and widths ──────────────────────────────────────────────────────────

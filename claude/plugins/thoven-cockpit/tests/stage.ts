@@ -23,6 +23,13 @@ export function relabelTab(snapshot: string, tab: string, label: string): string
   return JSON.stringify(root)
 }
 
+/** The live snapshot with one pane's own label set, or removed (undefined): herdr carries it only sometimes. */
+export function relabelPane(snapshot: string, pane: string, label: string | undefined): string {
+  const root = JSON.parse(snapshot)
+  for (const p of root.result.snapshot.panes) if (p.pane_id === pane) p.label = label
+  return JSON.stringify(root)
+}
+
 /** `herdr pane get <id>`, answered with that pane's own entry from the snapshot. */
 function paneGetFrom(snapshot: string, pane: string): string {
   const entry = JSON.parse(snapshot).result.snapshot.panes.find((p: { pane_id: string }) => p.pane_id === pane)
