@@ -4,16 +4,16 @@
 // there. Each source here says what to ask (`plan`) and how to read the answers (`read`), and
 // register.ts runs them through one executor, `perform($, req)`. That gives one place where a
 // failure becomes "stale since hh:mm" for that source only, and parsers that tests feed real
-// text without the test kit. A process argv can only be an `Argv` from commands.ts.
+// text without the test kit. A process can only be one commands.ts built.
 
-import type { Argv } from './commands.ts'
-import { FIXED_REPOS, configPathOf, parseOrigin, parsePrList, prListReq } from './github.ts'
-import { paneGetReq, parsePaneLabel, parseSnapshot, snapshotReq } from './herdr.ts'
+import { COMMANDS, type Req as Proc } from './commands.ts'
+import { FIXED_REPOS, configPathOf, parseOrigin, parsePrList } from './github.ts'
+import { parsePaneLabel, parseSnapshot } from './herdr.ts'
 import { inboxFile, inboxTicket } from './dispatch.ts'
 import type { Branches, GithubView, HeadPaths, InboxFile, Ms, Origins, Pane, PaneId, PaneLabels, Polled, Pr, SourceId, SourceValues, SpaceMap, World } from './model.ts'
 
 /** One outside read. `perform($, req)` in register.ts is the only code that turns these into `$` calls. */
-export type Req = { k: 'proc'; argv: Argv; timeoutMs: number } | { k: 'read'; path: string } | { k: 'list'; path: string }
+export type Req = Proc | { k: 'read'; path: string } | { k: 'list'; path: string }
 
 /** What came back, already reduced to text so parsers never see a `$` result type. A `list` answers `Listing` as JSON. */
 export type Resp = { k: 'ok'; text: string } | { k: 'fail'; error: string }
@@ -38,7 +38,7 @@ export type Listing = Array<{ name: string; kind: string; mtimeMs: number }>
 export const HEARTBEAT_MS = 5000
 
 /** Poll order. A source's `plan` reads only sources earlier in this list. */
-export const SOURCE_ORDER = ['herdr', 'labels', 'spaces', 'heads', 'branches', 'origins', 'github', 'inbox'] as const
+const SOURCE_ORDER = ['herdr', 'labels', 'spaces', 'heads', 'branches', 'origins', 'github', 'inbox'] as const
 export type PolledId = (typeof SOURCE_ORDER)[number]
 
 export function valueOf<T>(p: Polled<T>): T | undefined {
@@ -85,7 +85,7 @@ function toRead(world: World): Pane[] {
 
 // ── WORKFLOW.md §8 Live spaces ─────────────────────────────────────────────────────────────
 
-export const workflowPath = (home: string): string => `${home}/.agents/skills/workspace/references/WORKFLOW.md`
+const workflowPath = (home: string): string => `${home}/.agents/skills/workspace/references/WORKFLOW.md`
 
 /**
  * The `### Live spaces` table, `| \`COPPA\` | COPPA and Data Compliance Audit |` per row.
@@ -149,7 +149,7 @@ function unreadConfigs(world: World): string[] {
 }
 
 /** The repos main asks gh about, frontend and backend first. */
-export function reposOf(world: World): string[] {
+function reposOf(world: World): string[] {
   const origins = valueOf(world.sources.origins)
   return [...new Set([...FIXED_REPOS, ...configPaths(world).flatMap((path) => origins?.get(path) ?? [])])]
 }
@@ -157,7 +157,7 @@ export function reposOf(world: World): string[] {
 // ── $TMPDIR/dispatch/out, main's inbox ───────────────────────────────────────────────────────
 
 /** macOS's TMPDIR ends in `/`. No TMPDIR, no inbox. */
-export const inboxDir = (tmp: string): string | undefined => (tmp === '' ? undefined : `${tmp.replace(/\/+$/, '')}/dispatch/out`)
+const inboxDir = (tmp: string): string | undefined => (tmp === '' ? undefined : `${tmp.replace(/\/+$/, '')}/dispatch/out`)
 
 function listingOf(r: Resp | undefined): Listing | undefined {
   const text = ok(r)
@@ -184,7 +184,7 @@ function unread(world: World, listing: Listing): Listing {
 export const SOURCES: { [K in PolledId]: Source<SourceValues[K]> } = {
   herdr: {
     everyMs: HEARTBEAT_MS,
-    plan: () => [snapshotReq()],
+    plan: () => [COMMANDS['herdr api snapshot']()],
     read: (_world, [r]) => {
       const text = ok(r)
       return text === undefined ? undefined : parseSnapshot(text)
@@ -195,7 +195,7 @@ export const SOURCES: { [K in PolledId]: Source<SourceValues[K]> } = {
   // A failed read keeps the old entry, so the pane is tried again next tick.
   labels: {
     everyMs: HEARTBEAT_MS,
-    plan: (world) => toRead(world).map((p) => paneGetReq(p.pane)),
+    plan: (world) => toRead(world).map((p) => COMMANDS['herdr pane get'](p.pane)),
     read: (world, resps): PaneLabels => {
       const cache = valueOf(world.sources.labels)?.byPane
       const byPane = new Map<PaneId, { seen: string; label: string | undefined }>()
@@ -269,7 +269,7 @@ export const SOURCES: { [K in PolledId]: Source<SourceValues[K]> } = {
   // cells keep the last full answer rather than mixing two polls.
   github: {
     everyMs: 60_000,
-    plan: (world) => reposOf(world).map(prListReq),
+    plan: (world) => reposOf(world).map((repo) => COMMANDS['gh pr list'](repo)),
     read: (world, resps): GithubView | undefined => {
       const prs: Pr[] = []
       for (const [i, repo] of reposOf(world).entries()) {

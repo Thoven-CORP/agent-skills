@@ -22,7 +22,8 @@ import type { EngineInterface, Register } from 'claude-code'
 import { project } from './board.ts'
 import { readPrompt, sendCalls } from './dispatch.ts'
 import { claimHeldBy, claimOf } from './facts.ts'
-import { findMe, focusReq, parseSnapshot, snapshotReq, spaceOfPane } from './herdr.ts'
+import { COMMANDS } from './commands.ts'
+import { findMe, parseSnapshot, spaceOfPane } from './herdr.ts'
 import { VERDICTS, isOneOf, type Board, type Engagement, type Fact, type FactKind, type Intent, type Main, type Me, type Ms, type PaneId, type PaneUi, type Polled, type SessionId, type SourceId, type Sources, type SourceValues, type World } from './model.ts'
 import { HEARTBEAT_MS, SOURCES, due, settle, type Listing, type PolledId, type Req, type Resp, type Source } from './sources.ts'
 import { isFactKey, keyOf, parseFact } from './store.ts'
@@ -204,7 +205,7 @@ async function resolveMe($: Api, sid: SessionId): Promise<void> {
 async function claimAndOpen($: Api): Promise<string> {
   const envPane = await $.env.get('HERDR_PANE_ID')
   const sid = (await $.session.id()) as SessionId
-  const resp = await perform($, snapshotReq())
+  const resp = await perform($, COMMANDS['herdr api snapshot']())
   const snap = resp.k === 'ok' ? parseSnapshot(resp.text) : undefined
   const mine = snap ? findMe(snap, envPane, sid) : undefined
   const pane = mine?.pane ?? (snap ? undefined : (envPane as PaneId | undefined))
@@ -378,7 +379,7 @@ async function act($: Api, intent: Intent): Promise<void> {
         $.ui.invalidate('ui.render')
         return
       case 'focus-pane': {
-        const req = focusReq(intent.pane)
+        const req = COMMANDS['herdr agent focus'](intent.pane)
         $.clock.after(0, () => {
           void focusPane($, req)
         })

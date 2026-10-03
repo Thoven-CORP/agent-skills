@@ -50,7 +50,7 @@ export function parseLabel(text: string): Label | undefined {
 }
 
 /** A label.sh Kind (`Build`), or undefined for any other word (`main`, `Feature`, `Verify`). */
-export function kindOf(word: string | undefined): Kind | undefined {
+function kindOf(word: string | undefined): Kind | undefined {
   return isOneOf(KINDS)(word) ? word : undefined
 }
 

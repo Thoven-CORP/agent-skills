@@ -10,7 +10,7 @@
 import { KINDS, REPORT_STATUSES, ROLES, VERDICTS, isOneOf, type Fact, type FactKind, type FactOf, type LinearEventId, type PaneId, type SessionId, type SpaceId, type Ticket } from './model.ts'
 import { ticket } from './dispatch.ts'
 
-export const PREFIX = 'cockpit:'
+const PREFIX = 'cockpit:'
 
 /** The key a fact lives at. Total over Fact: a new Fact variant without a key fails to compile. */
 export function keyOf(fact: Fact): string {

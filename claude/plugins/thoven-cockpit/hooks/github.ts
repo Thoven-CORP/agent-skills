@@ -1,24 +1,16 @@
-// github.ts: gh's wire format in, gh commands out, and the repo each folder belongs to.
+// github.ts: gh's wire format in, and the repo each folder belongs to.
 //
 // `gh pr list --json` and `.git/config` text are read here and nowhere else. What leaves is a
 // `Pr` or an `owner/name` string; no gh field name appears outside this file.
 
-import { gh } from './commands.ts'
 import { branchTicket, trailingTickets } from './dispatch.ts'
 import type { Checks, Pr, Ticket } from './model.ts'
-import type { Req } from './sources.ts'
 
 export const FRONTEND = 'Thoven-CORP/frontend-remote'
 export const BACKEND = 'Thoven-CORP/backend-remote'
 export const AGENT_SKILLS = 'Thoven-CORP/agent-skills'
 /** Every space's PRs cover these, whatever folders its panes are in (synthesis A4). */
 export const FIXED_REPOS: readonly string[] = [FRONTEND, BACKEND]
-
-const TIMEOUT_MS = 30_000
-
-export function prListReq(repo: string): Req {
-  return { k: 'proc', argv: gh.prList(repo), timeoutMs: TIMEOUT_MS }
-}
 
 // ── .git/config ──────────────────────────────────────────────────────────────────────────────
 

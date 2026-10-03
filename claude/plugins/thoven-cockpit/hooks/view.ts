@@ -68,7 +68,7 @@ export function drawCockpit(el: El, board: Board | undefined, ui: PaneUi, column
   })
 }
 
-export function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): RenderElement {
+function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): RenderElement {
   const { Box, Text, Button } = el
   const hasLinear = board.project !== undefined
   const widths = columnsFor(columns, hasLinear)
@@ -143,13 +143,13 @@ export function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act:
 }
 
 /** `owner/name#n`: a PR's key in PaneUi and in its Button's key. */
-export const prKey = (pr: Pr): string => `${pr.repo}#${pr.number}`
+const prKey = (pr: Pr): string => `${pr.repo}#${pr.number}`
 
 /**
  * The PRs tab: one block per repo, each PR's state and CI. `c` (or pressing a PR) lists the
  * checks still red or running. `o` and `m` are shown as hints only; they arrive with S4.
  */
-export function drawPrs(el: El, board: Board, ui: PaneUi, columns: number, act: Act): RenderElement {
+function drawPrs(el: El, board: Board, ui: PaneUi, columns: number, act: Act): RenderElement {
   const { Box, Text, Button } = el
   const items = board.prs.flatMap((g) => g.items)
   const heading = board.project === undefined ? "THIS SPACE'S PRS" : "THIS PROJECT'S PRS"
