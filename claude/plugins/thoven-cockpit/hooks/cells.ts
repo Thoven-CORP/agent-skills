@@ -8,7 +8,7 @@
 // survives a later report replacing it or the PR falling out of gh's last 50.
 
 import { newest, type BoardFacts } from './facts.ts'
-import type { Cells, CiCell, FixCell, InboxFile, LinearEventId, Pending, Pr, ReportCell, Row, RowIdentity, Ticket } from './model.ts'
+import { eventId, type Cells, type CiCell, type FixCell, type InboxFile, type Pending, type Pr, type ReportCell, type Row, type RowIdentity, type Ticket } from './model.ts'
 import type { PrJoin } from './prs.ts'
 
 /** What a row is built from besides its identity: the facts about its ticket, the inbox, and where PRs attach. */
@@ -46,7 +46,7 @@ function newMergedEvents(t: Ticket, prs: readonly Pr[], about: BoardFacts): Pend
   const recorded = new Set(about.happened.map((f) => f.event))
   const ids = new Set<string>()
   return prs.flatMap((pr) => {
-    const id = `merged-${pr.number}` as LinearEventId
+    const id = eventId('merged', pr.number)
     if (pr.state !== 'MERGED' || recorded.has(id) || ids.has(id)) return []
     ids.add(id)
     return [{ ticket: t, event: { k: 'merged', number: pr.number }, id }]
@@ -80,7 +80,7 @@ function newReportEvents(t: Ticket, about: BoardFacts): Pending[] {
   const recorded = new Set(about.happened.map((f) => f.event))
   const statuses = [...new Set([...about.report].sort((a, b) => a.at - b.at).map((f) => f.status))]
   return statuses.flatMap((status) => {
-    const id = `report-${status}` as LinearEventId
+    const id = eventId('report', status)
     return recorded.has(id) ? [] : [{ ticket: t, event: { k: 'report', status }, id }]
   })
 }

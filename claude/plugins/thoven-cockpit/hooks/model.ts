@@ -251,6 +251,9 @@ export type LinearEvent =
   | { k: 'merged'; number: number }
 /** `started`, `pr-141`, `report-DONE`, `merged-138`. The last segment of a `happened:` key. */
 export type LinearEventId = Brand<string, 'LinearEventId'>
+
+/** The one place an event id is made: `merged-141`, `report-DONE`. */
+export const eventId = (k: 'merged' | 'report', v: string | number): LinearEventId => `${k}-${v}` as LinearEventId
 export type Pending = { ticket: Ticket; event: LinearEvent; id: LinearEventId }
 
 // ── 3. The Board (board.ts builds it, view.ts draws it) ────────────────────────────────────

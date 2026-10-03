@@ -73,7 +73,10 @@ function prOf(repo: string, v: unknown): Pr | undefined {
   if (!title || !branch || !state) return undefined
   const trailing = trailingTickets(title)
   const files = Array.isArray(v.files) ? v.files.filter(isObj) : []
-  const dirs = new Set(files.flatMap((f) => (str(f.path)?.includes('/') ? [(f.path as string).split('/')[0]] : [])))
+  const dirs = new Set(files.flatMap((f) => {
+    const path = str(f.path)
+    return path?.includes('/') ? [path.split('/')[0]] : []
+  }))
   return {
     repo,
     number: v.number,

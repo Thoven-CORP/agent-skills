@@ -4,7 +4,7 @@
 // inbox file grammar. If dispatch-work changes a format, this is
 // the only file that changes. Every function is pure and is tested on real text.
 
-import { KINDS, STATUS_WORDS, VERDICTS, isOneOf, type Brief, type InboxFile, type Kind, type Label, type PaneId, type Role, type SendCall, type StatusLine, type Ticket } from './model.ts'
+import { KINDS, STATUS_WORDS, VERDICTS, isOneOf, isPaneId, type Brief, type InboxFile, type Kind, type Label, type Role, type SendCall, type StatusLine, type Ticket } from './model.ts'
 
 /** `THV-1045`, `thv-1045`, `1045` → Ticket. Undefined for anything else. */
 export function ticket(raw: string): Ticket | undefined {
@@ -211,9 +211,10 @@ export function sendCalls(command: string): SendCall[] {
     const file = (m[2] ?? '').split('/').pop() ?? ''
     const f = BRIEF_FILE.exec(file)
     const t = f?.[1] ? ticket(f[1]) : undefined
-    if (!m[1] || !f || !t) continue
+    const pane = m[1]
+    if (!isPaneId(pane) || !f || !t) continue
     const role: Role = f[4] ? 'verifier' : 'builder'
-    calls.push({ pane: m[1] as PaneId, ticket: t, role, round: Number(f[3] ?? f[5] ?? 0) || 0, file })
+    calls.push({ pane, ticket: t, role, round: Number(f[3] ?? f[5] ?? 0) || 0, file })
   }
   return calls
 }
