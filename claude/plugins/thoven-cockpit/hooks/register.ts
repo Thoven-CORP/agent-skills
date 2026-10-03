@@ -24,7 +24,7 @@ import { readPrompt, sendCalls } from './dispatch.ts'
 import { claimHeldBy, claimOf } from './facts.ts'
 import { COMMANDS, type Req } from './commands.ts'
 import { findMe, parseSnapshot, spaceOfPane } from './herdr.ts'
-import { VERDICTS, isOneOf, type Board, type Engagement, type Fact, type FactKind, type Intent, type Main, type Me, type Ms, type PaneId, type PaneUi, type Polled, type SessionId, type SourceId, type Sources, type SourceValues, type World } from './model.ts'
+import { VERDICTS, isOneOf, type Board, type Engagement, type Fact, type FactKind, type FactOf, type Intent, type Main, type Me, type Ms, type PaneId, type PaneUi, type Polled, type SessionId, type SourceId, type Sources, type SourceValues, type World } from './model.ts'
 import { HEARTBEAT_MS, SOURCES, due, settle, unpolled, type Answer, type Ask, type Listing, type Source } from './sources.ts'
 import { isFactKey, keyOf, parseFact } from './store.ts'
 import { drawCockpit } from './view.ts'
@@ -35,16 +35,21 @@ const PANE_ID = 'cockpit'
 /** Synthesis A2: above this, facts move to per-session logs. Logged so the debug log shows it. */
 const STORE_SLOW_MS = 50
 
+/** What only main holds. becomeMain builds it fresh and loseClaim drops it, so a re-claim polls every source at once. */
+type MainState = {
+  who: Main
+  sources: Sources
+  lastRun: Partial<Record<SourceId, Ms>>
+  board: Board | undefined
+  heartbeat: { cancel(): void }
+  isTicking: boolean
+  isStoreTimed: boolean
+}
+
 // ── Module state: caches only. Everything here can be lost on reload and rebuilt in one tick. ──
 let me: Me = { k: 'inert' }
-let sources: Sources = unpolled()
-let lastRun: Partial<Record<SourceId, Ms>> = {}
-let board: Board | undefined
-let heartbeat: { cancel(): void } | undefined
-let isTicking = false
-let isStoreTimed = false
+let main: MainState | undefined
 let ui: PaneUi = { tab: 'work', selected: undefined, selectedPr: undefined, checks: undefined }
-let sessionCwd = ''
 
 export const register: Register = (on) => {
   on('session.start', async ($, e, next) => {
@@ -55,7 +60,6 @@ export const register: Register = (on) => {
       await debug($, 'command.register', err)
     }
     try {
-      sessionCwd = e.cwd
       await resolveMe($, (await $.session.id()) as SessionId)
     } catch (err) {
       await debug($, 'session.start', err)
@@ -68,7 +72,6 @@ export const register: Register = (on) => {
   on('classic.SessionStart', async ($, e, next) => {
     const r = await next(e)
     try {
-      if (e.cwd) sessionCwd = e.cwd
       await resolveMe($, e.session_id as SessionId)
     } catch (err) {
       await debug($, 'classic.SessionStart', err)
@@ -123,7 +126,7 @@ export const register: Register = (on) => {
   on('ui.render', { component: 'Pane' }, async ($, e, next) => {
     if (e.requestId !== PANE_ID) return next(e)
     try {
-      return drawCockpit($.ui.resolve(e), board, ui, e.props.bodyColumns, (intent) => act($, intent))
+      return drawCockpit($.ui.resolve(e), main?.board, ui, e.props.bodyColumns, (intent) => act($, intent))
     } catch (err) {
       await debug($, 'ui.render', err)
     }
@@ -162,28 +165,34 @@ async function debug($: Api, where: string, err: unknown): Promise<void> {
 
 /**
  * Decide `me`. No HERDR_PANE_ID → inert. A claim whose pane is ours makes us main (its sid is
- * refreshed when /clear changed it) and starts the heartbeat; otherwise we are a pane session.
- * Idempotent, because classic.SessionStart and session.start both run it at startup.
+ * refreshed when /clear changed it); otherwise we are a pane session.
+ * Safe to repeat, because classic.SessionStart and session.start both run it at startup.
  */
 async function resolveMe($: Api, sid: SessionId): Promise<void> {
   const pane = (await $.env.get('HERDR_PANE_ID')) as PaneId | undefined
-  if (!pane) {
-    stopHeartbeat()
-    me = { k: 'inert' }
+  const claim = pane ? claimHeldBy((await loadFacts($, 'main')).facts, pane) : undefined
+  if (claim) {
+    if (claim.sid !== sid) await writeFact($, { ...claim, sid })
+    await becomeMain($, { ...claim, sid }, await $.session.cwd())
     return
   }
-  const claim = claimHeldBy((await loadFacts($, 'main')).facts, pane)
-  if (!claim) {
-    stopHeartbeat()
-    me = { k: 'pane', pane, sid, engagements: me.k === 'pane' ? me.engagements : [] }
-    return
-  }
-  if (claim.sid !== sid) await writeFact($, { ...claim, sid })
-  me = { k: 'main', pane, sid, space: claim.space, cwd: sessionCwd, home: (await $.env.get('HOME')) ?? '', tmp: (await $.env.get('TMPDIR')) ?? '' }
-  startHeartbeat($)
+  await loseClaim($)
+  me = pane ? { k: 'pane', pane, sid, engagements: me.k === 'pane' ? me.engagements : [] } : { k: 'inert' }
+}
+
+/** The one way into main: fresh state, a heartbeat, and the first tick scheduled at once. */
+async function becomeMain($: Api, claim: FactOf<'main'>, cwd: string): Promise<MainState> {
+  main?.heartbeat.cancel()
+  const who: Main = { k: 'main', pane: claim.pane, sid: claim.sid, space: claim.space, cwd, home: (await $.env.get('HOME')) ?? '', tmp: (await $.env.get('TMPDIR')) ?? '' }
+  const heartbeat = $.clock.every(HEARTBEAT_MS, () => {
+    void tick($)
+  })
+  me = who
+  main = { who, sources: unpolled(), lastRun: {}, board: undefined, heartbeat, isTicking: false, isStoreTimed: false }
   $.clock.after(0, () => {
     void tick($)
   })
+  return main
 }
 
 /**
@@ -202,28 +211,16 @@ async function claimAndOpen($: Api): Promise<string> {
   if (!pane || !space) return 'Cockpit needs a herdr pane, and this session is not in one.'
 
   const now = await $.clock.now()
-  await writeFact($, { kind: 'main', space, sid, pane, at: now })
-  me = { k: 'main', pane, sid, space, cwd: sessionCwd || (mine?.cwd ?? ''), home: (await $.env.get('HOME')) ?? '', tmp: (await $.env.get('TMPDIR')) ?? '' }
+  const claim: FactOf<'main'> = { kind: 'main', space, sid, pane, at: now }
+  await writeFact($, claim)
+  const m = await becomeMain($, claim, await $.session.cwd())
   const error = resp.k === 'fail' ? resp.error : 'the snapshot has a shape this cockpit does not know'
-  sources = { ...sources, herdr: settle(sources.herdr, snap, now, error) }
-  lastRun = { ...lastRun, herdr: now }
-  isStoreTimed = false
-  startHeartbeat($)
+  m.sources.herdr = settle(m.sources.herdr, snap, now, error)
+  m.lastRun.herdr = now
   await tick($)
   await $.ui.open({ id: PANE_ID, title: 'Cockpit', focus: true })
   if (!snap) return `Cockpit is main of ${space}, but herdr is unavailable.`
   return `Cockpit is main of ${snap.spaces.find((s) => s.space === space)?.label ?? space}.`
-}
-
-function startHeartbeat($: Api): void {
-  heartbeat ??= $.clock.every(HEARTBEAT_MS, () => {
-    void tick($)
-  })
-}
-
-function stopHeartbeat(): void {
-  heartbeat?.cancel()
-  heartbeat = undefined
 }
 
 /**
@@ -231,44 +228,47 @@ function stopHeartbeat(): void {
  * ticks. Still main? → poll each due source → project → redraw.
  */
 async function tick($: Api): Promise<void> {
-  if (isTicking || me.k !== 'main') return
-  isTicking = true
+  const m = main
+  if (!m || m.isTicking) return
+  m.isTicking = true
   try {
-    const main: Main = me
     const t0 = await $.clock.now()
     const { facts, reads } = await loadFacts($)
     const readMs = (await $.clock.now()) - t0
-    if (!isStoreTimed || readMs > STORE_SLOW_MS) {
-      isStoreTimed = true
+    if (!m.isStoreTimed || readMs > STORE_SLOW_MS) {
+      m.isStoreTimed = true
       $.ui.log(`cockpit store: keys() and ${reads} gets in ${readMs} ms`, { to: 'debug' })
     }
 
-    if (claimOf(facts, main.space)?.pane !== main.pane) {
-      await loseClaim($, main)
+    if (claimOf(facts, m.who.space)?.pane !== m.who.pane) {
+      if (main === m) await loseClaim($)
       return
     }
     const now = await $.clock.now()
-    for (const id of due(lastRun, now)) await poll($, id, worldOf(main, now, facts))
-    board = project(worldOf(main, now, facts))
+    for (const id of due(m.lastRun, now)) await poll($, m, id, worldOf(m, now, facts))
+    const board = project(worldOf(m, now, facts))
+    m.board = board
     // Set once: the board lists only events with no `happened` fact in what this tick loaded.
     for (const e of board.newEvents) await writeFact($, { kind: 'happened', ticket: e.ticket, event: e.id, at: now })
     $.ui.invalidate('ui.render')
   } catch (err) {
     await debug($, 'tick', err)
   } finally {
-    isTicking = false
+    m.isTicking = false
   }
 }
 
-async function loseClaim($: Api, main: Main): Promise<void> {
-  stopHeartbeat()
-  me = { k: 'pane', pane: main.pane, sid: main.sid, engagements: [] }
-  board = undefined
+/** The one way out of main. A session that is not main does nothing. */
+async function loseClaim($: Api): Promise<void> {
+  if (!main) return
+  main.heartbeat.cancel()
+  me = { k: 'pane', pane: main.who.pane, sid: main.who.sid, engagements: [] }
+  main = undefined
   await $.ui.close({ id: PANE_ID })
 }
 
 /** One source, one poll. A throw or an unusable answer marks this source stale and no other. */
-async function poll<K extends SourceId>($: Api, id: K, world: World): Promise<void> {
+async function poll<K extends SourceId>($: Api, m: MainState, id: K, world: World): Promise<void> {
   const source = SOURCES[id] as Source<SourceValues[K]>
   const answers: Array<Promise<Answer<unknown>>> = []
   let value: SourceValues[K] | undefined
@@ -280,8 +280,8 @@ async function poll<K extends SourceId>($: Api, id: K, world: World): Promise<vo
   } catch (err) {
     error = messageOf(err)
   }
-  sources = { ...sources, [id]: settle(sources[id] as Polled<SourceValues[K]>, value, world.now, error) }
-  lastRun = { ...lastRun, [id]: world.now }
+  m.sources = { ...m.sources, [id]: settle(m.sources[id] as Polled<SourceValues[K]>, value, world.now, error) }
+  m.lastRun[id] = world.now
 }
 
 /** The reads one poll may make, over `$`. Each answer is kept in `answers`, in the order asked, so the poll can name the first failure. */
@@ -421,8 +421,8 @@ async function focusPane($: Api, req: Req): Promise<void> {
   if (r.k === 'fail') await debug($, 'focus', r.error)
 }
 
-function worldOf(main: Main, now: Ms, facts: Fact[]): World {
-  return { now, me: main, sources, facts, readbacks: new Map(), inFlight: new Set(), mainSkill: undefined }
+function worldOf(m: MainState, now: Ms, facts: Fact[]): World {
+  return { now, me: m.who, sources: m.sources, facts, readbacks: new Map(), inFlight: new Set(), mainSkill: undefined }
 }
 
 function messageOf(err: unknown): string {

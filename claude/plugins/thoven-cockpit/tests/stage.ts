@@ -100,6 +100,8 @@ export type Stage = {
   files: Map<string, string>
   /** Every key `$.store.set` wrote, in order, repeats included. */
   setKeys: string[]
+  /** Every `$.fs` call, in order: `read <path>`, `list <path>` or `exists <path>`. */
+  fsCalls: string[]
   snapshots(): number
   paneGets(): string[]
 }
@@ -132,6 +134,7 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
     gh: { mode: 'ok', byRepo: {} },
     files: new Map(),
     setKeys: [],
+    fsCalls: [],
     snapshots: () => s.argvs.filter((a) => a.join(' ') === 'herdr api snapshot').length,
     paneGets: () => s.argvs.filter((a) => a[1] === 'pane' && a[2] === 'get').map((a) => a[3] ?? ''),
   }
@@ -159,6 +162,7 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
   on('store.delete', (_$: unknown, e: { key: string }) => (s.storeCalls.n++, s.saved.delete(e.key), { value: undefined }))
   on('store.keys', () => (s.storeCalls.n++, { value: [...s.saved.keys()] }))
   on('session.id', () => ({ value: o.sid ?? 'sid-a' }))
+  on('session.cwd', () => ({ value: MAIN_CWD }))
   on('command.register', (_$: unknown, e: { name: string }) => {
     s.registrations.push({ ...e })
     if (s.register.deny !== undefined) return { deny: s.register.deny }
@@ -169,6 +173,7 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
   on('ui.close', (_$: unknown, e: { id: string }) => (s.closed.push(e.id), { value: undefined }))
   on('ui.log', (_$: unknown, e: { text: string }) => (s.logs.push(e.text), { value: undefined }))
   on('fs.read', (_$: unknown, e: { path: string }) => {
+    s.fsCalls.push(`read ${e.path}`)
     if (e.path.endsWith('WORKFLOW.md')) return { value: WORKFLOW_LIVE_SPACES }
     const known = s.files.get(e.path)
     if (known !== undefined) return { value: known }
@@ -177,8 +182,9 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
   })
   // A folder exists when `files` holds something under it, so `<cwd>/.git/HEAD` makes `.git` a folder.
   const under = (dir: string): string[] => [...s.files.keys()].filter((k) => k.startsWith(`${dir}/`)).map((k) => k.slice(dir.length + 1))
-  on('fs.exists', (_$: unknown, e: { path: string }) => ({ value: e.path === INBOX_DIR ? s.inbox.size > 0 : s.files.has(e.path) || under(e.path).length > 0 }))
+  on('fs.exists', (_$: unknown, e: { path: string }) => (s.fsCalls.push(`exists ${e.path}`), { value: e.path === INBOX_DIR ? s.inbox.size > 0 : s.files.has(e.path) || under(e.path).length > 0 }))
   on('fs.list', (_$: unknown, e: { path: string }) => {
+    s.fsCalls.push(`list ${e.path}`)
     if (e.path === INBOX_DIR) return { value: [...s.inbox].map(([name, f]) => ({ name, kind: 'file', size: f.text.length, mtimeMs: f.mtimeMs, isLink: false })) }
     const kinds = new Map(under(e.path).map((rest) => [rest.split('/')[0] ?? '', rest.includes('/') ? 'dir' : 'file']))
     return kinds.size > 0 ? { value: [...kinds].map(([name, kind]) => ({ name, kind, size: 0, mtimeMs: 0, isLink: false })) } : { deny: `ENOENT: ${e.path}` }

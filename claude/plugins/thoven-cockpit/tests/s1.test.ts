@@ -303,6 +303,25 @@ test('a session whose claim was taken by another session stops polling and close
   expect(s.closed).toEqual(['cockpit'])
 })
 
+test('a session that lost main and claims again polls every source on its first tick back', async ($, on) => {
+  const s = stage(on, { pane: 'w18:p8W', sid: 'sid-a', snapshot: SNAPSHOT_W18_BUILD })
+  await start($)
+  const firstTick = async (): Promise<string[]> => {
+    const [argvs, fs] = [s.argvs.length, s.fsCalls.length]
+    await cockpit($)
+    await s.clock.settle()
+    return [...s.argvs.slice(argvs).map((a) => a.join(' ')), ...s.fsCalls.slice(fs)].sort()
+  }
+  const first = await firstTick()
+  // The slow sources (Live spaces 5 min, gh 60 s, inbox 10 s) are the ones a kept lastRun would skip.
+  expect(first.filter((c) => c.endsWith('/WORKFLOW.md') || c.startsWith('gh pr list') || c.endsWith('/dispatch/out'))).toHaveLength(4)
+
+  s.saved.set('cockpit:main:w18', { kind: 'main', space: 'w18', sid: 'sid-b', pane: 'w18:p8V', at: 1 })
+  await s.clock.advance(5_000)
+  expect(s.closed).toEqual(['cockpit'])
+  expect(await firstTick()).toEqual(first)
+})
+
 test('after /clear the same pane is main again under its new session id, and draws at once', async ($, on) => {
   const s = stage(on, {
     pane: 'w18:p8W',
