@@ -107,6 +107,13 @@ test('a fix round brief draws its own denominator', async () => {
   expect(cellText(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: [brief] }), 'THV-1041'), 'fix')).toBe('2/3')
 })
 
+test('a send.sh fix round takes its denominator from the FIX ROUND brief, and 5 when no brief gave one', async () => {
+  const send = storedFact('cockpit:send:THV-1041:w40:pC', { kind: 'send', ticket: 'THV-1041', pane: 'w40:pC', role: 'builder', round: 2, file: 'THV-1041-fix2.md', at: 3 })
+  const brief = storedFact(`cockpit:brief:THV-1041:${P8V_SID}`, { kind: 'brief', k: 'fix', ticket: 'THV-1041', round: 1, of: 3, sid: P8V_SID, pane: 'w18:p8V', at: 1 })
+  expect(cellText(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: [send, brief] }), 'THV-1041'), 'fix')).toBe('2/3')
+  expect(cellText(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: [send] }), 'THV-1041'), 'fix')).toBe('2/5')
+})
+
 // ── unit: main's send.sh calls ─────────────────────────────────────────────────────────────
 
 test('send.sh calls give the pane, ticket, role and round from the brief file name', async () => {

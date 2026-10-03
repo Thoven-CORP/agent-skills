@@ -63,12 +63,15 @@ function reportCell(t: Ticket, about: BoardFacts, inbox: readonly InboxFile[]): 
   return report ? { k: 'in', status: report.status, at: report.at, concerns: report.concerns, selfChecked: false } : { k: 'none' }
 }
 
+/** brief.md's fix-round limit (`FIX ROUND <n>/5`), for a send.sh round no FIX ROUND brief gave a denominator. */
+const FIX_ROUNDS = 5
+
 function fixCell(about: BoardFacts): FixCell {
   const top = (rounds: number[]) => rounds.reduce((a, b) => Math.max(a, b), 0)
-  const sent = top(about.send.filter((f) => f.role === 'builder').map((f) => f.round))
-  if (sent > 0) return { k: 'round', round: sent, of: 5 }
   const fixes = about.brief.flatMap((f) => (f.k === 'fix' && f.round > 0 ? [f] : []))
   const fix = fixes.reduce<(typeof fixes)[number] | undefined>((a, f) => (a === undefined || f.round > a.round ? f : a), undefined)
+  const sent = top(about.send.filter((f) => f.role === 'builder').map((f) => f.round))
+  if (sent > 0) return { k: 'round', round: sent, of: fix?.of ?? FIX_ROUNDS }
   return fix ? { k: 'round', round: fix.round, of: fix.of } : { k: 'none' }
 }
 
