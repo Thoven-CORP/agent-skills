@@ -118,6 +118,18 @@ unpushed_count() {
   git -C "$1" rev-list --count "$2" --not --remotes=origin 2>/dev/null || echo 0
 }
 
+# merged_at_tip <repo> <branch>: true when GitHub has a merged PR from <branch> whose head is the
+# branch's local tip. A squash merge leaves the branch's commits off origin and --delete-branch
+# drops the remote, so this is what proves them safe to delete (THV-1067). gh missing, offline,
+# slow (10s) or finding nothing is false: the guard fails closed.
+merged_at_tip() {
+  local tip
+  tip="$(git -C "$1" rev-parse -q --verify "refs/heads/$2")" || return 1
+  (cd "$1" && GH_PROMPT_DISABLED=1 perl -e 'alarm 10; exec @ARGV' \
+    gh pr list --head "$2" --state merged --json headRefOid -q '.[].headRefOid' 2>/dev/null) |
+    grep -Fxq "$tip"
+}
+
 # git's own arguments after its global options, with the repo dir -C points at
 parse_git() {
   local dir="$1"; shift
@@ -348,8 +360,8 @@ for sub in "${subcommands[@]}"; do
         esac
         git -C "$git_dir" rev-parse --verify -q "refs/heads/$b" >/dev/null || continue
         ahead="$(unpushed_count "$git_dir" "refs/heads/$b")"
-        if [ "${ahead:-0}" -gt 0 ]; then
-          deny "Branch $b holds work that is not on origin (unpushed commits: $ahead), which git branch -D destroys; push it with git push origin $b first, or use git branch -d if it is merged."
+        if [ "${ahead:-0}" -gt 0 ] && ! merged_at_tip "$git_dir" "$b"; then
+          deny "Branch $b holds work that is not on origin (unpushed commits: $ahead), which git branch -D destroys, and gh shows no merged PR whose head is its tip; push it with git push origin $b first, or use git branch -d if it is merged."
         fi
       done
     fi
