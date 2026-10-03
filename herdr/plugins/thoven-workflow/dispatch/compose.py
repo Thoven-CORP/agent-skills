@@ -89,14 +89,26 @@ def standing_and_report(ticket, main_pane, inbox_file):
     if main_pane:
         tail = tail.replace("{{MAIN_PANE}}", main_pane)
     else:
-        # No main pane was marked: the report goes to the inbox file tw_tell_main also uses.
+        # No dispatcher and no space main: the report goes to the inbox file tw_tell_main also uses.
         tail = re.sub(
             r"with\s+\S*herdr agent prompt \{\{MAIN_PANE\}\} and the message as one quoted argument\.",
-            f"by writing it to {inbox_file} (no main pane was marked at dispatch).",
+            f"by writing it to {inbox_file} (no dispatcher pane and no space main at dispatch).",
             tail,
         )
         tail = tail.replace("{{MAIN_PANE}}", f"(no main pane; write to {inbox_file})")
     return tail
+
+
+def label_script():
+    """label.sh from the checkout this plugin is linked from, else the installed skill (THV-1064)."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    for path in (
+        os.path.normpath(os.path.join(here, "..", "..", "..", "..", "skills", "dev", "dispatch-work", "scripts", "label.sh")),
+        os.path.expanduser("~/.agents/skills/dispatch-work/scripts/label.sh"),
+    ):
+        if os.path.exists(path):
+            return path
+    return None
 
 
 def brief(cli, ctx):
@@ -107,10 +119,16 @@ def brief(cli, ctx):
     if main:
         send = f'~/.local/bin/herdr agent prompt {main} "$(cat <file>)" (write the message to a temp file first, delete it after)'
     else:
-        send = f"writing it to {inbox_file} (no main pane was marked at dispatch)"
+        send = f"writing it to {inbox_file} (no dispatcher pane and no space main at dispatch)"
     sibling = ctx.get("sibling") or "none"
+    script = label_script()
+    kinds = "plan -> Plan, build -> Build, design -> Design, review -> Review"
+    if script:
+        label_cmd = f'bash {script} {ctx.get("pane") or "$HERDR_PANE_ID"} <Kind> "<ticket title>" {t} --tab   ({kinds})'
+    else:
+        label_cmd = f"(label.sh not found; skip labelling and say so in your MODE message)"
     # First line carries the task: Devin drops a prompt whose first line is only a slash command.
-    head = f"{spec['skill_prefix']}poteto-mode {t}: read the ticket and all its comments in Linear, pick a mode, tell main, then work."
+    head = f"{spec['skill_prefix']}poteto-mode {t}: read the ticket and all its comments in Linear, pick a mode, label your tab, tell the dispatcher, then work."
     body = f"""
 TICKET     {t}  {ctx.get('url') or 'https://linear.app/thoven/issue/' + t}
 WHERE      Repo {ctx['path']} ({ctx['repo']}), branch {ctx['branch']}, base {ctx['base']}.
@@ -122,12 +140,14 @@ MODE       Choose one:
              build   the feature, bug-fix or refactoring playbook, when the spec is decided
              design  prototype or building-components, when the ticket is a surface still shaped
              review  verify-this then code-review, when the work exists and needs judging
-           Then send main ONE screen, by {send}:
+           Then label this tab with that mode:
+             {label_cmd}
+           Then send the dispatcher ONE screen, by {send}:
              MODE <mode> {t}
              WHY <two lines>
              FIRST STEPS <three to five bullets>
            Then continue without waiting. If you cannot choose with confidence, send
-           "NEEDS_CONTEXT {t}" with your question the same way, and wait for main's answer.
+           "NEEDS_CONTEXT {t}" with your question the same way, and wait for the answer.
 """
     return head + "\n" + body + "\n" + standing_and_report(t, main, inbox_file) + "\n"
 

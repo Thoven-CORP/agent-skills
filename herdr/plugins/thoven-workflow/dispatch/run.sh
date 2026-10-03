@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Dispatch worker: for each repo, a worktree, a workspace rooted there, an agent in its shell pane,
-# and the self-brief. picker.sh starts this detached so the session-modal popup can close while a
+# Dispatch worker: for each repo, a worktree, a new tab in the space you clicked from (never a new
+# space, THV-1064), an agent in its shell pane, and the self-brief. picker.sh starts this detached so the session-modal popup can close while a
 # fresh worktree installs dependencies.
 #
 #   run.sh <n> <fe|be|both> <claude|codex|devin> <area> [url]
@@ -36,7 +36,14 @@ repo_dir() { case "$1" in fe) echo frontend ;; be) echo backend ;; esac; }
 flags=()
 while IFS= read -r -d '' a; do flags+=("$a"); done < <(python3 "$HERE/compose.py" flags "$cli")
 
-main_pane="$(tw_main_pane || true)"
+# Reports go to the pane that dispatched (TW_DISPATCHER), else the space's main, else the inbox.
+space="${TW_DISPATCH_WS:-}"
+dispatcher="${TW_DISPATCHER:-}"
+[ -n "$space" ] || { [ -n "$dispatcher" ] && space="$(tw_pane_workspace "$dispatcher")"; }
+[ -n "$space" ] || { echo "no current space: dispatch from a pane, so the new tab knows where to open" >&2; exit 2; }
+report_to="$dispatcher"
+[ -n "$report_to" ] || report_to="$(tw_space_main "$space" || true)"
+export TW_REPORT_TO="$report_to"
 # Per-repo values live in pane_fe, path_be, ...: macOS ships bash 3.2, which has no associative arrays.
 setv() { printf -v "$1_$2" '%s' "$3"; }
 getv() { local v="$1_$2"; printf '%s' "${!v:-}"; }
@@ -57,7 +64,7 @@ for r in "${repos[@]}"; do
   setv path "$r" "$path"
 done
 
-# Step 2, per repo: workspace, shell pane, agent, brief.
+# Step 2, per repo: a tab in the current space, its shell pane, the agent.
 for r in "${repos[@]}"; do
   [ -n "$(getv path "$r")" ] || continue
   path="$(getv path "$r")"
@@ -71,12 +78,15 @@ for r in "${repos[@]}"; do
   fi
 
   if [ "$dry" = 1 ]; then
-    show "$TW_HERDR" workspace create --cwd "$path" --label "$label" --no-focus
-    pane="<root_pane of '$label'>"
+    show "$TW_HERDR" tab create --workspace "$space" --cwd "$path" --label "$label" --no-focus
+    pane="<root_pane of tab '$label'>"
   else
-    created="$("$TW_HERDR" workspace create --cwd "$path" --label "$label" --no-focus)" || { fail "$r: workspace create failed"; continue; }
+    created="$("$TW_HERDR" tab create --workspace "$space" --cwd "$path" --label "$label" --no-focus)" || { fail "$r: tab create in $space failed"; continue; }
     pane="$(jq -r '.result.root_pane.pane_id' <<<"$created")"
-    [ -n "$pane" ] && [ "$pane" != null ] || { fail "$r: workspace create returned no root pane"; continue; }
+    [ -n "$pane" ] && [ "$pane" != null ] || { fail "$r: tab create returned no root pane"; continue; }
+    # The verifier and tw_tell_main read this to route the pane's escalations back to the dispatcher.
+    jq -nc --arg d "$dispatcher" --arg w "$space" --arg t "$ticket" '{dispatcher:$d,workspace:$w,ticket:$t}' \
+      > "$TW_STATE/dispatch/by-pane/$(tw_key "$pane").json"
     # agent start needs the shell at its prompt; wait until the shell has drawn something.
     "$TW_HERDR" pane wait-output "$pane" --regex '\S' --timeout 15000 >/dev/null 2>&1 || true
     sleep 1
@@ -118,9 +128,9 @@ for r in "${repos[@]}"; do
   [ -n "$branch" ] || branch="$area/thv-$n (created by thoven-worktree)"
   [ -n "$base" ] || base="origin/main at creation"
   ctx="$(jq -nc --arg ticket "$ticket" --arg url "$url" --arg path "$path" --arg repo "$(repo_dir "$r")" \
-    --arg branch "$branch" --arg base "$base" --arg main "$main_pane" --arg inbox "$TW_INBOX/$ticket.md" \
+    --arg branch "$branch" --arg base "$base"  --arg main "$report_to" --arg pane "$(getv pane "$r")" --arg inbox "$TW_INBOX/$ticket.md" \
     --arg sibling "$sibling" \
-    '{ticket:$ticket,url:$url,path:$path,repo:$repo,branch:$branch,base:$base,main_pane:$main,inbox_file:$inbox,sibling:$sibling}')"
+    '{ticket:$ticket,url:$url,path:$path,repo:$repo,branch:$branch,base:$base,main_pane:$main,inbox_file:$inbox,sibling:$sibling,pane:$pane}')"
   brief="$(python3 "$HERE/compose.py" brief "$cli" "$ctx")"
   if [ "$dry" = 1 ]; then
     show "$TW_HERDR" agent prompt "$name" "<self-brief below>"

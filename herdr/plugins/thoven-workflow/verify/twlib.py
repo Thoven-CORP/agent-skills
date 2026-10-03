@@ -1,6 +1,6 @@
 """Shared Python helpers for thoven.workflow (verify/ and watchdog/).
 
-Mirrors lib/common.sh: the same state dir, main-pane file and inbox, so bash and
+Mirrors lib/common.sh: the same state dir, report routing and inbox, so bash and
 Python modules read and write the same places. Nothing here raises on a herdr or
 ps failure; callers get None / {} and decide.
 """
@@ -99,27 +99,51 @@ def notify(title, body=None, sound=None):
     return herdr_ok(*args)
 
 
-def main_pane():
+def _read(path):
     try:
-        with open(os.path.join(STATE, "main-pane")) as f:
+        with open(path) as f:
             return f.read().strip() or None
     except Exception:
         return None
 
 
-def tell_main(tag, text):
-    """Python twin of tw_tell_main: prompt the main pane, else drop the text in
-    the inbox and toast. Returns 'main' or the inbox path."""
-    main = main_pane()
-    if main:
-        ok, _ = herdr_ok("agent", "prompt", main, text)
+def pane_workspace(pane_id):
+    return ((herdr("pane", "get", pane_id) or {}).get("pane") or {}).get("workspace_id")
+
+
+def report_targets(pane_id=None, workspace=None):
+    """Who hears about a pane (THV-1064), best first: the pane that dispatched it, else the main of
+    its space. There is no global main. Mirrors tw_report_targets in lib/common.sh."""
+    out = []
+    if pane_id:
+        rec = _read(os.path.join(STATE, "dispatch", "by-pane", pane_id.replace(":", "_") + ".json"))
+        if rec:
+            try:
+                d = json.loads(rec).get("dispatcher")
+                if d:
+                    out.append(d)
+            except Exception:
+                pass
+        workspace = workspace or pane_workspace(pane_id)
+    if workspace:
+        m = _read(os.path.join(STATE, f"main-pane.{workspace}"))
+        if m:
+            out.append(m)
+    return [t for t in out if t and t != pane_id]
+
+
+def tell_main(tag, text, pane_id=None, workspace=None):
+    """Python twin of tw_tell_main: prompt the first reachable target, else drop the text in the
+    inbox and toast. Returns the pane that took it, or the inbox path."""
+    for target in report_targets(pane_id, workspace):
+        ok, _ = herdr_ok("agent", "prompt", target, text)
         if ok:
-            return "main"
+            return target
     os.makedirs(INBOX, exist_ok=True)
     path = os.path.join(INBOX, f"{tag}.md")
     with open(path, "w") as f:
         f.write(text + "\n")
-    notify("thoven: main unreachable", f"Report saved to {path}", "request")
+    notify("thoven: no one to report to", f"Saved to {path}", "request")
     return path
 
 

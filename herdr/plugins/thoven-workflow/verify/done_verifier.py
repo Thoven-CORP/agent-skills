@@ -294,7 +294,7 @@ def on_event():
                     where = tw.tell_main(tag, (
                         f"[thoven verify] {ticket or 'no ticket'} pane {pane_id} reported done "
                         f"{MAX_NUDGES + 1} times and still: {'; '.join(reasons)}. "
-                        f"Nudged {MAX_NUDGES}x; needs you."))
+                        f"Nudged {MAX_NUDGES}x; needs you."), pane_id)
                     internal["escalated"] = True
                     tw.log(LOG, f"{pane_id} escalated -> {where}")
         tw.set_badge(pane_id, tw.SRC_VERIFY, TOKEN, agent, badge_text(result, reasons))
