@@ -26,7 +26,7 @@ DONE WHEN  <the ticket's Done when, verbatim or by pointer>
 STANDING
 - You and main run side by side. Main owns Linear, product calls and your review. You own
   the code on this branch and your commits.
-- Commit as you go, by exact path, message ending in THV-<id>. Commit only; publishing is outside this task.
+- Commit as you go, by exact path, message ending in THV-<id>. Commit only: main pushes the branch and opens the PR.
 - Machine: run only the tests you touch, one process at a time, no dev servers or watch mode.
   Route big logs and wide reads through a subagent and keep its summary.
 - Budget: stop near 250k tokens and send your status with what is done and what is left.
