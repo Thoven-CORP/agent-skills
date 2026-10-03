@@ -21,10 +21,11 @@
 import type { EngineInterface, Register } from 'claude-code'
 import { project } from './board.ts'
 import { readPrompt, sendCalls } from './dispatch.ts'
+import { claimHeldBy, claimOf } from './facts.ts'
 import { findMe, focusReq, parseSnapshot, snapshotReq, spaceOfPane } from './herdr.ts'
 import { VERDICTS, isOneOf, type Board, type Engagement, type Fact, type FactKind, type Intent, type Main, type Me, type Ms, type PaneId, type PaneUi, type Polled, type SessionId, type SourceId, type Sources, type SourceValues, type World } from './model.ts'
 import { HEARTBEAT_MS, SOURCES, due, settle, type Listing, type PolledId, type Req, type Resp, type Source } from './sources.ts'
-import { claimHeldBy, claimOf, isFactKey, keyOf, parseFact } from './store.ts'
+import { isFactKey, keyOf, parseFact } from './store.ts'
 import { drawCockpit } from './view.ts'
 
 type Api = EngineInterface

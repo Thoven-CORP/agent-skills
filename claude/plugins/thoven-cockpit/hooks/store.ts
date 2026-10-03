@@ -99,15 +99,3 @@ export function parseFact(key: string, value: unknown): Fact | undefined {
   const fact = SHAPES[value.kind](value)
   return fact && keyOf(fact) === key ? fact : undefined
 }
-
-type Claim = Extract<Fact, { kind: 'main' }>
-
-/** The claim on a space, which says who its main is. */
-export function claimOf(facts: readonly Fact[], space: SpaceId): Claim | undefined {
-  return facts.find((f): f is Claim => f.kind === 'main' && f.space === space)
-}
-
-/** The claim a pane holds, so a reload or `/clear` finds its main role again. */
-export function claimHeldBy(facts: readonly Fact[], pane: PaneId): Claim | undefined {
-  return facts.find((f): f is Claim => f.kind === 'main' && f.pane === pane)
-}

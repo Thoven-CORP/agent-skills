@@ -30,6 +30,7 @@
 //      survives a later report replacing it or the PR falling out of gh's last 50.
 
 import { branchTicket, labelOfBranch, pickLabel } from './dispatch.ts'
+import { factsOf } from './facts.ts'
 import { configPathOf } from './github.ts'
 import {
   isOneOf,
@@ -211,9 +212,6 @@ function newMergedEvents(t: Ticket, prs: readonly Pr[], facts: readonly Fact[]):
     return [{ ticket: t, event: { k: 'merged', number: pr.number }, id }]
   })
 }
-
-const factsOf = <K extends Fact['kind']>(facts: readonly Fact[], kind: K, ticket: Ticket): Array<FactOf<K>> =>
-  facts.filter((f): f is FactOf<K> => f.kind === kind && 'ticket' in f && f.ticket === ticket)
 
 const newest = <F extends { at: number }>(fs: readonly F[]): F | undefined => fs.reduce<F | undefined>((a, f) => (a === undefined || f.at > a.at ? f : a), undefined)
 
