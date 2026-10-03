@@ -5,56 +5,16 @@ import { expect, test } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { branchTicket, parseLabel, pickLabel } from '../hooks/dispatch.ts'
 import { parseSnapshot } from '../hooks/herdr.ts'
-import type { Main, PaneId, Polled, SessionId, Snapshot, Sources, SpaceId, World } from '../hooks/model.ts'
-import { SOURCES, headPathOf, parseHead, parseLiveSpaces } from '../hooks/sources.ts'
+import type { PaneId } from '../hooks/model.ts'
+import { SOURCES, headPathOf, parseHead } from '../hooks/sources.ts'
 import { cellText, columnsFor } from '../hooks/view.ts'
 import { DOT_GIT_THV_481, DOT_GIT_WORKTREE, HEAD_COCKPIT, HEAD_THV_481 } from './fixtures/git.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
-import { WORKFLOW_LIVE_SPACES } from './fixtures/workflow.ts'
-import { MAIN_CWD, PANE, cockpit, dropPane, fakeAsk, relabelPane, relabelTab, stage, start } from './stage.ts'
+import { MAIN_CWD, PANE, cockpit, dropPane, fakeAsk, fresh, mainOf, must, relabelPane, relabelTab, rowOf, rowsOf, stage, start, worldOf } from './stage.ts'
 
 const CONSENT = 'Build · Consent evidence hardening (THV-1045)'
 /** w18 with its `Mods` tab named the way label.sh names a build tab. p8V sits in it with no pane label. */
 const SNAPSHOT_W18_BUILD = relabelTab(SNAPSHOT_LIVE, 'w18:t45', CONSENT)
-
-const fresh = <T>(value: T): Polled<T> => ({ k: 'fresh', value, at: 0 })
-const never = { k: 'never' } as const
-function must<T>(value: T | undefined): T {
-  if (value === undefined) throw new Error('the source read nothing')
-  return value
-}
-
-function snap(json: string): Snapshot {
-  const s = parseSnapshot(json)
-  if (!s) throw new Error('fixture did not parse')
-  return s
-}
-
-function mainOf(space: string, pane: string, cwd = MAIN_CWD): Main {
-  return { k: 'main', space: space as SpaceId, pane: pane as PaneId, sid: 'sid-a' as SessionId, cwd, home: '/Users/andresmartinez', tmp: '' }
-}
-
-function worldOf(me: Main, snapshot: Snapshot, extra: Partial<Sources> = {}): World {
-  return {
-    now: 0,
-    me,
-    sources: {
-      herdr: fresh(snapshot),
-      labels: never,
-      spaces: fresh(parseLiveSpaces(WORKFLOW_LIVE_SPACES)),
-      heads: never,
-      branches: never,
-      origins: never,
-      github: never,
-      inbox: never,
-      ...extra,
-    },
-    facts: [],
-    readbacks: new Map(),
-    inFlight: new Set(),
-    mainSkill: undefined,
-  }
-}
 
 // ── unit: dispatch.ts label grammar ──────────────────────────────────────────────────────────
 
@@ -83,7 +43,7 @@ test("herdr's default tab name '1' is no label", async () => {
 // ── unit: herdr.ts on the real snapshot ──────────────────────────────────────────────────────
 
 test('the live snapshot parses: 5 spaces, 7 panes, labels only where herdr gave one', async () => {
-  const s = snap(SNAPSHOT_LIVE)
+  const s = must(parseSnapshot(SNAPSHOT_LIVE))
   expect(s.spaces.map((x) => `${x.space} ${x.label}`)).toEqual(['w18 Research', 'w4D UI Polishes', 'w54 frontend', 'w56 Coppa', 'w57 thoven'])
   expect(s.panes.map((p) => p.pane)).toEqual(['w18:p8P', 'w18:p8V', 'w18:p8W', 'w4D:pH', 'w54:p1', 'w56:p1', 'w57:p1'])
   expect(s.panes.filter((p) => p.paneLabel !== undefined).map((p) => p.paneLabel)).toEqual(['Plan · Cockpit spec (THV-1053)', 'UI polish walkthrough (THV-481)'])
@@ -100,7 +60,7 @@ test('a snapshot of an unknown shape is undefined, not a throw', async () => {
 // ── unit: board.ts on the real snapshot ──────────────────────────────────────────────────────
 
 test("w18 with a Build tab: p8V is the THV-1045 row, main's own labelled pane is not a row", async () => {
-  const board = project(worldOf(mainOf('w18', 'w18:p8W'), snap(SNAPSHOT_W18_BUILD)))
+  const board = project(worldOf(mainOf('w18', 'w18:p8W'), SNAPSHOT_W18_BUILD))
   expect(board.space).toEqual({ space: 'w18', label: 'Research' })
   expect(board.project).toBeUndefined()
   expect(board.build).toEqual([
@@ -128,9 +88,9 @@ test("w18 with a Build tab: p8V is the THV-1045 row, main's own labelled pane is
 })
 
 test('UI Polishes: the THV-481 tab is a Build row with no Kind, and the space has its Project', async () => {
-  const board = project(worldOf(mainOf('w4D', 'w18:p8W'), snap(SNAPSHOT_LIVE)))
+  const board = project(worldOf(mainOf('w4D', 'w18:p8W'), SNAPSHOT_LIVE))
   expect(board.project).toBe('Design System')
-  expect(board.build.map((g) => (g.k === 'single' ? [g.row.ticket, g.row.title, g.row.kind, g.row.cells.linear.k] : []))).toEqual([['THV-481', 'UI polish walkthrough', undefined, 'none']])
+  expect(rowsOf(board).map((r) => [r.ticket, r.title, r.kind, r.cells.linear.k])).toEqual([['THV-481', 'UI polish walkthrough', undefined, 'none']])
 })
 
 test('this-session row: main on cockpit/thv-1058 with no dispatch shows one row and no Linear column', async () => {
@@ -138,7 +98,7 @@ test('this-session row: main on cockpit/thv-1058 with no dispatch shows one row 
   expect(headPathOf(cwd, DOT_GIT_WORKTREE)).toBe('/Users/andresmartinez/thoven/agent-skills/.git/worktrees/agent-skills-thv-1058/HEAD')
   expect(parseHead(HEAD_COCKPIT)).toBe('cockpit/thv-1058')
   const branches = new Map([[cwd, 'cockpit/thv-1058']])
-  const board = project(worldOf(mainOf('w18', 'w18:p8W', cwd), snap(SNAPSHOT_LIVE), { branches: fresh(branches) }))
+  const board = project(worldOf(mainOf('w18', 'w18:p8W', cwd), SNAPSHOT_LIVE, { sources: { branches: fresh(branches) } }))
   expect(board.build).toEqual([
     {
       k: 'single',
@@ -163,7 +123,7 @@ test('this-session row: main on cockpit/thv-1058 with no dispatch shows one row 
 })
 
 test('an unlabelled tab goes under Other as unlabelled', async () => {
-  const board = project(worldOf(mainOf('w18', 'w18:p8W'), snap(SNAPSHOT_LIVE)))
+  const board = project(worldOf(mainOf('w18', 'w18:p8W'), SNAPSHOT_LIVE))
   expect(board.build).toEqual([])
   expect(board.other).toEqual([
     { label: 'tab "Research"', kind: undefined, ticket: undefined, pane: { k: 'live', status: 'idle', tool: 'C', pane: 'w18:p8P' }, note: 'unlabelled' },
@@ -172,7 +132,7 @@ test('an unlabelled tab goes under Other as unlabelled', async () => {
 })
 
 test('a multi-ticket pane gives three Build rows that share the pane', async () => {
-  const board = project(worldOf(mainOf('w18', 'w18:p8W'), snap(relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Book Lessons follow-ups (THV-843 847 851)'))))
+  const board = project(worldOf(mainOf('w18', 'w18:p8W'), relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Book Lessons follow-ups (THV-843 847 851)')))
   const p8V = { status: 'idle', tool: 'C', pane: 'w18:p8V' }
   const shared = { title: 'Book Lessons follow-ups', kind: undefined, origin: 'label', panes: { k: 'live', list: [p8V] }, verifierPane: { k: 'none' } }
   const cells = { report: { k: 'none' }, fix: { k: 'none' }, review: { k: 'none', offer: undefined }, pr: { k: 'none' }, ci: { k: 'none' }, linear: { k: 'hidden' } }
@@ -184,30 +144,28 @@ test('a multi-ticket pane gives three Build rows that share the pane', async () 
 })
 
 test("Live spaces match the space's label in any case: Coppa is COPPA's Project", async () => {
-  const board = project(worldOf(mainOf('w56', 'w18:p8W'), snap(SNAPSHOT_LIVE)))
+  const board = project(worldOf(mainOf('w56', 'w18:p8W'), SNAPSHOT_LIVE))
   expect(board.space).toEqual({ space: 'w56', label: 'Coppa' })
   expect(board.project).toBe('COPPA and Data Compliance Audit')
-  expect(board.build.map((g) => (g.k === 'single' ? [g.row.ticket, g.row.title, g.row.cells.linear.k] : []))).toEqual([['THV-1004', "children's media URL expiry", 'none']])
+  expect(rowsOf(board).map((r) => [r.ticket, r.title, r.cells.linear.k])).toEqual([['THV-1004', "children's media URL expiry", 'none']])
 })
 
 test('two Build panes on one ticket give one row whose Pane cell lists both', async () => {
   // p8W loses its own label, so both panes of the THV-1045 tab read the tab's Build label.
   const json = relabelPane(SNAPSHOT_W18_BUILD, 'w18:p8W', undefined)
-  const board = project(worldOf(mainOf('w18', 'w18:p8P'), snap(json)))
-  expect(board.build.map((g) => (g.k === 'single' ? [g.row.ticket, g.row.panes] : []))).toEqual([
+  const board = project(worldOf(mainOf('w18', 'w18:p8P'), json))
+  expect(rowsOf(board).map((r) => [r.ticket, r.panes])).toEqual([
     ['THV-1045', { k: 'live', list: [{ status: 'idle', tool: 'C', pane: 'w18:p8V' }, { status: 'working', tool: 'C', pane: 'w18:p8W' }] }],
   ])
-  const g = board.build[0]
-  if (g?.k !== 'single') throw new Error('expected one row')
-  expect(cellText(g.row).pane).toBe('○ C ◐ C')
+  expect(cellText(must(rowsOf(board)[0])).pane).toBe('○ C ◐ C')
 })
 
 test('a Review pane naming two tickets verifies the one with a Build row and gives the other its own row', async () => {
   const json = relabelPane(SNAPSHOT_W18_BUILD, 'w18:p8W', 'Review · Consent evidence hardening (THV-1045 1004)')
-  const board = project(worldOf(mainOf('w18', 'w18:p8P'), snap(json)))
+  const board = project(worldOf(mainOf('w18', 'w18:p8P'), json))
   const p8V = { status: 'idle', tool: 'C', pane: 'w18:p8V' }
   const p8W = { status: 'working', tool: 'C', pane: 'w18:p8W' }
-  expect(board.build.map((g) => (g.k === 'single' ? [g.row.ticket, g.row.kind, g.row.title, g.row.panes, g.row.verifierPane] : []))).toEqual([
+  expect(rowsOf(board).map((r) => [r.ticket, r.kind, r.title, r.panes, r.verifierPane])).toEqual([
     ['THV-1045', 'Build', 'Consent evidence hardening', { k: 'live', list: [p8V] }, { k: 'live', ...p8W }],
     ['THV-1004', 'Review', 'Consent evidence hardening', { k: 'live', list: [p8W] }, { k: 'live', ...p8W }],
   ])
@@ -218,7 +176,7 @@ test("a pane known only by its folder's branch is a Build row for the branch's t
   // pH loses its own label and its tab goes back to herdr's default `1`. Its title names no ticket.
   const json = relabelTab(relabelPane(SNAPSHOT_LIVE, 'w4D:pH', undefined), 'w4D:tB', '1')
   const cwd = '/Users/andresmartinez/thoven/frontend-thv-481'
-  const w0 = worldOf(mainOf('w4D', 'w18:p8W'), snap(json))
+  const w0 = worldOf(mainOf('w4D', 'w18:p8W'), json)
   const worktreeHead = '/Users/andresmartinez/thoven/frontend/.git/worktrees/frontend-thv-481/HEAD'
   const ask = fakeAsk({
     list: { [MAIN_CWD]: [{ name: '.git', kind: 'dir', mtimeMs: 0 }], [cwd]: [{ name: '.git', kind: 'file', mtimeMs: 0 }] },
@@ -226,11 +184,11 @@ test("a pane known only by its folder's branch is a Build row for the branch's t
   })
   const heads = must(await SOURCES.heads.run(w0, ask))
   expect(ask.asked).toEqual([`list ${MAIN_CWD}`, `list ${cwd}`, `read ${cwd}/.git`])
-  const w1 = worldOf(w0.me, snap(json), { heads: fresh(heads) })
+  const w1 = worldOf(w0.me, json, { sources: { heads: fresh(heads) } })
   const branches = must(await SOURCES.branches.run(w1, ask))
   expect(ask.asked.slice(3)).toEqual([`read ${MAIN_CWD}/.git/HEAD`, `read ${worktreeHead}`])
-  const board = project(worldOf(w0.me, snap(json), { heads: fresh(heads), branches: fresh(branches) }))
-  expect(board.build.map((g) => (g.k === 'single' ? [g.row.ticket, g.row.title, g.row.kind, g.row.origin, g.row.panes] : []))).toEqual([
+  const board = project(worldOf(w0.me, json, { sources: { heads: fresh(heads), branches: fresh(branches) } }))
+  expect(rowsOf(board).map((r) => [r.ticket, r.title, r.kind, r.origin, r.panes])).toEqual([
     ['THV-481', 'ui/thv-481', undefined, 'branch', { k: 'live', list: [{ status: 'idle', tool: 'C', pane: 'w4D:pH' }] }],
   ])
   expect(board.other).toEqual([])
@@ -239,7 +197,7 @@ test("a pane known only by its folder's branch is a Build row for the branch's t
 test('the heads cache keeps only answers that succeeded, and only for folders still tracked', async () => {
   const json = relabelTab(relabelPane(SNAPSHOT_LIVE, 'w4D:pH', undefined), 'w4D:tB', '1')
   const cwd = '/Users/andresmartinez/thoven/frontend-thv-481'
-  const w0 = worldOf(mainOf('w4D', 'w18:p8W'), snap(json), { heads: fresh(new Map([['/Users/andresmartinez/gone', '/Users/andresmartinez/gone/.git/HEAD']])) })
+  const w0 = worldOf(mainOf('w4D', 'w18:p8W'), json, { sources: { heads: fresh(new Map([['/Users/andresmartinez/gone', '/Users/andresmartinez/gone/.git/HEAD']])) } })
   const worktree = [{ name: '.git', kind: 'file', mtimeMs: 0 }]
   const listings = { [MAIN_CWD]: [{ name: '.git', kind: 'dir', mtimeMs: 0 }], [cwd]: worktree }
   // The worktree's `.git` lists as a file but will not read, and MAIN_CWD will not list.
@@ -250,19 +208,17 @@ test('the heads cache keeps only answers that succeeded, and only for folders st
   const heads = must(await SOURCES.heads.run(w0, answering))
   expect([...heads]).toEqual([[MAIN_CWD, `${MAIN_CWD}/.git/HEAD`], [cwd, headPathOf(cwd, DOT_GIT_THV_481)]])
   const cached = fakeAsk({})
-  expect([...must(await SOURCES.heads.run(worldOf(w0.me, snap(json), { heads: fresh(heads) }), cached))]).toEqual([...heads])
+  expect([...must(await SOURCES.heads.run(worldOf(w0.me, json, { sources: { heads: fresh(heads) } }), cached))]).toEqual([...heads])
   expect(cached.asked).toEqual([])
 })
 
 // ── unit: view.ts glyphs and widths ──────────────────────────────────────────────────────────
 
 test('cellText: an S1 row shows its Pane glyph and tool tag, and a dash in every later column', async () => {
-  const board = project(worldOf(mainOf('w18', 'w18:p8W'), snap(SNAPSHOT_W18_BUILD)))
-  const g = board.build[0]
-  if (g?.k !== 'single') throw new Error('expected one row')
-  expect(cellText(g.row)).toEqual({ pane: '○ C', report: '–', fix: '–', review: '– – – –', pr: '–', ci: '–', linear: '' })
-  expect(cellText({ ...g.row, panes: { k: 'live', list: [{ status: 'working', tool: 'X', pane: 'w18:p8V' as PaneId }] }, cells: { ...g.row.cells, linear: { k: 'none' } } })).toMatchObject({ pane: '◐ X', linear: '–' })
-  expect(cellText({ ...g.row, panes: { k: 'gone' } }).pane).toBe('gone')
+  const row = rowOf(worldOf(mainOf('w18', 'w18:p8W'), SNAPSHOT_W18_BUILD), 'THV-1045')
+  expect(cellText(row)).toEqual({ pane: '○ C', report: '–', fix: '–', review: '– – – –', pr: '–', ci: '–', linear: '' })
+  expect(cellText({ ...row, panes: { k: 'live', list: [{ status: 'working', tool: 'X', pane: 'w18:p8V' as PaneId }] }, cells: { ...row.cells, linear: { k: 'none' } } })).toMatchObject({ pane: '◐ X', linear: '–' })
+  expect(cellText({ ...row, panes: { k: 'gone' } }).pane).toBe('gone')
 })
 
 test('columnsFor: fixed cells, the Work column takes what is left, never under 10', async () => {

@@ -10,15 +10,13 @@
 import { expect, test } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { BACKEND, FRONTEND, configPathOf, parseOrigin, parsePrList, titleTickets } from '../hooks/github.ts'
-import { parseSnapshot } from '../hooks/herdr.ts'
-import type { Board, Fact, Main, PaneId, Polled, Pr, Row, SessionId, Snapshot, Sources, SpaceId, World } from '../hooks/model.ts'
-import { SOURCES, headPathOf, parseHead, parseLiveSpaces } from '../hooks/sources.ts'
+import type { Board, Fact, Pr, Sources } from '../hooks/model.ts'
+import { SOURCES, headPathOf, parseHead } from '../hooks/sources.ts'
 import { cellText } from '../hooks/view.ts'
 import { CONFIG_AGENT_SKILLS, CONFIG_BACKEND, CONFIG_FRONTEND, DOT_GIT_THV_481, DOT_GIT_WORKTREE, HEAD_THV_481 } from './fixtures/git.ts'
 import { GH_AGENT_SKILLS, GH_BACKEND, GH_FRONTEND } from './fixtures/github.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
-import { WORKFLOW_LIVE_SPACES } from './fixtures/workflow.ts'
-import { HOME, MAIN_CWD, PANE, TMPDIR, cockpit, fakeAsk, relabelPane, relabelTab, stage, start } from './stage.ts'
+import { MAIN_CWD, PANE, cockpit, fakeAsk, fresh, mainOf, must, relabelPane, relabelTab, rowOf, stage, start, worldOf } from './stage.ts'
 
 const AGENT_SKILLS = 'Thoven-CORP/agent-skills'
 const JSON_FIELDS = 'number,title,headRefName,state,statusCheckRollup,mergedAt,url,additions,deletions,files'
@@ -27,46 +25,6 @@ const THOVEN = '/Users/andresmartinez/thoven'
 const FE_481_CWD = '/Users/andresmartinez/thoven/frontend-thv-481'
 const FE_481_HEAD = headPathOf(FE_481_CWD, DOT_GIT_THV_481)
 const BRANCH_481 = parseHead(HEAD_THV_481) ?? ''
-
-const fresh = <T>(value: T): Polled<T> => ({ k: 'fresh', value, at: 0 })
-const never = { k: 'never' } as const
-
-function snap(json: string): Snapshot {
-  const s = parseSnapshot(json)
-  if (!s) throw new Error('fixture did not parse')
-  return s
-}
-
-function mainOf(space: string, pane: string, cwd = MAIN_CWD): Main {
-  return { k: 'main', space: space as SpaceId, pane: pane as PaneId, sid: 'sid-main' as SessionId, cwd, home: HOME, tmp: TMPDIR }
-}
-
-function worldOf(me: Main, snapshot: string, facts: Fact[], extra: Partial<Sources> = {}): World {
-  return {
-    now: 10_000,
-    me,
-    sources: {
-      herdr: fresh(snap(snapshot)),
-      labels: never,
-      spaces: fresh(parseLiveSpaces(WORKFLOW_LIVE_SPACES)),
-      heads: never,
-      branches: never,
-      origins: never,
-      github: never,
-      inbox: never,
-      ...extra,
-    },
-    facts,
-    readbacks: new Map(),
-    inFlight: new Set(),
-    mainSkill: undefined,
-  }
-}
-
-function must<T>(v: T | undefined): T {
-  if (v === undefined) throw new Error('expected a value')
-  return v
-}
 
 function prsOf(repo: string, json: string): Pr[] {
   const prs = parsePrList(repo, json)
@@ -91,14 +49,6 @@ function gitOf(places: Place[]): Partial<Sources> {
     branches: fresh(new Map(places.map((p) => [p.cwd, p.branch]))),
     origins: fresh(new Map(places.map((p) => [configPathOf(p.head), p.config === undefined ? undefined : parseOrigin(p.config)]))),
   }
-}
-
-function rowOf(world: World, ticket: string): Row {
-  const row = project(world)
-    .build.flatMap((g) => (g.k === 'single' ? [g.row] : g.children))
-    .find((r) => r.ticket === ticket)
-  if (!row) throw new Error(`no row for ${ticket}`)
-  return row
 }
 
 const prItems = (board: Board) => board.prs.flatMap((g) => g.items)
@@ -170,7 +120,7 @@ test('repos are each space folder’s origin, read once, plus frontend and backe
     [THOVEN, `${THOVEN}/.git/HEAD`],
     [MAIN_CWD, `${MAIN_CWD}/.git/HEAD`],
   ])
-  const w1 = worldOf(mainOf('w18', 'w18:p8W', asCwd), SNAPSHOT_LIVE, [], { heads: fresh(heads) })
+  const w1 = worldOf(mainOf('w18', 'w18:p8W', asCwd), SNAPSHOT_LIVE, { sources: { heads: fresh(heads) } })
   const ask1 = fakeAsk({
     read: { '/Users/andresmartinez/thoven/agent-skills/.git/config': CONFIG_AGENT_SKILLS, '/Users/andresmartinez/thoven/frontend/.git/config': CONFIG_FRONTEND },
   })
@@ -185,7 +135,7 @@ test('repos are each space folder’s origin, read once, plus frontend and backe
     ['/Users/andresmartinez/thoven/.git/config', undefined],
     ['/Users/andresmartinez/thoven/frontend/.git/config', FRONTEND],
   ])
-  const w2 = worldOf(mainOf('w18', 'w18:p8W', asCwd), SNAPSHOT_LIVE, [], { heads: fresh(heads), origins: fresh(read) })
+  const w2 = worldOf(mainOf('w18', 'w18:p8W', asCwd), SNAPSHOT_LIVE, { sources: { heads: fresh(heads), origins: fresh(read) } })
   const ask2 = fakeAsk({})
   expect([...must(await SOURCES.origins.run(w2, ask2))]).toEqual([...read])
   expect(ask2.asked).toEqual([])
@@ -201,9 +151,11 @@ test('repos are each space folder’s origin, read once, plus frontend and backe
 
 test('the pane on ui/thv-481 gives PR #136 and CI ✓ from its statusCheckRollup', async () => {
   // w4D:pH runs in frontend-thv-481, whose HEAD reads ui/thv-481.
-  const world = worldOf(mainOf('w4D', 'w18:p8W'), SNAPSHOT_LIVE, [], {
-    ...gitOf([{ cwd: FE_481_CWD, head: FE_481_HEAD, branch: BRANCH_481, config: CONFIG_FRONTEND }]),
-    github: fresh({ prs: ALL_PRS() }),
+  const world = worldOf(mainOf('w4D', 'w18:p8W'), SNAPSHOT_LIVE, {
+    sources: {
+      ...gitOf([{ cwd: FE_481_CWD, head: FE_481_HEAD, branch: BRANCH_481, config: CONFIG_FRONTEND }]),
+      github: fresh({ prs: ALL_PRS() }),
+    },
   })
   const row = rowOf(world, 'THV-481')
   expect(row.cells.pr).toEqual({ k: 'own', pr: prOf(FRONTEND, GH_FRONTEND, 136) })
@@ -212,8 +164,10 @@ test('the pane on ui/thv-481 gives PR #136 and CI ✓ from its statusCheckRollup
 })
 
 test('a THV-1045 Build tab with no branch read takes its open PR #141 by ticket, and CI shows its 4 failures', async () => {
-  const world = worldOf(mainOf('w18', 'w18:p8W'), relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Consent evidence hardening (THV-1045)'), [], {
-    github: fresh({ prs: ALL_PRS() }),
+  const world = worldOf(mainOf('w18', 'w18:p8W'), relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Consent evidence hardening (THV-1045)'), {
+    sources: {
+      github: fresh({ prs: ALL_PRS() }),
+    },
   })
   const row = rowOf(world, 'THV-1045')
   expect(row.cells.pr).toEqual({ k: 'own', pr: prOf(FRONTEND, GH_FRONTEND, 141) })
@@ -224,9 +178,11 @@ test('a THV-1045 Build tab with no branch read takes its open PR #141 by ticket,
 test('two tickets whose panes share ui/thv-481 both show in #136, and #136 is listed once with both', async () => {
   // Derived: p8V and p8W both run in ~/thoven/frontend, here on ui/thv-481, each labelled for its own ticket.
   const json = relabelPane(relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Getting Started stepper (THV-481)'), 'w18:p8W', 'Build · Frontend guardrails (THV-1069)')
-  const world = worldOf(mainOf('w18', 'w18:p8P', THOVEN), json, [], {
-    ...gitOf([{ cwd: MAIN_CWD, head: headPathOf(MAIN_CWD, undefined), branch: BRANCH_481, config: CONFIG_FRONTEND }]),
-    github: fresh({ prs: ALL_PRS() }),
+  const world = worldOf(mainOf('w18', 'w18:p8P', THOVEN), json, {
+    sources: {
+      ...gitOf([{ cwd: MAIN_CWD, head: headPathOf(MAIN_CWD, undefined), branch: BRANCH_481, config: CONFIG_FRONTEND }]),
+      github: fresh({ prs: ALL_PRS() }),
+    },
   })
   const pr136 = prOf(FRONTEND, GH_FRONTEND, 136)
   for (const t of ['THV-481', 'THV-1069']) {
@@ -242,8 +198,10 @@ test('a PR whose title group lists three tickets attaches to each row and is lis
   const retitled = JSON.stringify(
     (JSON.parse(GH_BACKEND) as Array<{ number: number; title: string }>).map((p) => (p.number === 145 ? { ...p, title: 'Book Lessons follow-ups (THV-851, THV-847, THV-843)' } : p)),
   )
-  const world = worldOf(mainOf('w18', 'w18:p8W'), relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Book Lessons follow-ups (THV-843 847 851)'), [], {
-    github: fresh({ prs: prsOf(BACKEND, retitled) }),
+  const world = worldOf(mainOf('w18', 'w18:p8W'), relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Book Lessons follow-ups (THV-843 847 851)'), {
+    sources: {
+      github: fresh({ prs: prsOf(BACKEND, retitled) }),
+    },
   })
   const attached = { ...pr, title: 'Book Lessons follow-ups', tickets: ['THV-851', 'THV-847', 'THV-843'] }
   for (const t of ['THV-843', 'THV-847', 'THV-851']) {
@@ -256,7 +214,7 @@ test('a PR whose title group lists three tickets attaches to each row and is lis
 
 test('frontend #139 attaches to THV-908 only, never to THV-1003, THV-1041 or THV-1038 named in its prose', async () => {
   const json = relabelTab(relabelTab(SNAPSHOT_LIVE, 'w18:t30', 'Build · Docs catch up (THV-908)'), 'w18:t45', 'Build · Consent and purge (THV-1003 1041 1038)')
-  const world = worldOf(mainOf('w18', 'w18:p8W'), json, [], { github: fresh({ prs: ALL_PRS() }) })
+  const world = worldOf(mainOf('w18', 'w18:p8W'), json, { sources: { github: fresh({ prs: ALL_PRS() }) } })
   const board = project(world)
   const pick = (t: string) => {
     const pr = rowOf(world, t).cells.pr
@@ -275,9 +233,11 @@ test('frontend #139 attaches to THV-908 only, never to THV-1003, THV-1041 or THV
 })
 
 test('the this-session row on ui/thv-481 shows PR #136 and CI ✓, and no Linear column', async () => {
-  const world = worldOf(mainOf('w18', 'w18:p8W', FE_481_CWD), SNAPSHOT_LIVE, [], {
-    ...gitOf([{ cwd: FE_481_CWD, head: FE_481_HEAD, branch: BRANCH_481, config: CONFIG_FRONTEND }]),
-    github: fresh({ prs: ALL_PRS() }),
+  const world = worldOf(mainOf('w18', 'w18:p8W', FE_481_CWD), SNAPSHOT_LIVE, {
+    sources: {
+      ...gitOf([{ cwd: FE_481_CWD, head: FE_481_HEAD, branch: BRANCH_481, config: CONFIG_FRONTEND }]),
+      github: fresh({ prs: ALL_PRS() }),
+    },
   })
   const row = rowOf(world, 'THV-481')
   expect([row.origin, row.cells.pr, row.cells.ci, row.cells.linear]).toEqual(['this-session', { k: 'own', pr: prOf(FRONTEND, GH_FRONTEND, 136) }, { k: 'pass' }, { k: 'hidden' }])
@@ -286,12 +246,14 @@ test('the this-session row on ui/thv-481 shows PR #136 and CI ✓, and no Linear
 
 test('a PR with no ticket is listed only while a space pane has its branch checked out', async () => {
   const backendCwd = `${THOVEN}/backend`
-  const away = worldOf(mainOf('w18', 'w18:p8W'), SNAPSHOT_LIVE, [], { github: fresh({ prs: ALL_PRS() }) })
+  const away = worldOf(mainOf('w18', 'w18:p8W'), SNAPSHOT_LIVE, { sources: { github: fresh({ prs: ALL_PRS() }) } })
   expect(project(away).prs).toEqual([])
   // Derived: p8P moves into the backend checkout, on the branch BE #145 came from.
-  const here = worldOf(mainOf('w18', 'w18:p8W'), withCwd(SNAPSHOT_LIVE, 'w18:p8P', backendCwd), [], {
-    ...gitOf([{ cwd: backendCwd, head: headPathOf(backendCwd, undefined), branch: 'sentry-error', config: CONFIG_BACKEND }]),
-    github: fresh({ prs: ALL_PRS() }),
+  const here = worldOf(mainOf('w18', 'w18:p8W'), withCwd(SNAPSHOT_LIVE, 'w18:p8P', backendCwd), {
+    sources: {
+      ...gitOf([{ cwd: backendCwd, head: headPathOf(backendCwd, undefined), branch: 'sentry-error', config: CONFIG_BACKEND }]),
+      github: fresh({ prs: ALL_PRS() }),
+    },
   })
   // Dependabot's #140 names no ticket and no pane is on its branch, so it stays out.
   expect(project(here).prs).toEqual([{ repo: BACKEND, items: [{ pr: prOf(BACKEND, GH_BACKEND, 145), tickets: [] }] }])
@@ -300,12 +262,12 @@ test('a PR with no ticket is listed only while a space pane has its branch check
 test('a merged PR on a row is a new merged-<n> event until its happened fact exists', async () => {
   const json = relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Design system and specs move out of thoven2.0 (THV-1038)')
   const sources = { github: fresh({ prs: [...prsOf(FRONTEND, GH_FRONTEND), ...prsOf(BACKEND, GH_BACKEND)] }) }
-  expect(project(worldOf(mainOf('w18', 'w18:p8W'), json, [], sources)).newEvents).toEqual([
+  expect(project(worldOf(mainOf('w18', 'w18:p8W'), json, { sources })).newEvents).toEqual([
     { ticket: 'THV-1038', event: { k: 'merged', number: 138 }, id: 'merged-138' },
     { ticket: 'THV-1038', event: { k: 'merged', number: 144 }, id: 'merged-144' },
   ])
   const seen: Fact = { kind: 'happened', ticket: 'THV-1038' as never, event: 'merged-138' as never, at: 0 }
-  expect(project(worldOf(mainOf('w18', 'w18:p8W'), json, [seen], sources)).newEvents.map((e) => e.id)).toEqual(['merged-144'])
+  expect(project(worldOf(mainOf('w18', 'w18:p8W'), json, { facts: [seen], sources })).newEvents.map((e) => e.id)).toEqual(['merged-144'])
 })
 
 // ── kit: main polls gh ───────────────────────────────────────────────────────────────────────

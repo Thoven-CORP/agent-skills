@@ -15,9 +15,8 @@ import { expect, test } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { briefOf, inboxFile, sendCalls, ticket, unwrapPasted } from '../hooks/dispatch.ts'
 import { BACKEND, FRONTEND, configPathOf, parseOrigin, parsePrList } from '../hooks/github.ts'
-import { parseSnapshot } from '../hooks/herdr.ts'
-import type { Board, Fact, Polled, Pr, Sources, World } from '../hooks/model.ts'
-import { headPathOf, parseHead, parseLiveSpaces } from '../hooks/sources.ts'
+import type { Board, Fact, Pr, Sources, World } from '../hooks/model.ts'
+import { headPathOf, parseHead } from '../hooks/sources.ts'
 import { drawCockpit } from '../hooks/view.ts'
 import { CONFIG_BACKEND, CONFIG_FRONTEND, DOT_GIT_THV_481, HEAD_COCKPIT, HEAD_THV_481 } from './fixtures/git.ts'
 import { GH_AGENT_SKILLS, GH_BACKEND, GH_FRONTEND } from './fixtures/github.ts'
@@ -25,8 +24,7 @@ import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import { OUT_ESCALATION_THV_1004, OUT_RESEARCH_THV_1038_HEAD } from './fixtures/inbox.ts'
 import * as REPORTS from './fixtures/reports.ts'
 import * as SENDS from './fixtures/send.ts'
-import { WORKFLOW_LIVE_SPACES } from './fixtures/workflow.ts'
-import { HOME, MAIN_CWD, PANE, TMPDIR, bash, cockpit, receive, relabelPane, relabelTab, stage, start, submit, type Stage } from './stage.ts'
+import { MAIN_CWD, PANE, bash, cockpit, fresh, mainOf, must, receive, relabelPane, relabelTab, stage, start, submit, worldOf, type Stage } from './stage.ts'
 
 
 
@@ -53,40 +51,7 @@ function id<T extends string>(text: string): T {
   if (isId<T>(text)) return text
   throw new Error(text)
 }
-function must<T>(value: T | undefined): T {
-  if (value === undefined) throw new Error('expected a value')
-  return value
-}
 const tk = (text: string) => must(ticket(text))
-
-function snap(json: string) {
-  return must(parseSnapshot(json))
-}
-const fresh = <T>(value: T): Polled<T> => ({ k: 'fresh', value, at: 0 })
-const never = { k: 'never' } as const
-
-type Spec = { space: string; pane: string; cwd?: string; snapshot: string; facts?: Fact[]; sources?: Partial<Sources> }
-function worldOf(w: Spec): World {
-  return {
-    now: 10_000,
-    me: { k: 'main', space: id(w.space), pane: id(w.pane), sid: id('sid-main'), cwd: w.cwd ?? MAIN_CWD, home: HOME, tmp: TMPDIR },
-    sources: {
-      herdr: fresh(snap(w.snapshot)),
-      labels: never,
-      spaces: fresh(parseLiveSpaces(WORKFLOW_LIVE_SPACES)),
-      heads: never,
-      branches: never,
-      origins: never,
-      github: never,
-      inbox: never,
-      ...w.sources,
-    },
-    facts: w.facts ?? [],
-    readbacks: new Map(),
-    inFlight: new Set(),
-    mainSkill: undefined,
-  }
-}
 
 const P8V_SID = '27c71f2d-e064-4ebc-ae51-e993d40abfac'
 const THOVEN = '/Users/andresmartinez/thoven'
@@ -133,7 +98,7 @@ function withCwd(snapshot: string, pane: string, cwd: string): string {
   return JSON.stringify(root)
 }
 
-const W18 = { space: 'w18', pane: 'w18:p8W' }
+const W18 = mainOf('w18', 'w18:p8W')
 const AS_1058 = '/Users/andresmartinez/thoven/agent-skills-thv-1058'
 const BE_CWD = `${THOVEN}/backend`
 const BE_145_THREE = JSON.stringify(
@@ -142,21 +107,18 @@ const BE_145_THREE = JSON.stringify(
 
 const WORLDS: Array<[string, () => World]> = [
   // s1
-  ['s1.w18-build', () => worldOf({ ...W18, snapshot: W18_BUILD })],
-  ['s1.w4D', () => worldOf({ space: 'w4D', pane: 'w18:p8W', snapshot: SNAPSHOT_LIVE })],
-  ['s1.this-session-1058', () => worldOf({ ...W18, cwd: AS_1058, snapshot: SNAPSHOT_LIVE, sources: { branches: fresh(new Map([[AS_1058, must(parseHead(HEAD_COCKPIT))]])) } })],
-  ['s1.w18-live', () => worldOf({ ...W18, snapshot: SNAPSHOT_LIVE })],
-  ['s1.multi-ticket', () => worldOf({ ...W18, snapshot: relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Book Lessons follow-ups (THV-843 847 851)') })],
-  ['s1.w56', () => worldOf({ space: 'w56', pane: 'w18:p8W', snapshot: SNAPSHOT_LIVE })],
-  ['s1.two-panes', () => worldOf({ space: 'w18', pane: 'w18:p8P', snapshot: relabelPane(W18_BUILD, 'w18:p8W', undefined) })],
-  ['s1.review', () => worldOf({ space: 'w18', pane: 'w18:p8P', snapshot: relabelPane(W18_BUILD, 'w18:p8W', 'Review · Consent evidence hardening (THV-1045 1004)') })],
+  ['s1.w18-build', () => worldOf(W18, W18_BUILD)],
+  ['s1.w4D', () => worldOf(mainOf('w4D', 'w18:p8W'), SNAPSHOT_LIVE)],
+  ['s1.this-session-1058', () => worldOf(mainOf('w18', 'w18:p8W', AS_1058), SNAPSHOT_LIVE, { sources: { branches: fresh(new Map([[AS_1058, must(parseHead(HEAD_COCKPIT))]])) } })],
+  ['s1.w18-live', () => worldOf(W18, SNAPSHOT_LIVE)],
+  ['s1.multi-ticket', () => worldOf(W18, relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Book Lessons follow-ups (THV-843 847 851)'))],
+  ['s1.w56', () => worldOf(mainOf('w56', 'w18:p8W'), SNAPSHOT_LIVE)],
+  ['s1.two-panes', () => worldOf(mainOf('w18', 'w18:p8P'), relabelPane(W18_BUILD, 'w18:p8W', undefined))],
+  ['s1.review', () => worldOf(mainOf('w18', 'w18:p8P'), relabelPane(W18_BUILD, 'w18:p8W', 'Review · Consent evidence hardening (THV-1045 1004)'))],
   [
     's1.branch-481',
     () =>
-      worldOf({
-        space: 'w4D',
-        pane: 'w18:p8W',
-        snapshot: relabelTab(relabelPane(SNAPSHOT_LIVE, 'w4D:pH', undefined), 'w4D:tB', '1'),
+      worldOf(mainOf('w4D', 'w18:p8W'), relabelTab(relabelPane(SNAPSHOT_LIVE, 'w4D:pH', undefined), 'w4D:tB', '1'), {
         sources: {
           heads: fresh(new Map([[MAIN_CWD, headPathOf(MAIN_CWD, undefined)], [FE_481_CWD, FE_481_HEAD]])),
           branches: fresh(new Map([[MAIN_CWD, 'main'], [FE_481_CWD, BRANCH_481]])),
@@ -166,84 +128,56 @@ const WORLDS: Array<[string, () => World]> = [
   // s2
   ...(['DONE', 'DONE_WITH_CONCERNS', 'NEEDS_CONTEXT', 'BLOCKED'] as const).map((status): [string, () => World] => [
     `s2.report-${status}`,
-    () => worldOf({ ...W18, snapshot: W18_1041, facts: [report('THV-1041', 'sid-b', status, 1000, status === 'DONE_WITH_CONCERNS' ? 1 : 0)] }),
+    () => worldOf(W18, W18_1041, { facts: [report('THV-1041', 'sid-b', status, 1000, status === 'DONE_WITH_CONCERNS' ? 1 : 0)] }),
   ]),
-  ['s2.report-concerns-0', () => worldOf({ ...W18, snapshot: W18_1041, facts: [report('THV-1041', 'sid-b', 'DONE_WITH_CONCERNS', 1000, 0)] })],
-  ['s2.newest', () => worldOf({ ...W18, snapshot: W18_1041, facts: [report('THV-1041', 'sid-b', 'DONE', 5000), report('THV-1041', 'sid-main', 'DONE_WITH_CONCERNS', 1000, 1)] })],
-  ['s2.inbox-unsent', () => worldOf({ ...W18, snapshot: W18_1041, facts: [report('THV-1041', 'sid-b', 'DONE', 5000)], sources: { inbox: fresh([must(inboxFile('THV-1041.md', OUT_THV_1041, 7000))]) } })],
-  ['s2.inbox-delivered', () => worldOf({ ...W18, snapshot: W18_1041, facts: [report('THV-1041', 'sid-b', 'DONE', 9000)], sources: { inbox: fresh([must(inboxFile('THV-1041.md', OUT_THV_1041, 7000))]) } })],
+  ['s2.report-concerns-0', () => worldOf(W18, W18_1041, { facts: [report('THV-1041', 'sid-b', 'DONE_WITH_CONCERNS', 1000, 0)] })],
+  ['s2.newest', () => worldOf(W18, W18_1041, { facts: [report('THV-1041', 'sid-b', 'DONE', 5000), report('THV-1041', 'sid-main', 'DONE_WITH_CONCERNS', 1000, 1)] })],
+  ['s2.inbox-unsent', () => worldOf(W18, W18_1041, { facts: [report('THV-1041', 'sid-b', 'DONE', 5000)], sources: { inbox: fresh([must(inboxFile('THV-1041.md', OUT_THV_1041, 7000))]) } })],
+  ['s2.inbox-delivered', () => worldOf(W18, W18_1041, { facts: [report('THV-1041', 'sid-b', 'DONE', 9000)], sources: { inbox: fresh([must(inboxFile('THV-1041.md', OUT_THV_1041, 7000))]) } })],
   [
     's2.fix-send-and-brief',
     () =>
-      worldOf({
-        ...W18,
-        snapshot: W18_1041,
-        facts: [{ kind: 'send', ticket: tk('THV-1041'), pane: id('w40:pC'), role: 'builder', round: 2, file: 'THV-1041-fix2.md', at: 1 }, briefFact(FIX_ROUND_3_THV_1041, 'w18:p8V', P8V_SID, 2)],
-      }),
+      worldOf(W18, W18_1041, { facts: [{ kind: 'send', ticket: tk('THV-1041'), pane: id('w40:pC'), role: 'builder', round: 2, file: 'THV-1041-fix2.md', at: 1 }, briefFact(FIX_ROUND_3_THV_1041, 'w18:p8V', P8V_SID, 2)] }),
   ],
-  ['s2.fix-brief', () => worldOf({ ...W18, snapshot: W18_1041, facts: [briefFact(FIX_ROUND_3_THV_1041, 'w18:p8V', P8V_SID, 2)] })],
-  ['s2.events-recorded', () => worldOf({ ...W18, snapshot: W18_1041, facts: [report('THV-1041', 'sid-b', 'DONE', 5000), { kind: 'happened', ticket: tk('THV-1041'), event: id('report-DONE'), at: 5000 }] })],
-  ['s2.tie-1014', () => worldOf({ ...W18, snapshot: SNAPSHOT_LIVE, facts: [briefFact(REPORTS.BUILD_BRIEF_THV_1014, 'w18:p8V', P8V_SID, 1)] })],
-  ['s2.verifier-tie-1016', () => worldOf({ ...W18, snapshot: SNAPSHOT_LIVE, facts: [briefFact(REPORTS.VERIFY_BRIEF_THV_1016, 'w18:p8V', P8V_SID, 1)] })],
-  ['s2.fix-1015', () => worldOf({ ...W18, snapshot: SNAPSHOT_LIVE, facts: [briefFact(REPORTS.FIX_ROUND_3_THV_1015, 'w18:p8V', P8V_SID, 0)] })],
-  ['s2.send-1004', () => worldOf({ space: 'w56', pane: 'w56:p2', snapshot: SNAPSHOT_LIVE, facts: [{ kind: 'send', ...must(sendCalls(SENDS.SEND_FIX2_THV_1004)[0]), at: 0 }] })],
-  ['s2.escalation-1004', () => worldOf({ space: 'w56', pane: 'w56:p2', snapshot: SNAPSHOT_LIVE, sources: { inbox: fresh([must(inboxFile('THV-1004.md', OUT_ESCALATION_THV_1004, 1))]) } })],
-  ['s2.research-1038', () => worldOf({ ...W18, snapshot: W18_1038, sources: { inbox: fresh([must(inboxFile('THV-1038.md', OUT_RESEARCH_THV_1038_HEAD, 7000))]) } })],
+  ['s2.fix-brief', () => worldOf(W18, W18_1041, { facts: [briefFact(FIX_ROUND_3_THV_1041, 'w18:p8V', P8V_SID, 2)] })],
+  ['s2.events-recorded', () => worldOf(W18, W18_1041, { facts: [report('THV-1041', 'sid-b', 'DONE', 5000), { kind: 'happened', ticket: tk('THV-1041'), event: id('report-DONE'), at: 5000 }] })],
+  ['s2.tie-1014', () => worldOf(W18, SNAPSHOT_LIVE, { facts: [briefFact(REPORTS.BUILD_BRIEF_THV_1014, 'w18:p8V', P8V_SID, 1)] })],
+  ['s2.verifier-tie-1016', () => worldOf(W18, SNAPSHOT_LIVE, { facts: [briefFact(REPORTS.VERIFY_BRIEF_THV_1016, 'w18:p8V', P8V_SID, 1)] })],
+  ['s2.fix-1015', () => worldOf(W18, SNAPSHOT_LIVE, { facts: [briefFact(REPORTS.FIX_ROUND_3_THV_1015, 'w18:p8V', P8V_SID, 0)] })],
+  ['s2.send-1004', () => worldOf(mainOf('w56', 'w56:p2'), SNAPSHOT_LIVE, { facts: [{ kind: 'send', ...must(sendCalls(SENDS.SEND_FIX2_THV_1004)[0]), at: 0 }] })],
+  ['s2.escalation-1004', () => worldOf(mainOf('w56', 'w56:p2'), SNAPSHOT_LIVE, { sources: { inbox: fresh([must(inboxFile('THV-1004.md', OUT_ESCALATION_THV_1004, 1))]) } })],
+  ['s2.research-1038', () => worldOf(W18, W18_1038, { sources: { inbox: fresh([must(inboxFile('THV-1038.md', OUT_RESEARCH_THV_1038_HEAD, 7000))]) } })],
   [
     's2.verdict-1003',
     () =>
-      worldOf({
-        ...W18,
-        snapshot: relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Consent and purge (THV-1003)'),
-        facts: [report('THV-1003', 'sid-b', 'DONE', 5000)],
-        sources: { inbox: fresh([must(inboxFile('THV-1003.md', OUT_VERDICT_THV_1003, 7000))]) },
-      }),
+      worldOf(W18, relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Consent and purge (THV-1003)'), { facts: [report('THV-1003', 'sid-b', 'DONE', 5000)], sources: { inbox: fresh([must(inboxFile('THV-1003.md', OUT_VERDICT_THV_1003, 7000))]) } }),
   ],
   // s2b
-  ['s2b.481-pH', () => worldOf({ space: 'w4D', pane: 'w18:p8W', snapshot: SNAPSHOT_LIVE, sources: { ...gitOf([{ cwd: FE_481_CWD, head: FE_481_HEAD, branch: BRANCH_481, config: CONFIG_FRONTEND }]), github: fresh({ prs: ALL_PRS() }) } })],
-  ['s2b.1045-by-ticket', () => worldOf({ ...W18, snapshot: W18_BUILD, sources: { github: fresh({ prs: ALL_PRS() }) } })],
+  ['s2b.481-pH', () => worldOf(mainOf('w4D', 'w18:p8W'), SNAPSHOT_LIVE, { sources: { ...gitOf([{ cwd: FE_481_CWD, head: FE_481_HEAD, branch: BRANCH_481, config: CONFIG_FRONTEND }]), github: fresh({ prs: ALL_PRS() }) } })],
+  ['s2b.1045-by-ticket', () => worldOf(W18, W18_BUILD, { sources: { github: fresh({ prs: ALL_PRS() }) } })],
   [
     's2b.shared-481',
     () =>
-      worldOf({
-        space: 'w18',
-        pane: 'w18:p8P',
-        cwd: THOVEN,
-        snapshot: relabelPane(relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Getting Started stepper (THV-481)'), 'w18:p8W', 'Build · Frontend guardrails (THV-1069)'),
-        sources: { ...gitOf([{ cwd: MAIN_CWD, head: headPathOf(MAIN_CWD, undefined), branch: BRANCH_481, config: CONFIG_FRONTEND }]), github: fresh({ prs: ALL_PRS() }) },
-      }),
+      worldOf(mainOf('w18', 'w18:p8P', THOVEN), relabelPane(relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Getting Started stepper (THV-481)'), 'w18:p8W', 'Build · Frontend guardrails (THV-1069)'), { sources: { ...gitOf([{ cwd: MAIN_CWD, head: headPathOf(MAIN_CWD, undefined), branch: BRANCH_481, config: CONFIG_FRONTEND }]), github: fresh({ prs: ALL_PRS() }) } }),
   ],
-  ['s2b.multi-ticket-pr', () => worldOf({ ...W18, snapshot: relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Book Lessons follow-ups (THV-843 847 851)'), sources: { github: fresh({ prs: prsOf(BACKEND, BE_145_THREE) }) } })],
+  ['s2b.multi-ticket-pr', () => worldOf(W18, relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Book Lessons follow-ups (THV-843 847 851)'), { sources: { github: fresh({ prs: prsOf(BACKEND, BE_145_THREE) }) } })],
   [
     's2b.prose-139',
     () =>
-      worldOf({
-        ...W18,
-        snapshot: relabelTab(relabelTab(SNAPSHOT_LIVE, 'w18:t30', 'Build · Docs catch up (THV-908)'), 'w18:t45', 'Build · Consent and purge (THV-1003 1041 1038)'),
-        sources: { github: fresh({ prs: ALL_PRS() }) },
-      }),
+      worldOf(W18, relabelTab(relabelTab(SNAPSHOT_LIVE, 'w18:t30', 'Build · Docs catch up (THV-908)'), 'w18:t45', 'Build · Consent and purge (THV-1003 1041 1038)'), { sources: { github: fresh({ prs: ALL_PRS() }) } }),
   ],
-  ['s2b.this-session-481', () => worldOf({ ...W18, cwd: FE_481_CWD, snapshot: SNAPSHOT_LIVE, sources: { ...gitOf([{ cwd: FE_481_CWD, head: FE_481_HEAD, branch: BRANCH_481, config: CONFIG_FRONTEND }]), github: fresh({ prs: ALL_PRS() }) } })],
-  ['s2b.ticketless-away', () => worldOf({ ...W18, snapshot: SNAPSHOT_LIVE, sources: { github: fresh({ prs: ALL_PRS() }) } })],
+  ['s2b.this-session-481', () => worldOf(mainOf('w18', 'w18:p8W', FE_481_CWD), SNAPSHOT_LIVE, { sources: { ...gitOf([{ cwd: FE_481_CWD, head: FE_481_HEAD, branch: BRANCH_481, config: CONFIG_FRONTEND }]), github: fresh({ prs: ALL_PRS() }) } })],
+  ['s2b.ticketless-away', () => worldOf(W18, SNAPSHOT_LIVE, { sources: { github: fresh({ prs: ALL_PRS() }) } })],
   [
     's2b.ticketless-here',
     () =>
-      worldOf({
-        ...W18,
-        snapshot: withCwd(SNAPSHOT_LIVE, 'w18:p8P', BE_CWD),
-        sources: { ...gitOf([{ cwd: BE_CWD, head: headPathOf(BE_CWD, undefined), branch: 'sentry-error', config: CONFIG_BACKEND }]), github: fresh({ prs: ALL_PRS() }) },
-      }),
+      worldOf(W18, withCwd(SNAPSHOT_LIVE, 'w18:p8P', BE_CWD), { sources: { ...gitOf([{ cwd: BE_CWD, head: headPathOf(BE_CWD, undefined), branch: 'sentry-error', config: CONFIG_BACKEND }]), github: fresh({ prs: ALL_PRS() }) } }),
   ],
-  ['s2b.merged-1038', () => worldOf({ ...W18, snapshot: W18_1038, sources: { github: fresh({ prs: [...prsOf(FRONTEND, GH_FRONTEND), ...prsOf(BACKEND, GH_BACKEND)] }) } })],
+  ['s2b.merged-1038', () => worldOf(W18, W18_1038, { sources: { github: fresh({ prs: [...prsOf(FRONTEND, GH_FRONTEND), ...prsOf(BACKEND, GH_BACKEND)] }) } })],
   [
     's2b.merged-1038-seen',
     () =>
-      worldOf({
-        ...W18,
-        snapshot: W18_1038,
-        facts: [{ kind: 'happened', ticket: tk('THV-1038'), event: id('merged-138'), at: 0 }],
-        sources: { github: fresh({ prs: [...prsOf(FRONTEND, GH_FRONTEND), ...prsOf(BACKEND, GH_BACKEND)] }) },
-      }),
+      worldOf(W18, W18_1038, { facts: [{ kind: 'happened', ticket: tk('THV-1038'), event: id('merged-138'), at: 0 }], sources: { github: fresh({ prs: [...prsOf(FRONTEND, GH_FRONTEND), ...prsOf(BACKEND, GH_BACKEND)] }) } }),
   ],
 ]
 

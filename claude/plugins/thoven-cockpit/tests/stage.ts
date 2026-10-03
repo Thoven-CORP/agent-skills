@@ -1,8 +1,12 @@
-// The kit stubs every S1 kit test shares: a herdr that answers from a real snapshot (or fails, or
-// hangs), a Map for $.store, and recorders for what the mod opened, closed and ran.
+// What every suite shares. The worlds board tests project, built from a real snapshot; and the kit
+// stubs: a herdr that answers from a real snapshot (or fails, or hangs), a Map for $.store, and
+// recorders for what the mod opened, closed and ran.
 
 import { mock } from 'claude-code/testing'
-import type { Answer, Ask, Listing } from '../hooks/sources.ts'
+import { project } from '../hooks/board.ts'
+import { parseSnapshot } from '../hooks/herdr.ts'
+import type { Board, Fact, Main, PaneId, Polled, Row, SessionId, Sources, SpaceId, World } from '../hooks/model.ts'
+import { parseLiveSpaces, unpolled, type Answer, type Ask, type Listing } from '../hooks/sources.ts'
 import { PANE_GET_P8W } from './fixtures/herdr.ts'
 import { WORKFLOW_LIVE_SPACES } from './fixtures/workflow.ts'
 
@@ -11,6 +15,41 @@ export const MAIN_CWD = '/Users/andresmartinez/thoven/frontend'
 /** macOS gives TMPDIR a trailing slash; the inbox path must not double it. */
 export const TMPDIR = '/var/folders/15/408cjyln12l18dh26xh1gksh0000gn/T/'
 export const INBOX_DIR = `${TMPDIR}dispatch/out`
+
+// ── worlds ───────────────────────────────────────────────────────────────────────────────────
+
+export const fresh = <T>(value: T): Polled<T> => ({ k: 'fresh', value, at: 0 })
+
+export function must<T>(value: T | undefined): T {
+  if (value === undefined) throw new Error('expected a value')
+  return value
+}
+
+export function mainOf(space: string, pane: string, cwd = MAIN_CWD): Main {
+  return { k: 'main', space: space as SpaceId, pane: pane as PaneId, sid: 'sid-main' as SessionId, cwd, home: HOME, tmp: TMPDIR }
+}
+
+/** What main knows at 10 s: herdr's snapshot and the Live spaces table fresh, every other source of SOURCES unpolled unless `sources` says. */
+export function worldOf(me: Main, snapshot: string, o: { facts?: Fact[]; sources?: Partial<Sources> } = {}): World {
+  return {
+    now: 10_000,
+    me,
+    sources: { ...unpolled(), herdr: fresh(must(parseSnapshot(snapshot))), spaces: fresh(parseLiveSpaces(WORKFLOW_LIVE_SPACES)), ...o.sources },
+    facts: o.facts ?? [],
+    readbacks: new Map(),
+    inFlight: new Set(),
+    mainSkill: undefined,
+  }
+}
+
+/** Every Work row on the board, parents' children in place. */
+export const rowsOf = (board: Board): Row[] => board.build.flatMap((g) => (g.k === 'single' ? [g.row] : g.children))
+
+export function rowOf(world: World, ticket: string): Row {
+  const row = rowsOf(project(world)).find((r) => r.ticket === ticket)
+  if (!row) throw new Error(`no row for ${ticket}`)
+  return row
+}
 
 export const PANE = {
   plugin: 'thoven-cockpit',
