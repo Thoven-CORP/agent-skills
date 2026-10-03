@@ -25,7 +25,7 @@ import { CHECKPOINT_FRESH_MS, briefPath, briefsSent, builderTickets, checkpointO
 import { readPrompt, sendCalls } from './dispatch.ts'
 import { answerSeen, bashSeen, promptSeen, readbackSeen, skillSeen, type Observer } from './observe.ts'
 import { reviewSkill } from './review.ts'
-import { LINEAR_URL, readbacks, updateArgs, type StateQuery } from './linear.ts'
+import { LINEAR_URL, linearEntries, readbacks, updateArgs, type StateQuery } from './linear.ts'
 import { claimHeldBy, claimOf } from './facts.ts'
 import { COMMANDS, type Req } from './commands.ts'
 import { findMe, parseSnapshot, spaceOfPane } from './herdr.ts'
@@ -383,7 +383,7 @@ async function expire($: Api, m: MainState, now: Ms): Promise<void> {
   const board = m.board
   if (!board) return
   // The Linear state read (S4) is not wired yet, so merged-done deletion waits for it.
-  const gone = expired(await loadStored($), { now, prs: valueOf(m.sources.github)?.prs, linear: undefined, onBoard: ticketsOn(board) })
+  const gone = expired(await loadStored($), { now, prs: valueOf(m.sources.github)?.prs, linear: new Map([...linearEntries(m.sources)].map(([t, e]) => [t, e.state.name])), onBoard: ticketsOn(board) })
   for (const { key } of gone) await $.store.delete(key)
 }
 
