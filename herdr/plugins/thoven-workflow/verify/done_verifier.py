@@ -133,7 +133,7 @@ def check_pr(top, branch, dirty):
                            "number,state,statusCheckRollup"], cwd=top, timeout=25)
     if rc != 0:
         if "no pull requests found" in err.lower():
-            return "fail", f"no PR for {branch}"
+            return None  # main pushes and opens the PR (dispatch brief), so its absence is not the pane's
         return "pending", "PR lookup failed: " + (err.strip().splitlines() or ["?"])[-1][:60]
     try:
         pr = json.loads(out)
