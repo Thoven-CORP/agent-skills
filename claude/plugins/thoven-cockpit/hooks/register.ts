@@ -23,7 +23,8 @@ import type { EngineInterface, Register, RenderElement } from 'claude-code'
 import { project } from './board.ts'
 import { CHECKPOINT_FRESH_MS, briefPath, briefsSent, builderTickets, checkpointOf, checkpointText, isWatching, labelRecords, recordKey, rulingsFrom, sentLines, statusWarning, watcherWarning, type BackgroundTasks } from './background.ts'
 import { readPrompt, sendCalls } from './dispatch.ts'
-import { answerSeen, bashSeen, promptSeen, type Observer } from './observe.ts'
+import { answerSeen, bashSeen, promptSeen, skillSeen, type Observer } from './observe.ts'
+import { reviewSkill } from './review.ts'
 import { claimHeldBy, claimOf } from './facts.ts'
 import { COMMANDS, type Req } from './commands.ts'
 import { findMe, parseSnapshot, spaceOfPane } from './herdr.ts'
@@ -62,6 +63,8 @@ let main: MainState | undefined
 let ui: PaneUi = { tab: 'work', selected: undefined, selectedPr: undefined, checks: undefined }
 /** What main's `classic.Stop` saw, for the `turn.complete` that follows it about 200 ms later (spike check 4). */
 let stopped: { watching: boolean } | undefined
+/** Skills whose Skill tool call is open in this session's main loop, once per open call. */
+const openSkillCalls: string[] = []
 
 export const register: Register = (on) => {
   on('session.start', ($, e, next) => observeThenPass($, 'session.start', e, next, () => startSession($))).catch(passThrough)
@@ -90,6 +93,12 @@ export const register: Register = (on) => {
   // send.sh is how a brief or fix round reaches a pane. Observed after it ran: a refused or failed
   // call sent nothing.
   on('tool.call', { tool: 'Bash' }, ($, e, next) => passThenObserve($, 'tool.call', e, next, (r) => noteBash($, r, e.command))).catch(passThrough)
+
+  // A Review skill this session runs (S3). A typed `/skill` fires skill.prompt alone. A model's
+  // Skill call fires skill.prompt inside tool.call{Skill}, and only the call's result says whether
+  // it ran read-only, so while the call is open skill.prompt leaves that skill to it.
+  on('skill.prompt', ($, e, next) => observeThenPass($, 'skill.prompt', e, next, () => noteSkillPrompt($, e))).catch(passThrough)
+  on('tool.call', { tool: 'Skill' }, ($, e, next) => passThenObserve($, 'tool.call', e, (ev) => holdSkill(e.skill, () => next(ev)), (r) => noteSkillCall($, r, e))).catch(passThrough)
 
   // `/cockpit doctor` reports; any other argument is ignored and opens the cockpit.
   on('command.run', { command: 'cockpit' }, ($, e) => runCockpit($, e.args)).catch(passThrough)
@@ -498,6 +507,40 @@ async function noteBash($: Api, r: object, command: unknown): Promise<void> {
   if (('deny' in r && r.deny !== undefined) || ('isError' in r && r.isError === true) || typeof command !== 'string') return
   const calls = sendCalls(command)
   if (calls.length > 0) await record($, bashSeen, calls)
+}
+
+/** A loop's event carries `agentId` only inside a subagent or teammate: their skills are not this session's. */
+const isSubagent = (e: object): boolean => 'agentId' in e && e.agentId !== undefined
+
+/** Mark a Skill call open while it runs. `finally`, not a try: the call's failure still reaches the caller. */
+function holdSkill<R>(skill: unknown, run: () => Promise<R>): Promise<R> {
+  const name = typeof skill === 'string' ? skill : ''
+  openSkillCalls.push(name)
+  return run().finally(() => {
+    openSkillCalls.splice(openSkillCalls.indexOf(name), 1)
+  })
+}
+
+async function noteSkillPrompt($: Api, e: { skill: string }): Promise<void> {
+  if (isSubagent(e) || openSkillCalls.includes(e.skill)) return
+  await noteSkill($, e.skill)
+}
+
+/** A Skill call that answered, ran in this loop, and did not run read-only (`isReadOnly`, or the Skill's own `readOnly`). */
+async function noteSkillCall($: Api, r: object, e: object): Promise<void> {
+  if (isSubagent(e) || !('skill' in e) || typeof e.skill !== 'string') return
+  if (('deny' in r && r.deny !== undefined) || ('isError' in r && r.isError === true) || ('isReadOnly' in r && r.isReadOnly === true)) return
+  const result = 'result' in r ? r.result : undefined
+  if (typeof result === 'object' && result !== null && (('readOnly' in result && result.readOnly === true) || ('success' in result && result.success === false))) return
+  await noteSkill($, e.skill)
+}
+
+/** A Review skill, recorded against the briefs this session holds. Any other skill costs one regex. */
+async function noteSkill($: Api, name: string): Promise<void> {
+  const skill = reviewSkill(name)
+  if (skill === undefined || me.k === 'inert') return
+  const briefs = (await loadFacts($, 'brief')).flatMap((f) => (f.kind === 'brief' ? [f] : []))
+  await record($, skillSeen, { skill, briefs })
 }
 
 /** Run a pure observer on what a hook saw, keep its `me`, and write its facts. */

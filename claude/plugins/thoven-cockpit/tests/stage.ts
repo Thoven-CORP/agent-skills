@@ -150,6 +150,10 @@ export type Stage = {
   bashThrows: string | undefined
   /** Every `$.fs` call, in order: `read <path>`, `list <path>` or `exists <path>`. */
   fsCalls: string[]
+  /** What the Skill tool answers (S3): core's `{ result, text }`, with `isReadOnly` when a test sets it. */
+  skillResult: Record<string, unknown>
+  /** What fires inside the Skill call before it answers, as skill.prompt does in a real one. */
+  skillInside: (() => Promise<unknown>) | undefined
   snapshots(): number
   paneGets(): string[]
 }
@@ -175,6 +179,8 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
     setKeys: [],
     fsCalls: [],
     bashThrows: undefined,
+    skillInside: undefined,
+    skillResult: { result: { success: true, commandName: 'verify-this' }, text: 'Launching skill: verify-this' },
     snapshots: () => ranTimes(s, COMMANDS['herdr api snapshot']()),
     paneGets: () => s.argvs.filter((a) => a[1] === 'pane' && a[2] === 'get').map((a) => a[3] ?? ''),
   }
@@ -236,7 +242,12 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
   })
   on('prompt.submit', (_$: unknown, e: { text: string }) => ({ text: e.text }))
   on('session.receive', (_$: unknown, e: { text: string }) => ({ text: e.text }))
-  on('tool.call', () => {
+  on('skill.prompt', (_$: unknown, e: { text: string }) => ({ text: e.text }))
+  on('tool.call', async (_$: unknown, e: { tool?: string }) => {
+    if (e.tool === 'Skill') {
+      await s.skillInside?.()
+      return s.skillResult
+    }
     if (s.bashThrows !== undefined) throw new Error(s.bashThrows)
     return { result: { stdout: '', stderr: '', interrupted: false } }
   })

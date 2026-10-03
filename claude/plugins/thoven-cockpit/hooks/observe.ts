@@ -5,7 +5,7 @@
 // report, verdict or send.sh call means for the store lives here, not in the shell.
 
 import type { ReportLine, readPrompt } from './dispatch.ts'
-import { VERDICTS, isOneOf, type Engagement, type Fact, type Me, type Ms, type ReportStatus, type SendCall, type SessionId, type StatusLine } from './model.ts'
+import { VERDICTS, isOneOf, type Engagement, type Fact, type FactOf, type Me, type Ms, type ReportStatus, type ReviewSkill, type SendCall, type SessionId, type StatusLine } from './model.ts'
 
 export type Observed = { facts: Fact[]; me: Me }
 export type Observer<I> = (me: Me, input: I, sid: SessionId, at: Ms) => Observed
@@ -47,4 +47,18 @@ export const bashSeen: Observer<readonly SendCall[]> = (me, calls, _sid, at) => 
 export const answerSeen: Observer<ReadonlyArray<StatusLine & { word: ReportStatus }>> = (me, lines, sid, at) => ({
   me,
   facts: me.k === 'pane' ? lines.map((l) => ({ kind: 'status', ticket: l.ticket, sid, status: l.word, text: l.line, at })) : [],
+})
+
+/**
+ * A Review skill this session ran itself, with the brief facts it wrote (ADR12): one fact per ticket
+ * it holds a brief for, `review` under a verifier brief and `self` under any other, in the round of
+ * that brief. A session with no brief (main, a /clear, Andres's own sessions) records nothing.
+ */
+export const skillSeen: Observer<{ skill: ReviewSkill; briefs: ReadonlyArray<FactOf<'brief'>> }> = (me, { skill, briefs }, sid, at) => ({
+  me,
+  facts: briefs.flatMap((b): Fact[] => {
+    if (b.sid !== sid) return []
+    const run = { ticket: b.ticket, sid, skill, round: b.at, at }
+    return [b.k === 'first' && b.role === 'verifier' ? { kind: 'review', ...run } : { kind: 'self', ...run }]
+  }),
 })
