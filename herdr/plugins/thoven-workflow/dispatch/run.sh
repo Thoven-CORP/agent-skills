@@ -145,7 +145,15 @@ if [ "$dry" = 1 ]; then
   show "$TW_HERDR" agent prompt "$name" "<self-brief below>"
   printf -- '----- self-brief for %s -----\n%s\n----- end -----\n' "$name" "$brief"
 else
-  "$TW_HERDR" agent prompt "$name" "$brief" >/dev/null || { fail "agent prompt to $name failed"; exit 1; }
+  "$TW_HERDR" agent wait "$name" --until idle --until done --timeout 60000 >/dev/null 2>&1 || true
+  # A long brief can land in Claude Code's input box after the submit key, so it sits there unsent
+  # and the pane stays idle (THV-981, 2026-10-03). Confirm the agent started; press Enter once if not.
+  if ! "$TW_HERDR" agent prompt "$name" "$brief" --wait --until working --until blocked --timeout 30000 >/dev/null 2>&1; then
+    log "$name did not start on the brief; pressing Enter"
+    "$TW_HERDR" agent send-keys "$name" enter >/dev/null 2>&1 || true
+    "$TW_HERDR" agent wait "$name" --until working --until blocked --until done --timeout 30000 >/dev/null 2>&1 ||
+      { fail "$name in $pane never started on the brief; it may sit unsent in the input box"; exit 1; }
+  fi
 fi
 
 where="$label ($pane)"
