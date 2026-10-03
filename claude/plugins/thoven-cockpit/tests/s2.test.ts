@@ -243,6 +243,10 @@ test('an inbox file newer than any delivered report shows unsent; an older one d
   const escalation = inboxFile('thv-1041.md', OUT_ESCALATION_THV_1004.replaceAll('THV-1004', 'THV-1041'), 8000)
   const both = (files: InboxFile[]) => rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [], { inbox: fresh(files) }), 'THV-1041').report.k
   expect(file && escalation ? [both([file, escalation]), both([escalation, file])] : []).toEqual(['escalation', 'escalation'])
+  // An undelivered verdict is never the Report cell: the delivered report stays.
+  const verdict = inboxFile('THV-1041.md', 'VERIFIED THV-1041\n', 7000)
+  const withVerdict = rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [report('THV-1041', 'sid-b', 'DONE', 5000)], { inbox: fresh(verdict ? [verdict] : []) }), 'THV-1041')
+  expect(withVerdict.report).toEqual({ k: 'in', status: 'DONE', at: 5000, concerns: 0, selfChecked: false })
 })
 
 test('Fix cell: main send.sh round wins; without one, the pane FIX ROUND brief gives it', async () => {

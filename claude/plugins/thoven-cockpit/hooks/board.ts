@@ -238,9 +238,9 @@ function tiedLabel(facts: readonly Fact[], p: Pane): Label | undefined {
 
 function reportCell(t: Ticket, facts: readonly Fact[], inbox: readonly InboxFile[]): ReportCell {
   const report = newest(factsOf(facts, 'report', t))
-  const file = newest(inbox.filter((f) => f.ticket === t && f.k !== 'note' && (report === undefined || f.at > report.at)))
+  // An undelivered verdict is the verifier's, so it waits for the Review cell (S3), never this one.
+  const file = newest(inbox.filter((f) => f.ticket === t && (f.k === 'report' || f.k === 'escalation') && (report === undefined || f.at > report.at)))
   if (file?.k === 'report') return { k: 'undelivered', status: file.line.word, file: file.name, selfChecked: false }
-  if (file?.k === 'verdict') return { k: 'undelivered', status: undefined, file: file.name, selfChecked: false }
   if (file?.k === 'escalation') return { k: 'escalation', head: file.head }
   return report ? { k: 'in', status: report.status, at: report.at, concerns: report.concerns, selfChecked: false } : { k: 'none' }
 }
