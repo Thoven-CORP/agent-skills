@@ -8,7 +8,7 @@ const thv63AsFound = {
   state: 'Todo',
   assignee: null,
   milestone: null,
-  writesTo: 'thoven2.0/teacher-2.0/projects/00-onboarding/DESIGN_ONBOARDING.md',
+  writesTo: 'docs/Teacher_Onboarding_Tour/PRD.md',
   writesToExists: true,
 };
 
@@ -17,7 +17,7 @@ const thv63Claimed = {
   state: 'In Progress',
   assignee: 'Cursor',
   milestone: 'Design',
-  writesTo: 'thoven2.0/teacher-2.0/projects/00-onboarding/DESIGN_ONBOARDING.md',
+  writesTo: 'docs/Teacher_Onboarding_Tour/PRD.md',
   writesToExists: true,
 };
 
@@ -64,7 +64,7 @@ test('retired Speccing lane with Writes to: is red', () => {
     state: 'Speccing',
     assignee: 'Cursor',
     milestone: 'Design',
-    writesTo: 'thoven2.0/teacher-2.0/projects/00-onboarding/DESIGN_ONBOARDING.md',
+    writesTo: 'docs/Teacher_Onboarding_Tour/PRD.md',
     writesToExists: true,
   });
   assert.equal(r.ok, false);

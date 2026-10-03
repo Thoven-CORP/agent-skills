@@ -21,9 +21,9 @@
         "icons": "Icons and the two tiers. Open lib/icon-tokens.ts and the icon tests.",
         "motion": "Motion, springs, reduced motion. Open lib/motion-config.ts.",
         "layout": "Layout, viewport, spacing. There is no token module. Open docs/design/layout.md.",
-        "lexicon": "What a thing is called. Open design-system/lexicon/LEXICON.md in thoven2.0.",
+        "lexicon": "What a thing is called. Open design/lexicon/LEXICON.md in the frontend repo.",
         "components_ui": "Does a component already exist? Dialog, sheet, popover, primitive. Open components/ui/ (primitives only).",
-        "stack_md": "Could a user name it, build or take, Interior vs base-ui. Open design-system/STACK.md rule 7.",
+        "stack_md": "Could a user name it, build or take, Interior vs base-ui. Open design/STACK.md rule 7 in the frontend repo.",
         "design_md": "A declared lock, a divergence row, or intent with no token module. Open DESIGN.md."
       }
     }
