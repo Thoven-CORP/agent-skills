@@ -53,7 +53,8 @@ async function main(argv) {
     try {
       console.log(`${id} ${await move(key, id, stateName)}`);
     } catch (error) {
-      console.log(`${id} ERROR ${error.message}`);
+      // fetch quotes a malformed header value in its error, so never let the key reach output.
+      console.log(`${id} ERROR ${String(error.message).replace(/lin_api_\w+/g, "lin_api_[redacted]")}`);
       failed = 1;
     }
   }
