@@ -7,7 +7,9 @@
 #
 #   thoven-stale-refs                   one line per hit, then a count per root; exit 1 on any hit
 #   thoven-stale-refs --count           the counts only
-#   thoven-stale-refs [--count] DIR...  scan DIRs instead of the default roots
+#   thoven-stale-refs [--count] ROOT...  scan ROOTs instead of the default roots
+#
+# A root that is a git checkout is scanned through git grep, so untracked local files do not count.
 set -uo pipefail
 
 PATTERN='release/2\.0|feature/teacher-2\.0|integrate/2\.0|thoven\.vercel\.app|thoven2\.0'
@@ -15,17 +17,51 @@ ROOTS=(
   "$HOME/thoven/frontend"
   "$HOME/thoven/backend"
   "$HOME/thoven/agent-skills"
-  "$HOME/thoven/.workspace"
+  # The rest of .workspace is session history (THV-1038 inventory). These three are live law.
+  "$HOME/thoven/.workspace/CLAUDE-root.md"
+  "$HOME/thoven/.workspace/AGENTS-root.md"
+  "$HOME/thoven/.workspace/CONTEXT-MAP.md"
   "$HOME/thoven/CI_CD.md"
 )
 # Paths whose job is to record the past.
 EXEMPT='/(archive|_archive|audit|audits|history|node_modules|\.git|\.next|coverage|tmp|log|vendor|orchestrate|checkins|runs|reports|scratch|\.specs|resume-prompts|wireframe)/|/TODO\.md|/TECH_DEBT\.md|/thoven-stale-refs|CHANGELOG|/decisions/|/adr/|/plans/20[0-9]{2}-|/plans/[^/]*20[0-9]{2}-[0-9]{2}|\.bak|\.jsonl$|/graphify-out/|/test-results/|/playwright-report/|package-lock\.json$|/\.agents/|/\.claude/worktrees/'
 
-# Records the THV-1038 inventory ruled history. They cite thoven2.0 as it was then.
-HISTORY='/\.audit/|/decisions\.tsv|/\.superpowers/|/docs/superpowers/|/\.scratch/|/docs/Design_Practice/|/docs/Book_Lessons/CONTINUE_HERE\.md|/docs/Payment_Request_Management/|/docs/Platform/projects/platform-upgrade-and-hosting/(STATE\.md|research/)'
+# Records the THV-1038 inventory ruled history, per repo. They cite thoven2.0 as it was then.
+# Matched against the root-relative path only.
+FE_HISTORY='^(\.audit/|decisions\.tsv:|\.superpowers/|docs/superpowers/|docs/Design_Practice/|docs/Book_Lessons/CONTINUE_HERE\.md:|docs/Payment_Request_Management/|docs/Platform/projects/platform-upgrade-and-hosting/(STATE\.md:|research/))'
+BE_HISTORY='^\.scratch/'
 
 # A live doc may still name the old model when the same line says it is gone.
 ALLOW='retired|deleted|superseded|no longer|formerly|stale-ok'
+
+drop_history() {
+  case "$(basename "$1")" in
+    frontend*) grep -vE "$FE_HISTORY" ;;
+    backend*) grep -vE "$BE_HISTORY" ;;
+    *) cat ;;
+  esac
+}
+
+# Prints hits as root-relative path:line:text.
+scan_relative() {
+  if git -C "$1" rev-parse --git-dir >/dev/null 2>&1; then
+    git -C "$1" grep -nIE "$PATTERN" -- . ':(exclude,glob)**/public/**' ':(exclude,glob)**/storage/**' \
+      ':(exclude)*.lock' ':(exclude)package-lock.json' ':(exclude)*.min.js' ':(exclude)*.map'
+  else
+    grep -rInE "$PATTERN" "$1" \
+      --exclude-dir={node_modules,.git,.next,coverage,tmp,log,vendor,graphify-out,test-results,playwright-report,worktrees,storage,public} \
+      --exclude='*.lock' --exclude='package-lock.json' --exclude='*.min.js' --exclude='*.map' |
+      cut -c$((${#1} + 2))-
+  fi
+}
+
+scan() {
+  if [ -f "$1" ]; then
+    grep -HnIE "$PATTERN" "$1"
+  else
+    scan_relative "$1" 2>/dev/null | drop_history "$1" | sed "s|^|$1/|"
+  fi
+}
 
 count_only=0
 [ "${1:-}" = --count ] && { count_only=1; shift; }
@@ -33,10 +69,7 @@ count_only=0
 total=0
 for root in "${ROOTS[@]}"; do
   [ -e "$root" ] || continue
-  hits=$(grep -rInE "$PATTERN" "$root" \
-    --exclude-dir={node_modules,.git,.next,coverage,tmp,log,vendor,graphify-out,test-results,playwright-report,worktrees,storage,public} \
-    --exclude='*.lock' --exclude='package-lock.json' --exclude='*.min.js' --exclude='*.map' \
-    2>/dev/null | grep -vE "$EXEMPT" | grep -vE "$HISTORY" | grep -viE "$ALLOW" || true)
+  hits=$(scan "$root" 2>/dev/null | grep -vE "$EXEMPT" | grep -viE "$ALLOW" || true)
   n=$(printf '%s' "$hits" | grep -c . || true)
   total=$((total + n))
   [ "$count_only" = 1 ] || { [ -n "$hits" ] && printf '%s\n' "$hits"; }
