@@ -298,8 +298,6 @@ function ciDrawn(c: CiCell): Drawn {
 
 function linearText(l: Cells['linear']): string {
   switch (l.k) {
-    case 'hidden':
-      return ''
     case 'none':
       return DASH
     case 'ok':

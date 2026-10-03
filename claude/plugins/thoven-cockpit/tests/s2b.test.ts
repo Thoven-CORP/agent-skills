@@ -240,8 +240,8 @@ test('the this-session row on ui/thv-481 shows PR #136 and CI ✓, and no Linear
     },
   })
   const row = rowOf(world, 'THV-481')
-  expect([row.origin, row.cells.pr, row.cells.ci, row.cells.linear]).toEqual(['this-session', { k: 'own', pr: prOf(FRONTEND, GH_FRONTEND, 136) }, { k: 'pass' }, { k: 'hidden' }])
-  expect([cellText(row, 'pr'), cellText(row, 'ci'), cellText(row, 'linear')]).toEqual(['#136', '✓', ''])
+  expect([row.origin, row.cells.pr, row.cells.ci, row.cells.linear]).toEqual(['this-session', { k: 'own', pr: prOf(FRONTEND, GH_FRONTEND, 136) }, { k: 'pass' }, { k: 'none' }])
+  expect([cellText(row, 'pr'), cellText(row, 'ci'), cellText(row, 'linear')]).toEqual(['#136', '✓', '–'])
 })
 
 test('a PR with no ticket is listed only while a space pane has its branch checked out', async () => {

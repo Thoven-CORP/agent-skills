@@ -326,7 +326,6 @@ export type PrCell = { k: 'none' } | { k: 'own'; pr: Pr } | { k: 'shared'; pr: P
 export type CiCell = { k: 'none' } | { k: 'pass' } | { k: 'fail'; failed: number } | { k: 'running'; done: number; total: number }
 
 export type LinearCell =
-  | { k: 'hidden' } // the space has no Project, so the column is not drawn
   | { k: 'none' } // not read yet
   | { k: 'ok' }
   | { k: 'pending'; pending: Pending[]; isInFlight: boolean }

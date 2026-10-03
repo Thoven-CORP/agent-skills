@@ -92,7 +92,7 @@ export function project(world: World): Board {
   if (mine && !ids.some((id) => id.ticket === mine.ticket)) ids.push(mine)
 
   const join = prJoin(world, panes, ids)
-  const context = { inbox: valueOf(world.sources.inbox) ?? [], join, project: projectName }
+  const context = { inbox: valueOf(world.sources.inbox) ?? [], join }
 
   return {
     space,
@@ -112,7 +112,7 @@ export function project(world: World): Board {
 }
 
 /** Every cell of a row, from the facts about its ticket and what the sources say. */
-function cellsOf(t: Ticket, about: BoardFacts, s: { inbox: readonly InboxFile[]; join: ReturnType<typeof prJoin>; project: string | undefined }): Cells {
+function cellsOf(t: Ticket, about: BoardFacts, s: { inbox: readonly InboxFile[]; join: ReturnType<typeof prJoin> }): Cells {
   const pr = s.join.cell(t)
   return {
     report: reportCell(t, about, s.inbox),
@@ -120,7 +120,7 @@ function cellsOf(t: Ticket, about: BoardFacts, s: { inbox: readonly InboxFile[];
     review: { k: 'none', offer: undefined },
     pr,
     ci: pr.k === 'none' ? { k: 'none' } : ciCell(pr.pr),
-    linear: s.project === undefined ? { k: 'hidden' } : { k: 'none' },
+    linear: { k: 'none' },
   }
 }
 

@@ -5,7 +5,7 @@ import { expect, test } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { branchTicket, parseLabel, pickLabel } from '../hooks/dispatch.ts'
 import { parseSnapshot } from '../hooks/herdr.ts'
-import type { Board, PaneId, Row } from '../hooks/model.ts'
+import type { Board, PaneId } from '../hooks/model.ts'
 import { SOURCES, headPathOf, parseHead } from '../hooks/sources.ts'
 import { cellText, columnsFor } from '../hooks/view.ts'
 import { DOT_GIT_THV_481, DOT_GIT_WORKTREE, HEAD_COCKPIT, HEAD_THV_481 } from './fixtures/git.ts'
@@ -79,7 +79,7 @@ test("w18 with a Build tab: p8V is the THV-1045 row, main's own labelled pane is
           review: { k: 'none', offer: undefined },
           pr: { k: 'none' },
           ci: { k: 'none' },
-          linear: { k: 'hidden' },
+          linear: { k: 'none' },
         },
       },
     },
@@ -115,7 +115,7 @@ test('this-session row: main on cockpit/thv-1058 with no dispatch shows one row 
           review: { k: 'none', offer: undefined },
           pr: { k: 'none' },
           ci: { k: 'none' },
-          linear: { k: 'hidden' },
+          linear: { k: 'none' },
         },
       },
     },
@@ -135,7 +135,7 @@ test('a multi-ticket pane gives three Build rows that share the pane', async () 
   const board = project(worldOf(mainOf('w18', 'w18:p8W'), relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Book Lessons follow-ups (THV-843 847 851)')))
   const p8V = { status: 'idle', tool: 'C', pane: 'w18:p8V' }
   const shared = { title: 'Book Lessons follow-ups', kind: undefined, origin: 'label', panes: { k: 'live', list: [p8V] }, verifierPane: { k: 'none' } }
-  const cells = { report: { k: 'none' }, fix: { k: 'none' }, review: { k: 'none', offer: undefined }, pr: { k: 'none' }, ci: { k: 'none' }, linear: { k: 'hidden' } }
+  const cells = { report: { k: 'none' }, fix: { k: 'none' }, review: { k: 'none', offer: undefined }, pr: { k: 'none' }, ci: { k: 'none' }, linear: { k: 'none' } }
   expect(board.build).toEqual([
     { k: 'single', row: { ticket: 'THV-843', ...shared, cells } },
     { k: 'single', row: { ticket: 'THV-847', ...shared, cells } },
@@ -216,9 +216,8 @@ test('the heads cache keeps only answers that succeeded, and only for folders st
 
 test('cellText: an S1 row shows its Pane glyph and tool tag, and a dash in every later column', async () => {
   const row = rowOf(worldOf(mainOf('w18', 'w18:p8W'), SNAPSHOT_W18_BUILD), 'THV-1045')
-  expect((['pane', 'report', 'fix', 'review', 'pr', 'ci', 'linear'] as const).map((id) => cellText(row, id))).toEqual(['○ C', '–', '–', '– – – –', '–', '–', ''])
-  const working: Row = { ...row, panes: { k: 'live', list: [{ status: 'working', tool: 'X', pane: 'w18:p8V' as PaneId }] }, cells: { ...row.cells, linear: { k: 'none' } } }
-  expect([cellText(working, 'pane'), cellText(working, 'linear')]).toEqual(['◐ X', '–'])
+  expect((['pane', 'report', 'fix', 'review', 'pr', 'ci', 'linear'] as const).map((id) => cellText(row, id))).toEqual(['○ C', '–', '–', '– – – –', '–', '–', '–'])
+  expect(cellText({ ...row, panes: { k: 'live', list: [{ status: 'working', tool: 'X', pane: 'w18:p8V' as PaneId }] } }, 'pane')).toBe('◐ X')
   expect(cellText({ ...row, panes: { k: 'gone' } }, 'pane')).toBe('gone')
 })
 
