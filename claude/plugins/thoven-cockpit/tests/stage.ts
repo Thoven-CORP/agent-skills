@@ -38,13 +38,23 @@ export type Stage = {
   opened: Array<Record<string, unknown>>
   closed: string[]
   registered: string[]
+  /** Every `$.clock.every` and `$.clock.after` the mod started, with its period. */
+  timers: Array<['every' | 'after', number]>
   storeCalls: { n: number }
   herdr: { mode: 'ok' | 'fail' | 'hang' }
   snapshots(): number
 }
 
 export function stage(on: any, o: { pane?: string; sid?: string; snapshot: string; store?: Record<string, unknown> }): Stage {
-  const clock = mock.clock(on)
+  const timers: Stage['timers'] = []
+  // An event takes one hook per test, so the recorder rides inside mock.clock's own hooks.
+  const recording = (pattern: string, ...rest: any[]) => {
+    const hook = rest.pop()
+    const kind = pattern === 'clock.every' ? 'every' : pattern === 'clock.after' ? 'after' : undefined
+    const wrapped = kind ? (...args: any[]) => (timers.push([kind, args[1].ms]), hook(...args)) : hook
+    return on(pattern, ...rest, wrapped)
+  }
+  const clock = mock.clock(recording as typeof on)
   mock.env(on, o.pane ? { HERDR_PANE_ID: o.pane, HOME } : { HOME })
   const s: Stage = {
     clock,
@@ -53,6 +63,7 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
     opened: [],
     closed: [],
     registered: [],
+    timers,
     storeCalls: { n: 0 },
     herdr: { mode: 'ok' },
     snapshots: () => s.argvs.filter((a) => a.join(' ') === 'herdr api snapshot').length,

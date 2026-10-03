@@ -315,3 +315,15 @@ test('a drawn Build row and the heading row share the column widths for the pane
   expect(row && kids(row).map((c) => c.props.width)).toEqual([39, 5, 7, 5, 9, 9, 6])
   expect(heading && kids(heading).map((c) => c.props.width)).toEqual([39, 5, 7, 5, 9, 9, 6])
 })
+
+test('two sessions in one space: the pane that did not run /cockpit stays a pane and starts no timers', async ($, on) => {
+  // The claim exactly as the session in w18:p8W wrote it when it ran /cockpit (see the test above).
+  const claim = { kind: 'main', space: 'w18', sid: 'sid-a', pane: 'w18:p8W', at: 15_000 }
+  const s = stage(on, { pane: 'w18:p8V', sid: 'sid-b', snapshot: SNAPSHOT_LIVE, store: { 'cockpit:main:w18': claim } })
+  await start($)
+  await s.clock.advance(15_000)
+  expect(s.timers).toEqual([])
+  expect(s.snapshots()).toBe(0)
+  expect(s.saved.get('cockpit:main:w18')).toEqual(claim)
+  expect(s.opened).toEqual([])
+})
