@@ -12,7 +12,7 @@
 1 = { cli = "claude", model = "claude-fable-5-1", effort = 3 }
 2 = { cli = "claude", model = "claude-opus-5-5", effort = 3 }
 3 = { cli = "droid", model = "auto", effort = 1 }
-4 = { cli = "claude", model = "claude-sonnet-5", effort = 3 }
+4 = { cli = "droid", model = "gpt-5.6-luna", effort = 4 }
 
 # One block per CLI. herdr already knows how to run the CLI (`herdr agent start --kind`); a block
 # adds what herdr cannot know: the launch flags, the skill prefix and where the models come from.
