@@ -97,7 +97,7 @@ export type Brief =
  * A session's brief for one ticket as it holds it. A fix round is written to the key of the brief
  * before it, so it keeps that brief's kind, and any brief without a title keeps the title before it.
  */
-export type Engagement = Brief & { labelKind?: Kind; title?: string }
+export type Engagement = Brief & Pick<Extract<Brief, { k: 'first' }>, 'labelKind' | 'title'>
 
 /** One `send.sh <pane> …/<THV-n>[-fixN|-verify[N]].md` in a Bash command. */
 export type SendCall = { pane: PaneId; ticket: Ticket; role: Role; round: number; file: string }
