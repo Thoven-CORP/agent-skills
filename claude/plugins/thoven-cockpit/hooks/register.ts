@@ -36,8 +36,6 @@ type Api = EngineInterface
 const PANE_ID = 'cockpit'
 /** `/cockpit` answers within about this long, herdr up, down or hung. */
 const CLAIM_SNAPSHOT_MS = 3_000
-/** Synthesis A2: above this, facts move to per-session logs. Logged so the debug log shows it. */
-const STORE_SLOW_MS = 50
 
 /** What only main holds. becomeMain builds it fresh and loseClaim drops it, so a re-claim polls every source at once. */
 type MainState = {
@@ -47,7 +45,6 @@ type MainState = {
   board: Board | undefined
   heartbeat: { cancel(): void }
   isTicking: boolean
-  isStoreTimed: boolean
 }
 
 // ── Module state: caches only. Everything here can be lost on reload and rebuilt in one tick. ──
@@ -139,7 +136,7 @@ async function startSession($: Api): Promise<void> {
   } catch (err) {
     await debug($, 'command.register', err)
   }
-  await resolveMe($, (await $.session.id()) as SessionId)
+  await resolveMe($, await sessionId($))
 }
 
 /** `/cockpit`. It has no `next`, so a failure is the answer. */
@@ -176,8 +173,8 @@ function noteFocus(element: string): void {
  * Safe to repeat, because classic.SessionStart and session.start both run it at startup.
  */
 async function resolveMe($: Api, sid: SessionId): Promise<void> {
-  const pane = (await $.env.get('HERDR_PANE_ID')) as PaneId | undefined
-  const claim = pane ? claimHeldBy((await loadFacts($, 'main')).facts, pane) : undefined
+  const pane = await envPane($)
+  const claim = pane ? claimHeldBy(await loadFacts($, 'main'), pane) : undefined
   if (claim) {
     if (claim.sid !== sid) await writeFact($, { ...claim, sid })
     await becomeMain($, { ...claim, sid }, await $.session.cwd())
@@ -199,7 +196,7 @@ async function becomeMain($: Api, claim: FactOf<'main'>, cwd: string, herdr?: So
   })
   me = who
   const sources = herdr ? { ...unpolled(), herdr } : unpolled()
-  main = { who, sources, lastRun: herdr ? { herdr: claim.at } : {}, board: undefined, heartbeat, isTicking: false, isStoreTimed: false }
+  main = { who, sources, lastRun: herdr ? { herdr: claim.at } : {}, board: undefined, heartbeat, isTicking: false }
   void tick($)
 }
 
@@ -210,13 +207,13 @@ async function becomeMain($: Api, claim: FactOf<'main'>, cwd: string, herdr?: So
  * pane opens saying "herdr unavailable".
  */
 async function claimAndOpen($: Api): Promise<string> {
-  const envPane = await $.env.get('HERDR_PANE_ID')
-  const sid = (await $.session.id()) as SessionId
+  const herePane = await envPane($)
+  const sid = await sessionId($)
   const resp = await runProc($, COMMANDS['herdr api snapshot'](CLAIM_SNAPSHOT_MS))
   const snap = resp.k === 'ok' ? parseSnapshot(resp.value) : undefined
-  const mine = snap ? findMe(snap, envPane, sid) : undefined
-  const pane = mine?.pane ?? (snap ? undefined : (envPane as PaneId | undefined))
-  const space = mine?.space ?? (snap ? undefined : spaceOfPane(envPane))
+  const mine = snap ? findMe(snap, herePane, sid) : undefined
+  const pane = mine?.pane ?? (snap ? undefined : herePane)
+  const space = mine?.space ?? (snap ? undefined : spaceOfPane(herePane))
   if (!pane || !space) return 'Cockpit needs a herdr pane, and this session is not in one.'
 
   const now = await $.clock.now()
@@ -238,13 +235,7 @@ async function tick($: Api): Promise<void> {
   if (!m || m.isTicking) return
   m.isTicking = true
   try {
-    const t0 = await $.clock.now()
-    const { facts, reads } = await loadFacts($)
-    const readMs = (await $.clock.now()) - t0
-    if (!m.isStoreTimed || readMs > STORE_SLOW_MS) {
-      m.isStoreTimed = true
-      $.ui.log(`cockpit store: keys() and ${reads} gets in ${readMs} ms`, { to: 'debug' })
-    }
+    const facts = await loadFacts($)
 
     if (claimOf(facts, m.who.space)?.pane !== m.who.pane) {
       if (main === m) await loseClaim($)
@@ -335,11 +326,21 @@ async function listDir($: Api, path: string): Promise<Answer<Listing>> {
   }
 }
 
+/** The herdr pane this session runs in, branded once here. */
+async function envPane($: Api): Promise<PaneId | undefined> {
+  return (await $.env.get('HERDR_PANE_ID')) as PaneId | undefined
+}
+
+/** This session's id, branded once here. `/clear` changes it, so read it fresh each time. */
+async function sessionId($: Api): Promise<SessionId> {
+  return (await $.session.id()) as SessionId
+}
+
 /** Every `cockpit:` fact, or only one kind's. Values that do not validate are skipped, never thrown on. */
-async function loadFacts($: Api, only?: FactKind): Promise<{ facts: Fact[]; reads: number }> {
+async function loadFacts($: Api, only?: FactKind): Promise<Fact[]> {
   const keys = (await $.store.keys()).filter((key) => isFactKey(key, only))
   const values = await Promise.all(keys.map((key) => $.store.get(key)))
-  return { facts: keys.flatMap((key, i) => parseFact(key, values[i]) ?? []), reads: keys.length }
+  return keys.flatMap((key, i) => parseFact(key, values[i]) ?? [])
 }
 
 /** A prompt or hand-back any session received. The regex is all a session pays for a prompt that holds no status line and no brief. */
@@ -357,7 +358,7 @@ async function noteBash($: Api, r: object, command: unknown): Promise<void> {
 
 /** Run a pure observer on what a hook saw, keep its `me`, and write its facts. */
 async function record<I>($: Api, observer: Observer<I>, input: I): Promise<void> {
-  const sid = me.k === 'inert' ? ((await $.session.id()) as SessionId) : me.sid
+  const sid = me.k === 'inert' ? (await sessionId($)) : me.sid
   const at = await $.clock.now()
   // Read and replace `me` in one synchronous step, so a resolveMe between the awaits is not undone.
   const seen = observer(me, input, sid, at)
