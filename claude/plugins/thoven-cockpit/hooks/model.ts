@@ -306,21 +306,15 @@ export type ReportCell =
 
 export type FixCell = { k: 'none' } | { k: 'round'; round: number; of: number }
 
-/** One Review letter. `amber` exists only for T: thermo was due and did not run. */
-export type Light = 'lit' | 'dim' | 'off' | 'amber' | 'na'
+/** The Review column's letters, in order. */
+export const LETTERS = ['V', 'C', 'T', 'D'] as const
+export type Letter = (typeof LETTERS)[number]
+/** One Review letter. `amber` exists only for T: thermo was due and did not run. `claimed`: a VERIFIED line claimed it and the verifier session never ran it. */
+export type Light = 'lit' | 'dim' | 'off' | 'amber' | 'na' | 'claimed'
 export type ReviewCell =
-  | { k: 'none'; offer: 'code-review' | undefined } // hotfix space: `c` fills /code-review
-  | {
-      k: 'review'
-      V: Light
-      C: Light
-      T: Light
-      D: Light
-      round: number
-      tool: Tool | undefined
-      /** Letters a VERIFIED line claimed that the verifier session never ran. */
-      claimedNotRun: Array<'V' | 'C' | 'T' | 'D'>
-    }
+  | { k: 'none' }
+  | { k: 'offer'; skill: 'code-review' } // hotfix space: `c` fills /code-review
+  | { k: 'review'; lights: Record<Letter, Light>; round: number; tool: Tool | undefined }
 
 export type PrCell = { k: 'none' } | { k: 'own'; pr: Pr } | { k: 'shared'; pr: Pr } // "in #N"
 export type CiCell = { k: 'none' } | { k: 'pass' } | { k: 'fail'; failed: number } | { k: 'running'; done: number; total: number }

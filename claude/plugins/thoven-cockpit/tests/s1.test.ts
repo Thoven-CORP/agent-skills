@@ -76,7 +76,7 @@ test("w18 with a Build tab: p8V is the THV-1045 row, main's own labelled pane is
         cells: {
           report: { k: 'none' },
           fix: { k: 'none' },
-          review: { k: 'none', offer: undefined },
+          review: { k: 'none' },
           pr: { k: 'none' },
           ci: { k: 'none' },
           linear: { k: 'none' },
@@ -112,7 +112,7 @@ test('this-session row: main on cockpit/thv-1058 with no dispatch shows one row 
         cells: {
           report: { k: 'none' },
           fix: { k: 'none' },
-          review: { k: 'none', offer: undefined },
+          review: { k: 'none' },
           pr: { k: 'none' },
           ci: { k: 'none' },
           linear: { k: 'none' },
@@ -135,7 +135,7 @@ test('a multi-ticket pane gives three Build rows that share the pane', async () 
   const board = project(worldOf(mainOf('w18', 'w18:p8W'), relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Book Lessons follow-ups (THV-843 847 851)')))
   const p8V = { status: 'idle', tool: 'C', pane: 'w18:p8V' }
   const shared = { title: 'Book Lessons follow-ups', kind: undefined, origin: 'label', panes: { k: 'live', list: [p8V] }, verifierPane: { k: 'none' } }
-  const cells = { report: { k: 'none' }, fix: { k: 'none' }, review: { k: 'none', offer: undefined }, pr: { k: 'none' }, ci: { k: 'none' }, linear: { k: 'none' } }
+  const cells = { report: { k: 'none' }, fix: { k: 'none' }, review: { k: 'none' }, pr: { k: 'none' }, ci: { k: 'none' }, linear: { k: 'none' } }
   expect(board.build).toEqual([
     { k: 'single', row: { ticket: 'THV-843', ...shared, cells } },
     { k: 'single', row: { ticket: 'THV-847', ...shared, cells } },

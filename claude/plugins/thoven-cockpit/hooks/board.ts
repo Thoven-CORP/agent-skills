@@ -117,7 +117,7 @@ function cellsOf(t: Ticket, about: BoardFacts, s: { inbox: readonly InboxFile[];
   return {
     report: reportCell(t, about, s.inbox),
     fix: fixCell(about),
-    review: { k: 'none', offer: undefined },
+    review: { k: 'none' },
     pr,
     ci: pr.k === 'none' ? { k: 'none' } : ciCell(pr.pr),
     linear: { k: 'none' },

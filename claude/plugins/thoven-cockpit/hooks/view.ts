@@ -8,7 +8,8 @@
 import type { Elements, RenderElement } from 'claude-code'
 import { ciCell } from './board.ts'
 import { AGENT_SKILLS, BACKEND, FRONTEND } from './github.ts'
-import type { Board, Cells, CiCell, Group, Health, Intent, Ms, LivePane, OtherItem, PaneStatus, PaneUi, Pr, PrCell, PrItem, ReportStatus, Row, SourceId } from './model.ts'
+import { LETTERS } from './model.ts'
+import type { Board, Cells, CiCell, Group, Health, Intent, Letter, Light, Ms, LivePane, OtherItem, PaneStatus, PaneUi, Pr, PrCell, PrItem, ReportStatus, Row, SourceId } from './model.ts'
 
 /** The three elements the cockpit draws with, on whichever surface resolved them. */
 type El = Pick<Elements[keyof Elements], 'Box' | 'Text' | 'Button'>
@@ -266,13 +267,11 @@ function reportDrawn(r: Cells['report']): Drawn {
   return { text: r.k === 'na' ? 'n/a' : DASH }
 }
 
+const LIGHT_TEXT: Record<Light, (letter: Letter) => string> = { lit: (l) => l, dim: (l) => l, claimed: (l) => l, amber: () => '·', na: () => 'n/a', off: () => DASH }
+
+/** Until a verifier reports, and while the offer stands, every letter is a dash. */
 function reviewText(r: Cells['review']): string {
-  if (r.k === 'none') return `${DASH} ${DASH} ${DASH} ${DASH}`
-  const light = (letter: 'V' | 'C' | 'T' | 'D') => {
-    const l = r[letter]
-    return l === 'lit' || l === 'dim' ? letter : l === 'amber' ? '·' : l === 'na' ? 'n/a' : DASH
-  }
-  return (['V', 'C', 'T', 'D'] as const).map(light).join(' ')
+  return LETTERS.map((l) => (r.k === 'review' ? LIGHT_TEXT[r.lights[l]](l) : DASH)).join(' ')
 }
 
 /** The mock's classes: an open PR blue, a merged one green. */
