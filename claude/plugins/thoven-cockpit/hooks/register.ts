@@ -18,7 +18,7 @@
 
 import type { EngineInterface, Register } from 'claude-code'
 import { project } from './board.ts'
-import { findMe, focusReq, parseSnapshot, snapshotReq } from './herdr.ts'
+import { findMe, focusReq, parseSnapshot, snapshotReq, spaceOfPane } from './herdr.ts'
 import type { Board, Fact, FactKind, Intent, Main, Me, Ms, PaneId, PaneUi, Polled, SessionId, SourceId, Sources, SourceValues, World } from './model.ts'
 import { HEARTBEAT_MS, SOURCES, due, settle, type PolledId, type Req, type Resp, type Source } from './sources.ts'
 import { claimHeldBy, claimOf, keyOf, parseFact, parseKey } from './store.ts'
@@ -53,8 +53,13 @@ let sessionCwd = ''
 
 export const register: Register = (on) => {
   on('session.start', async ($, e, next) => {
+    // Its own try: a register that throws (as a re-registration can) must not keep main dark.
     try {
-      await $.command.register({ name: 'cockpit', description: 'Open the Thoven cockpit for this herdr space', argumentHint: '[doctor]', immediate: true })
+      await $.command.register({ name: 'cockpit', description: 'Open the Thoven cockpit for this herdr space', immediate: true })
+    } catch (err) {
+      await debug($, 'command.register', err)
+    }
+    try {
       sessionCwd = e.cwd
       await resolveMe($, (await $.session.id()) as SessionId)
     } catch (err) {
@@ -64,21 +69,21 @@ export const register: Register = (on) => {
   }).catch(passThrough)
 
   // Fires before session.start at startup (measured), and after /clear, /resume, /branch, compact.
+  // The compaction checkpoint arrives in S5.
   on('classic.SessionStart', async ($, e, next) => {
     const r = await next(e)
     try {
       if (e.cwd) sessionCwd = e.cwd
       await resolveMe($, e.session_id as SessionId)
-      if (e.source === 'compact' && me.k === 'main') return { ...r, additionalContext: [...(r.additionalContext ?? []), await checkpointFor($)] }
     } catch (err) {
       await debug($, 'classic.SessionStart', err)
     }
     return r
   }).catch(passThrough)
 
-  on('command.run', { command: 'cockpit' }, async ($, e) => {
+  // `/cockpit doctor` arrives in S6; until then every argument is ignored.
+  on('command.run', { command: 'cockpit' }, async ($) => {
     try {
-      if (e.args.trim() === 'doctor') return { text: await doctor($) }
       return { text: await claimAndOpen($) }
     } catch (err) {
       await debug($, 'command.run', err)
@@ -151,27 +156,31 @@ async function resolveMe($: Api, sid: SessionId): Promise<void> {
 
 /**
  * `/cockpit`: claim this session's space (last claim wins, ADR3) and open the pane. The claim's
- * snapshot doubles as the first herdr poll, so the first tick does not read herdr again.
+ * snapshot doubles as the first herdr poll, so the first tick does not read herdr again. With
+ * herdr down, the space comes from HERDR_PANE_ID and the pane opens saying "herdr unavailable".
  */
 async function claimAndOpen($: Api): Promise<string> {
   const envPane = await $.env.get('HERDR_PANE_ID')
   const sid = (await $.session.id()) as SessionId
   const resp = await perform($, snapshotReq())
   const snap = resp.k === 'ok' ? parseSnapshot(resp.text) : undefined
-  if (!snap) return `Cockpit could not read herdr: ${resp.k === 'fail' ? resp.error : 'the snapshot has a shape this cockpit does not know'}.`
-  const mine = findMe(snap, envPane, sid)
-  if (!mine) return 'Cockpit needs a herdr pane, and this session is not in one.'
+  const mine = snap ? findMe(snap, envPane, sid) : undefined
+  const pane = mine?.pane ?? (snap ? undefined : (envPane as PaneId | undefined))
+  const space = mine?.space ?? (snap ? undefined : spaceOfPane(envPane))
+  if (!pane || !space) return 'Cockpit needs a herdr pane, and this session is not in one.'
 
   const now = await $.clock.now()
-  await writeFact($, { kind: 'main', space: mine.space, sid, pane: mine.pane, at: now })
-  me = { k: 'main', pane: mine.pane, sid, space: mine.space, cwd: sessionCwd || mine.cwd, home: (await $.env.get('HOME')) ?? '' }
-  sources = { ...sources, herdr: settle(sources.herdr, snap, now, '') }
+  await writeFact($, { kind: 'main', space, sid, pane, at: now })
+  me = { k: 'main', pane, sid, space, cwd: sessionCwd || (mine?.cwd ?? ''), home: (await $.env.get('HOME')) ?? '' }
+  const error = resp.k === 'fail' ? resp.error : 'the snapshot has a shape this cockpit does not know'
+  sources = { ...sources, herdr: settle(sources.herdr, snap, now, error) }
   lastRun = { ...lastRun, herdr: now }
   isStoreTimed = false
   startHeartbeat($)
   await tick($)
   await $.ui.open({ id: PANE_ID, title: 'Cockpit', focus: true })
-  return `Cockpit is main of ${snap.spaces.find((s) => s.space === mine.space)?.label ?? mine.space}.`
+  if (!snap) return `Cockpit is main of ${space}, but herdr is unavailable.`
+  return `Cockpit is main of ${snap.spaces.find((s) => s.space === space)?.label ?? space}.`
 }
 
 function startHeartbeat($: Api): void {
@@ -303,14 +312,6 @@ async function act($: Api, intent: Intent): Promise<void> {
 async function focusPane($: Api, req: Req): Promise<void> {
   const r = await perform($, req)
   if (r.k === 'fail') await debug($, 'focus', r.error)
-}
-
-async function checkpointFor(_$: Api): Promise<string> {
-  throw new Error('not implemented (S5): compaction checkpoint')
-}
-
-async function doctor(_$: Api): Promise<string> {
-  throw new Error('not implemented (S6): /cockpit doctor')
 }
 
 function worldOf(main: Main, now: Ms, facts: Fact[]): World {

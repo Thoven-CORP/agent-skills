@@ -56,7 +56,13 @@ export type Stage = {
   opened: Array<Record<string, unknown>>
   closed: string[]
   registered: string[]
-  /** Every `$.clock.every` and `$.clock.after` the mod started, with its period. */
+  /** What each `$.command.register` was called with. */
+  registrations: Array<Record<string, unknown>>
+  /** Set to make `$.command.register` refuse, as a re-registration can. */
+  register: { deny: string | undefined }
+  /** Every `$.ui.log` line. */
+  logs: string[]
+  /** Every `$.clock.every` and `$.clock.after` wait, with its period. The kit raises an `every` again each period. */
   timers: Array<['every' | 'after', number]>
   storeCalls: { n: number }
   /** What `herdr api snapshot` does now; a test changes `snapshot` to move the space on. */
@@ -83,6 +89,9 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
     opened: [],
     closed: [],
     registered: [],
+    registrations: [],
+    register: { deny: undefined },
+    logs: [],
     timers,
     storeCalls: { n: 0 },
     herdr: { mode: 'ok', snapshot: o.snapshot },
@@ -109,10 +118,15 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
   on('store.delete', (_$: unknown, e: { key: string }) => (s.storeCalls.n++, s.saved.delete(e.key), { value: undefined }))
   on('store.keys', () => (s.storeCalls.n++, { value: [...s.saved.keys()] }))
   on('session.id', () => ({ value: o.sid ?? 'sid-a' }))
-  on('command.register', (_$: unknown, e: { name: string }) => (s.registered.push(e.name), { value: undefined }))
+  on('command.register', (_$: unknown, e: { name: string }) => {
+    s.registrations.push({ ...e })
+    if (s.register.deny !== undefined) return { deny: s.register.deny }
+    s.registered.push(e.name)
+    return { value: undefined }
+  })
   on('ui.open', (_$: unknown, e: Record<string, unknown>) => (s.opened.push(e), { value: { isPlaced: true } }))
   on('ui.close', (_$: unknown, e: { id: string }) => (s.closed.push(e.id), { value: undefined }))
-  on('ui.log', () => ({ value: undefined }))
+  on('ui.log', (_$: unknown, e: { text: string }) => (s.logs.push(e.text), { value: undefined }))
   on('fs.read', (_$: unknown, e: { path: string }) => (e.path.endsWith('WORKFLOW.md') ? { value: WORKFLOW_LIVE_SPACES } : { deny: `ENOENT: ${e.path}` }))
   on('session.start', () => ({ cwd: MAIN_CWD }))
   on('classic.SessionStart', () => ({}))
@@ -122,4 +136,4 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
 
 export const start = ($: any) => $.session.start({ surface: 'terminal', isInteractive: true, cwd: MAIN_CWD })
 /** `/cockpit`, typed at the prompt. */
-export const cockpit = ($: any): Promise<{ text?: string }> => $.command.run({ command: 'cockpit', args: '' })
+export const cockpit = ($: any, args = ''): Promise<{ text?: string }> => $.command.run({ command: 'cockpit', args })

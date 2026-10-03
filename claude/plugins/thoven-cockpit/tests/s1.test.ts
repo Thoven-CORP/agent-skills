@@ -302,6 +302,26 @@ test('after /clear the same pane is main again under its new session id, and dra
   expect(s.snapshots()).toBe(2)
 })
 
+test('a /cockpit re-registration that throws still leaves the claiming pane main', async ($, on) => {
+  const s = stage(on, { pane: 'w18:p8W', snapshot: SNAPSHOT_LIVE, store: { 'cockpit:main:w18': { kind: 'main', space: 'w18', sid: 'sid-a', pane: 'w18:p8W', at: 0 } } })
+  s.register.deny = 'command.register: cockpit is already registered'
+  await start($)
+  expect(s.registered).toEqual([])
+  expect(s.timers).toEqual([['every', 5_000], ['after', 0]])
+  await s.clock.advance(5_000)
+  expect(s.snapshots()).toBe(2)
+})
+
+test('S1 reaches no stub: no [doctor] hint, /cockpit doctor opens the cockpit, and compaction logs nothing', async ($, on) => {
+  const s = stage(on, { pane: 'w18:p8W', snapshot: SNAPSHOT_LIVE })
+  await start($)
+  expect(s.registrations).toEqual([{ name: 'cockpit', description: 'Open the Thoven cockpit for this herdr space', immediate: true }])
+  expect((await cockpit($, 'doctor')).text).toBe('Cockpit is main of Research.')
+  await $.classic.SessionStart({ session_id: 'sid-a', cwd: MAIN_CWD, source: 'compact', hook_event_name: 'SessionStart', transcript_path: '' } as any)
+  await s.clock.settle()
+  expect(s.logs.filter((l) => /not implemented|failed/.test(l))).toEqual([])
+})
+
 // ── kit: pane labels (ADR4) ──────────────────────────────────────────────────────────────────
 
 test("a label read with herdr pane get wins over the tab's label", async ($, on) => {
@@ -347,6 +367,25 @@ test('herdr exits 1: the pane says herdr unavailable, keeps the last rows, and n
   const ui = await $.ui.mount(PANE)
   expect(await ui.find({ type: 'Text', text: /^herdr unavailable since \d\d:\d\d$/ })).toBeDefined()
   expect((await ui.find({ key: 'row-THV-1045' }))?.props.label).toBe('Consent evidence hardening')
+})
+
+test('herdr exits 1 at /cockpit: the pane still opens and says herdr unavailable', async ($, on) => {
+  const s = stage(on, { pane: 'w18:p8W', snapshot: SNAPSHOT_LIVE })
+  s.herdr.mode = 'fail'
+  await start($)
+  const answer = await cockpit($)
+  expect(answer.text).toBe('Cockpit is main of w18, but herdr is unavailable.')
+  expect(s.saved.get('cockpit:main:w18')).toEqual({ kind: 'main', space: 'w18', sid: 'sid-a', pane: 'w18:p8W', at: 0 })
+  expect(s.opened).toEqual([{ id: 'cockpit', title: 'Cockpit', focus: true }])
+  const ui = await $.ui.mount(PANE)
+  expect(await ui.find({ type: 'Text', text: 'herdr unavailable' })).toBeDefined()
+
+  await ui.unmount()
+  s.herdr.mode = 'ok'
+  await s.clock.advance(5_000)
+  const back = await $.ui.mount(PANE)
+  expect(await back.find({ type: 'Text', text: 'Research' })).toBeDefined()
+  expect(await back.find({ type: 'Text', text: 'herdr unavailable' })).toBeUndefined()
 })
 
 test('herdr down since a reload: the pane says herdr unavailable', async ($, on) => {

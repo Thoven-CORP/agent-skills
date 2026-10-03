@@ -87,6 +87,15 @@ export function findMe(snapshot: Snapshot, envPane: string | undefined, sid: Ses
   return snapshot.panes.find((p) => p.pane === envPane) ?? snapshot.panes.find((p) => p.sid === sid)
 }
 
+/**
+ * `w18:p8W` → `w18`: herdr 0.9.0 prefixes every pane id with its workspace id. Used only when the
+ * snapshot cannot be read, so `/cockpit` can still claim and say "herdr unavailable".
+ */
+export function spaceOfPane(pane: string | undefined): SpaceId | undefined {
+  const m = pane === undefined ? null : /^([^:\s]+):[^:\s]+$/.exec(pane)
+  return m?.[1] as SpaceId | undefined
+}
+
 export function snapshotReq(): Req {
   return { k: 'proc', argv: herdr.snapshot(), timeoutMs: TIMEOUT_MS }
 }
