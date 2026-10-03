@@ -73,12 +73,6 @@ export function pickLabel(candidates: ReadonlyArray<string | undefined>): Label 
   return undefined
 }
 
-/** The last fallback, after `pickLabel`: the ticket the folder's branch names, titled by the branch. */
-export function labelOfBranch(branch: string | undefined): Label | undefined {
-  const t = branch === undefined ? undefined : branchTicket(branch)
-  return t && branch ? { kind: undefined, title: branch, tickets: [t] } : undefined
-}
-
 /** The ticket a branch names: `legal/thv-1045` → THV-1045, `sentry-error` → undefined. */
 export function branchTicket(branch: string): Ticket | undefined {
   const m = /thv-(\d+)/i.exec(branch)

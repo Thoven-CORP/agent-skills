@@ -3,7 +3,7 @@
 
 import { expect, test } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
-import { labelOfBranch, parseLabel, pickLabel } from '../hooks/dispatch.ts'
+import { branchTicket, parseLabel, pickLabel } from '../hooks/dispatch.ts'
 import { parseSnapshot } from '../hooks/herdr.ts'
 import type { Main, PaneId, Polled, SessionId, Snapshot, Sources, SpaceId, World } from '../hooks/model.ts'
 import { SOURCES, headPathOf, parseHead, parseLiveSpaces } from '../hooks/sources.ts'
@@ -74,8 +74,9 @@ test('a Build tab label with a null pane label gives a Build row titled from the
     title: 'Consent evidence hardening',
     tickets: ['THV-1045'],
   })
-  expect(pickLabel([undefined, '1', undefined]) ?? labelOfBranch('legal/thv-1045')).toEqual({ kind: undefined, title: 'legal/thv-1045', tickets: ['THV-1045'] })
-  expect(labelOfBranch('sentry-error')).toBeUndefined()
+  expect(pickLabel([undefined, '1', undefined])).toBeUndefined()
+  expect(branchTicket('legal/thv-1045')).toBe('THV-1045')
+  expect(branchTicket('sentry-error')).toBeUndefined()
 })
 
 test('a multi-ticket label gives three tickets', async () => {
@@ -224,7 +225,7 @@ test("a pane known only by its folder's branch is a Build row for the branch's t
   expect(ask.asked.slice(3)).toEqual([`read ${MAIN_CWD}/.git/HEAD`, `read ${worktreeHead}`])
   const board = project(worldOf(w0.me, snap(json), { heads: fresh(heads), branches: fresh(branches) }))
   expect(board.build.map((g) => (g.k === 'single' ? [g.row.ticket, g.row.title, g.row.kind, g.row.origin, g.row.panes] : []))).toEqual([
-    ['THV-481', 'ui/thv-481', undefined, 'label', { k: 'live', list: [{ status: 'idle', tool: 'C', pane: 'w4D:pH' }] }],
+    ['THV-481', 'ui/thv-481', undefined, 'branch', { k: 'live', list: [{ status: 'idle', tool: 'C', pane: 'w4D:pH' }] }],
   ])
   expect(board.other).toEqual([])
 })

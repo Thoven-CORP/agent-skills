@@ -29,7 +29,7 @@
 //      `happened` fact yet, is a new event for main to record once (synthesis A1), so S4's ↻
 //      survives a later report replacing it or the PR falling out of gh's last 50.
 
-import { branchTicket, labelOfBranch, pickLabel } from './dispatch.ts'
+import { branchTicket, pickLabel } from './dispatch.ts'
 import { factsOf } from './facts.ts'
 import { configPathOf } from './github.ts'
 import {
@@ -42,14 +42,16 @@ import {
   type Health,
   type InboxFile,
   type Kind,
-  type Label,
   type LinearEventId,
   type LivePane,
+  type NonEmpty,
   type OtherItem,
   type Pane,
   type PaneCell,
   type PaneId,
   type Panes,
+  type PaneLabels,
+  type Branches,
   type Pending,
   type Polled,
   type Pr,
@@ -64,7 +66,29 @@ import {
 } from './model.ts'
 import { bySource, valueOf } from './sources.ts'
 
-const BUILD_KINDS: ReadonlyArray<Kind | undefined> = ['Build', 'Fix', undefined]
+/** What ties a pane to its work: its label, else its folder's branch, else what main sent it. */
+type Tie = { kind: Kind | undefined; title: string; tickets: Ticket[]; origin: 'label' | 'branch' | 'dispatch' }
+
+/** Where a pane goes on the board. A shell (no tie, no agent) goes nowhere. */
+type Slot = { k: 'build' | 'review'; tie: Tie; pane: Pane } | { k: 'other'; tie: Tie | undefined; pane: Pane } | { k: 'shell' }
+
+/** The slot a tie naming a ticket takes, by its Kind. A tie with no Kind is an older Build label. */
+const SLOT_OF_KIND: Record<Kind, 'build' | 'review' | 'other'> = {
+  Build: 'build',
+  Fix: 'build',
+  Review: 'review',
+  Meta: 'other',
+  Plan: 'other',
+  Design: 'other',
+  Research: 'other',
+  Audit: 'other',
+}
+
+function slotOf(tie: Tie | undefined, p: Pane): Slot {
+  if (tie === undefined) return p.agent ? { k: 'other', tie, pane: p } : { k: 'shell' }
+  if (tie.tickets.length === 0) return { k: 'other', tie, pane: p }
+  return { k: tie.kind === undefined ? 'build' : SLOT_OF_KIND[tie.kind], tie, pane: p }
+}
 
 export function project(world: World): Board {
   const { me } = world
@@ -75,33 +99,33 @@ export function project(world: World): Board {
 
   const panes = (snap?.panes ?? []).filter((p) => p.space === me.space && p.pane !== me.pane)
   const branches = valueOf(world.sources.branches)
-  const labelled = panes.map((p) => {
-    const label = pickLabel([p.paneLabel ?? labels?.get(p.pane)?.label, p.tabLabel, p.terminalTitle]) ?? labelOfBranch(branches?.get(p.cwd))
-    if (label && label.tickets.length > 0) return { p, label, origin: 'label' as const }
-    const tied = tiedLabel(world.facts, p)
-    return tied ? { p, label: tied, origin: 'dispatch' as const } : { p, label, origin: 'label' as const }
-  })
 
-  const rows = new Map<Ticket, Row>()
-  for (const { p, label, origin } of labelled) {
-    if (!label || !BUILD_KINDS.includes(label.kind)) continue
-    for (const t of label.tickets) {
-      const r = rows.get(t)
-      rows.set(t, r?.panes.k === 'live' ? { ...r, panes: { k: 'live', list: [...r.panes.list, live(p)] } } : row(t, label, origin, { k: 'live', list: [live(p)] }, projectName))
-    }
-  }
-
-  for (const { p, label, origin } of labelled) {
-    if (label?.kind !== 'Review') continue
-    for (const t of label.tickets) rows.set(t, { ...(rows.get(t) ?? row(t, label, origin, { k: 'live', list: [live(p)] }, projectName)), verifierPane: cell(p) })
-  }
-
+  // A Build row is ordered by its first Build pane, a Review-only row after them all by its first Review pane.
+  const builds = new Map<Ticket, { tie: Tie; panes: NonEmpty<LivePane> }>()
+  const reviews = new Map<Ticket, { tie: Tie; pane: Pane; verifier: Pane }>()
   const other: OtherItem[] = []
-  for (const { p, label } of labelled) {
-    if (label && (BUILD_KINDS.includes(label.kind) || label.kind === 'Review') && label.tickets.length > 0) continue
-    if (label) other.push({ label: label.title, kind: label.kind, ticket: label.tickets[0], pane: cell(p), note: undefined })
-    else if (p.agent) other.push({ label: `tab "${p.tabLabel ?? p.tab}"`, kind: undefined, ticket: undefined, pane: cell(p), note: 'unlabelled' })
+  for (const s of panes.map((p) => slotOf(tieOf(world.facts, p, labels, branches), p))) {
+    if (s.k === 'build')
+      for (const t of s.tie.tickets) {
+        const b = builds.get(t)
+        if (b) b.panes.push(live(s.pane))
+        else builds.set(t, { tie: s.tie, panes: [live(s.pane)] })
+      }
+    else if (s.k === 'review')
+      for (const t of s.tie.tickets) {
+        const r = reviews.get(t)
+        reviews.set(t, { tie: r?.tie ?? s.tie, pane: r?.pane ?? s.pane, verifier: s.pane })
+      }
+    else if (s.k === 'other') other.push(otherItem(s.tie, s.pane))
   }
+
+  const verifierOf = (t: Ticket): PaneCell => {
+    const r = reviews.get(t)
+    return r ? cell(r.verifier) : { k: 'none' }
+  }
+  const rows = new Map<Ticket, Row>()
+  for (const [t, b] of builds) rows.set(t, row(t, b.tie, b.tie.origin, { k: 'live', list: b.panes }, verifierOf(t), projectName))
+  for (const [t, r] of reviews) if (!rows.has(t)) rows.set(t, row(t, r.tie, r.tie.origin, { k: 'live', list: [live(r.pane)] }, verifierOf(t), projectName))
 
   const mine = thisSession(world, snap?.panes.find((p) => p.pane === me.pane), projectName)
   if (mine && !rows.has(mine.ticket)) rows.set(mine.ticket, mine)
@@ -217,10 +241,28 @@ function newMergedEvents(t: Ticket, prs: readonly Pr[], facts: readonly Fact[]):
 const newest = <F extends { at: number }>(fs: readonly F[]): F | undefined => fs.reduce<F | undefined>((a, f) => (a === undefined || f.at > a.at ? f : a), undefined)
 
 /**
- * The label a pane with no ticket in its label gets from what it was sent: the briefs its current
- * session received (a /clear starts over), else the newest send.sh call main made to it.
+ * A pane's label when it names a ticket; else, when no label matched, the ticket its folder's
+ * branch names; else what it was sent; else its ticketless label.
  */
-function tiedLabel(facts: readonly Fact[], p: Pane): Label | undefined {
+function tieOf(facts: readonly Fact[], p: Pane, labels: PaneLabels['byPane'] | undefined, branches: Branches | undefined): Tie | undefined {
+  const label = pickLabel([p.paneLabel ?? labels?.get(p.pane)?.label, p.tabLabel, p.terminalTitle])
+  if (label && label.tickets.length > 0) return { ...label, origin: 'label' }
+  const branch = label === undefined ? branches?.get(p.cwd) : undefined
+  const t = branch === undefined ? undefined : branchTicket(branch)
+  if (t && branch) return { kind: undefined, title: branch, tickets: [t], origin: 'branch' }
+  return dispatchTie(facts, p) ?? (label && { ...label, origin: 'label' })
+}
+
+const otherItem = (tie: Tie | undefined, p: Pane): OtherItem =>
+  tie
+    ? { label: tie.title, kind: tie.kind, ticket: tie.tickets[0], pane: cell(p), note: undefined }
+    : { label: `tab "${p.tabLabel ?? p.tab}"`, kind: undefined, ticket: undefined, pane: cell(p), note: 'unlabelled' }
+
+/**
+ * What a pane with no ticket in its label was sent: the briefs its current session received (a
+ * /clear starts over), else the newest send.sh call main made to it.
+ */
+function dispatchTie(facts: readonly Fact[], p: Pane): Tie | undefined {
   const briefs = facts.filter((f): f is FactOf<'brief'> => f.kind === 'brief' && f.pane === p.pane && f.sid === p.sid)
   const latest = newest(briefs)
   if (latest) {
@@ -229,10 +271,11 @@ function tiedLabel(facts: readonly Fact[], p: Pane): Label | undefined {
       kind: latest.k === 'first' && latest.role === 'verifier' ? 'Review' : latest.labelKind,
       title: titled?.title ?? p.terminalTitle ?? latest.ticket,
       tickets: [...new Set(briefs.map((b) => b.ticket))],
+      origin: 'dispatch',
     }
   }
   const sent = newest(facts.filter((f): f is FactOf<'send'> => f.kind === 'send' && f.pane === p.pane))
-  return sent ? { kind: sent.role === 'verifier' ? 'Review' : undefined, title: p.terminalTitle ?? sent.ticket, tickets: [sent.ticket] } : undefined
+  return sent ? { kind: sent.role === 'verifier' ? 'Review' : undefined, title: p.terminalTitle ?? sent.ticket, tickets: [sent.ticket], origin: 'dispatch' } : undefined
 }
 
 function reportCell(t: Ticket, facts: readonly Fact[], inbox: readonly InboxFile[]): ReportCell {
@@ -269,18 +312,19 @@ function thisSession(world: World, mainPane: Pane | undefined, projectName: stri
   const t = branch === undefined ? undefined : branchTicket(branch)
   if (!t || !branch) return undefined
   const label = pickLabel([mainPane?.paneLabel, mainPane?.tabLabel])
-  const title = label?.tickets.includes(t) ? label.title : (mainPane?.terminalTitle ?? branch)
-  return row(t, { kind: label?.tickets.includes(t) ? label.kind : undefined, title, tickets: [t] }, 'this-session', mainPane ? { k: 'live', list: [live(mainPane)] } : { k: 'none' }, projectName)
+  const named = label?.tickets.includes(t) ? label : undefined
+  const panes: Panes = mainPane ? { k: 'live', list: [live(mainPane)] } : { k: 'none' }
+  return row(t, { kind: named?.kind, title: named?.title ?? mainPane?.terminalTitle ?? branch }, 'this-session', panes, { k: 'none' }, projectName)
 }
 
-function row(ticket: Ticket, label: Label, origin: Row['origin'], panes: Panes, projectName: string | undefined): Row {
+function row(ticket: Ticket, id: Pick<Row, 'kind' | 'title'>, origin: Row['origin'], panes: Panes, verifierPane: PaneCell, projectName: string | undefined): Row {
   return {
     ticket,
-    title: label.title,
-    kind: label.kind,
+    title: id.title,
+    kind: id.kind,
     origin,
     panes,
-    verifierPane: { k: 'none' },
+    verifierPane,
     report: { k: 'none' },
     fix: { k: 'none' },
     review: { k: 'none', offer: undefined },

@@ -338,8 +338,8 @@ export type Row = {
   title: string
   /** Undefined for an older label that names a ticket and no Kind (`UI polish walkthrough (THV-481)`). */
   kind: Kind | undefined
-  /** `label`: a pane's label names the ticket. `this-session`: main's own branch does. */
-  origin: 'dispatch' | 'this-session' | 'label'
+  /** `label`: a pane's label names the ticket; `branch`: its folder's branch; `dispatch`: what main sent it; `this-session`: main's own branch. */
+  origin: 'label' | 'branch' | 'dispatch' | 'this-session'
   panes: Panes
   verifierPane: PaneCell
   report: ReportCell
