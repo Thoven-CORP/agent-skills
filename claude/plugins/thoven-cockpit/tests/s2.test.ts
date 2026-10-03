@@ -221,35 +221,35 @@ test('Report cell glyphs: done, concerns with their count, ask, blocked', async 
 test('the newest report by at wins, whichever session received it', async () => {
   const older = report('THV-1041', 'sid-main', 'DONE_WITH_CONCERNS', 1000, 1)
   const newer = report('THV-1041', 'sid-b', 'DONE', 5000)
-  expect(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [newer, older]), 'THV-1041').report).toEqual({ k: 'in', status: 'DONE', at: 5000, concerns: 0, selfChecked: false })
-  expect(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [older, newer]), 'THV-1041').report).toEqual({ k: 'in', status: 'DONE', at: 5000, concerns: 0, selfChecked: false })
+  expect(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [newer, older]), 'THV-1041').cells.report).toEqual({ k: 'in', status: 'DONE', at: 5000, concerns: 0, selfChecked: false })
+  expect(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [older, newer]), 'THV-1041').cells.report).toEqual({ k: 'in', status: 'DONE', at: 5000, concerns: 0, selfChecked: false })
 })
 
 test('an inbox file newer than any delivered report shows unsent; an older one does not', async () => {
   const file = inboxFile('THV-1041.md', OUT_THV_1041, 7000)
   const inbox = { inbox: fresh(file ? [file] : []) }
   const unsent = rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [report('THV-1041', 'sid-b', 'DONE', 5000)], inbox), 'THV-1041')
-  expect(unsent.report).toEqual({ k: 'undelivered', status: 'DONE_WITH_CONCERNS', file: 'THV-1041.md', selfChecked: false })
+  expect(unsent.cells.report).toEqual({ k: 'undelivered', status: 'DONE_WITH_CONCERNS', file: 'THV-1041.md', selfChecked: false })
   expect(cellText(unsent).report).toBe('unsent')
   const delivered = rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [report('THV-1041', 'sid-b', 'DONE', 9000)], inbox), 'THV-1041')
-  expect(delivered.report.k).toBe('in')
+  expect(delivered.cells.report.k).toBe('in')
   // Of two files for one ticket, the newer one is the cell, whichever the listing gives first.
   const escalation = inboxFile('thv-1041.md', OUT_ESCALATION_THV_1004.replaceAll('THV-1004', 'THV-1041'), 8000)
-  const both = (files: InboxFile[]) => rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [], { inbox: fresh(files) }), 'THV-1041').report.k
+  const both = (files: InboxFile[]) => rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [], { inbox: fresh(files) }), 'THV-1041').cells.report.k
   expect(file && escalation ? [both([file, escalation]), both([escalation, file])] : []).toEqual(['escalation', 'escalation'])
   // An undelivered verdict is never the Report cell: the delivered report stays.
   const verdict = inboxFile('THV-1041.md', 'VERIFIED THV-1041\n', 7000)
   const withVerdict = rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [report('THV-1041', 'sid-b', 'DONE', 5000)], { inbox: fresh(verdict ? [verdict] : []) }), 'THV-1041')
-  expect(withVerdict.report).toEqual({ k: 'in', status: 'DONE', at: 5000, concerns: 0, selfChecked: false })
+  expect(withVerdict.cells.report).toEqual({ k: 'in', status: 'DONE', at: 5000, concerns: 0, selfChecked: false })
 })
 
 test('Fix cell: main send.sh round wins; without one, the pane FIX ROUND brief gives it', async () => {
   const send = storedFact('cockpit:send:THV-1041:w40:pC', { kind: 'send', ticket: 'THV-1041', pane: 'w40:pC', role: 'builder', round: 2, file: 'THV-1041-fix2.md', at: 1 })
   const brief = storedFact(`cockpit:brief:THV-1041:${P8V_SID}`, { kind: 'brief', k: 'fix', ticket: 'THV-1041', round: 3, of: 5, sid: P8V_SID, pane: 'w18:p8V', at: 2 })
-  expect(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [send, brief]), 'THV-1041').fix).toEqual({ k: 'round', round: 2, of: 5 })
-  expect(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [brief]), 'THV-1041').fix).toEqual({ k: 'round', round: 3, of: 5 })
+  expect(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [send, brief]), 'THV-1041').cells.fix).toEqual({ k: 'round', round: 2, of: 5 })
+  expect(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [brief]), 'THV-1041').cells.fix).toEqual({ k: 'round', round: 3, of: 5 })
   expect(cellText(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [brief]), 'THV-1041')).fix).toBe('3/5')
-  expect(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, []), 'THV-1041').fix).toEqual({ k: 'none' })
+  expect(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, []), 'THV-1041').cells.fix).toEqual({ k: 'none' })
 })
 
 test('a report on a row asks main to record report STATUS once; a recorded one is not asked again', async () => {
@@ -299,7 +299,7 @@ test('a report reaching a non-main session lands as a fact main reads, newest by
   await s.clock.advance(5000)
   await submit($, PASTED_DONE_FIX_ROUND_THV_1041)
   const row = rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, factsIn(s.saved)), 'THV-1041')
-  expect(row.report).toEqual({ k: 'in', status: 'DONE', at: 5000, concerns: 0, selfChecked: false })
+  expect(row.cells.report).toEqual({ k: 'in', status: 'DONE', at: 5000, concerns: 0, selfChecked: false })
   expect(cellText(row).report).toBe('✓')
 })
 
@@ -310,7 +310,7 @@ test('Bash send.sh of THV-1004-fix2.md writes the send fact, and the Fix cell re
   expect(s.saved.get('cockpit:send:THV-1004:w40:pC')).toEqual({ kind: 'send', ticket: 'THV-1004', pane: 'w40:pC', role: 'builder', round: 2, file: 'THV-1004-fix2.md', at: 0 })
   // w56:p1's terminal title names THV-1004.
   const row = rowOf(worldOf(mainOf('w56', 'w56:p2'), SNAPSHOT_LIVE, factsIn(s.saved)), 'THV-1004')
-  expect(row.fix).toEqual({ k: 'round', round: 2, of: 5 })
+  expect(row.cells.fix).toEqual({ k: 'round', round: 2, of: 5 })
   expect(cellText(row).fix).toBe('2/5')
 })
 
@@ -333,7 +333,7 @@ test('FIX ROUND 3/5 received by a pane with no send.sh gives Fix round 3', async
   await start($)
   await submit($, FIX_ROUND_3_THV_1015)
   expect(s.saved.get(`cockpit:brief:THV-1015:${P8V_SID}`)).toEqual({ kind: 'brief', k: 'fix', ticket: 'THV-1015', round: 3, of: 5, sid: P8V_SID, pane: 'w18:p8V', at: 0 })
-  expect(rowOf(worldOf(W18_MAIN, SNAPSHOT_LIVE, factsIn(s.saved)), 'THV-1015').fix).toEqual({ k: 'round', round: 3, of: 5 })
+  expect(rowOf(worldOf(W18_MAIN, SNAPSHOT_LIVE, factsIn(s.saved)), 'THV-1015').cells.fix).toEqual({ k: 'round', round: 3, of: 5 })
 })
 
 test('a brief received by an unlabelled pane ties that pane to its ticket', async ($, on) => {

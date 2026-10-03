@@ -30,14 +30,13 @@
 //      survives a later report replacing it or the PR falling out of gh's last 50.
 
 import { branchTicket, pickLabel } from './dispatch.ts'
-import { factsOf } from './facts.ts'
+import { aboutTicket, boardFacts, type BoardFacts } from './facts.ts'
 import { configPathOf } from './github.ts'
 import {
   isOneOf,
   type Board,
+  type Cells,
   type CiCell,
-  type Fact,
-  type FactOf,
   type FixCell,
   type Health,
   type InboxFile,
@@ -58,7 +57,7 @@ import {
   type PrCell,
   type PrGroup,
   type ReportCell,
-  type Row,
+  type RowIdentity,
   type Sources,
   type SpaceMap,
   type Ticket,
@@ -99,12 +98,13 @@ export function project(world: World): Board {
 
   const panes = (snap?.panes ?? []).filter((p) => p.space === me.space && p.pane !== me.pane)
   const branches = valueOf(world.sources.branches)
+  const facts = boardFacts(world.facts)
 
   // A Build row is ordered by its first Build pane, a Review-only row after them all by its first Review pane.
   const builds = new Map<Ticket, { tie: Tie; panes: NonEmpty<LivePane> }>()
   const reviews = new Map<Ticket, { tie: Tie; pane: Pane; verifier: Pane }>()
   const other: OtherItem[] = []
-  for (const s of panes.map((p) => slotOf(tieOf(world.facts, p, labels, branches), p))) {
+  for (const s of panes.map((p) => slotOf(tieOf(facts, p, labels, branches), p))) {
     if (s.k === 'build')
       for (const t of s.tie.tickets) {
         const b = builds.get(t)
@@ -123,31 +123,43 @@ export function project(world: World): Board {
     const r = reviews.get(t)
     return r ? cell(r.verifier) : { k: 'none' }
   }
-  const rows = new Map<Ticket, Row>()
-  for (const [t, b] of builds) rows.set(t, row(t, b.tie, b.tie.origin, { k: 'live', list: b.panes }, verifierOf(t), projectName))
-  for (const [t, r] of reviews) if (!rows.has(t)) rows.set(t, row(t, r.tie, r.tie.origin, { k: 'live', list: [live(r.pane)] }, verifierOf(t), projectName))
+  const held = new Map<Ticket, RowIdentity>()
+  for (const [t, b] of builds) held.set(t, holding(t, b.tie, { k: 'live', list: b.panes }, verifierOf(t)))
+  for (const [t, r] of reviews) if (!held.has(t)) held.set(t, holding(t, r.tie, { k: 'live', list: [live(r.pane)] }, verifierOf(t)))
+  const mine = thisSession(world, snap?.panes.find((p) => p.pane === me.pane))
+  if (mine && !held.has(mine.ticket)) held.set(mine.ticket, mine)
 
-  const mine = thisSession(world, snap?.panes.find((p) => p.pane === me.pane), projectName)
-  if (mine && !rows.has(mine.ticket)) rows.set(mine.ticket, mine)
-
-  const inbox = valueOf(world.sources.inbox) ?? []
-  const join = prJoin(world, panes, [...rows.values()])
-  for (const [t, r] of rows) {
-    const pr = join.cell(t)
-    rows.set(t, { ...r, report: reportCell(t, world.facts, inbox), fix: fixCell(t, world.facts), pr, ci: pr.k === 'none' ? { k: 'none' } : ciCell(pr.pr) })
-  }
+  const ids = [...held.values()]
+  const join = prJoin(world, panes, ids)
+  const context = { inbox: valueOf(world.sources.inbox) ?? [], join, project: projectName }
 
   return {
     space,
     project: projectName,
     here: undefined,
-    build: [...rows.values()].map((r) => ({ k: 'single', row: r })),
+    build: ids.map((id) => ({ k: 'single', row: { ...id, cells: cellsOf(id.ticket, aboutTicket(facts, id.ticket), context) } })),
     other,
     prs: join.groups(),
     pending: [],
     health: health(world.sources),
     working: panes.filter((p) => p.status === 'working').map((p) => p.pane),
-    newEvents: [...rows.keys()].flatMap((t) => [...newReportEvents(t, world.facts), ...newMergedEvents(t, join.attached(t), world.facts)]),
+    newEvents: ids.flatMap(({ ticket: t }) => {
+      const about = aboutTicket(facts, t)
+      return [...newReportEvents(t, about), ...newMergedEvents(t, join.attached(t), about)]
+    }),
+  }
+}
+
+/** Every cell of a row, from the facts about its ticket and what the sources say. */
+function cellsOf(t: Ticket, about: BoardFacts, s: { inbox: readonly InboxFile[]; join: ReturnType<typeof prJoin>; project: string | undefined }): Cells {
+  const pr = s.join.cell(t)
+  return {
+    report: reportCell(t, about, s.inbox),
+    fix: fixCell(about),
+    review: { k: 'none', offer: undefined },
+    pr,
+    ci: pr.k === 'none' ? { k: 'none' } : ciCell(pr.pr),
+    linear: s.project === undefined ? { k: 'hidden' } : { k: 'none' },
   }
 }
 
@@ -165,7 +177,7 @@ const isOn = (pr: Pr, places: readonly Place[]): boolean => places.some((p) => p
  * Where each row's panes are, and which PRs that ties to it. A stale gh source still joins on its
  * last answer; a gh that never answered joins nothing.
  */
-function prJoin(world: World, panes: readonly Pane[], rows: readonly Row[]) {
+function prJoin(world: World, panes: readonly Pane[], rows: readonly RowIdentity[]) {
   const prs = valueOf(world.sources.github)?.prs ?? []
   const heads = valueOf(world.sources.heads)
   const branches = valueOf(world.sources.branches)
@@ -177,7 +189,7 @@ function prJoin(world: World, panes: readonly Pane[], rows: readonly Row[]) {
   }
   // Main's own folder is its session cwd, which the snapshot may not show.
   const cwdOf = new Map<PaneId, string>([...panes.map((p): [PaneId, string] => [p.pane, p.cwd]), [world.me.pane, world.me.cwd]])
-  const placesOf = (r: Row): Place[] =>
+  const placesOf = (r: RowIdentity): Place[] =>
     [...(r.panes.k === 'live' ? r.panes.list : []), ...(r.verifierPane.k === 'live' ? [r.verifierPane] : [])].flatMap((c) => {
       const cwd = cwdOf.get(c.pane)
       return cwd === undefined ? [] : placeOf(cwd)
@@ -227,8 +239,8 @@ export function ciCell(pr: Pr): CiCell {
 }
 
 /** `merged <n>` for each merged PR attached to the ticket, not yet recorded. */
-function newMergedEvents(t: Ticket, prs: readonly Pr[], facts: readonly Fact[]): Pending[] {
-  const recorded = new Set(factsOf(facts, 'happened', t).map((f) => f.event))
+function newMergedEvents(t: Ticket, prs: readonly Pr[], about: BoardFacts): Pending[] {
+  const recorded = new Set(about.happened.map((f) => f.event))
   const ids = new Set<string>()
   return prs.flatMap((pr) => {
     const id = `merged-${pr.number}` as LinearEventId
@@ -244,7 +256,7 @@ const newest = <F extends { at: number }>(fs: readonly F[]): F | undefined => fs
  * A pane's label when it names a ticket; else, when no label matched, the ticket its folder's
  * branch names; else what it was sent; else its ticketless label.
  */
-function tieOf(facts: readonly Fact[], p: Pane, labels: PaneLabels['byPane'] | undefined, branches: Branches | undefined): Tie | undefined {
+function tieOf(facts: BoardFacts, p: Pane, labels: PaneLabels['byPane'] | undefined, branches: Branches | undefined): Tie | undefined {
   const label = pickLabel([p.paneLabel ?? labels?.get(p.pane)?.label, p.tabLabel, p.terminalTitle])
   if (label && label.tickets.length > 0) return { ...label, origin: 'label' }
   const branch = label === undefined ? branches?.get(p.cwd) : undefined
@@ -262,8 +274,8 @@ const otherItem = (tie: Tie | undefined, p: Pane): OtherItem =>
  * What a pane with no ticket in its label was sent: the briefs its current session received (a
  * /clear starts over), else the newest send.sh call main made to it.
  */
-function dispatchTie(facts: readonly Fact[], p: Pane): Tie | undefined {
-  const briefs = facts.filter((f): f is FactOf<'brief'> => f.kind === 'brief' && f.pane === p.pane && f.sid === p.sid)
+function dispatchTie(facts: BoardFacts, p: Pane): Tie | undefined {
+  const briefs = facts.brief.filter((f) => f.pane === p.pane && f.sid === p.sid)
   const latest = newest(briefs)
   if (latest) {
     const titled = newest(briefs.filter((b) => b.title !== undefined))
@@ -274,12 +286,12 @@ function dispatchTie(facts: readonly Fact[], p: Pane): Tie | undefined {
       origin: 'dispatch',
     }
   }
-  const sent = newest(facts.filter((f): f is FactOf<'send'> => f.kind === 'send' && f.pane === p.pane))
+  const sent = newest(facts.send.filter((f) => f.pane === p.pane))
   return sent ? { kind: sent.role === 'verifier' ? 'Review' : undefined, title: p.terminalTitle ?? sent.ticket, tickets: [sent.ticket], origin: 'dispatch' } : undefined
 }
 
-function reportCell(t: Ticket, facts: readonly Fact[], inbox: readonly InboxFile[]): ReportCell {
-  const report = newest(factsOf(facts, 'report', t))
+function reportCell(t: Ticket, about: BoardFacts, inbox: readonly InboxFile[]): ReportCell {
+  const report = newest(about.report)
   // An undelivered verdict is the verifier's, so it waits for the Review cell (S3), never this one.
   const file = newest(inbox.filter((f) => f.ticket === t && (f.k === 'report' || f.k === 'escalation') && (report === undefined || f.at > report.at)))
   if (file?.k === 'report') return { k: 'undelivered', status: file.line.word, file: file.name, selfChecked: false }
@@ -287,19 +299,19 @@ function reportCell(t: Ticket, facts: readonly Fact[], inbox: readonly InboxFile
   return report ? { k: 'in', status: report.status, at: report.at, concerns: report.concerns, selfChecked: false } : { k: 'none' }
 }
 
-function fixCell(t: Ticket, facts: readonly Fact[]): FixCell {
+function fixCell(about: BoardFacts): FixCell {
   const top = (rounds: number[]) => rounds.reduce((a, b) => Math.max(a, b), 0)
-  const sent = top(factsOf(facts, 'send', t).filter((f) => f.role === 'builder').map((f) => f.round))
+  const sent = top(about.send.filter((f) => f.role === 'builder').map((f) => f.round))
   if (sent > 0) return { k: 'round', round: sent, of: 5 }
-  const fixes = factsOf(facts, 'brief', t).flatMap((f) => (f.k === 'fix' && f.round > 0 ? [f] : []))
+  const fixes = about.brief.flatMap((f) => (f.k === 'fix' && f.round > 0 ? [f] : []))
   const fix = fixes.reduce<(typeof fixes)[number] | undefined>((a, f) => (a === undefined || f.round > a.round ? f : a), undefined)
   return fix ? { k: 'round', round: fix.round, of: fix.of } : { k: 'none' }
 }
 
 /** `report <STATUS>` for each status the ticket was reported in, in the order they arrived, not yet recorded. */
-function newReportEvents(t: Ticket, facts: readonly Fact[]): Pending[] {
-  const recorded = new Set(factsOf(facts, 'happened', t).map((f) => f.event))
-  const statuses = [...new Set(factsOf(facts, 'report', t).sort((a, b) => a.at - b.at).map((f) => f.status))]
+function newReportEvents(t: Ticket, about: BoardFacts): Pending[] {
+  const recorded = new Set(about.happened.map((f) => f.event))
+  const statuses = [...new Set([...about.report].sort((a, b) => a.at - b.at).map((f) => f.status))]
   return statuses.flatMap((status) => {
     const id = `report-${status}` as LinearEventId
     return recorded.has(id) ? [] : [{ ticket: t, event: { k: 'report', status }, id }]
@@ -307,32 +319,24 @@ function newReportEvents(t: Ticket, facts: readonly Fact[]): Pending[] {
 }
 
 /** The row for work main does itself: its branch names a ticket no pane holds. */
-function thisSession(world: World, mainPane: Pane | undefined, projectName: string | undefined): Row | undefined {
+function thisSession(world: World, mainPane: Pane | undefined): RowIdentity | undefined {
   const branch = valueOf(world.sources.branches)?.get(world.me.cwd)
   const t = branch === undefined ? undefined : branchTicket(branch)
   if (!t || !branch) return undefined
   const label = pickLabel([mainPane?.paneLabel, mainPane?.tabLabel])
   const named = label?.tickets.includes(t) ? label : undefined
   const panes: Panes = mainPane ? { k: 'live', list: [live(mainPane)] } : { k: 'none' }
-  return row(t, { kind: named?.kind, title: named?.title ?? mainPane?.terminalTitle ?? branch }, 'this-session', panes, { k: 'none' }, projectName)
+  return holding(t, { kind: named?.kind, title: named?.title ?? mainPane?.terminalTitle ?? branch, origin: 'this-session' }, panes, { k: 'none' })
 }
 
-function row(ticket: Ticket, id: Pick<Row, 'kind' | 'title'>, origin: Row['origin'], panes: Panes, verifierPane: PaneCell, projectName: string | undefined): Row {
-  return {
-    ticket,
-    title: id.title,
-    kind: id.kind,
-    origin,
-    panes,
-    verifierPane,
-    report: { k: 'none' },
-    fix: { k: 'none' },
-    review: { k: 'none', offer: undefined },
-    pr: { k: 'none' },
-    ci: { k: 'none' },
-    linear: projectName === undefined ? { k: 'hidden' } : { k: 'none' },
-  }
-}
+const holding = (ticket: Ticket, by: Pick<RowIdentity, 'kind' | 'title' | 'origin'>, panes: Panes, verifierPane: PaneCell): RowIdentity => ({
+  ticket,
+  title: by.title,
+  kind: by.kind,
+  origin: by.origin,
+  panes,
+  verifierPane,
+})
 
 /** herdr's space label and WORKFLOW.md's `COPPA` differ in case (`Coppa`), so the match ignores it. */
 function projectOf(spaces: SpaceMap | undefined, label: string): string | undefined {

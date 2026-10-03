@@ -8,7 +8,7 @@
 import type { Elements, RenderElement } from 'claude-code'
 import { ciCell } from './board.ts'
 import { AGENT_SKILLS, BACKEND, FRONTEND } from './github.ts'
-import type { Board, Group, Health, Intent, Ms, LivePane, OtherItem, PaneCell, PaneStatus, PaneUi, Pr, PrItem, Row, SourceId } from './model.ts'
+import type { Board, Cells, Group, Health, Intent, Ms, LivePane, OtherItem, PaneCell, PaneStatus, PaneUi, Pr, PrItem, Row, SourceId } from './model.ts'
 
 /** The three elements the cockpit draws with, on whichever surface resolved them. */
 type El = Pick<Elements[keyof Elements], 'Box' | 'Text' | 'Button'>
@@ -109,8 +109,8 @@ function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): 
           ],
         }),
         Box({ width: widths[1] ?? 0, flexShrink: 0, children: [Text({ color: lead === undefined ? undefined : PANE_COLOR[lead.status], children: [t.pane] })] }),
-        ...cells([t.report, t.fix, t.review], 2, false, [reportColor(row.report)]),
-        ...cells([t.pr, t.ci], 5, isGhStale, isGhStale ? [] : [prColor(row.pr), ciColor(row.ci)]),
+        ...cells([t.report, t.fix, t.review], 2, false, [reportColor(row.cells.report)]),
+        ...cells([t.pr, t.ci], 5, isGhStale, isGhStale ? [] : [prColor(row.cells.pr), ciColor(row.cells.ci)]),
         ...(hasLinear ? cells([t.linear], 7, false) : []),
       ],
     })
@@ -221,12 +221,12 @@ function checkLines(el: El, pr: Pr): RenderElement {
 export function cellText(row: Row): Record<'pane' | 'report' | 'fix' | 'review' | 'pr' | 'ci' | 'linear', string> {
   return {
     pane: row.panes.k === 'live' ? row.panes.list.map(liveText).join(' ') : paneText(row.panes),
-    report: reportText(row.report),
-    fix: row.fix.k === 'round' ? `${row.fix.round}/${row.fix.of}` : DASH,
-    review: reviewText(row.review),
-    pr: prText(row.pr),
-    ci: ciText(row.ci),
-    linear: linearText(row.linear),
+    report: reportText(row.cells.report),
+    fix: row.cells.fix.k === 'round' ? `${row.cells.fix.round}/${row.cells.fix.of}` : DASH,
+    review: reviewText(row.cells.review),
+    pr: prText(row.cells.pr),
+    ci: ciText(row.cells.ci),
+    linear: linearText(row.cells.linear),
   }
 }
 
@@ -262,7 +262,7 @@ function paneText(p: PaneCell): string {
 }
 
 /** The mock's Report copy: ✓ clean, `2 !` concerns, `ask` needs you. A report still in the inbox is `unsent`. */
-function reportText(r: Row['report']): string {
+function reportText(r: Cells['report']): string {
   switch (r.k) {
     case 'none':
       return DASH
@@ -288,13 +288,13 @@ function reportText(r: Row['report']): string {
 }
 
 /** The mock's classes: `g` green for ✓, `a` amber for concerns, `r` red for what needs Andres. */
-function reportColor(r: Row['report']): string | undefined {
+function reportColor(r: Cells['report']): string | undefined {
   if (r.k === 'undelivered' || r.k === 'escalation') return 'yellow'
   if (r.k !== 'in') return undefined
   return r.status === 'DONE' ? 'green' : r.status === 'DONE_WITH_CONCERNS' ? 'yellow' : 'red'
 }
 
-function reviewText(r: Row['review']): string {
+function reviewText(r: Cells['review']): string {
   if (r.k === 'none') return `${DASH} ${DASH} ${DASH} ${DASH}`
   const light = (letter: 'V' | 'C' | 'T' | 'D') => {
     const l = r[letter]
@@ -303,23 +303,23 @@ function reviewText(r: Row['review']): string {
   return (['V', 'C', 'T', 'D'] as const).map(light).join(' ')
 }
 
-function prText(p: Row['pr']): string {
+function prText(p: Cells['pr']): string {
   if (p.k === 'own') return `#${p.pr.number}`
   if (p.k === 'shared') return `in #${p.pr.number}`
   return DASH
 }
 
 /** The mock's classes: an open PR blue, a merged one green. */
-function prColor(p: Row['pr']): string | undefined {
+function prColor(p: Cells['pr']): string | undefined {
   if (p.k === 'none') return undefined
   return p.pr.state === 'OPEN' ? 'blue' : p.pr.state === 'MERGED' ? 'green' : undefined
 }
 
-function ciColor(c: Row['ci']): string | undefined {
+function ciColor(c: Cells['ci']): string | undefined {
   return c.k === 'pass' ? 'green' : c.k === 'fail' ? 'red' : c.k === 'running' ? 'blue' : undefined
 }
 
-function ciText(c: Row['ci']): string {
+function ciText(c: Cells['ci']): string {
   switch (c.k) {
     case 'pass':
       return '✓'
@@ -332,7 +332,7 @@ function ciText(c: Row['ci']): string {
   }
 }
 
-function linearText(l: Row['linear']): string {
+function linearText(l: Cells['linear']): string {
   switch (l.k) {
     case 'hidden':
       return ''

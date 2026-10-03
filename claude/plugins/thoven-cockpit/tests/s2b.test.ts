@@ -206,8 +206,8 @@ test('the pane on ui/thv-481 gives PR #136 and CI ✓ from its statusCheckRollup
     github: fresh({ prs: ALL_PRS() }),
   })
   const row = rowOf(world, 'THV-481')
-  expect(row.pr).toEqual({ k: 'own', pr: prOf(FRONTEND, GH_FRONTEND, 136) })
-  expect(row.ci).toEqual({ k: 'pass' })
+  expect(row.cells.pr).toEqual({ k: 'own', pr: prOf(FRONTEND, GH_FRONTEND, 136) })
+  expect(row.cells.ci).toEqual({ k: 'pass' })
   expect([cellText(row).pr, cellText(row).ci]).toEqual(['#136', '✓'])
 })
 
@@ -216,8 +216,8 @@ test('a THV-1045 Build tab with no branch read takes its open PR #141 by ticket,
     github: fresh({ prs: ALL_PRS() }),
   })
   const row = rowOf(world, 'THV-1045')
-  expect(row.pr).toEqual({ k: 'own', pr: prOf(FRONTEND, GH_FRONTEND, 141) })
-  expect(row.ci).toEqual({ k: 'fail', failed: 4 })
+  expect(row.cells.pr).toEqual({ k: 'own', pr: prOf(FRONTEND, GH_FRONTEND, 141) })
+  expect(row.cells.ci).toEqual({ k: 'fail', failed: 4 })
   expect([cellText(row).pr, cellText(row).ci]).toEqual(['#141', '✗ 4'])
 })
 
@@ -231,7 +231,7 @@ test('two tickets whose panes share ui/thv-481 both show in #136, and #136 is li
   const pr136 = prOf(FRONTEND, GH_FRONTEND, 136)
   for (const t of ['THV-481', 'THV-1069']) {
     const row = rowOf(world, t)
-    expect(row.pr).toEqual({ k: 'shared', pr: pr136 })
+    expect(row.cells.pr).toEqual({ k: 'shared', pr: pr136 })
     expect(cellText(row).pr).toBe('in #136')
   }
   expect(project(world).prs).toEqual([{ repo: FRONTEND, items: [{ pr: pr136, tickets: ['THV-481', 'THV-1069'] }] }])
@@ -248,7 +248,7 @@ test('a PR whose title group lists three tickets attaches to each row and is lis
   const attached = { ...pr, title: 'Book Lessons follow-ups', tickets: ['THV-851', 'THV-847', 'THV-843'] }
   for (const t of ['THV-843', 'THV-847', 'THV-851']) {
     const row = rowOf(world, t)
-    expect(row.pr).toEqual({ k: 'own', pr: attached })
+    expect(row.cells.pr).toEqual({ k: 'own', pr: attached })
     expect(cellText(row).pr).toBe('#145')
   }
   expect(project(world).prs).toEqual([{ repo: BACKEND, items: [{ pr: attached, tickets: ['THV-843', 'THV-847', 'THV-851'] }] }])
@@ -259,7 +259,7 @@ test('frontend #139 attaches to THV-908 only, never to THV-1003, THV-1041 or THV
   const world = worldOf(mainOf('w18', 'w18:p8W'), json, [], { github: fresh({ prs: ALL_PRS() }) })
   const board = project(world)
   const pick = (t: string) => {
-    const pr = rowOf(world, t).pr
+    const pr = rowOf(world, t).cells.pr
     return pr.k === 'own' || pr.k === 'shared' ? `${pr.pr.repo}#${pr.pr.number}` : pr.k
   }
   expect(['THV-908', 'THV-1003', 'THV-1041', 'THV-1038'].map(pick)).toEqual([
@@ -280,7 +280,7 @@ test('the this-session row on ui/thv-481 shows PR #136 and CI ✓, and no Linear
     github: fresh({ prs: ALL_PRS() }),
   })
   const row = rowOf(world, 'THV-481')
-  expect([row.origin, row.pr, row.ci, row.linear]).toEqual(['this-session', { k: 'own', pr: prOf(FRONTEND, GH_FRONTEND, 136) }, { k: 'pass' }, { k: 'hidden' }])
+  expect([row.origin, row.cells.pr, row.cells.ci, row.cells.linear]).toEqual(['this-session', { k: 'own', pr: prOf(FRONTEND, GH_FRONTEND, 136) }, { k: 'pass' }, { k: 'hidden' }])
   expect([cellText(row).pr, cellText(row).ci, cellText(row).linear]).toEqual(['#136', '✓', ''])
 })
 

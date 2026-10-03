@@ -333,7 +333,8 @@ export type LinearCell =
   | { k: 'pending'; pending: Pending[]; isInFlight: boolean }
   | { k: 'error'; message: string; pending: Pending[] }
 
-export type Row = {
+/** Who holds a ticket on the board, and so where its PRs are. */
+export type RowIdentity = {
   ticket: Ticket
   title: string
   /** Undefined for an older label that names a ticket and no Kind (`UI polish walkthrough (THV-481)`). */
@@ -342,6 +343,9 @@ export type Row = {
   origin: 'label' | 'branch' | 'dispatch' | 'this-session'
   panes: Panes
   verifierPane: PaneCell
+}
+
+export type Cells = {
   report: ReportCell
   fix: FixCell
   review: ReviewCell
@@ -350,6 +354,8 @@ export type Row = {
   ci: CiCell
   linear: LinearCell
 }
+
+export type Row = RowIdentity & { cells: Cells }
 
 /** A parent and its on-screen children, or one parentless row. */
 export type Group =

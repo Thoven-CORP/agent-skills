@@ -56,15 +56,6 @@ function worldOf(me: Main, snapshot: Snapshot, extra: Partial<Sources> = {}): Wo
   }
 }
 
-const NO_LATER_CELLS = {
-  verifierPane: { k: 'none' },
-  report: { k: 'none' },
-  fix: { k: 'none' },
-  review: { k: 'none', offer: undefined },
-  pr: { k: 'none' },
-  ci: { k: 'none' },
-}
-
 // ── unit: dispatch.ts label grammar ──────────────────────────────────────────────────────────
 
 test('a Build tab label with a null pane label gives a Build row titled from the tab', async () => {
@@ -121,8 +112,15 @@ test("w18 with a Build tab: p8V is the THV-1045 row, main's own labelled pane is
         kind: 'Build',
         origin: 'label',
         panes: { k: 'live', list: [{ status: 'idle', tool: 'C', pane: 'w18:p8V' }] },
-        linear: { k: 'hidden' },
-        ...NO_LATER_CELLS,
+        verifierPane: { k: 'none' },
+        cells: {
+          report: { k: 'none' },
+          fix: { k: 'none' },
+          review: { k: 'none', offer: undefined },
+          pr: { k: 'none' },
+          ci: { k: 'none' },
+          linear: { k: 'hidden' },
+        },
       },
     },
   ])
@@ -132,7 +130,7 @@ test("w18 with a Build tab: p8V is the THV-1045 row, main's own labelled pane is
 test('UI Polishes: the THV-481 tab is a Build row with no Kind, and the space has its Project', async () => {
   const board = project(worldOf(mainOf('w4D', 'w18:p8W'), snap(SNAPSHOT_LIVE)))
   expect(board.project).toBe('Design System')
-  expect(board.build.map((g) => (g.k === 'single' ? [g.row.ticket, g.row.title, g.row.kind, g.row.linear.k] : []))).toEqual([['THV-481', 'UI polish walkthrough', undefined, 'none']])
+  expect(board.build.map((g) => (g.k === 'single' ? [g.row.ticket, g.row.title, g.row.kind, g.row.cells.linear.k] : []))).toEqual([['THV-481', 'UI polish walkthrough', undefined, 'none']])
 })
 
 test('this-session row: main on cockpit/thv-1058 with no dispatch shows one row and no Linear column', async () => {
@@ -150,8 +148,15 @@ test('this-session row: main on cockpit/thv-1058 with no dispatch shows one row 
         kind: undefined,
         origin: 'this-session',
         panes: { k: 'live', list: [{ status: 'working', tool: 'C', pane: 'w18:p8W' }] },
-        linear: { k: 'hidden' },
-        ...NO_LATER_CELLS,
+        verifierPane: { k: 'none' },
+        cells: {
+          report: { k: 'none' },
+          fix: { k: 'none' },
+          review: { k: 'none', offer: undefined },
+          pr: { k: 'none' },
+          ci: { k: 'none' },
+          linear: { k: 'hidden' },
+        },
       },
     },
   ])
@@ -169,11 +174,12 @@ test('an unlabelled tab goes under Other as unlabelled', async () => {
 test('a multi-ticket pane gives three Build rows that share the pane', async () => {
   const board = project(worldOf(mainOf('w18', 'w18:p8W'), snap(relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Book Lessons follow-ups (THV-843 847 851)'))))
   const p8V = { status: 'idle', tool: 'C', pane: 'w18:p8V' }
-  const shared = { title: 'Book Lessons follow-ups', kind: undefined, origin: 'label', panes: { k: 'live', list: [p8V] }, linear: { k: 'hidden' }, ...NO_LATER_CELLS }
+  const shared = { title: 'Book Lessons follow-ups', kind: undefined, origin: 'label', panes: { k: 'live', list: [p8V] }, verifierPane: { k: 'none' } }
+  const cells = { report: { k: 'none' }, fix: { k: 'none' }, review: { k: 'none', offer: undefined }, pr: { k: 'none' }, ci: { k: 'none' }, linear: { k: 'hidden' } }
   expect(board.build).toEqual([
-    { k: 'single', row: { ticket: 'THV-843', ...shared } },
-    { k: 'single', row: { ticket: 'THV-847', ...shared } },
-    { k: 'single', row: { ticket: 'THV-851', ...shared } },
+    { k: 'single', row: { ticket: 'THV-843', ...shared, cells } },
+    { k: 'single', row: { ticket: 'THV-847', ...shared, cells } },
+    { k: 'single', row: { ticket: 'THV-851', ...shared, cells } },
   ])
 })
 
@@ -181,7 +187,7 @@ test("Live spaces match the space's label in any case: Coppa is COPPA's Project"
   const board = project(worldOf(mainOf('w56', 'w18:p8W'), snap(SNAPSHOT_LIVE)))
   expect(board.space).toEqual({ space: 'w56', label: 'Coppa' })
   expect(board.project).toBe('COPPA and Data Compliance Audit')
-  expect(board.build.map((g) => (g.k === 'single' ? [g.row.ticket, g.row.title, g.row.linear.k] : []))).toEqual([['THV-1004', "children's media URL expiry", 'none']])
+  expect(board.build.map((g) => (g.k === 'single' ? [g.row.ticket, g.row.title, g.row.cells.linear.k] : []))).toEqual([['THV-1004', "children's media URL expiry", 'none']])
 })
 
 test('two Build panes on one ticket give one row whose Pane cell lists both', async () => {
@@ -255,7 +261,7 @@ test('cellText: an S1 row shows its Pane glyph and tool tag, and a dash in every
   const g = board.build[0]
   if (g?.k !== 'single') throw new Error('expected one row')
   expect(cellText(g.row)).toEqual({ pane: '○ C', report: '–', fix: '–', review: '– – – –', pr: '–', ci: '–', linear: '' })
-  expect(cellText({ ...g.row, panes: { k: 'live', list: [{ status: 'working', tool: 'X', pane: 'w18:p8V' as PaneId }] }, linear: { k: 'none' } })).toMatchObject({ pane: '◐ X', linear: '–' })
+  expect(cellText({ ...g.row, panes: { k: 'live', list: [{ status: 'working', tool: 'X', pane: 'w18:p8V' as PaneId }] }, cells: { ...g.row.cells, linear: { k: 'none' } } })).toMatchObject({ pane: '◐ X', linear: '–' })
   expect(cellText({ ...g.row, panes: { k: 'gone' } }).pane).toBe('gone')
 })
 
