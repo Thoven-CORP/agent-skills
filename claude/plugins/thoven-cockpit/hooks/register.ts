@@ -24,7 +24,7 @@ import { readPrompt, sendCalls } from './dispatch.ts'
 import { findMe, focusReq, parseSnapshot, snapshotReq, spaceOfPane } from './herdr.ts'
 import { VERDICTS, isOneOf, type Board, type Engagement, type Fact, type FactKind, type Intent, type Main, type Me, type Ms, type PaneId, type PaneUi, type Polled, type SessionId, type SourceId, type Sources, type SourceValues, type World } from './model.ts'
 import { HEARTBEAT_MS, SOURCES, due, settle, type Listing, type PolledId, type Req, type Resp, type Source } from './sources.ts'
-import { claimHeldBy, claimOf, keyOf, parseFact, parseKey } from './store.ts'
+import { claimHeldBy, claimOf, isFactKey, keyOf, parseFact } from './store.ts'
 import { drawCockpit } from './view.ts'
 
 type Api = EngineInterface
@@ -317,12 +317,9 @@ async function perform($: Api, req: Req): Promise<Resp> {
 
 /** Every `cockpit:` fact, or only one kind's. Values that do not validate are skipped, never thrown on. */
 async function loadFacts($: Api, only?: FactKind): Promise<{ facts: Fact[]; reads: number }> {
-  const infos = (await $.store.keys()).flatMap((key) => {
-    const info = parseKey(key)
-    return info && (only === undefined || info.kind === only) ? [{ key, info }] : []
-  })
-  const values = await Promise.all(infos.map(({ key }) => $.store.get(key)))
-  return { facts: infos.flatMap(({ info }, i) => parseFact(info, values[i]) ?? []), reads: infos.length }
+  const keys = (await $.store.keys()).filter((key) => isFactKey(key, only))
+  const values = await Promise.all(keys.map((key) => $.store.get(key)))
+  return { facts: keys.flatMap((key, i) => parseFact(key, values[i]) ?? []), reads: keys.length }
 }
 
 /**

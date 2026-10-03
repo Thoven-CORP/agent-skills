@@ -8,7 +8,7 @@ import { inboxFile, readPrompt, sendCalls, statusLines, unwrapPasted } from '../
 import { parseSnapshot } from '../hooks/herdr.ts'
 import type { Fact, InboxFile, Main, PaneId, Polled, Row, SessionId, Snapshot, Sources, SpaceId, World } from '../hooks/model.ts'
 import { parseLiveSpaces } from '../hooks/sources.ts'
-import { parseFact, parseKey } from '../hooks/store.ts'
+import { parseFact } from '../hooks/store.ts'
 import { cellText } from '../hooks/view.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import { OUT_ESCALATION_THV_1004, OUT_RESEARCH_THV_1038_HEAD } from './fixtures/inbox.ts'
@@ -74,12 +74,17 @@ function worldOf(me: Main, snapshot: string, facts: Fact[], extra: Partial<Sourc
 
 /** What main reads back from the store: every key that parses, as loadFacts does. */
 function factsIn(saved: Map<string, unknown>): Fact[] {
-  return [...saved].flatMap(([key, value]) => {
-    const info = parseKey(key)
-    const fact = info ? parseFact(info, value) : undefined
-    return fact ? [fact] : []
-  })
+  return [...saved].flatMap(([key, value]) => parseFact(key, value) ?? [])
 }
+
+test('a stored fact is read back only at its own key', async () => {
+  const fact: Fact = { kind: 'send', ticket: 'THV-1004' as never, pane: 'w40:pC' as PaneId, role: 'builder', round: 2, file: 'THV-1004-fix2.md', at: 1 }
+  expect(parseFact('cockpit:send:THV-1004:w40:pC', fact)).toEqual(fact)
+  expect(parseFact('cockpit:send:THV-1004:w40:pD', fact)).toBeUndefined()
+  expect(parseFact('cockpit:brief:THV-1004:w40:pC', fact)).toBeUndefined()
+  expect(parseFact('cockpit:send:THV-1004:w40:pC', { ...fact, ticket: 'thv-1004' })).toBeUndefined()
+  expect(parseFact('cockpit:send:THV-1004:w40:pC', { ...fact, round: '2' })).toBeUndefined()
+})
 
 function rowOf(world: World, ticket: string): Row {
   const row = project(world)
