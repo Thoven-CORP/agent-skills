@@ -130,7 +130,6 @@ function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): 
   return Box({
     flexDirection: 'column',
     children: [
-      board.here === undefined ? null : Text({ dimColor: true, children: [`You are here: /${board.here.skill}`] }),
       Text({ dimColor: true, children: ['BUILD'] }),
       rows.length === 0
         ? Text({ dimColor: true, children: ['No build work in this space.'] })

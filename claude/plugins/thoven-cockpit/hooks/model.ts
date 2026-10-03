@@ -378,8 +378,6 @@ export type Board = {
   space: Space
   /** The Linear Project of this space; undefined hides the Linear column. */
   project: string | undefined
-  /** The skill main itself ran last. Undefined until it runs one. */
-  here: { skill: string } | undefined
   build: Group[]
   other: OtherItem[]
   /** Each PR once: attached to a row by branch or title group, or ticketless on a space folder's branch. */

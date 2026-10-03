@@ -95,7 +95,6 @@ export function project(world: World): Board {
   return {
     space,
     project: projectName,
-    here: undefined,
     build,
     other,
     prs: join.groups(),
