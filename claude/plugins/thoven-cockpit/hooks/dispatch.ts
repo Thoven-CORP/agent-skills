@@ -79,7 +79,6 @@ export function branchTicket(branch: string): Ticket | undefined {
   return m?.[1] ? ticket(m[1]) : undefined
 }
 
-
 // ── Reports, briefs and send.sh (brief.md REPORT, FIX ROUND; scripts/send.sh) ───────────────
 
 /**

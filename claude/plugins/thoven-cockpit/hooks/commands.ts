@@ -21,8 +21,8 @@ function mint(timeoutMs: number, ...argv: string[]): Req {
 const HERDR_MS = 10_000
 const GH_MS = 30_000
 
-/** The fields every PR read asks for. `mergedAt` is a field name inside `--json`, not a verb. */
-const PR_FIELDS = 'number,title,headRefName,state,statusCheckRollup,mergedAt,url,additions,deletions,files'
+/** The fields every PR read asks for. */
+const PR_FIELDS = 'number,title,headRefName,state,statusCheckRollup,url,additions,deletions,files'
 /** `owner/name`, starting with a letter or digit, so a repo operand can never read as a flag. */
 const REPO = /^[A-Za-z0-9][\w.-]*\/[\w.-]+$/
 /** herdr's `w18:p8V`, starting with a letter or digit, so the pane operand can never read as a flag. */

@@ -161,7 +161,7 @@ const prKey = (pr: Pr): string => `${pr.repo}#${pr.number}`
 
 /**
  * The PRs tab: one block per repo, each PR's state and CI. `c` (or pressing a PR) lists the
- * checks still red or running. `o` and `m` are shown as hints only; they arrive with S4.
+ * checks still red or running.
  */
 function drawPrs(el: El, board: Board, ui: PaneUi, columns: number, act: Act): RenderElement {
   const { Box, Text, Button } = el
@@ -289,7 +289,7 @@ const LIGHT_TEXT: Record<Light, (letter: Letter) => string> = { lit: (l) => l, d
 /** The mock's classes: a letter that ran green, the amber dot, a VERIFIED claim with no run red, a skill Codex only selected dim. */
 const LIGHT_STYLE: Record<Light, { color?: string; dim?: boolean }> = { lit: { color: 'green' }, dim: { dim: true }, claimed: { color: 'red' }, amber: { color: 'yellow' }, na: { dim: true }, off: { dim: true } }
 
-/** Until a verifier reports, and while the offer stands, every letter is a dash. A verifier no trace can come from reads n/a once. */
+/** Until a verifier reports, every letter is a dash. A verifier no trace can come from reads n/a once. */
 function reviewDrawn(r: Cells['review']): Drawn {
   if (r.k !== 'review') return { text: LETTERS.map(() => DASH).join(' ') }
   if (LETTERS.every((l) => r.lights[l] === 'na')) return { text: 'n/a' }
@@ -339,7 +339,7 @@ function linearPress(row: Row): { key: string; intent: Intent } | undefined {
 }
 
 function healthLines(health: Health): string[] {
-  return (Object.keys(health) as Array<keyof Health>).flatMap((id) => {
+  return Object.keys(health).filter(isHealthId).flatMap((id) => {
     const h = health[id]
     const { name, down } = HEALTH_WORDS[id]
     if (h.k === 'ok') return []

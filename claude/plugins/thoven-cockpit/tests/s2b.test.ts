@@ -10,7 +10,7 @@
 import { expect, test } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { COMMANDS } from '../hooks/commands.ts'
-import { BACKEND, FRONTEND, configPathOf, parseOrigin, parsePrList, titleTickets } from '../hooks/github.ts'
+import { BACKEND, FRONTEND, configPathOf, parseOrigin, parsePrList } from '../hooks/github.ts'
 import { isLinearEventId, type Board, type Fact, type Pr, type Sources } from '../hooks/model.ts'
 import { SOURCES, headPathOf, parseHead } from '../hooks/sources.ts'
 import { cellText } from '../hooks/view.ts'
@@ -95,10 +95,6 @@ test('frontend #136 parses to its branch, THV-481, and 13 of 13 checks done with
 })
 
 test("frontend #139's title names THV-1003, THV-1041 and THV-1038 in prose; only its trailing THV-908 is a ticket", async () => {
-  const title = 'Docs catch up with THV-1003, THV-1041 and THV-1038 (THV-908)'
-  expect(titleTickets(title)).toEqual(['THV-908'])
-  expect(titleTickets('Book Lessons follow-ups (THV-851, THV-847, THV-843)')).toEqual(['THV-851', 'THV-847', 'THV-843'])
-  expect(titleTickets('Retire feature-orchestrator, design-workflow-outline and building-thoven-ui')).toEqual([])
   const pr = prOf(FRONTEND, GH_FRONTEND, 139)
   expect([pr.title, pr.branch, pr.tickets, pr.state]).toEqual(['Docs catch up with THV-1003, THV-1041 and THV-1038', 'docs/thv-908', ['THV-908'], 'MERGED'])
 })

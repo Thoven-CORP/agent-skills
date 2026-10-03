@@ -142,7 +142,6 @@ function dispatchTie(facts: BoardFacts, p: Pane): Tie | undefined {
   return sent ? { kind: sent.role === 'verifier' ? 'Review' : undefined, title: p.terminalTitle ?? sent.ticket, tickets: [sent.ticket], origin: 'dispatch' } : undefined
 }
 
-
 /** The row for work main does itself: its branch names a ticket no pane holds. */
 function thisSession(world: World, mainPane: Pane | undefined): RowIdentity | undefined {
   const branch = valueOf(world.sources.branches)?.get(world.me.cwd)

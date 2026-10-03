@@ -321,7 +321,6 @@ export type ReviewSkill = (typeof REVIEW_SKILLS)[number]
 export type Light = 'lit' | 'dim' | 'off' | 'amber' | 'na' | 'claimed'
 export type ReviewCell =
   | { k: 'none' }
-  | { k: 'offer'; skill: 'code-review' } // hotfix space: `c` fills /code-review
   | { k: 'review'; lights: Record<Letter, Light>; round: number; tool: Tool | undefined }
 
 export type PrCell = { k: 'none' } | { k: 'own'; pr: Pr } | { k: 'shared'; pr: Pr } // "in #N"
