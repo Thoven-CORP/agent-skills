@@ -314,6 +314,20 @@ test('Bash send.sh of THV-1004-fix2.md writes the send fact, and the Fix cell re
   expect(cellText(row).fix).toBe('2/5')
 })
 
+test('a Bash tool that throws beneath the cockpit still fails through it, and the cockpit neither logs nor records it', async ($, on) => {
+  const s = stage(on, { pane: 'w56:p2', sid: 'sid-main', snapshot: SNAPSHOT_LIVE })
+  await start($)
+  s.bashThrows.error = 'Bash crashed'
+  const failed = await bash($, SEND_FIX2_THV_1004).then(
+    () => 'resolved',
+    (err: unknown) => (err instanceof Error ? err.message : String(err)),
+  )
+  // The kit reports a throwing tool its own way; what matters is that the call still fails.
+  expect(failed).not.toBe('resolved')
+  expect(s.logs.filter((l) => l.startsWith('cockpit '))).toEqual([])
+  expect(s.setKeys).toEqual([])
+})
+
 test('FIX ROUND 3/5 received by a pane with no send.sh gives Fix round 3', async ($, on) => {
   const s = stage(on, { pane: 'w18:p8V', sid: P8V_SID, snapshot: SNAPSHOT_LIVE })
   await start($)

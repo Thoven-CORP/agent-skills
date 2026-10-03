@@ -12,13 +12,14 @@
 //   pane (engaged)             the same today; S3 and S5 add their observers here
 //   main   (claimed a space)   one 5 s heartbeat timer; all polling, projection, drawing
 //
-// Crash safety: every hook is one of two shapes, and the try/catch never wraps `next`:
-//   observe-then-pass   try { await observe… } catch (err) { debug(err) }  return next(e)
-//   pass-then-observe   const r = await next(e); try { … } catch (err) { debug(err) }  return r
+// Crash safety: every hook is one line over a shape below, and no try/catch wraps `next`:
+//   observeThenPass   try { await observe() } catch (err) { debug(err) }  return next(e)
+//   passThenObserve   const r = await next(e); try { await observe(r) } catch (err) { debug(err) }  return r
+//   passThenExtend    the same, returning what `extend(r)` gave (S5)
 // Every registration also gets `.catch(passThrough)`. The heartbeat catches per source, so one
 // failing source never stops another.
 
-import type { EngineInterface, Register } from 'claude-code'
+import type { EngineInterface, Register, RenderElement } from 'claude-code'
 import { project } from './board.ts'
 import { readPrompt, sendCalls } from './dispatch.ts'
 import { claimHeldBy, claimOf } from './facts.ts'
@@ -54,100 +55,65 @@ let main: MainState | undefined
 let ui: PaneUi = { tab: 'work', selected: undefined, selectedPr: undefined, checks: undefined }
 
 export const register: Register = (on) => {
-  on('session.start', async ($, e, next) => {
-    // Its own try: a register that throws (as a re-registration can) must not keep main dark.
-    try {
-      await $.command.register({ name: 'cockpit', description: 'Open the Thoven cockpit for this herdr space', immediate: true })
-    } catch (err) {
-      await debug($, 'command.register', err)
-    }
-    try {
-      await resolveMe($, (await $.session.id()) as SessionId)
-    } catch (err) {
-      await debug($, 'session.start', err)
-    }
-    return next(e)
-  }).catch(passThrough)
+  on('session.start', ($, e, next) => observeThenPass($, 'session.start', e, next, () => startSession($))).catch(passThrough)
 
   // Fires before session.start at startup (measured), and after /clear, /resume, /branch, compact.
   // The compaction checkpoint arrives in S5.
-  on('classic.SessionStart', async ($, e, next) => {
-    const r = await next(e)
-    try {
-      await resolveMe($, e.session_id as SessionId)
-    } catch (err) {
-      await debug($, 'classic.SessionStart', err)
-    }
-    return r
-  }).catch(passThrough)
+  on('classic.SessionStart', ($, e, next) => passThenObserve($, 'classic.SessionStart', e, next, () => resolveMe($, e.session_id as SessionId))).catch(passThrough)
 
   // A report, verdict or brief can reach any session: herdr's `agent prompt` arrives here (origin
   // composer, pastes expanded), and so does a typed paste.
-  on('prompt.submit', async ($, e, next) => {
-    try {
-      await observePrompt($, e.text)
-    } catch (err) {
-      await debug($, 'prompt.submit', err)
-    }
-    return next(e)
-  }).catch(passThrough)
+  on('prompt.submit', ($, e, next) => observeThenPass($, 'prompt.submit', e, next, () => observePrompt($, e.text))).catch(passThrough)
 
   // A peer's or subagent's hand-back (synthesis A6). Writes are idempotent, so arriving here and in
   // prompt.submit as well costs one more set of the same key.
-  on('session.receive', async ($, e, next) => {
-    try {
-      await observePrompt($, e.text)
-    } catch (err) {
-      await debug($, 'session.receive', err)
-    }
-    return next(e)
-  }).catch(passThrough)
+  on('session.receive', ($, e, next) => observeThenPass($, 'session.receive', e, next, () => observePrompt($, e.text))).catch(passThrough)
 
   // send.sh is how a brief or fix round reaches a pane. Observed after it ran: a refused or failed
   // call sent nothing.
-  on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
-    const r = await next(e)
-    try {
-      if (!('deny' in r && r.deny !== undefined) && r.isError !== true) await observeBash($, (e as { command?: unknown }).command)
-    } catch (err) {
-      await debug($, 'tool.call', err)
-    }
-    return r
-  }).catch(passThrough)
+  on('tool.call', { tool: 'Bash' }, ($, e, next) => passThenObserve($, 'tool.call', e, next, (r) => observeBash($, r, (e as { command?: unknown }).command))).catch(passThrough)
 
   // `/cockpit doctor` arrives in S6; until then every argument is ignored.
-  on('command.run', { command: 'cockpit' }, async ($) => {
-    try {
-      return { text: await claimAndOpen($) }
-    } catch (err) {
-      await debug($, 'command.run', err)
-      return { text: `Cockpit failed: ${messageOf(err)}` }
-    }
-  }).catch(passThrough)
+  on('command.run', { command: 'cockpit' }, ($) => runCockpit($)).catch(passThrough)
 
-  on('ui.render', { component: 'Pane' }, async ($, e, next) => {
-    if (e.requestId !== PANE_ID) return next(e)
-    try {
-      return drawCockpit($.ui.resolve(e), main?.board, ui, e.props.bodyColumns, (intent) => act($, intent))
-    } catch (err) {
-      await debug($, 'ui.render', err)
-    }
-    return next(e)
-  }).catch(passThrough)
+  on('ui.render', { component: 'Pane' }, ($, e, next) => (e.requestId === PANE_ID ? drawOrPass($, e, next) : next(e))).catch(passThrough)
 
   // `f` acts on the row whose button holds the focus ring, and `c` on the PR whose button does.
-  on('ui.focus', async ($, e, next) => {
-    try {
-      const element = e.requestId === PANE_ID ? (e.element ?? '') : ''
-      const ticket = /^row-(THV-\d+)$/.exec(element)?.[1]
-      const pr = /^pr-(.+#\d+)$/.exec(element)?.[1]
-      if (ticket) ui = { ...ui, selected: ticket }
-      if (pr) ui = { ...ui, selectedPr: pr }
-    } catch (err) {
-      await debug($, 'ui.focus', err)
-    }
-    return next(e)
-  }).catch(passThrough)
+  on('ui.focus', ($, e, next) => observeThenPass($, 'ui.focus', e, next, async () => noteFocus(e.requestId === PANE_ID ? (e.element ?? '') : ''))).catch(passThrough)
+}
+
+// ── The hook shapes. `next` is never inside a try, so the cockpit never hides a failure beneath it. ──
+
+/** Observe, then pass on. A failing observer is logged and the event goes on untouched. */
+async function observeThenPass<E, R>($: Api, where: string, e: E, next: (e: E) => Promise<R>, observe: () => Promise<void>): Promise<R> {
+  try {
+    await observe()
+  } catch (err) {
+    await debug($, where, err)
+  }
+  return next(e)
+}
+
+/** Pass on, then observe what came back. A failing observer is logged and the result returned untouched. */
+async function passThenObserve<E, R>($: Api, where: string, e: E, next: (e: E) => Promise<R>, observe: (r: R) => Promise<void>): Promise<R> {
+  const r = await next(e)
+  try {
+    await observe(r)
+  } catch (err) {
+    await debug($, where, err)
+  }
+  return r
+}
+
+/** Pass on, then add to what came back (S5's compaction checkpoint). A failing `extend` returns the result untouched. */
+async function passThenExtend<E, R>($: Api, where: string, e: E, next: (e: E) => Promise<R>, extend: (r: R) => Promise<R>): Promise<R> {
+  const r = await next(e)
+  try {
+    return await extend(r)
+  } catch (err) {
+    await debug($, where, err)
+  }
+  return r
 }
 
 // ── Top-level effects. Each takes `$` and is the only code that performs its kind of effect. ──
@@ -163,6 +129,44 @@ async function debug($: Api, where: string, err: unknown): Promise<void> {
   } catch {
     // The debug log is the last resort; nothing is left to report a failure to.
   }
+}
+
+/** Register `/cockpit`, then decide `me`. Its own try: a register that throws (as a re-registration can) must not keep main dark. */
+async function startSession($: Api): Promise<void> {
+  try {
+    await $.command.register({ name: 'cockpit', description: 'Open the Thoven cockpit for this herdr space', immediate: true })
+  } catch (err) {
+    await debug($, 'command.register', err)
+  }
+  await resolveMe($, (await $.session.id()) as SessionId)
+}
+
+/** `/cockpit`. It has no `next`, so a failure is the answer. */
+async function runCockpit($: Api): Promise<{ text: string }> {
+  try {
+    return { text: await claimAndOpen($) }
+  } catch (err) {
+    await debug($, 'command.run', err)
+    return { text: `Cockpit failed: ${messageOf(err)}` }
+  }
+}
+
+/** The cockpit pane, or what is beneath when drawing it threw. */
+async function drawOrPass<E extends Parameters<Api['ui']['resolve']>[0] & { props: { bodyColumns: number } }, R>($: Api, e: E, next: (e: E) => Promise<R>): Promise<RenderElement | R> {
+  try {
+    return drawCockpit($.ui.resolve(e), main?.board, ui, e.props.bodyColumns, (intent) => act($, intent))
+  } catch (err) {
+    await debug($, 'ui.render', err)
+  }
+  return next(e)
+}
+
+/** The focused element's key: `row-THV-n` selects a row, `pr-owner/name#n` a PR. */
+function noteFocus(element: string): void {
+  const ticket = /^row-(THV-\d+)$/.exec(element)?.[1]
+  const pr = /^pr-(.+#\d+)$/.exec(element)?.[1]
+  if (ticket) ui = { ...ui, selected: ticket }
+  if (pr) ui = { ...ui, selectedPr: pr }
 }
 
 /**
@@ -369,8 +373,9 @@ async function observePrompt($: Api, text: unknown): Promise<void> {
   }
 }
 
-/** A Bash command this session ran. Only send.sh calls matter; send.sh itself needs HERDR_PANE_ID. */
-async function observeBash($: Api, command: unknown): Promise<void> {
+/** A Bash command this session ran, with its result. Only a send.sh call that ran matters; send.sh itself needs HERDR_PANE_ID. */
+async function observeBash($: Api, r: object, command: unknown): Promise<void> {
+  if (('deny' in r && r.deny !== undefined) || ('isError' in r && r.isError === true)) return
   if (me.k === 'inert' || typeof command !== 'string' || !command.includes('send.sh')) return
   const calls = sendCalls(command)
   if (calls.length === 0) return

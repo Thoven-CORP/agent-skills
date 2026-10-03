@@ -102,6 +102,8 @@ export type Stage = {
   files: Map<string, string>
   /** Every key `$.store.set` wrote, in order, repeats included. */
   setKeys: string[]
+  /** Set to make the Bash tool beneath the cockpit throw, as a crashed tool does. */
+  bashThrows: { error: string | undefined }
   /** Every `$.fs` call, in order: `read <path>`, `list <path>` or `exists <path>`. */
   fsCalls: string[]
   snapshots(): number
@@ -138,6 +140,7 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
     files: new Map(),
     setKeys: [],
     fsCalls: [],
+    bashThrows: { error: undefined },
     snapshots: () => s.argvs.filter((a) => a.join(' ') === 'herdr api snapshot').length,
     paneGets: () => s.argvs.filter((a) => a[1] === 'pane' && a[2] === 'get').map((a) => a[3] ?? ''),
   }
@@ -200,7 +203,10 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
   })
   on('prompt.submit', (_$: unknown, e: { text: string }) => ({ text: e.text }))
   on('session.receive', (_$: unknown, e: { text: string }) => ({ text: e.text }))
-  on('tool.call', () => ({ result: { stdout: '', stderr: '', interrupted: false } }))
+  on('tool.call', () => {
+    if (s.bashThrows.error !== undefined) throw new Error(s.bashThrows.error)
+    return { result: { stdout: '', stderr: '', interrupted: false } }
+  })
   on('session.start', () => ({ cwd: MAIN_CWD }))
   on('classic.SessionStart', () => ({}))
   on('ui.render', () => ({ type: 'Text', props: {}, children: ['drawn by Claude Code'] }))
