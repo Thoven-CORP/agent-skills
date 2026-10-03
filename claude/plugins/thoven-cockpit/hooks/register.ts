@@ -86,24 +86,6 @@ export const register: Register = (on) => {
     }
   }).catch(passThrough)
 
-  on('prompt.submit', async ($, e, next) => {
-    try {
-      if (me.k !== 'inert') await observePrompt($, e.text)
-    } catch (err) {
-      await debug($, 'prompt.submit', err)
-    }
-    return next(e)
-  }).catch(passThrough)
-
-  on('session.receive', async ($, e, next) => {
-    try {
-      if (me.k !== 'inert') await observePrompt($, e.text)
-    } catch (err) {
-      await debug($, 'session.receive', err)
-    }
-    return next(e)
-  }).catch(passThrough)
-
   on('ui.render', { component: 'Pane' }, async ($, e, next) => {
     if (e.requestId !== PANE_ID) return next(e)
     try {
@@ -287,10 +269,6 @@ async function loadFacts($: Api, only?: FactKind): Promise<{ facts: Fact[]; read
 /** Whole value, writer-owned key: never get-then-set. */
 async function writeFact($: Api, fact: Fact): Promise<void> {
   await $.store.set(keyOf(fact), fact)
-}
-
-async function observePrompt(_$: Api, _text: string): Promise<void> {
-  throw new Error('not implemented (S2): reports, briefs and fix rounds')
 }
 
 /** A press, as data. herdr focus runs from `$.clock.after(0)`, outside the press handler. */
