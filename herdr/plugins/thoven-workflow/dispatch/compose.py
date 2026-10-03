@@ -120,7 +120,12 @@ def brief(cli, ctx):
         send = f'~/.local/bin/herdr agent prompt {main} "$(cat <file>)" (write the message to a temp file first, delete it after)'
     else:
         send = f"writing it to {inbox_file} (no dispatcher pane and no space main at dispatch)"
-    sibling = ctx.get("sibling") or "none"
+    other = ctx.get("other_repo") or ""
+    where_other = (
+        f"\n           Also yours: {other}. Work across both repos from this pane and commit in each"
+        "\n           repo by exact path."
+        if other else ""
+    )
     script = label_script()
     kinds = "plan -> Plan, build -> Build, design -> Design, review -> Review"
     if script:
@@ -131,8 +136,7 @@ def brief(cli, ctx):
     head = f"{spec['skill_prefix']}poteto-mode {t}: read the ticket and all its comments in Linear, pick a mode, label your tab, tell the dispatcher, then work."
     body = f"""
 TICKET     {t}  {ctx.get('url') or 'https://linear.app/thoven/issue/' + t}
-WHERE      Repo {ctx['path']} ({ctx['repo']}), branch {ctx['branch']}, base {ctx['base']}.
-           Sibling pane on this ticket: {sibling}.
+WHERE      Repo {ctx['path']} ({ctx['repo']}), branch {ctx['branch']}, base {ctx['base']}.{where_other}
 FIRST      Read {t} in full with the Linear tools, then read ALL of its comments, oldest to
            newest. A ruling in a comment binds and beats the description.
 MODE       Choose one:
