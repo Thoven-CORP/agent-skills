@@ -60,6 +60,9 @@ export type StatusWord = (typeof STATUS_WORDS)[number]
 export const ROLES = ['builder', 'verifier'] as const
 export type Role = (typeof ROLES)[number]
 
+export const PR_STATES = ['OPEN', 'MERGED', 'CLOSED'] as const
+export type PrState = (typeof PR_STATES)[number]
+
 /** A guard for one of the lists above: is this outside value one of its words? */
 export function isOneOf<L extends readonly string[]>(list: L): (v: unknown) => v is L[number] {
   return (v): v is L[number] => list.some((word) => word === v)
@@ -71,6 +74,7 @@ export const isPaneId = (v: unknown): v is PaneId => isId(v)
 export const isTabId = (v: unknown): v is TabId => isId(v)
 export const isSpaceId = (v: unknown): v is SpaceId => isId(v)
 export const isSessionId = (v: unknown): v is SessionId => isId(v)
+export const isLinearEventId = (v: unknown): v is LinearEventId => isId(v)
 
 /** One line-anchored status line. */
 export type StatusLine = { ticket: Ticket; word: StatusWord; line: string }
@@ -195,7 +199,7 @@ export type Pr = {
   /** The title without its trailing `(THV-n …)` group, which is in `tickets`. */
   title: string
   branch: string
-  state: 'OPEN' | 'MERGED' | 'CLOSED'
+  state: PrState
   /** Tickets named by the branch `thv-(\d+)`, then every ticket in the title's trailing `(…)`. Prose mentions are not tickets. */
   tickets: Ticket[]
   checks: Checks
@@ -217,16 +221,6 @@ export type InboxFile = { name: string; ticket: Ticket; at: Ms } & (
   | { k: 'escalation'; head: string } // herdr's verify plugin: a pane keeps reporting done with live processes
   | { k: 'note' } // anything else, such as a research deliverable
 )
-
-/** Best-effort read of one Codex verifier rollout. */
-export type CodexReview = {
-  sid: SessionId
-  ticket: Ticket | undefined
-  /** `spawn_agent` task names: proof a reviewer started. */
-  spawned: string[]
-  /** `skills.selected_skill_instructions`: injected, not proof of a run. */
-  selected: string[]
-}
 
 /** What each source yields when it answers, read off `SOURCES` in sources.ts: a source cannot be added without its value type. */
 export type SourceValues = { [K in keyof typeof SOURCES]: (typeof SOURCES)[K] extends Source<infer T> ? T : never }

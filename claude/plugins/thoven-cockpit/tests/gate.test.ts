@@ -4,8 +4,9 @@
 
 import { expect, test } from 'claude-code/testing'
 import { COMMANDS, type CommandName, type Req } from '../hooks/commands.ts'
+import { isPaneId } from '../hooks/model.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
-import { PANE, cockpit, relabelTab, stage, start } from './stage.ts'
+import { PANE, cockpit, idOf, relabelTab, stage, start } from './stage.ts'
 
 const SNAPSHOT = relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Consent evidence hardening (THV-1045)')
 
@@ -15,8 +16,8 @@ const isMerging = (a: string): boolean => /^merge$/i.test(a) || /^--?(merge|squa
 /** Each command built once with a real operand. The mapped type makes a new command name a compile error here. */
 const BUILT: { [K in CommandName]: () => Req } = {
   'herdr api snapshot': () => COMMANDS['herdr api snapshot'](),
-  'herdr pane get': () => COMMANDS['herdr pane get']('w18:p8V' as never),
-  'herdr agent focus': () => COMMANDS['herdr agent focus']('w18:p8V' as never),
+  'herdr pane get': () => COMMANDS['herdr pane get'](idOf(isPaneId, 'w18:p8V')),
+  'herdr agent focus': () => COMMANDS['herdr agent focus'](idOf(isPaneId, 'w18:p8V')),
   'gh pr list': () => COMMANDS['gh pr list']('Thoven-CORP/frontend-remote'),
 }
 

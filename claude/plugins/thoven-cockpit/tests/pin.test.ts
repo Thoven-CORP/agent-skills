@@ -13,9 +13,9 @@
 import type { RenderElement, RenderNode } from 'claude-code'
 import { expect, test } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
-import { briefOf, inboxFile, sendCalls, ticket, unwrapPasted } from '../hooks/dispatch.ts'
+import { briefOf, inboxFile, sendCalls, unwrapPasted } from '../hooks/dispatch.ts'
 import { BACKEND, FRONTEND, configPathOf, parseOrigin, parsePrList } from '../hooks/github.ts'
-import type { Board, Fact, Pr, Sources, World } from '../hooks/model.ts'
+import { isLinearEventId, isPaneId, isSessionId, type Board, type Fact, type Pr, type Sources, type World } from '../hooks/model.ts'
 import { headPathOf, parseHead } from '../hooks/sources.ts'
 import { drawCockpit } from '../hooks/view.ts'
 import { CONFIG_BACKEND, CONFIG_FRONTEND, DOT_GIT_THV_481, HEAD_COCKPIT, HEAD_THV_481 } from './fixtures/git.ts'
@@ -24,7 +24,7 @@ import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import { OUT_ESCALATION_THV_1004, OUT_RESEARCH_THV_1038_HEAD } from './fixtures/inbox.ts'
 import * as REPORTS from './fixtures/reports.ts'
 import * as SENDS from './fixtures/send.ts'
-import { MAIN_CWD, PANE, bash, cockpit, fresh, mainOf, must, receive, relabelPane, relabelTab, stage, start, submit, worldOf, type Stage } from './stage.ts'
+import { MAIN_CWD, PANE, bash, cockpit, fresh, idOf, mainOf, must, receive, relabelPane, relabelTab, stage, start, submit, tk, worldOf, type Stage } from './stage.ts'
 
 
 
@@ -42,16 +42,6 @@ function show(value: unknown): string {
 const written = (s: Stage): string => show(s.setKeys.map((k) => [k, s.saved.get(k)]))
 
 // ── ids and worlds ───────────────────────────────────────────────────────────────────────────
-
-function isId<T extends string>(_v: string): _v is T {
-  return true
-}
-/** A literal as an id type. */
-function id<T extends string>(text: string): T {
-  if (isId<T>(text)) return text
-  throw new Error(text)
-}
-const tk = (text: string) => must(ticket(text))
 
 const P8V_SID = '27c71f2d-e064-4ebc-ae51-e993d40abfac'
 const THOVEN = '/Users/andresmartinez/thoven'
@@ -72,13 +62,13 @@ const FIX_ROUND_3_THV_1041 = REPORTS.FIX_ROUND_3_THV_1015.replaceAll('THV-1015',
 const report = (t: string, sid: string, status: 'DONE' | 'DONE_WITH_CONCERNS' | 'NEEDS_CONTEXT' | 'BLOCKED', at: number, concerns = 0): Fact => ({
   kind: 'report',
   ticket: tk(t),
-  sid: id(sid),
+  sid: idOf(isSessionId, sid),
   status,
   text: `${status} ${t}`,
   concerns,
   at,
 })
-const briefFact = (text: string, pane: string, sid: string, at: number): Fact => ({ kind: 'brief', ...must(briefOf(text)), sid: id(sid), pane: id(pane), at })
+const briefFact = (text: string, pane: string, sid: string, at: number): Fact => ({ kind: 'brief', ...must(briefOf(text)), sid: idOf(isSessionId, sid), pane: idOf(isPaneId, pane), at })
 
 function prsOf(repo: string, json: string): Pr[] {
   return must(parsePrList(repo, json))
@@ -137,10 +127,10 @@ const WORLDS: Array<[string, () => World]> = [
   [
     's2.fix-send-and-brief',
     () =>
-      worldOf(W18, W18_1041, { facts: [{ kind: 'send', ticket: tk('THV-1041'), pane: id('w40:pC'), role: 'builder', round: 2, file: 'THV-1041-fix2.md', at: 1 }, briefFact(FIX_ROUND_3_THV_1041, 'w18:p8V', P8V_SID, 2)] }),
+      worldOf(W18, W18_1041, { facts: [{ kind: 'send', ticket: tk('THV-1041'), pane: idOf(isPaneId, 'w40:pC'), role: 'builder', round: 2, file: 'THV-1041-fix2.md', at: 1 }, briefFact(FIX_ROUND_3_THV_1041, 'w18:p8V', P8V_SID, 2)] }),
   ],
   ['s2.fix-brief', () => worldOf(W18, W18_1041, { facts: [briefFact(FIX_ROUND_3_THV_1041, 'w18:p8V', P8V_SID, 2)] })],
-  ['s2.events-recorded', () => worldOf(W18, W18_1041, { facts: [report('THV-1041', 'sid-b', 'DONE', 5000), { kind: 'happened', ticket: tk('THV-1041'), event: id('report-DONE'), at: 5000 }] })],
+  ['s2.events-recorded', () => worldOf(W18, W18_1041, { facts: [report('THV-1041', 'sid-b', 'DONE', 5000), { kind: 'happened', ticket: tk('THV-1041'), event: idOf(isLinearEventId, 'report-DONE'), at: 5000 }] })],
   ['s2.tie-1014', () => worldOf(W18, SNAPSHOT_LIVE, { facts: [briefFact(REPORTS.BUILD_BRIEF_THV_1014, 'w18:p8V', P8V_SID, 1)] })],
   ['s2.verifier-tie-1016', () => worldOf(W18, SNAPSHOT_LIVE, { facts: [briefFact(REPORTS.VERIFY_BRIEF_THV_1016, 'w18:p8V', P8V_SID, 1)] })],
   ['s2.fix-1015', () => worldOf(W18, SNAPSHOT_LIVE, { facts: [briefFact(REPORTS.FIX_ROUND_3_THV_1015, 'w18:p8V', P8V_SID, 0)] })],
@@ -177,7 +167,7 @@ const WORLDS: Array<[string, () => World]> = [
   [
     's2b.merged-1038-seen',
     () =>
-      worldOf(W18, W18_1038, { facts: [{ kind: 'happened', ticket: tk('THV-1038'), event: id('merged-138'), at: 0 }], sources: { github: fresh({ prs: [...prsOf(FRONTEND, GH_FRONTEND), ...prsOf(BACKEND, GH_BACKEND)] }) } }),
+      worldOf(W18, W18_1038, { facts: [{ kind: 'happened', ticket: tk('THV-1038'), event: idOf(isLinearEventId, 'merged-138'), at: 0 }], sources: { github: fresh({ prs: [...prsOf(FRONTEND, GH_FRONTEND), ...prsOf(BACKEND, GH_BACKEND)] }) } }),
   ],
 ]
 

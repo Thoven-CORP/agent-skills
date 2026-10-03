@@ -11,13 +11,13 @@ import { expect, test } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { COMMANDS } from '../hooks/commands.ts'
 import { BACKEND, FRONTEND, configPathOf, parseOrigin, parsePrList, titleTickets } from '../hooks/github.ts'
-import type { Board, Fact, Pr, Sources } from '../hooks/model.ts'
+import { isLinearEventId, type Board, type Fact, type Pr, type Sources } from '../hooks/model.ts'
 import { SOURCES, headPathOf, parseHead } from '../hooks/sources.ts'
 import { cellText } from '../hooks/view.ts'
 import { CONFIG_AGENT_SKILLS, CONFIG_BACKEND, CONFIG_FRONTEND, DOT_GIT_THV_481, DOT_GIT_WORKTREE, HEAD_THV_481 } from './fixtures/git.ts'
 import { GH_AGENT_SKILLS, GH_BACKEND, GH_FRONTEND } from './fixtures/github.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
-import { MAIN_CWD, PANE, cockpit, fakeAsk, fresh, mainOf, must, ranTimes, relabelPane, relabelTab, rowOf, stage, start, worldOf } from './stage.ts'
+import { MAIN_CWD, PANE, cockpit, fakeAsk, fresh, idOf, mainOf, must, ranTimes, relabelPane, relabelTab, rowOf, stage, start, tk, worldOf } from './stage.ts'
 
 const AGENT_SKILLS = 'Thoven-CORP/agent-skills'
 const THOVEN = '/Users/andresmartinez/thoven'
@@ -266,7 +266,7 @@ test('a merged PR on a row is a new merged-<n> event until its happened fact exi
     { ticket: 'THV-1038', event: { k: 'merged', number: 138 }, id: 'merged-138' },
     { ticket: 'THV-1038', event: { k: 'merged', number: 144 }, id: 'merged-144' },
   ])
-  const seen: Fact = { kind: 'happened', ticket: 'THV-1038' as never, event: 'merged-138' as never, at: 0 }
+  const seen: Fact = { kind: 'happened', ticket: tk('THV-1038'), event: idOf(isLinearEventId, 'merged-138'), at: 0 }
   expect(project(worldOf(mainOf('w18', 'w18:p8W'), json, { facts: [seen], sources })).newEvents.map((e) => e.id)).toEqual(['merged-144'])
 })
 

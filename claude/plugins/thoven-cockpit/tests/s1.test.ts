@@ -5,14 +5,14 @@ import { expect, test } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { branchTicket, parseLabel, pickLabel } from '../hooks/dispatch.ts'
 import { parseSnapshot } from '../hooks/herdr.ts'
-import type { Board, PaneId } from '../hooks/model.ts'
+import { isPaneId, type Board } from '../hooks/model.ts'
 import { COMMANDS } from '../hooks/commands.ts'
 import { BACKEND, FRONTEND } from '../hooks/github.ts'
 import { SOURCES } from '../hooks/sources.ts'
 import { cellText, columnsFor } from '../hooks/view.ts'
 import { DOT_GIT_THV_481, DOT_GIT_WORKTREE, HEAD_COCKPIT, HEAD_THV_481 } from './fixtures/git.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
-import { MAIN_CWD, PANE, cockpit, dropPane, fakeAsk, fresh, mainOf, must, ranTimes, relabelPane, relabelTab, rowOf, rowsOf, stage, start, worldOf } from './stage.ts'
+import { MAIN_CWD, PANE, cockpit, dropPane, fakeAsk, fresh, idOf, mainOf, must, ranTimes, relabelPane, relabelTab, rowOf, rowsOf, stage, start, worldOf } from './stage.ts'
 
 const CONSENT = 'Build · Consent evidence hardening (THV-1045)'
 /** w18 with its `Mods` tab named the way label.sh names a build tab. p8V sits in it with no pane label. */
@@ -223,7 +223,7 @@ test('the heads cache keeps only answers that succeeded, and only for folders st
 test('cellText: an S1 row shows its Pane glyph and tool tag, and a dash in every later column', async () => {
   const row = rowOf(worldOf(mainOf('w18', 'w18:p8W'), SNAPSHOT_W18_BUILD), 'THV-1045')
   expect((['pane', 'report', 'fix', 'review', 'pr', 'ci', 'linear'] as const).map((id) => cellText(row, id))).toEqual(['○ C', '–', '–', '– – – –', '–', '–', '–'])
-  expect(cellText({ ...row, panes: { k: 'live', list: [{ status: 'working', tool: 'X', pane: 'w18:p8V' as PaneId }] } }, 'pane')).toBe('◐ X')
+  expect(cellText({ ...row, panes: { k: 'live', list: [{ status: 'working', tool: 'X', pane: idOf(isPaneId, 'w18:p8V') }] } }, 'pane')).toBe('◐ X')
   expect(cellText({ ...row, panes: { k: 'gone' } }, 'pane')).toBe('gone')
 })
 
@@ -318,7 +318,7 @@ test('after /clear the same pane is main again under its new session id, and dra
     snapshot: SNAPSHOT_LIVE,
     store: { 'cockpit:main:w18': { kind: 'main', space: 'w18', sid: 'sid-old', pane: 'w18:p8W', at: 0 } },
   })
-  await $.classic.SessionStart({ session_id: 'sid-new', cwd: MAIN_CWD, source: 'clear', hook_event_name: 'SessionStart', transcript_path: '' } as any)
+  await $.classic.SessionStart({ session_id: 'sid-new', cwd: MAIN_CWD, source: 'clear', transcript_path: '' })
   expect(s.saved.get('cockpit:main:w18')).toEqual({ kind: 'main', space: 'w18', sid: 'sid-new', pane: 'w18:p8W', at: 0 })
   await s.clock.settle()
   expect(s.snapshots()).toBe(1)
@@ -340,7 +340,7 @@ test('S1 reaches no stub: no [doctor] hint, /cockpit doctor opens the cockpit, a
   await start($)
   expect(s.registrations).toEqual([{ name: 'cockpit', description: 'Open the Thoven cockpit for this herdr space', immediate: true }])
   expect((await cockpit($, 'doctor')).text).toBe('Cockpit is main of Research.')
-  await $.classic.SessionStart({ session_id: 'sid-a', cwd: MAIN_CWD, source: 'compact', hook_event_name: 'SessionStart', transcript_path: '' } as any)
+  await $.classic.SessionStart({ session_id: 'sid-a', cwd: MAIN_CWD, source: 'compact', transcript_path: '' })
   await s.clock.settle()
   expect(s.logs.filter((l) => /not implemented|failed/.test(l))).toEqual([])
 })
@@ -461,7 +461,7 @@ test('the Work tab draws kind, title, Pane glyph and tool tag; 2 switches to PRs
   await ui.press({ key: 'tab-work' })
   await ui.press({ key: 'focus-row' })
   await s.clock.settle()
-  expect(s.argvs.filter((a) => a[1] === 'agent')).toEqual([[...COMMANDS['herdr agent focus']('w18:p8V' as PaneId).argv]])
+  expect(s.argvs.filter((a) => a[1] === 'agent')).toEqual([[...COMMANDS['herdr agent focus'](idOf(isPaneId, 'w18:p8V')).argv]])
 })
 
 type Node = { type: string; props: Record<string, unknown>; children?: unknown[] }

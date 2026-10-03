@@ -5,7 +5,7 @@
 import { expect, test } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { inboxFile, readPrompt, sendCalls, statusLines, unwrapPasted } from '../hooks/dispatch.ts'
-import type { Fact, InboxFile, SessionId } from '../hooks/model.ts'
+import { isLinearEventId, isSessionId, type Fact, type InboxFile } from '../hooks/model.ts'
 import { parseFact } from '../hooks/store.ts'
 import { cellText } from '../hooks/view.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
@@ -24,7 +24,7 @@ import {
 } from './fixtures/reports.ts'
 import { BUILT_CONCERNS_TABLE_THV_1045 } from './fixtures/built.ts'
 import { SEND_1, SEND_2, SEND_3, SEND_4, SEND_5, SEND_6, SEND_FIX2_THV_1004 } from './fixtures/send.ts'
-import { PANE, bash, cockpit, fresh, mainOf, receive, relabelTab, rowOf, stage, start, submit, worldOf } from './stage.ts'
+import { PANE, bash, cockpit, fresh, idOf, mainOf, receive, relabelTab, rowOf, stage, start, submit, tk, worldOf } from './stage.ts'
 
 /** p8V's session id in SNAPSHOT_LIVE (`agent_session.value`). */
 const P8V_SID = '27c71f2d-e064-4ebc-ae51-e993d40abfac'
@@ -162,8 +162,8 @@ test('an inbox file is a report or verdict only when it starts with its own stat
 
 const report = (ticket: string, sid: string, status: 'DONE' | 'DONE_WITH_CONCERNS' | 'NEEDS_CONTEXT' | 'BLOCKED', at: number, concerns = 0): Fact => ({
   kind: 'report',
-  ticket: ticket as never,
-  sid: sid as SessionId,
+  ticket: tk(ticket),
+  sid: idOf(isSessionId, sid),
   status,
   text: `${status} ${ticket}`,
   concerns,
@@ -217,7 +217,7 @@ test('Fix cell: main send.sh round wins; without one, the pane FIX ROUND brief g
 test('a report on a row asks main to record report STATUS once; a recorded one is not asked again', async () => {
   const done = report('THV-1041', 'sid-b', 'DONE', 5000)
   expect(project(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: [done] })).newEvents).toEqual([{ ticket: 'THV-1041', event: { k: 'report', status: 'DONE' }, id: 'report-DONE' }])
-  const happened: Fact = { kind: 'happened', ticket: 'THV-1041' as never, event: 'report-DONE' as never, at: 5000 }
+  const happened: Fact = { kind: 'happened', ticket: tk('THV-1041'), event: idOf(isLinearEventId, 'report-DONE'), at: 5000 }
   expect(project(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: [done, happened] })).newEvents).toEqual([])
 })
 

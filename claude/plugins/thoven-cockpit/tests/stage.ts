@@ -5,8 +5,9 @@
 import { mock } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { COMMANDS, type Req } from '../hooks/commands.ts'
+import { ticket } from '../hooks/dispatch.ts'
 import { parseSnapshot } from '../hooks/herdr.ts'
-import type { Board, Fact, Main, PaneId, Polled, Row, SessionId, Sources, SpaceId, World } from '../hooks/model.ts'
+import { isPaneId, isSessionId, isSpaceId, type Board, type Fact, type Main, type Polled, type Row, type Sources, type Ticket, type World } from '../hooks/model.ts'
 import { parseLiveSpaces, unpolled, type Ask, type Listing } from '../hooks/sources.ts'
 import { PANE_GET_P8W } from './fixtures/herdr.ts'
 import { WORKFLOW_LIVE_SPACES } from './fixtures/workflow.ts'
@@ -26,8 +27,17 @@ export function must<T>(value: T | undefined): T {
   return value
 }
 
+/** A literal as an id, minted through model.ts's guard as the hooks mint outside text. */
+export function idOf<T>(isT: (v: unknown) => v is T, text: string): T {
+  if (isT(text)) return text
+  throw new Error(`not an id: ${text}`)
+}
+
+/** A literal as a ticket, through dispatch.ts's `ticket()`, the one place tickets are made. */
+export const tk = (text: string): Ticket => must(ticket(text))
+
 export function mainOf(space: string, pane: string, cwd = MAIN_CWD): Main {
-  return { k: 'main', space: space as SpaceId, pane: pane as PaneId, sid: 'sid-main' as SessionId, cwd, home: HOME, tmp: TMPDIR }
+  return { k: 'main', space: idOf(isSpaceId, space), pane: idOf(isPaneId, pane), sid: idOf(isSessionId, 'sid-main'), cwd, home: HOME, tmp: TMPDIR }
 }
 
 /** What main knows at 10 s: herdr's snapshot and the Live spaces table fresh, every other source of SOURCES unpolled unless `sources` says. */

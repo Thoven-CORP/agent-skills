@@ -4,7 +4,7 @@
 // `Pr` or an `owner/name` string; no gh field name appears outside this file.
 
 import { branchTicket, trailingTickets } from './dispatch.ts'
-import type { Checks, Pr, Ticket } from './model.ts'
+import { PR_STATES, isOneOf, type Checks, type Pr, type Ticket } from './model.ts'
 
 export const FRONTEND = 'Thoven-CORP/frontend-remote'
 export const BACKEND = 'Thoven-CORP/backend-remote'
@@ -45,7 +45,7 @@ const isObj = (v: unknown): v is Json => typeof v === 'object' && v !== null && 
 const str = (v: unknown): string | undefined => (typeof v === 'string' && v !== '' ? v : undefined)
 const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0)
 
-const STATES: ReadonlyArray<Pr['state']> = ['OPEN', 'MERGED', 'CLOSED']
+const isPrState = isOneOf(PR_STATES)
 /** CheckRun conclusions and StatusContext states that mean the check failed. */
 const FAILED = new Set(['FAILURE', 'TIMED_OUT', 'CANCELLED', 'ACTION_REQUIRED', 'STARTUP_FAILURE', 'ERROR'])
 
@@ -69,7 +69,7 @@ function prOf(repo: string, v: unknown): Pr | undefined {
   if (!isObj(v) || typeof v.number !== 'number') return undefined
   const title = str(v.title)
   const branch = str(v.headRefName)
-  const state = STATES.find((s) => s === v.state)
+  const state = isPrState(v.state) ? v.state : undefined
   if (!title || !branch || !state) return undefined
   const trailing = trailingTickets(title)
   const files = Array.isArray(v.files) ? v.files.filter(isObj) : []
