@@ -175,12 +175,14 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
     const file = e.path.startsWith(`${INBOX_DIR}/`) ? s.inbox.get(e.path.slice(INBOX_DIR.length + 1)) : undefined
     return file ? { value: file.text } : { deny: `ENOENT: ${e.path}` }
   })
-  on('fs.exists', (_$: unknown, e: { path: string }) => ({ value: e.path === INBOX_DIR && s.inbox.size > 0 }))
-  on('fs.list', (_$: unknown, e: { path: string }) =>
-    e.path === INBOX_DIR
-      ? { value: [...s.inbox].map(([name, f]) => ({ name, kind: 'file', size: f.text.length, mtimeMs: f.mtimeMs, isLink: false })) }
-      : { deny: `ENOENT: ${e.path}` },
-  )
+  // A folder exists when `files` holds something under it, so `<cwd>/.git/HEAD` makes `.git` a folder.
+  const under = (dir: string): string[] => [...s.files.keys()].filter((k) => k.startsWith(`${dir}/`)).map((k) => k.slice(dir.length + 1))
+  on('fs.exists', (_$: unknown, e: { path: string }) => ({ value: e.path === INBOX_DIR ? s.inbox.size > 0 : s.files.has(e.path) || under(e.path).length > 0 }))
+  on('fs.list', (_$: unknown, e: { path: string }) => {
+    if (e.path === INBOX_DIR) return { value: [...s.inbox].map(([name, f]) => ({ name, kind: 'file', size: f.text.length, mtimeMs: f.mtimeMs, isLink: false })) }
+    const kinds = new Map(under(e.path).map((rest) => [rest.split('/')[0] ?? '', rest.includes('/') ? 'dir' : 'file']))
+    return kinds.size > 0 ? { value: [...kinds].map(([name, kind]) => ({ name, kind, size: 0, mtimeMs: 0, isLink: false })) } : { deny: `ENOENT: ${e.path}` }
+  })
   on('prompt.submit', (_$: unknown, e: { text: string }) => ({ text: e.text }))
   on('session.receive', (_$: unknown, e: { text: string }) => ({ text: e.text }))
   on('tool.call', () => ({ result: { stdout: '', stderr: '', interrupted: false } }))

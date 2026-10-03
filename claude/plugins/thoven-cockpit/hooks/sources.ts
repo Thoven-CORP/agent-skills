@@ -126,6 +126,18 @@ export function headPathOf(cwd: string, dotGit: string | undefined): string {
   return m[1].startsWith('/') ? `${m[1]}/HEAD` : `${cwd}/${m[1]}/HEAD`
 }
 
+/**
+ * Where `cwd`'s HEAD lives, or undefined when a read failed. Only a `.git` that lists as a file
+ * is read: a checkout's is a folder, and a folder outside git has none.
+ */
+async function headOf(cwd: string, ask: Ask): Promise<string | undefined> {
+  const entries = ok(await ask.list(cwd))
+  if (!entries) return undefined
+  if (entries.find((e) => e.name === '.git')?.kind !== 'file') return headPathOf(cwd, undefined)
+  const dotGit = ok(await ask.read(`${cwd}/.git`))
+  return dotGit === undefined ? undefined : headPathOf(cwd, dotGit)
+}
+
 /** `ref: refs/heads/fix/thv-1050` → `fix/thv-1050`. A detached HEAD (a bare sha) has no branch. */
 export function parseHead(text: string): string | undefined {
   return /^ref: refs\/heads\/(.+?)\s*$/m.exec(text)?.[1]
@@ -197,16 +209,14 @@ export const SOURCES: { [K in PolledId]: Source<SourceValues[K]> } = {
     },
   },
 
+  // Rebuilt from the tracked folders each poll. A folder whose read failed is left out, so it is
+  // asked again next poll rather than cached as a checkout.
   heads: {
     everyMs: HEARTBEAT_MS,
     run: async (world, ask): Promise<HeadPaths> => {
       const known = valueOf(world.sources.heads)
-      const found = await Promise.all(
-        trackedCwds(world)
-          .filter((cwd) => !known?.has(cwd))
-          .map(async (cwd) => [cwd, headPathOf(cwd, ok(await ask.read(`${cwd}/.git`)))] as const),
-      )
-      return new Map([...(known ?? []), ...found])
+      const found = await Promise.all(trackedCwds(world).map(async (cwd) => [cwd, known?.get(cwd) ?? (await headOf(cwd, ask))] as const))
+      return new Map(found.flatMap(([cwd, head]) => (head === undefined ? [] : [[cwd, head] as const])))
     },
   },
 

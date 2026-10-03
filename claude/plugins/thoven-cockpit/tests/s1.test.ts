@@ -217,18 +217,38 @@ test("a pane known only by its folder's branch is a Build row for the branch's t
   const cwd = '/Users/andresmartinez/thoven/frontend-thv-481'
   const w0 = worldOf(mainOf('w4D', 'w18:p8W'), snap(json))
   const worktreeHead = '/Users/andresmartinez/thoven/frontend/.git/worktrees/frontend-thv-481/HEAD'
-  // MAIN_CWD's `.git` is a folder, so reading it as text fails and its HEAD is `.git/HEAD`.
-  const ask = fakeAsk({ read: { [`${cwd}/.git`]: DOT_GIT_THV_481, [`${MAIN_CWD}/.git/HEAD`]: 'ref: refs/heads/main\n', [worktreeHead]: HEAD_THV_481 } })
+  const ask = fakeAsk({
+    list: { [MAIN_CWD]: [{ name: '.git', kind: 'dir', mtimeMs: 0 }], [cwd]: [{ name: '.git', kind: 'file', mtimeMs: 0 }] },
+    read: { [`${cwd}/.git`]: DOT_GIT_THV_481, [`${MAIN_CWD}/.git/HEAD`]: 'ref: refs/heads/main\n', [worktreeHead]: HEAD_THV_481 },
+  })
   const heads = must(await SOURCES.heads.run(w0, ask))
-  expect(ask.asked).toEqual([`read ${MAIN_CWD}/.git`, `read ${cwd}/.git`])
+  expect(ask.asked).toEqual([`list ${MAIN_CWD}`, `list ${cwd}`, `read ${cwd}/.git`])
   const w1 = worldOf(w0.me, snap(json), { heads: fresh(heads) })
   const branches = must(await SOURCES.branches.run(w1, ask))
-  expect(ask.asked.slice(2)).toEqual([`read ${MAIN_CWD}/.git/HEAD`, `read ${worktreeHead}`])
+  expect(ask.asked.slice(3)).toEqual([`read ${MAIN_CWD}/.git/HEAD`, `read ${worktreeHead}`])
   const board = project(worldOf(w0.me, snap(json), { heads: fresh(heads), branches: fresh(branches) }))
   expect(board.build.map((g) => (g.k === 'single' ? [g.row.ticket, g.row.title, g.row.kind, g.row.origin, g.row.pane] : []))).toEqual([
     ['THV-481', 'ui/thv-481', undefined, 'label', { k: 'live', status: 'idle', tool: 'C', pane: 'w4D:pH' }],
   ])
   expect(board.other).toEqual([])
+})
+
+test('the heads cache keeps only answers that succeeded, and only for folders still tracked', async () => {
+  const json = relabelTab(relabelPane(SNAPSHOT_LIVE, 'w4D:pH', undefined), 'w4D:tB', '1')
+  const cwd = '/Users/andresmartinez/thoven/frontend-thv-481'
+  const w0 = worldOf(mainOf('w4D', 'w18:p8W'), snap(json), { heads: fresh(new Map([['/Users/andresmartinez/gone', '/Users/andresmartinez/gone/.git/HEAD']])) })
+  const worktree = [{ name: '.git', kind: 'file', mtimeMs: 0 }]
+  const listings = { [MAIN_CWD]: [{ name: '.git', kind: 'dir', mtimeMs: 0 }], [cwd]: worktree }
+  // The worktree's `.git` lists as a file but will not read, and MAIN_CWD will not list.
+  const failing = fakeAsk({ list: { [cwd]: worktree } })
+  expect([...must(await SOURCES.heads.run(w0, failing))]).toEqual([])
+  expect(failing.asked).toEqual([`list ${MAIN_CWD}`, `list ${cwd}`, `read ${cwd}/.git`])
+  const answering = fakeAsk({ list: listings, read: { [`${cwd}/.git`]: DOT_GIT_THV_481 } })
+  const heads = must(await SOURCES.heads.run(w0, answering))
+  expect([...heads]).toEqual([[MAIN_CWD, `${MAIN_CWD}/.git/HEAD`], [cwd, headPathOf(cwd, DOT_GIT_THV_481)]])
+  const cached = fakeAsk({})
+  expect([...must(await SOURCES.heads.run(worldOf(w0.me, snap(json), { heads: fresh(heads) }), cached))]).toEqual([...heads])
+  expect(cached.asked).toEqual([])
 })
 
 // ── unit: view.ts glyphs and widths ──────────────────────────────────────────────────────────
