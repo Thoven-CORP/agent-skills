@@ -4,6 +4,7 @@
 
 import { mock } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
+import { COMMANDS, type Req } from '../hooks/commands.ts'
 import { parseSnapshot } from '../hooks/herdr.ts'
 import type { Board, Fact, Main, PaneId, Polled, Row, SessionId, Sources, SpaceId, World } from '../hooks/model.ts'
 import { parseLiveSpaces, unpolled, type Answer, type Ask, type Listing } from '../hooks/sources.ts'
@@ -121,16 +122,13 @@ export type Stage = {
   saved: Map<string, unknown>
   opened: Array<Record<string, unknown>>
   closed: string[]
-  registered: string[]
-  /** What each `$.command.register` was called with. */
+  /** What each `$.command.register` was called with, refused or not. */
   registrations: Array<Record<string, unknown>>
   /** Set to make `$.command.register` refuse, as a re-registration can. */
-  register: { deny: string | undefined }
+  registerDeny: string | undefined
   /** Every `$.ui.log` line. */
   logs: string[]
-  /** Every `$.clock.every` and `$.clock.after` wait, with its period. The kit raises an `every` again each period. */
-  timers: Array<['every' | 'after', number]>
-  storeCalls: { n: number }
+  storeCalls: number
   /** `$TMPDIR/dispatch/out/`: file name → text and mtime. Empty means the folder does not exist. */
   inbox: Map<string, { text: string; mtimeMs: number }>
   /** What `herdr api snapshot` does now (`slow` answers after 2 s); a test changes `snapshot` to move the space on. */
@@ -142,7 +140,7 @@ export type Stage = {
   /** Every key `$.store.set` wrote, in order, repeats included. */
   setKeys: string[]
   /** Set to make the Bash tool beneath the cockpit throw, as a crashed tool does. */
-  bashThrows: { error: string | undefined }
+  bashThrows: string | undefined
   /** Every `$.fs` call, in order: `read <path>`, `list <path>` or `exists <path>`. */
   fsCalls: string[]
   snapshots(): number
@@ -150,15 +148,7 @@ export type Stage = {
 }
 
 export function stage(on: any, o: { pane?: string; sid?: string; snapshot: string; store?: Record<string, unknown> }): Stage {
-  const timers: Stage['timers'] = []
-  // An event takes one hook per test, so the recorder rides inside mock.clock's own hooks.
-  const recording = (pattern: string, ...rest: any[]) => {
-    const hook = rest.pop()
-    const kind = pattern === 'clock.every' ? 'every' : pattern === 'clock.after' ? 'after' : undefined
-    const wrapped = kind ? (...args: any[]) => (timers.push([kind, args[1].ms]), hook(...args)) : hook
-    return on(pattern, ...rest, wrapped)
-  }
-  const clock = mock.clock(recording as typeof on)
+  const clock = mock.clock(on)
   mock.env(on, o.pane ? { HERDR_PANE_ID: o.pane, HOME, TMPDIR } : { HOME, TMPDIR })
   const s: Stage = {
     clock,
@@ -167,20 +157,18 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
     saved: new Map(Object.entries(o.store ?? {})),
     opened: [],
     closed: [],
-    registered: [],
     registrations: [],
-    register: { deny: undefined },
+    registerDeny: undefined,
     logs: [],
-    timers,
-    storeCalls: { n: 0 },
+    storeCalls: 0,
     inbox: new Map(),
     herdr: { mode: 'ok', snapshot: o.snapshot },
     gh: { mode: 'ok', byRepo: {} },
     files: new Map(),
     setKeys: [],
     fsCalls: [],
-    bashThrows: { error: undefined },
-    snapshots: () => s.argvs.filter((a) => a.join(' ') === 'herdr api snapshot').length,
+    bashThrows: undefined,
+    snapshots: () => ranTimes(s, COMMANDS['herdr api snapshot']()),
     paneGets: () => s.argvs.filter((a) => a[1] === 'pane' && a[2] === 'get').map((a) => a[3] ?? ''),
   }
 
@@ -208,16 +196,15 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
     }
     return out('')
   })
-  on('store.get', (_$: unknown, e: { key: string }) => (s.storeCalls.n++, { value: s.saved.get(e.key) }))
-  on('store.set', (_$: unknown, e: { key: string; value: unknown }) => (s.storeCalls.n++, s.setKeys.push(e.key), s.saved.set(e.key, e.value), { value: undefined }))
-  on('store.delete', (_$: unknown, e: { key: string }) => (s.storeCalls.n++, s.saved.delete(e.key), { value: undefined }))
-  on('store.keys', () => (s.storeCalls.n++, { value: [...s.saved.keys()] }))
+  on('store.get', (_$: unknown, e: { key: string }) => (s.storeCalls++, { value: s.saved.get(e.key) }))
+  on('store.set', (_$: unknown, e: { key: string; value: unknown }) => (s.storeCalls++, s.setKeys.push(e.key), s.saved.set(e.key, e.value), { value: undefined }))
+  on('store.delete', (_$: unknown, e: { key: string }) => (s.storeCalls++, s.saved.delete(e.key), { value: undefined }))
+  on('store.keys', () => (s.storeCalls++, { value: [...s.saved.keys()] }))
   on('session.id', () => ({ value: o.sid ?? 'sid-a' }))
   on('session.cwd', () => ({ value: MAIN_CWD }))
   on('command.register', (_$: unknown, e: { name: string }) => {
     s.registrations.push({ ...e })
-    if (s.register.deny !== undefined) return { deny: s.register.deny }
-    s.registered.push(e.name)
+    if (s.registerDeny !== undefined) return { deny: s.registerDeny }
     return { value: undefined }
   })
   on('ui.open', (_$: unknown, e: Record<string, unknown>) => (s.opened.push(e), { value: { isPlaced: true } }))
@@ -243,7 +230,7 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
   on('prompt.submit', (_$: unknown, e: { text: string }) => ({ text: e.text }))
   on('session.receive', (_$: unknown, e: { text: string }) => ({ text: e.text }))
   on('tool.call', () => {
-    if (s.bashThrows.error !== undefined) throw new Error(s.bashThrows.error)
+    if (s.bashThrows !== undefined) throw new Error(s.bashThrows)
     return { result: { stdout: '', stderr: '', interrupted: false } }
   })
   on('session.start', () => ({ cwd: MAIN_CWD }))
@@ -251,6 +238,9 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
   on('ui.render', () => ({ type: 'Text', props: {}, children: ['drawn by Claude Code'] }))
   return s
 }
+
+/** How many times the stage ran exactly the argv a commands.ts builder makes. */
+export const ranTimes = (s: Stage, req: Req): number => s.argvs.filter((a) => a.join('\n') === req.argv.join('\n')).length
 
 export const start = ($: any) => $.session.start({ surface: 'terminal', isInteractive: true, cwd: MAIN_CWD })
 /** `/cockpit`, typed at the prompt. */

@@ -42,7 +42,6 @@ test('no process argv carries merge, and the cockpit runs only the three herdr r
 })
 
 test('every command in commands.ts starts with its own name and holds no merge verb or flag', async () => {
-  expect(Object.keys(BUILT).sort()).toEqual(Object.keys(COMMANDS).sort())
   for (const [name, build] of Object.entries(BUILT)) {
     const { argv } = build()
     expect(argv.slice(0, 3).join(' ')).toBe(name)

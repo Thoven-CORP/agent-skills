@@ -9,6 +9,7 @@
 
 import { expect, test } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
+import { COMMANDS } from '../hooks/commands.ts'
 import { BACKEND, FRONTEND, configPathOf, parseOrigin, parsePrList, titleTickets } from '../hooks/github.ts'
 import type { Board, Fact, Pr, Sources } from '../hooks/model.ts'
 import { SOURCES, headPathOf, parseHead } from '../hooks/sources.ts'
@@ -16,10 +17,9 @@ import { cellText } from '../hooks/view.ts'
 import { CONFIG_AGENT_SKILLS, CONFIG_BACKEND, CONFIG_FRONTEND, DOT_GIT_THV_481, DOT_GIT_WORKTREE, HEAD_THV_481 } from './fixtures/git.ts'
 import { GH_AGENT_SKILLS, GH_BACKEND, GH_FRONTEND } from './fixtures/github.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
-import { MAIN_CWD, PANE, cockpit, fakeAsk, fresh, mainOf, must, relabelPane, relabelTab, rowOf, stage, start, worldOf } from './stage.ts'
+import { MAIN_CWD, PANE, cockpit, fakeAsk, fresh, mainOf, must, ranTimes, relabelPane, relabelTab, rowOf, stage, start, worldOf } from './stage.ts'
 
 const AGENT_SKILLS = 'Thoven-CORP/agent-skills'
-const JSON_FIELDS = 'number,title,headRefName,state,statusCheckRollup,mergedAt,url,additions,deletions,files'
 const THOVEN = '/Users/andresmartinez/thoven'
 /** w4D:pH's real folder, a frontend worktree on ui/thv-481. */
 const FE_481_CWD = '/Users/andresmartinez/thoven/frontend-thv-481'
@@ -139,7 +139,7 @@ test('repos are each space folder’s origin, read once, plus frontend and backe
   const ask2 = fakeAsk({})
   expect([...must(await SOURCES.origins.run(w2, ask2))]).toEqual([...read])
   expect(ask2.asked).toEqual([])
-  const argvOf = (repo: string) => ['gh', 'pr', 'list', '--repo', repo, '--state', 'all', '--json', JSON_FIELDS, '--limit', '50'].join(' ')
+  const argvOf = (repo: string) => COMMANDS['gh pr list'](repo).argv.join(' ')
   const ask3 = fakeAsk({ proc: { [argvOf(FRONTEND)]: GH_FRONTEND, [argvOf(BACKEND)]: GH_BACKEND, [argvOf(AGENT_SKILLS)]: GH_AGENT_SKILLS } })
   const view = await SOURCES.github.run(w2, ask3)
   expect(ask3.asked).toEqual([FRONTEND, BACKEND, AGENT_SKILLS].map(argvOf))
@@ -303,7 +303,7 @@ test('a merged PR writes happened merged-<n> once, however many gh polls see it'
   await start($)
   await cockpit($)
   await s.clock.advance(130_000)
-  expect(s.argvs.filter((a) => a[0] === 'gh' && a[4] === FRONTEND)).toHaveLength(3)
+  expect(ranTimes(s, COMMANDS['gh pr list'](FRONTEND))).toBe(3)
   expect(s.saved.get('cockpit:happened:THV-1038:merged-138')).toEqual({ kind: 'happened', ticket: 'THV-1038', event: 'merged-138', at: 0 })
   expect(s.saved.get('cockpit:happened:THV-1038:merged-144')).toEqual({ kind: 'happened', ticket: 'THV-1038', event: 'merged-144', at: 0 })
   expect(s.setKeys.filter((k) => k.startsWith('cockpit:happened:'))).toEqual(['cockpit:happened:THV-1038:merged-138', 'cockpit:happened:THV-1038:merged-144'])
@@ -325,8 +325,8 @@ test('the PRs tab groups by repo with state, CI and key hints; c lists the faili
   await s.clock.advance(70_000)
 
   const gh = s.argvs.filter((a) => a[0] === 'gh')
-  expect(gh[0]).toEqual(['gh', 'pr', 'list', '--repo', FRONTEND, '--state', 'all', '--json', JSON_FIELDS, '--limit', '50'])
-  expect(gh.every((a) => a.slice(0, 3).join(' ') === 'gh pr list' && a.length === 11)).toBe(true)
+  expect(gh[0]).toEqual([...COMMANDS['gh pr list'](FRONTEND).argv])
+  expect(gh.length).toBe(ranTimes(s, COMMANDS['gh pr list'](FRONTEND)) + ranTimes(s, COMMANDS['gh pr list'](BACKEND)))
   expect(gh.flat().some((a) => /^merge$/i.test(a) || /^--?(merge|squash|rebase|auto|admin)$/i.test(a))).toBe(false)
   expect(s.logs.filter((l) => /not implemented|failed/.test(l))).toEqual([])
 })

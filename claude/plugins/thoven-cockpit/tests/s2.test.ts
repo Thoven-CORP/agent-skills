@@ -271,7 +271,7 @@ test('Bash send.sh of THV-1004-fix2.md writes the send fact, and the Fix cell re
 test('a Bash tool that throws beneath the cockpit still fails through it, and the cockpit neither logs nor records it', async ($, on) => {
   const s = stage(on, { pane: 'w56:p2', sid: 'sid-main', snapshot: SNAPSHOT_LIVE })
   await start($)
-  s.bashThrows.error = 'Bash crashed'
+  s.bashThrows = 'Bash crashed'
   const failed = await bash($, SEND_FIX2_THV_1004).then(
     () => 'resolved',
     (err: unknown) => (err instanceof Error ? err.message : String(err)),
@@ -331,10 +331,10 @@ test('a verifier brief received by a pane writes a brief and no report', async (
 test('a plain prompt costs a pane session no store call', async ($, on) => {
   const s = stage(on, { pane: 'w18:p8V', sid: P8V_SID, snapshot: SNAPSHOT_LIVE })
   await start($)
-  const before = s.storeCalls.n
+  const before = s.storeCalls
   await submit($, 'run the tests again and tell me which failed')
   await bash($, 'git status --short')
-  expect(s.storeCalls.n).toBe(before)
+  expect(s.storeCalls).toBe(before)
 })
 
 test('main draws an unsent report from the inbox, and records report DONE once', async ($, on) => {

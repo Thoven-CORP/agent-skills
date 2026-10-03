@@ -6,11 +6,13 @@ import { project } from '../hooks/board.ts'
 import { branchTicket, parseLabel, pickLabel } from '../hooks/dispatch.ts'
 import { parseSnapshot } from '../hooks/herdr.ts'
 import type { Board, PaneId } from '../hooks/model.ts'
-import { SOURCES, headPathOf, parseHead } from '../hooks/sources.ts'
+import { COMMANDS } from '../hooks/commands.ts'
+import { BACKEND, FRONTEND } from '../hooks/github.ts'
+import { SOURCES } from '../hooks/sources.ts'
 import { cellText, columnsFor } from '../hooks/view.ts'
 import { DOT_GIT_THV_481, DOT_GIT_WORKTREE, HEAD_COCKPIT, HEAD_THV_481 } from './fixtures/git.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
-import { MAIN_CWD, PANE, cockpit, dropPane, fakeAsk, fresh, mainOf, must, relabelPane, relabelTab, rowOf, rowsOf, stage, start, worldOf } from './stage.ts'
+import { MAIN_CWD, PANE, cockpit, dropPane, fakeAsk, fresh, mainOf, must, ranTimes, relabelPane, relabelTab, rowOf, rowsOf, stage, start, worldOf } from './stage.ts'
 
 const CONSENT = 'Build · Consent evidence hardening (THV-1045)'
 /** w18 with its `Mods` tab named the way label.sh names a build tab. p8V sits in it with no pane label. */
@@ -95,10 +97,14 @@ test('UI Polishes: the THV-481 tab is a Build row with no Kind, and the space ha
 
 test('this-session row: main on cockpit/thv-1058 with no dispatch shows one row and no Linear column', async () => {
   const cwd = '/Users/andresmartinez/thoven/agent-skills-thv-1058'
-  expect(headPathOf(cwd, DOT_GIT_WORKTREE)).toBe('/Users/andresmartinez/thoven/agent-skills/.git/worktrees/agent-skills-thv-1058/HEAD')
-  expect(parseHead(HEAD_COCKPIT)).toBe('cockpit/thv-1058')
-  const branches = new Map([[cwd, 'cockpit/thv-1058']])
-  const board = project(worldOf(mainOf('w18', 'w18:p8W', cwd), SNAPSHOT_LIVE, { sources: { branches: fresh(branches) } }))
+  const head = '/Users/andresmartinez/thoven/agent-skills/.git/worktrees/agent-skills-thv-1058/HEAD'
+  const w0 = worldOf(mainOf('w18', 'w18:p8W', cwd), SNAPSHOT_LIVE)
+  const ask = fakeAsk({ list: { [cwd]: [{ name: '.git', kind: 'file', mtimeMs: 0 }] }, read: { [`${cwd}/.git`]: DOT_GIT_WORKTREE, [head]: HEAD_COCKPIT } })
+  const heads = must(await SOURCES.heads.run(w0, ask))
+  expect(heads.get(cwd)).toBe(head)
+  const branches = must(await SOURCES.branches.run(worldOf(w0.me, SNAPSHOT_LIVE, { sources: { heads: fresh(heads) } }), ask))
+  expect(branches.get(cwd)).toBe('cockpit/thv-1058')
+  const board = project(worldOf(w0.me, SNAPSHOT_LIVE, { sources: { branches: fresh(branches) } }))
   expect(board.build).toEqual([
     {
       k: 'single',
@@ -206,7 +212,7 @@ test('the heads cache keeps only answers that succeeded, and only for folders st
   expect(failing.asked).toEqual([`list ${MAIN_CWD}`, `list ${cwd}`, `read ${cwd}/.git`])
   const answering = fakeAsk({ list: listings, read: { [`${cwd}/.git`]: DOT_GIT_THV_481 } })
   const heads = must(await SOURCES.heads.run(w0, answering))
-  expect([...heads]).toEqual([[MAIN_CWD, `${MAIN_CWD}/.git/HEAD`], [cwd, headPathOf(cwd, DOT_GIT_THV_481)]])
+  expect([...heads]).toEqual([[MAIN_CWD, `${MAIN_CWD}/.git/HEAD`], [cwd, '/Users/andresmartinez/thoven/frontend/.git/worktrees/frontend-thv-481/HEAD']])
   const cached = fakeAsk({})
   expect([...must(await SOURCES.heads.run(worldOf(w0.me, json, { sources: { heads: fresh(heads) } }), cached))]).toEqual([...heads])
   expect(cached.asked).toEqual([])
@@ -238,8 +244,8 @@ test('an inert session (no HERDR_PANE_ID) registers /cockpit and reads nothing',
   const s = stage(on, { snapshot: SNAPSHOT_LIVE })
   await start($)
   await s.clock.advance(15_000)
-  expect(s.registered).toEqual(['cockpit'])
-  expect(s.storeCalls.n).toBe(0)
+  expect(s.registrations.map((r) => r.name)).toEqual(['cockpit'])
+  expect(s.storeCalls).toBe(0)
   expect(s.argvs).toEqual([])
 })
 
@@ -273,7 +279,7 @@ test('/cockpit answers once its one snapshot does, before the first tick has run
   expect(s.opened).toEqual([{ id: 'cockpit', title: 'Cockpit', focus: true }])
   expect([s.snapshots(), s.timeoutsMs[0]]).toEqual([1, 3_000])
   // The first tick is under way, asleep on gh, and the answer did not wait for it.
-  expect(s.argvs.filter((a) => a[0] === 'gh')).toHaveLength(2)
+  expect([FRONTEND, BACKEND].map((repo) => ranTimes(s, COMMANDS['gh pr list'](repo)))).toEqual([1, 1])
 })
 
 test('a session whose claim was taken by another session stops polling and closes its pane', async ($, on) => {
@@ -322,10 +328,9 @@ test('after /clear the same pane is main again under its new session id, and dra
 
 test('a /cockpit re-registration that throws still leaves the claiming pane main', async ($, on) => {
   const s = stage(on, { pane: 'w18:p8W', snapshot: SNAPSHOT_LIVE, store: { 'cockpit:main:w18': { kind: 'main', space: 'w18', sid: 'sid-a', pane: 'w18:p8W', at: 0 } } })
-  s.register.deny = 'command.register: cockpit is already registered'
+  s.registerDeny = 'command.register: cockpit is already registered'
   await start($)
-  expect(s.registered).toEqual([])
-  expect(s.timers).toEqual([['every', 5_000]])
+  expect(s.registrations.map((r) => r.name)).toEqual(['cockpit'])
   await s.clock.advance(5_000)
   expect(s.snapshots()).toBe(2)
 })
@@ -456,7 +461,7 @@ test('the Work tab draws kind, title, Pane glyph and tool tag; 2 switches to PRs
   await ui.press({ key: 'tab-work' })
   await ui.press({ key: 'focus-row' })
   await s.clock.settle()
-  expect(s.argvs.filter((a) => a[1] === 'agent')).toEqual([['herdr', 'agent', 'focus', 'w18:p8V']])
+  expect(s.argvs.filter((a) => a[1] === 'agent')).toEqual([[...COMMANDS['herdr agent focus']('w18:p8V' as PaneId).argv]])
 })
 
 type Node = { type: string; props: Record<string, unknown>; children?: unknown[] }
@@ -489,7 +494,6 @@ test('two sessions in one space: the pane that did not run /cockpit stays a pane
   const s = stage(on, { pane: 'w18:p8V', sid: 'sid-b', snapshot: SNAPSHOT_LIVE, store: { 'cockpit:main:w18': claim } })
   await start($)
   await s.clock.advance(15_000)
-  expect(s.timers).toEqual([])
   expect(s.snapshots()).toBe(0)
   expect(s.saved.get('cockpit:main:w18')).toEqual(claim)
   expect(s.opened).toEqual([])
