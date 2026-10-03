@@ -145,9 +145,8 @@ test('an inbox file is a report or verdict only when it starts with its own stat
     head: '[thoven verify] THV-1004 pane w56:p1 reported done 3 times and still: 1 live process: sleep 30 (pid 71389). Nudged 2x; needs you.',
   })
   expect(inboxFile('THV-1038.md', OUT_RESEARCH_THV_1038_HEAD, 1)).toEqual({ name: 'THV-1038.md', ticket: 'THV-1038', at: 1, k: 'note' })
-  // Another ticket's status line is a note, and a name with no ticket is no inbox file.
+  // Another ticket's status line is a note.
   expect(inboxFile('THV-1041.md', 'DONE THV-1003\n', 1)?.k).toBe('note')
-  expect(inboxFile('w40-p1.md', OUT_THV_1041, 1)).toBeUndefined()
 })
 
 // ── unit: the board cells ───────────────────────────────────────────────────────────────────

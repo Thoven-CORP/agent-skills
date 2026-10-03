@@ -9,7 +9,7 @@
 import { COMMANDS, type Req } from './commands.ts'
 import { FIXED_REPOS, configPathOf, parseOrigin, parsePrList } from './github.ts'
 import { parsePaneLabel, parseSnapshot } from './herdr.ts'
-import { inboxFile, inboxTicket } from './dispatch.ts'
+import { inboxFile } from './dispatch.ts'
 import type { Branches, GithubView, HeadPaths, InboxFile, Ms, Origins, Pane, PaneId, PaneLabels, Polled, Pr, Snapshot, SourceId, SourceValues, Sources, SpaceMap, World } from './model.ts'
 
 /** One directory entry, as register.ts reduces `$.fs.list`. A folder that does not exist lists `[]`. */
@@ -177,9 +177,6 @@ function reposOf(world: Seen): string[] {
 /** macOS's TMPDIR ends in `/`. No TMPDIR, no inbox. */
 const inboxDir = (tmp: string): string | undefined => (tmp === '' ? undefined : `${tmp.replace(/\/+$/, '')}/dispatch/out`)
 
-/** Files whose name names a ticket: no row can show another (`w40-p1.md`), so it is never read. */
-const ticketFiles = (listing: Listing): Listing => listing.filter((e) => e.kind === 'file' && inboxTicket(e.name) !== undefined)
-
 // ── The registry ─────────────────────────────────────────────────────────────────────────────
 
 /** A source's `needs` are listed above it, so STAGES can be read off in one pass. */
@@ -278,7 +275,7 @@ export const SOURCES = {
       if (dir === undefined) return []
       const listing = await ask.list(dir)
       const known = valueOf(world.sources.inbox) ?? []
-      const files = await Promise.all(ticketFiles(listing).map(async (e) => {
+      const files = await Promise.all(listing.filter((e) => e.kind === 'file').map(async (e) => {
         const kept = known.filter((f) => f.name === e.name && f.at === e.mtimeMs)
         if (kept.length > 0) return kept
         const text = await tolerate(ask.read(`${dir}/${e.name}`))
