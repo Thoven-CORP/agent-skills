@@ -6,6 +6,7 @@
 // Intent does. Every glyph the cockpit shows is in this file.
 
 import type { Elements, RenderElement } from 'claude-code'
+import type { DoctorReport } from './doctor.ts'
 import { ciCell } from './cells.ts'
 import { AGENT_SKILLS, BACKEND, FRONTEND } from './github.ts'
 import { LETTERS } from './model.ts'
@@ -312,6 +313,41 @@ function healthLines(health: Health): string[] {
     if (h.k === 'ok') return []
     return [h.k === 'stale' ? `${name} ${down} since ${hhmm(h.since)}` : `${name} unavailable`]
   })
+}
+
+const isHealthId = (k: string): k is keyof Health => Object.hasOwn(HEALTH_WORDS, k)
+
+/** `/cockpit doctor` as the lines it answers with. */
+export function doctorText(r: DoctorReport): string {
+  const c = r.claim
+  const claim =
+    c.k === 'no-space' ? 'Main: this session is not in a herdr pane, so it has no space.'
+    : c.k === 'unclaimed' ? `Main of ${c.space}: none. Run /cockpit to claim it.`
+    : `Main of ${c.space}: ${c.isMine ? 'this session' : `pane ${c.pane}, session ${c.sid}`}, claimed ${ago(c.ageMs)} ago.`
+  const health = r.health
+  const sources = health === undefined
+    ? ['Sources: polled only by main, and this session is not main.']
+    : ['Sources:', ...Object.keys(health).filter(isHealthId).map((id) => {
+        const h = health[id]
+        return `  ${HEALTH_WORDS[id].name}: ${h.k === 'ok' ? 'ok' : h.k === 'stale' ? `${HEALTH_WORDS[id].down} since ${hhmm(h.since)}` : 'unavailable'}`
+      })]
+  const where = r.plugin.isMainCheckout ? 'the main checkout' : `not the main checkout (${r.plugin.expected})`
+  const keys = r.keys.map((k) => `  ${(k.ageMs === undefined ? '?' : ago(k.ageMs)).padEnd(6)} ${k.key}${k.isExpired ? '  older than 14 days, main deletes it' : ''}${k.isReadable ? '' : '  (unreadable)'}`)
+  return [
+    'Cockpit doctor',
+    `Plugin: ${r.plugin.root}, ${where}. CLAUDE_CODE_PLUGIN_DIRS: ${r.plugin.env ?? 'unset'}.`,
+    claim,
+    ...sources,
+    `Store: ${r.keys.length} cockpit key${r.keys.length === 1 ? '' : 's'}.`,
+    ...keys,
+  ].join('\n')
+}
+
+/** An age in its largest whole unit: `15 d`, `3 h`, `12 m`, `40 s`. */
+function ago(ms: Ms): string {
+  const units: Array<[string, number]> = [['d', 86_400_000], ['h', 3_600_000], ['m', 60_000], ['s', 1_000]]
+  for (const [unit, size] of units) if (ms >= size) return `${Math.floor(ms / size)} ${unit}`
+  return '0 s'
 }
 
 function hhmm(ms: Ms): string {

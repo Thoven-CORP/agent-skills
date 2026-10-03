@@ -31,6 +31,9 @@ export function keyOf(fact: Fact): string {
   }
 }
 
+/** Whether a key is the cockpit's at all, fact or not: the only keys expiry and doctor touch. */
+export const isCockpitKey = (key: string): boolean => key.startsWith(PREFIX)
+
 /** Whether a key is a fact's, or one kind's: `cockpit:<kind>:…`. */
 export function isFactKey(key: string, only?: FactKind): boolean {
   return (only === undefined ? FACT_KINDS : [only]).some((k) => key.startsWith(`${PREFIX}${k}:`))

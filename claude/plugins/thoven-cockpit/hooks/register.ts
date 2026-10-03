@@ -27,9 +27,11 @@ import { claimHeldBy, claimOf } from './facts.ts'
 import { COMMANDS, type Req } from './commands.ts'
 import { findMe, parseSnapshot, spaceOfPane } from './herdr.ts'
 import { isPaneId, isSessionId, type Board, type Fact, type FactKind, type FactOf, type Intent, type Main, type Me, type Ms, type PaneId, type PaneUi, type SessionId, type SourceId, type Snapshot, type Sources, type SourceValues, type World } from './model.ts'
-import { BY_ID, HEARTBEAT_MS, STAGES, due, settle, unpolled, type Ask, type Listing } from './sources.ts'
-import { isFactKey, keyOf, parseFact } from './store.ts'
-import { drawCockpit } from './view.ts'
+import { BY_ID, HEARTBEAT_MS, STAGES, due, settle, unpolled, valueOf, type Ask, type Listing } from './sources.ts'
+import { isCockpitKey, isFactKey, keyOf, parseFact } from './store.ts'
+import { doctorText, drawCockpit } from './view.ts'
+import { doctor } from './doctor.ts'
+import { EXPIRY_PASS_MS, expired, ticketsOn, type Stored } from './expiry.ts'
 
 type Api = EngineInterface
 
@@ -47,6 +49,8 @@ type MainState = {
   board: Board | undefined
   heartbeat: { cancel(): void }
   isDrawing: boolean
+  /** When the last expiry pass ran; undefined runs one on the first tick that drew. */
+  expiredAt: Ms | undefined
 }
 
 // ── Module state: caches only. Everything here can be lost on reload and rebuilt in one tick. ──
@@ -73,8 +77,8 @@ export const register: Register = (on) => {
   // call sent nothing.
   on('tool.call', { tool: 'Bash' }, ($, e, next) => passThenObserve($, 'tool.call', e, next, (r) => noteBash($, r, e.command))).catch(passThrough)
 
-  // `/cockpit doctor` arrives in S6; until then every argument is ignored.
-  on('command.run', { command: 'cockpit' }, ($) => runCockpit($)).catch(passThrough)
+  // `/cockpit doctor` reports; any other argument is ignored and opens the cockpit.
+  on('command.run', { command: 'cockpit' }, ($, e) => runCockpit($, e.args)).catch(passThrough)
 
   on('ui.render', { component: 'Pane' }, ($, e, next) => (e.requestId === PANE_ID ? drawOrPass($, e, next) : next(e))).catch(passThrough)
 
@@ -131,8 +135,9 @@ async function startSession($: Api): Promise<void> {
 }
 
 /** `/cockpit`. It has no `next`, so a failure is the answer. */
-async function runCockpit($: Api): Promise<{ text: string }> {
+async function runCockpit($: Api, args: string): Promise<{ text: string }> {
   try {
+    if (args.trim() === 'doctor') return { text: await doctorAnswer($) }
     return { text: await claimAndOpen($) }
   } catch (err) {
     await debug($, 'command.run', err)
@@ -187,7 +192,7 @@ async function becomeMain($: Api, claim: FactOf<'main'>, cwd: string, herdr?: So
   })
   me = who
   const sources = herdr ? { ...unpolled(), herdr } : unpolled()
-  main = { who, sources, lastRun: herdr ? { herdr: claim.at } : {}, polling: new Set(), board: undefined, heartbeat, isDrawing: false }
+  main = { who, sources, lastRun: herdr ? { herdr: claim.at } : {}, polling: new Set(), board: undefined, heartbeat, isDrawing: false, expiredAt: undefined }
   void tick($)
 }
 
@@ -240,9 +245,46 @@ async function tick($: Api): Promise<void> {
       await Promise.all(ids.map((id) => poll($, m, id, now)))
     }
     await draw($, m)
+    if (m.board && main === m && (m.expiredAt === undefined || now - m.expiredAt >= EXPIRY_PASS_MS)) {
+      m.expiredAt = now
+      await expire($, m, now)
+    }
   } catch (err) {
     await debug($, 'tick', err)
   }
+}
+
+/**
+ * Delete what expiry.ts names. Only `$.store.delete`: no value is written back, so no other
+ * session's key is ever read and then rewritten.
+ */
+async function expire($: Api, m: MainState, now: Ms): Promise<void> {
+  const board = m.board
+  if (!board) return
+  // The Linear state read (S4) is not wired yet, so merged-done deletion waits for it.
+  const gone = expired(await loadStored($), { now, prs: valueOf(m.sources.github)?.prs, linear: undefined, onBoard: ticketsOn(board) })
+  for (const { key } of gone) await $.store.delete(key)
+}
+
+/** `/cockpit doctor`: read only, in any session. */
+async function doctorAnswer($: Api): Promise<string> {
+  const pane = await envPane($)
+  const report = doctor({
+    now: await $.clock.now(),
+    stored: await loadStored($),
+    space: main?.who.space ?? spaceOfPane(pane),
+    pane: main?.who.pane ?? pane,
+    health: main?.board?.health,
+    plugin: { root: $.plugin.root, env: await $.env.get('CLAUDE_CODE_PLUGIN_DIRS'), home: (await $.env.get('HOME')) ?? '' },
+  })
+  return doctorText(report)
+}
+
+/** Every `cockpit:` key and its raw value, parsed or not. */
+async function loadStored($: Api): Promise<Stored[]> {
+  const keys = (await $.store.keys()).filter(isCockpitKey)
+  const values = await Promise.all(keys.map((key) => $.store.get(key)))
+  return keys.map((key, i) => ({ key, value: values[i] }))
 }
 
 /**
