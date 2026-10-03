@@ -1,4 +1,6 @@
-// register.ts: the shell. The only file that touches `$`.
+// register.ts: the shell, and the only file that takes `$`. It wires every hook and performs
+// every effect: store, processes, files, timers, the pane. What a hook or a poll saw means is
+// decided elsewhere, in pure code: observe.ts, sources.ts, board.ts, view.ts.
 //
 // Validator rules this file is shaped by (docs/create.md "Check what Claude Code reads"):
 //   - `$` may be passed only to functions declared at the top level of THIS file, so every effect
@@ -6,17 +8,16 @@
 //   - every `on(...)` names its event as a string literal; one registration per event+matcher.
 //
 // Cost by role (the plugin loads in every session):
-//   inert  (no HERDR_PANE_ID)  every hook returns next(e) after one comparison
-//   inert, pane (not engaged)  one regex per prompt, one substring test per Bash command; a store
-//                              write only on a match. No timers, no processes
-//   pane (engaged)             the same today; S3 and S5 add their observers to observe.ts
+//   inert  (no HERDR_PANE_ID)  one regex per prompt and one substring test per Bash command; a
+//                              store write only for a report or verdict. No timers, no processes
+//   pane   (not main)          the same, and a brief or send.sh call is written too
 //   main   (claimed a space)   one 5 s heartbeat timer; all polling, projection, drawing
 //
 // Crash safety: every hook is one line over a shape below, and no try/catch wraps `next`:
 //   observeThenPass   try { await observe() } catch (err) { debug(err) }  return next(e)
 //   passThenObserve   const r = await next(e); try { await observe(r) } catch (err) { debug(err) }  return r
-// Every registration also gets `.catch(passThrough)`. The heartbeat catches per source, so one
-// failing source never stops another.
+// Every registration also gets `.catch(passThrough)`. Each poll catches its own source's failure,
+// so one failing or hung source never stops another.
 
 import type { EngineInterface, Register, RenderElement } from 'claude-code'
 import { project } from './board.ts'
