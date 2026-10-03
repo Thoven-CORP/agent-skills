@@ -10,7 +10,8 @@ import { COMMANDS, type Req } from './commands.ts'
 import { FIXED_REPOS, configPathOf, parseOrigin, parsePrList } from './github.ts'
 import { parsePaneLabel, parseSnapshot } from './herdr.ts'
 import { inboxFile } from './dispatch.ts'
-import type { Branches, GithubView, HeadPaths, InboxFile, Ms, Origins, Pane, PaneId, PaneLabels, Polled, Pr, HealthId, Snapshot, SourceId, SourceValues, Sources, SpaceMap, World } from './model.ts'
+import { readRollouts } from './codex.ts'
+import type { Branches, CodexRollout, GithubView, HeadPaths, InboxFile, Ms, Origins, Pane, PaneId, PaneLabels, Polled, Pr, HealthId, Snapshot, SourceId, SourceValues, Sources, SpaceMap, World } from './model.ts'
 
 /** One directory entry, as register.ts reduces `$.fs.list`. A folder that does not exist lists `[]`. */
 export type Listing = ReadonlyArray<{ name: string; kind: string; mtimeMs: number }>
@@ -288,6 +289,18 @@ export const SOURCES = {
         return file ? [file] : []
       }))
       return files.flat()
+    },
+  }),
+
+  // Best effort (ADR11): Codex rollouts, read only while a Codex pane is in the space. A rollout
+  // that cannot be read is left out, never a failed source, since some history is simply gone.
+  codex: source({
+    everyMs: 60_000,
+    needs: ['herdr'],
+    run: async (world, ask): Promise<CodexRollout[]> => {
+      const panes = valueOf(world.sources.herdr)?.panes ?? []
+      if (!panes.some((p) => p.space === world.me.space && p.tool === 'X')) return []
+      return readRollouts(ask, world.me.home, valueOf(world.sources.codex) ?? [])
     },
   }),
 }

@@ -88,7 +88,7 @@ test('FE #138 merged and THV-1038 reads Done: every fresh THV-1038 key goes once
 
 // ── unit: the doctor report ──────────────────────────────────────────────────────────────────
 
-const HEALTH: Health = { herdr: { k: 'ok' }, labels: { k: 'ok' }, spaces: { k: 'ok' }, git: { k: 'ok' }, github: { k: 'unavailable' }, inbox: { k: 'ok' } }
+const HEALTH: Health = { herdr: { k: 'ok' }, labels: { k: 'ok' }, spaces: { k: 'ok' }, git: { k: 'ok' }, github: { k: 'unavailable' }, inbox: { k: 'ok' }, codex: { k: 'ok' } }
 
 test('doctor lists keys older than 14 days first, oldest first, then the rest, undated last', async () => {
   const r = doctor({
@@ -120,6 +120,7 @@ test('doctor lists keys older than 14 days first, oldest first, then the rest, u
     '  git: ok',
     '  gh: unavailable',
     '  dispatch inbox: ok',
+    '  Codex rollouts: ok',
     'Store: 5 cockpit keys.',
   ])
   expect(text.split('\n').slice(11)).toEqual([

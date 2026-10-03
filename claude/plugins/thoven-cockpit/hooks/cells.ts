@@ -8,25 +8,27 @@
 // survives a later report replacing it or the PR falling out of gh's last 50.
 
 import { newest, type BoardFacts } from './facts.ts'
-import { eventId, type Cells, type CiCell, type FixCell, type InboxFile, type Pending, type Pr, type ReportCell, type Row, type RowIdentity, type Ticket } from './model.ts'
+import { eventId, type Cells, type CiCell, type CodexRollout, type FixCell, type InboxFile, type Pending, type Pr, type ReportCell, type Row, type RowIdentity, type Ticket } from './model.ts'
 import type { PrJoin } from './prs.ts'
+import { reviewCell, selfChecked } from './review.ts'
 
-/** What a row is built from besides its identity: the facts about its ticket, the inbox, and where PRs attach. */
-export type RowContext = { facts: BoardFacts; inbox: readonly InboxFile[]; join: PrJoin }
+/** What a row is built from besides its identity: the facts about its ticket, the inbox, where PRs attach, and the space's Codex verifier rollouts. */
+export type RowContext = { facts: BoardFacts; inbox: readonly InboxFile[]; join: PrJoin; codex: readonly CodexRollout[] }
 
 /** A row's cells, and the events on it main has not recorded yet, from one pass over its context. */
 export function rowOf(id: RowIdentity, c: RowContext): { row: Row; events: Pending[] } {
   const t = id.ticket
-  return { row: { ...id, cells: cellsOf(t, c) }, events: [...newReportEvents(t, c.facts), ...newMergedEvents(t, c.join.attached(t), c.facts)] }
+  return { row: { ...id, cells: cellsOf(id, c) }, events: [...newReportEvents(t, c.facts), ...newMergedEvents(t, c.join.attached(t), c.facts)] }
 }
 
 /** Every cell of a row, from the facts about its ticket and what the sources say. */
-function cellsOf(t: Ticket, c: RowContext): Cells {
+function cellsOf(id: RowIdentity, c: RowContext): Cells {
+  const t = id.ticket
   const pr = c.join.cell(t)
   return {
     report: reportCell(t, c.facts, c.inbox),
     fix: fixCell(c.facts),
-    review: { k: 'none' },
+    review: reviewCell(c.facts, c.codex.filter((r) => r.review?.ticket === t), pr.k === 'none' ? undefined : pr.pr, id.verifierPane),
     pr,
     ci: pr.k === 'none' ? { k: 'none' } : ciCell(pr.pr),
     linear: { k: 'none' },
@@ -58,9 +60,9 @@ function reportCell(t: Ticket, about: BoardFacts, inbox: readonly InboxFile[]): 
   const report = newest(about.report)
   // An undelivered verdict is the verifier's, so it waits for the Review cell (S3), never this one.
   const file = newest(inbox.filter((f) => f.ticket === t && (f.k === 'report' || f.k === 'escalation') && (report === undefined || f.at > report.at)))
-  if (file?.k === 'report') return { k: 'undelivered', status: file.line.word, file: file.name, selfChecked: false }
+  if (file?.k === 'report') return { k: 'undelivered', status: file.line.word, file: file.name, selfChecked: selfChecked(about) }
   if (file?.k === 'escalation') return { k: 'escalation', head: file.head }
-  return report ? { k: 'in', status: report.status, at: report.at, concerns: report.concerns, selfChecked: false } : { k: 'none' }
+  return report ? { k: 'in', status: report.status, at: report.at, concerns: report.concerns, selfChecked: selfChecked(about) } : { k: 'none' }
 }
 
 /** brief.md's fix-round limit (`FIX ROUND <n>/5`), for a send.sh round no FIX ROUND brief gave a denominator. */

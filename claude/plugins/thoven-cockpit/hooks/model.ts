@@ -131,6 +131,10 @@ export type Fact =
   | { kind: 'status'; ticket: Ticket; sid: SessionId; status: ReportStatus; text: string; at: Ms }
   /** `checkpoint:<sid>`. Main's state when it last compacted, handed back after the compaction (S5). */
   | ({ kind: 'checkpoint'; sid: SessionId; at: Ms } & Checkpoint)
+  /** `review:<ticket>:<sid>:<skill>`. A Review skill a session ran itself while it held a verifier brief for the ticket. */
+  | ({ kind: 'review' } & SkillRun)
+  /** `self:<ticket>:<sid>:<skill>`. The same, under any other brief: the builder's own check (ADR12). */
+  | ({ kind: 'self' } & SkillRun)
 
 /** What main hands itself back after a compaction. Each row's state is already words, so the hand-back needs no board. */
 export type Checkpoint = {
@@ -143,6 +147,9 @@ export type Checkpoint = {
   rulings: Array<{ ticket: Ticket; file: string; text: string }>
   next: string[]
 }
+
+/** One Review skill run. `round` is the `at` of the brief the session held when it ran: a new brief starts a new round. */
+export type SkillRun = { ticket: Ticket; sid: SessionId; skill: ReviewSkill; round: Ms; at: Ms }
 
 export type FactKind = Fact['kind']
 export type FactOf<K extends FactKind> = Extract<Fact, { kind: K }>
@@ -230,6 +237,11 @@ export type Checks = { total: number; done: number; failed: string[]; running: s
 
 export type GithubView = { prs: Pr[] }
 
+/** One `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl`, as codex.ts reads it. `at` is the file's mtime; `review` is set only for a verifier's rollout. */
+export type CodexRollout = { file: string; at: Ms; cwd: string; startedAt: Ms; review: CodexReview | undefined }
+/** A Codex verifier's traces: the ticket its brief names, the `spawn_agent` task names, and the skills it only selected. */
+export type CodexReview = { ticket: Ticket; spawned: string[]; selected: string[] }
+
 /** A `THV-n.md` file in `$TMPDIR/dispatch/out/`, and what its first non-empty line makes it. */
 export type InboxFile = { name: string; ticket: Ticket; at: Ms } & (
   | { k: 'report'; line: StatusLine & { word: ReportStatus } } // an undelivered report
@@ -298,6 +310,9 @@ export type FixCell = { k: 'none' } | { k: 'round'; round: number; of: number }
 /** The Review column's letters, in order. */
 export const LETTERS = ['V', 'C', 'T', 'D'] as const
 export type Letter = (typeof LETTERS)[number]
+/** The skill behind each letter, in LETTERS order (review.md steps 1 to 4). */
+export const REVIEW_SKILLS = ['verify-this', 'code-review', 'thermo-nuclear-code-quality-review', 'deslop'] as const
+export type ReviewSkill = (typeof REVIEW_SKILLS)[number]
 /** One Review letter. `amber` exists only for T: thermo was due and did not run. `claimed`: a VERIFIED line claimed it and the verifier session never ran it. */
 export type Light = 'lit' | 'dim' | 'off' | 'amber' | 'na' | 'claimed'
 export type ReviewCell =

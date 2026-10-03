@@ -23,7 +23,7 @@ import { branchTicket, pickLabel } from './dispatch.ts'
 import { indexFacts, newest, type BoardFacts } from './facts.ts'
 import { rowOf } from './cells.ts'
 import { prJoin } from './prs.ts'
-import type { Board, Branches, Health, Kind, LivePane, NonEmpty, OtherItem, Pane, PaneCell, PaneLabels, Panes, Polled, RowIdentity, SourceHealth, SourceId, Sources, SpaceMap, Ticket, World } from './model.ts'
+import type { Board, Branches, CodexRollout, Health, Ms, Kind, LivePane, NonEmpty, OtherItem, Pane, PaneCell, PaneLabels, Panes, Polled, RowIdentity, SourceHealth, SourceId, Sources, SpaceMap, Ticket, World } from './model.ts'
 import { sharing, valueOf } from './sources.ts'
 
 /** What ties a pane to its work: its label, else its folder's branch, else what main sent it. */
@@ -84,7 +84,8 @@ export function project(world: World): Board {
 
   const join = prJoin(world, panes, ids)
   const inbox = valueOf(world.sources.inbox) ?? []
-  const rows = ids.map((id) => rowOf(id, { facts: facts.about(id.ticket), inbox, join }))
+  const codex = codexOf(valueOf(world.sources.codex), panes, world.now)
+  const rows = ids.map((id) => rowOf(id, { facts: facts.about(id.ticket), inbox, join, codex }))
 
   return {
     space,
@@ -150,6 +151,13 @@ function thisSession(world: World, mainPane: Pane | undefined): RowIdentity | un
 
 const holding = (ticket: Ticket, by: Pick<RowIdentity, 'kind' | 'title' | 'origin'>, panes: Panes, verifierPane: PaneCell): RowIdentity => ({ ticket, title: by.title, kind: by.kind, origin: by.origin, panes, verifierPane })
 
+/** A Codex verifier pane's rollouts: started within the last 2 days in the folder of a Codex pane in this space. */
+const CODEX_WINDOW_MS = 2 * 24 * 60 * 60_000
+function codexOf(rollouts: readonly CodexRollout[] | undefined, panes: readonly Pane[], now: Ms): CodexRollout[] {
+  const cwds = new Set(panes.filter((p) => p.tool === 'X').map((p) => p.cwd))
+  return (rollouts ?? []).filter((r) => r.review !== undefined && cwds.has(r.cwd) && r.startedAt >= now - CODEX_WINDOW_MS)
+}
+
 /** herdr's space label and WORKFLOW.md's `COPPA` differ in case (`Coppa`), so the match ignores it. */
 function projectOf(spaces: SpaceMap | undefined, label: string): string | undefined {
   const want = label.toLowerCase()
@@ -166,5 +174,5 @@ function health(sources: Sources): Health {
     const p = ids.map((id): Polled<unknown> => sources[id]).find((s) => s.k === 'stale' || s.k === 'down')
     return p?.k === 'stale' ? { k: 'stale', since: p.since } : p?.k === 'down' ? { k: 'unavailable' } : { k: 'ok' }
   }
-  return { herdr: of('herdr'), labels: of('labels'), spaces: of('spaces'), git: of(...sharing('git')), github: of('github'), inbox: of('inbox') }
+  return { herdr: of('herdr'), labels: of('labels'), spaces: of('spaces'), git: of(...sharing('git')), github: of('github'), inbox: of('inbox'), codex: of('codex') }
 }

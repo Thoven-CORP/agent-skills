@@ -7,7 +7,7 @@
 // No other module builds or parses a key string. If reading ~50 keys per tick proves too slow
 // (synthesis A2), this file is the only one that changes.
 
-import { KINDS, REPORT_STATUSES, ROLES, VERDICTS, isOneOf, isPaneId, isSessionId, isSpaceId, type Fact, type FactKind, type FactOf, type LinearEventId, type Ticket } from './model.ts'
+import { KINDS, REPORT_STATUSES, REVIEW_SKILLS, ROLES, VERDICTS, isOneOf, isPaneId, isSessionId, isSpaceId, type Fact, type FactKind, type FactOf, type LinearEventId, type SkillRun, type Ticket } from './model.ts'
 import { ticket } from './dispatch.ts'
 import { checkpointShape } from './background.ts'
 
@@ -30,6 +30,9 @@ export function keyOf(fact: Fact): string {
       return `${PREFIX}happened:${fact.ticket}:${fact.event}`
     case 'checkpoint':
       return `${PREFIX}checkpoint:${fact.sid}`
+    case 'review':
+    case 'self':
+      return `${PREFIX}${fact.kind}:${fact.ticket}:${fact.sid}:${fact.skill}`
     default:
       return fact satisfies never
   }
@@ -80,6 +83,20 @@ const SHAPES: { [K in FactKind]: (v: Raw) => FactOf<K> | undefined } = {
       ? { kind: 'status', ticket: v.ticket, sid: v.sid, status: v.status, text: v.text, at: v.at }
       : undefined,
   checkpoint: (v) => checkpointShape(v),
+  review: (v) => {
+    const run = skillRun(v)
+    return run && { kind: 'review', ...run }
+  },
+  self: (v) => {
+    const run = skillRun(v)
+    return run && { kind: 'self', ...run }
+  },
+}
+
+function skillRun(v: Raw): SkillRun | undefined {
+  return isTicket(v.ticket) && isSessionId(v.sid) && isOneOf(REVIEW_SKILLS)(v.skill) && isNum(v.round) && isNum(v.at)
+    ? { ticket: v.ticket, sid: v.sid, skill: v.skill, round: v.round, at: v.at }
+    : undefined
 }
 
 const isRaw = (v: unknown): v is Raw => typeof v === 'object' && v !== null

@@ -20,8 +20,8 @@ const DASH = '–'
 const MIN_WORK = 10
 const KIND_WIDTH = 9
 
-/** What one cell reads, and its colour. */
-type Drawn = { text: string; color?: string | undefined }
+/** What one cell reads, and its colour. `parts`, when set, are its pieces each in their own colour; `text` is them joined. */
+type Drawn = { text: string; color?: string | undefined; parts?: ReadonlyArray<{ text: string; color?: string | undefined; dim?: boolean }> }
 
 /** One Work-tab column after Work. While its `source` is stale the column keeps its last answer, dimmed and uncoloured. */
 type Column = { heading: string; width: number; draw(row: Row): Drawn; shownIf?: (board: Board) => boolean; source?: keyof Health; wrap?: 'wrap' }
@@ -32,7 +32,7 @@ const COLUMNS = {
   pane: { heading: 'Pane', width: 5, wrap: 'wrap', draw: ({ panes: p }) => (p.k === 'live' ? { text: p.list.map(liveText).join(' '), color: PANE_COLOR[p.list[0].status] } : { text: absent(p) }) },
   report: { heading: 'Report', width: 8, draw: (r) => reportDrawn(r.cells.report) },
   fix: { heading: 'Fix', width: 5, draw: ({ cells: { fix } }) => ({ text: fix.k === 'round' ? `${fix.round}/${fix.of}` : DASH }) },
-  review: { heading: 'Review', width: 9, draw: (r) => ({ text: reviewText(r.cells.review) }) },
+  review: { heading: 'Review', width: 9, draw: (r) => reviewDrawn(r.cells.review) },
   pr: { heading: 'PR', width: 9, source: 'github', draw: (r) => prDrawn(r.cells.pr) },
   ci: { heading: 'CI', width: 6, source: 'github', draw: (r) => ciDrawn(r.cells.ci) },
   linear: { heading: 'Linear', width: 7, shownIf: (b) => b.project !== undefined, draw: (r) => ({ text: linearText(r.cells.linear) }) },
@@ -60,6 +60,7 @@ const HEALTH_WORDS: Record<keyof Health, { name: string; down: string }> = {
   git: { name: 'git', down: 'stale' },
   github: { name: 'gh', down: 'stale' },
   inbox: { name: 'dispatch inbox', down: 'stale' },
+  codex: { name: 'Codex rollouts', down: 'stale' },
 }
 
 export function drawCockpit(el: El, board: Board | undefined, ui: PaneUi, columns: number, act: Act): RenderElement {
@@ -215,8 +216,9 @@ function checkLines(el: El, pr: Pr): RenderElement {
 }
 
 /** One fixed-width cell. A dimmed cell drops its colour. */
-function cell({ Box, Text }: El, width: number, { text, color }: Drawn, dim = false, wrap: 'wrap' | 'truncate-end' = 'truncate-end'): RenderElement {
-  return Box({ width, flexShrink: 0, children: [Text({ dimColor: dim, color: dim ? undefined : color, wrap, children: [text] })] })
+function cell({ Box, Text }: El, width: number, { text, color, parts }: Drawn, dim = false, wrap: 'wrap' | 'truncate-end' = 'truncate-end'): RenderElement {
+  const children = parts && !dim ? parts.map((p) => Text({ color: p.color, dimColor: p.dim === true, children: [p.text] })) : [text]
+  return Box({ width, flexShrink: 0, children: [Text({ dimColor: dim, color: dim ? undefined : color, wrap, children })] })
 }
 
 /** What a row's cell in one column reads. Cell glyphs live in COLUMNS and nowhere else. */
@@ -258,18 +260,28 @@ const REPORT_IN: Record<ReportStatus, (concerns: number) => Drawn> = {
   BLOCKED: () => ({ text: 'blocked', color: 'red' }),
 }
 
+/** The builder's own /verify-this, a small mark after Report. */
+const SELF_MARK = 'ᵛ'
+const withSelfMark = (d: Drawn, isChecked: boolean): Drawn => (isChecked ? { ...d, text: `${d.text}${SELF_MARK}` } : d)
+
 function reportDrawn(r: Cells['report']): Drawn {
-  if (r.k === 'in') return REPORT_IN[r.status](r.concerns)
-  if (r.k === 'undelivered') return { text: 'unsent', color: 'yellow' }
+  if (r.k === 'in') return withSelfMark(REPORT_IN[r.status](r.concerns), r.selfChecked)
+  if (r.k === 'undelivered') return withSelfMark({ text: 'unsent', color: 'yellow' }, r.selfChecked)
   if (r.k === 'escalation') return { text: 'note', color: 'yellow' }
   return { text: r.k === 'na' ? 'n/a' : DASH }
 }
 
 const LIGHT_TEXT: Record<Light, (letter: Letter) => string> = { lit: (l) => l, dim: (l) => l, claimed: (l) => l, amber: () => '·', na: () => 'n/a', off: () => DASH }
 
-/** Until a verifier reports, and while the offer stands, every letter is a dash. */
-function reviewText(r: Cells['review']): string {
-  return LETTERS.map((l) => (r.k === 'review' ? LIGHT_TEXT[r.lights[l]](l) : DASH)).join(' ')
+/** The mock's classes: a letter that ran green, the amber dot, a VERIFIED claim with no run red, a skill Codex only selected dim. */
+const LIGHT_STYLE: Record<Light, { color?: string; dim?: boolean }> = { lit: { color: 'green' }, dim: { dim: true }, claimed: { color: 'red' }, amber: { color: 'yellow' }, na: { dim: true }, off: { dim: true } }
+
+/** Until a verifier reports, and while the offer stands, every letter is a dash. A verifier no trace can come from reads n/a once. */
+function reviewDrawn(r: Cells['review']): Drawn {
+  if (r.k !== 'review') return { text: LETTERS.map(() => DASH).join(' ') }
+  if (LETTERS.every((l) => r.lights[l] === 'na')) return { text: 'n/a' }
+  const parts = LETTERS.flatMap((l, i) => [...(i === 0 ? [] : [{ text: ' ' }]), { text: LIGHT_TEXT[r.lights[l]](l), ...LIGHT_STYLE[r.lights[l]] }])
+  return { text: parts.map((p) => p.text).join(''), parts }
 }
 
 /** The mock's classes: an open PR blue, a merged one green. */
