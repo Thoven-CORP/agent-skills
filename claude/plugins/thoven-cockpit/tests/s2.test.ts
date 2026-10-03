@@ -280,6 +280,7 @@ test('a plain send.sh after a fix-2 send to the same pane keeps the Fix cell at 
   const s = stage(on, { pane: 'w56:p2', sid: 'sid-main', snapshot: SNAPSHOT_LIVE })
   await start($)
   await bash($, SEND_FIX2_THV_1004)
+  await s.clock.advance(1000)
   await bash($, '~/.claude/skills/dispatch-work/scripts/send.sh w40:pC $TMPDIR/dispatch/THV-1004.md 2>&1 | tail -1')
   const row = rowOf(worldOf(mainOf('w56', 'w56:p2'), SNAPSHOT_LIVE, { facts: factsIn(s.saved) }), 'THV-1004')
   expect(row.cells.fix).toEqual({ k: 'round', round: 2, of: 5 })
