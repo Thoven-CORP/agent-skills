@@ -213,7 +213,7 @@ test('a session whose claim was taken by another session stops polling and close
   expect(s.closed).toEqual(['cockpit'])
 })
 
-test('after /clear the same pane is main again under its new session id', async ($, on) => {
+test('after /clear the same pane is main again under its new session id, and draws at once', async ($, on) => {
   const s = stage(on, {
     pane: 'w18:p8W',
     sid: 'sid-new',
@@ -222,8 +222,10 @@ test('after /clear the same pane is main again under its new session id', async 
   })
   await $.classic.SessionStart({ session_id: 'sid-new', cwd: MAIN_CWD, source: 'clear', hook_event_name: 'SessionStart', transcript_path: '' } as any)
   expect(s.saved.get('cockpit:main:w18')).toEqual({ kind: 'main', space: 'w18', sid: 'sid-new', pane: 'w18:p8W', at: 0 })
-  await s.clock.advance(5_000)
+  await s.clock.settle()
   expect(s.snapshots()).toBe(1)
+  await s.clock.advance(5_000)
+  expect(s.snapshots()).toBe(2)
 })
 
 // ── kit: crash safety ────────────────────────────────────────────────────────────────────────
@@ -288,4 +290,28 @@ test('the Work tab draws kind, title, Pane glyph and tool tag; 2 switches to PRs
   await ui.press({ key: 'focus-row' })
   await s.clock.settle()
   expect(s.argvs.filter((a) => a[1] === 'agent')).toEqual([['herdr', 'agent', 'focus', 'w18:p8V']])
+})
+
+type Node = { type: string; props: Record<string, unknown>; children?: unknown[] }
+const kids = (n: Node): Node[] => (n.children ?? []).filter((c): c is Node => typeof c === 'object' && c !== null)
+function findNode(n: Node, match: (n: Node) => boolean): Node | undefined {
+  if (match(n)) return n
+  for (const c of kids(n)) {
+    const hit = findNode(c, match)
+    if (hit) return hit
+  }
+  return undefined
+}
+
+test('a drawn Build row and the heading row share the column widths for the pane width', async ($, on) => {
+  stage(on, { pane: 'w18:p8W', snapshot: SNAPSHOT_W18_BUILD })
+  await start($)
+  await cockpit($)
+  const ui = await $.ui.mount(PANE)
+  const root = (await ui.find({ type: 'Box' })) as Node
+  const holds = (pred: (n: Node) => boolean) => (n: Node) => n.type === 'Box' && n.props.flexDirection === 'row' && kids(n).some((c) => findNode(c, pred) !== undefined)
+  const row = findNode(root, holds((n) => n.props.key === 'row-THV-1045'))
+  const heading = findNode(root, holds((n) => n.type === 'Text' && n.children?.[0] === 'Review'))
+  expect(row && kids(row).map((c) => c.props.width)).toEqual([39, 5, 7, 5, 9, 9, 6])
+  expect(heading && kids(heading).map((c) => c.props.width)).toEqual([39, 5, 7, 5, 9, 9, 6])
 })

@@ -162,6 +162,9 @@ async function resolveMe($: Api, sid: SessionId): Promise<void> {
   if (claim.sid !== sid) await writeFact($, { ...claim, sid })
   me = { k: 'main', pane, sid, space: claim.space, cwd: sessionCwd, home: (await $.env.get('HOME')) ?? '' }
   startHeartbeat($)
+  $.clock.after(0, () => {
+    void tick($)
+  })
 }
 
 /**

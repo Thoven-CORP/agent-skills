@@ -64,14 +64,14 @@ export function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act:
   const selected = rows.find((r) => r.ticket === ui.selected) ?? rows[0]
   const focusTarget = selected?.pane.k === 'live' ? selected.pane.pane : undefined
 
-  const cells = (texts: string[], dim: boolean) =>
-    texts.map((t, i) => Box({ width: widths[i + 1] ?? 0, flexShrink: 0, children: [Text({ dimColor: dim, wrap: 'truncate-end', children: [t] })] }))
+  const cells = (texts: string[], from: number, dim: boolean) =>
+    texts.map((t, i) => Box({ width: widths[from + i] ?? 0, flexShrink: 0, children: [Text({ dimColor: dim, wrap: 'truncate-end', children: [t] })] }))
 
   const headingRow = Box({
     flexDirection: 'row',
     children: [
       Box({ width: widths[0] ?? MIN_WORK, flexShrink: 0, children: [Text({ dimColor: true, children: [HEADINGS[0] ?? ''] })] }),
-      ...cells(HEADINGS.slice(1, widths.length), true),
+      ...cells(HEADINGS.slice(1, widths.length), 1, true),
     ],
   })
 
@@ -97,7 +97,7 @@ export function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act:
           ],
         }),
         Box({ width: widths[1] ?? 0, flexShrink: 0, children: [Text({ color: pane.k === 'live' ? PANE_COLOR[pane.status] : undefined, children: [t.pane] })] }),
-        ...cells([t.report, t.fix, t.review, t.pr, t.ci, ...(hasLinear ? [t.linear] : [])], false).slice(0, widths.length - 2),
+        ...cells([t.report, t.fix, t.review, t.pr, t.ci, ...(hasLinear ? [t.linear] : [])], 2, false),
       ],
     })
   }
