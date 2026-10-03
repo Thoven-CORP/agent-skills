@@ -548,6 +548,7 @@ when a space is opened for a Project.
 |---|---|
 | `COPPA` | COPPA and Data Compliance Audit |
 | `UI Polishes` | Design System |
+| `Cockpit` | Thoven cockpit |
 
 ### Ledger bind
 
