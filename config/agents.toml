@@ -19,7 +19,11 @@
 #   launch       arguments after `--`, with {model} and {effort} filled in
 #   efforts      the CLI's effort words, lowest first; a model's own list wins when the CLI has one
 #   models       ids offered even when no live list exists
-#   models_from  a live list: "codex-cache", or a command plus a regex with (id) and (label) groups
+#   models_from  a live list: "codex-cache", or a command plus a regex with (id) and (label) groups;
+#                `after` reads only the block under that heading, and `efforts_pattern` maps a model's
+#                label to its own effort words
+#   settings     for a CLI that takes its model only from a settings file: a JSON template, written per
+#                pick and passed through {settings_file} in `launch`
 
 [cli.claude]
 kind = "claude"
@@ -53,3 +57,15 @@ skill_prefix = "/"
 launch = "--model {model} --force"
 models = []
 models_from = { cmd = "cursor-agent --list-models", pattern = '^([a-z0-9][a-z0-9.-]+) - (.+)$' }
+
+[cli.droid]
+kind = "droid"
+label = "Droid"
+skill_prefix = "/"
+# Interactive droid has no --model flag: the model and effort ride in a --settings file. --auto high
+# is "allow all commands", checked on the pane's footer (THV-1078).
+launch = "--settings {settings_file} --auto high"
+settings = '{"sessionDefaultSettings":{"model":"{model}","reasoningEffort":"{effort}"}}'
+efforts = ["low", "medium", "high"]
+models = []
+models_from = { cmd = "droid exec --help", after = "Available Models:", pattern = '^  ([a-z0-9][a-z0-9.-]+)\s{2,}(.+?)(?: \(default\))?$', efforts_pattern = '^  - (.+?): supports reasoning: \w+; supported: \[(.*?)\]' }

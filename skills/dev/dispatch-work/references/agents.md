@@ -15,7 +15,8 @@ Skills route by tier number. What each tier runs today (CLI, model, effort) live
 `python3 <this skill>/scripts/agents.py tiers` prints what each tier resolves to. A ticket that
 needs something outside the tiers gets an explicit CLI, model and effort: `agents.py models <cli>`
 and `agents.py efforts <cli> <model>` list the choices. To change a tier, edit its line in
-`agents.toml`, run `agents.py check`, and merge it.
+`agents.toml`, run `agents.py check`, and merge it. From herdr, `Ctrl+Space g` does the same from
+lists: set a tier, wire a new CLI, or check the config. It merges the change and pulls the checkout.
 
 ## Complexity signals
 

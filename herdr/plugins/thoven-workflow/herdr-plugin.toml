@@ -60,6 +60,21 @@ title = "Dispatch Linear ticket"
 pattern = "^https://linear\\.app/thoven/issue/THV-[0-9]+"
 action = "dispatch-link"
 
+# 5. agents menu: set what a tier runs, wire a new CLI, check the config (THV-1078)
+[[actions]]
+id = "agents"
+title = "Agents: set a tier, add a CLI, check models"
+contexts = ["workspace"]
+command = ["bash", "agents/open.sh"]
+
+[[panes]]
+id = "agents-menu"
+title = "Agents"
+placement = "popup"
+width = 80
+height = 26
+command = ["bash", "agents/menu.sh"]
+
 # 4. status-board
 [[actions]]
 id = "board"
