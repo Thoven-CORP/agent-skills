@@ -6,9 +6,9 @@ import { project } from '../hooks/board.ts'
 import { parseLabel, pickLabel } from '../hooks/dispatch.ts'
 import { parseSnapshot } from '../hooks/herdr.ts'
 import type { Main, PaneId, Polled, SessionId, Snapshot, Sources, SpaceId, World } from '../hooks/model.ts'
-import { headPathOf, parseHead, parseLiveSpaces } from '../hooks/sources.ts'
+import { SOURCES, headPathOf, parseHead, parseLiveSpaces } from '../hooks/sources.ts'
 import { cellText, columnsFor } from '../hooks/view.ts'
-import { DOT_GIT_WORKTREE, HEAD_COCKPIT } from './fixtures/git.ts'
+import { DOT_GIT_THV_481, DOT_GIT_WORKTREE, HEAD_COCKPIT, HEAD_THV_481 } from './fixtures/git.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import { WORKFLOW_LIVE_SPACES } from './fixtures/workflow.ts'
 import { MAIN_CWD, PANE, cockpit, relabelPane, relabelTab, stage, start } from './stage.ts'
@@ -19,6 +19,10 @@ const SNAPSHOT_W18_BUILD = relabelTab(SNAPSHOT_LIVE, 'w18:t45', CONSENT)
 
 const fresh = <T>(value: T): Polled<T> => ({ k: 'fresh', value, at: 0 })
 const never = { k: 'never' } as const
+function must<T>(value: T | undefined): T {
+  if (value === undefined) throw new Error('the source read nothing')
+  return value
+}
 
 function snap(json: string): Snapshot {
   const s = parseSnapshot(json)
@@ -199,6 +203,29 @@ test('a Review pane naming two tickets verifies the one with a Build row and giv
   expect(board.build.map((g) => (g.k === 'single' ? [g.row.ticket, g.row.kind, g.row.title, g.row.pane, g.row.verifierPane] : []))).toEqual([
     ['THV-1045', 'Build', 'Consent evidence hardening', p8V, p8W],
     ['THV-1004', 'Review', 'Consent evidence hardening', p8W, p8W],
+  ])
+  expect(board.other).toEqual([])
+})
+
+test("a pane known only by its folder's branch is a Build row for the branch's ticket", async () => {
+  // pH loses its own label and its tab goes back to herdr's default `1`. Its title names no ticket.
+  const json = relabelTab(relabelPane(SNAPSHOT_LIVE, 'w4D:pH', undefined), 'w4D:tB', '1')
+  const cwd = '/Users/andresmartinez/thoven/frontend-thv-481'
+  const w0 = worldOf(mainOf('w4D', 'w18:p8W'), snap(json))
+  expect(SOURCES.heads.plan(w0)).toEqual([
+    { k: 'read', path: `${MAIN_CWD}/.git` },
+    { k: 'read', path: `${cwd}/.git` },
+  ])
+  const heads = must(SOURCES.heads.read(w0, [{ k: 'fail', error: 'EISDIR' }, { k: 'ok', text: DOT_GIT_THV_481 }]))
+  const w1 = worldOf(w0.me, snap(json), { heads: fresh(heads) })
+  expect(SOURCES.branches.plan(w1)).toEqual([
+    { k: 'read', path: `${MAIN_CWD}/.git/HEAD` },
+    { k: 'read', path: '/Users/andresmartinez/thoven/frontend/.git/worktrees/frontend-thv-481/HEAD' },
+  ])
+  const branches = must(SOURCES.branches.read(w1, [{ k: 'ok', text: 'ref: refs/heads/main\n' }, { k: 'ok', text: HEAD_THV_481 }]))
+  const board = project(worldOf(w0.me, snap(json), { heads: fresh(heads), branches: fresh(branches) }))
+  expect(board.build.map((g) => (g.k === 'single' ? [g.row.ticket, g.row.title, g.row.kind, g.row.origin, g.row.pane] : []))).toEqual([
+    ['THV-481', 'ui/thv-481', undefined, 'label', { k: 'live', status: 'idle', tool: 'C', pane: 'w4D:pH' }],
   ])
   expect(board.other).toEqual([])
 })

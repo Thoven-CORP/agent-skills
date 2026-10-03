@@ -6,8 +6,8 @@
 // The join, as far as S1 reaches:
 //   1. Space panes: snapshot panes with `space === me.space`, minus main's own pane.
 //   2. Each pane's label, first match wins: pane label (snapshot, else `herdr pane get`), tab
-//      label, terminal title. A label naming several tickets gives one row per ticket, sharing
-//      the pane.
+//      label, terminal title, then the `thv-(\d+)` of the branch its folder is on. A label naming
+//      several tickets gives one row per ticket, sharing the pane.
 //   3. A Build or Fix label, or an older label that names a ticket and no Kind, is a Build row.
 //      A second pane on the same ticket joins that row's Pane cell. A Review pane is the verifier
 //      of each of its tickets' Build rows; a ticket it names with no Build row gets a Review row
@@ -29,7 +29,8 @@ export function project(world: World): Board {
   const projectName = projectOf(valueOf(world.sources.spaces), space.label)
 
   const panes = (snap?.panes ?? []).filter((p) => p.space === me.space && p.pane !== me.pane)
-  const labelled = panes.map((p) => ({ p, label: pickLabel([p.paneLabel ?? labels?.get(p.pane), p.tabLabel, p.terminalTitle], undefined) }))
+  const branches = valueOf(world.sources.branches)
+  const labelled = panes.map((p) => ({ p, label: pickLabel([p.paneLabel ?? labels?.get(p.pane), p.tabLabel, p.terminalTitle], branches?.get(p.cwd)) }))
 
   const rows = new Map<Ticket, Row>()
   for (const { p, label } of labelled) {

@@ -8,7 +8,7 @@ Nothing here is hand-made; a case that needs a shape no log holds is an open gap
 |---|---|---|
 | `herdr.ts` | `SNAPSHOT_LIVE`, `PANE_GET_P8W`, `TAB_GET_T45` | `/tmp/cockpit-fixtures/herdr/{snapshot-live,pane-get-sample,tab-get-sample}.json` |
 | `workflow.ts` | `WORKFLOW_LIVE_SPACES` | `~/.agents/skills/workspace/references/WORKFLOW.md`, `### Live spaces` section |
-| `git.ts` | `DOT_GIT_WORKTREE`, `HEAD_COCKPIT` | the `.git` file and HEAD of the `agent-skills-thv-1058` worktree |
+| `git.ts` | `DOT_GIT_WORKTREE`, `HEAD_COCKPIT`, `DOT_GIT_THV_481`, `HEAD_THV_481` | the `.git` file and HEAD of the `agent-skills-thv-1058` and `frontend-thv-481` worktrees |
 
 Two test inputs are derived from these, not copied, and say so where they are built
 (`tests/stage.ts`): `relabelTab` renames one tab of `SNAPSHOT_LIVE` to a label `label.sh` writes,

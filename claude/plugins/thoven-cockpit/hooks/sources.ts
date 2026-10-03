@@ -96,8 +96,11 @@ export function parseLiveSpaces(markdown: string): SpaceMap {
 
 // ── git HEAD files (synthesis graft 4: read the file, never run git) ─────────────────────────
 
-/** The folders whose branch main needs: in S1 only its own. */
-const trackedCwds = (world: World): string[] => (world.me.cwd ? [world.me.cwd] : [])
+/** The folders whose branch main needs: its own, and every pane's in its space, as a pane's last label fallback. */
+function trackedCwds(world: World): string[] {
+  const panes = (valueOf(world.sources.herdr)?.panes ?? []).filter((p) => p.space === world.me.space && p.pane !== world.me.pane)
+  return [...new Set([world.me.cwd, ...panes.map((p) => p.cwd)])].filter((cwd) => cwd !== '')
+}
 
 /**
  * Where a folder's HEAD lives, from the text of `<cwd>/.git`. A worktree's `.git` is a file
