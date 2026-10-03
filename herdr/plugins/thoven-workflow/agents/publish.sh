@@ -44,8 +44,10 @@ git -C "$wt" commit -q -m "$summary" -m "Published from the herdr agents menu (T
 git -C "$wt" push -q -u origin "$br"
 url="$(cd "$wt" && gh pr create --base main --head "$br" --title "$summary" \
   --body "Published from the herdr agents menu (THV-1078). One change to config/agents.toml, checked with agents.py check.")"
-(cd "$wt" && gh pr merge "$url" --squash --delete-branch >/dev/null)
+# No --delete-branch: gh then checks out main locally, which fails while ~/thoven/agent-skills has it.
+(cd "$wt" && gh pr merge "$url" --squash >/dev/null)
 merged=1
+git -C "$REPO" push -q origin --delete "$br" >/dev/null 2>&1 || true
 echo "merged: $url"
 if git -C "$REPO" pull -q --ff-only 2>/dev/null; then
   echo "live: ~/thoven/agent-skills is at $(git -C "$REPO" rev-parse --short HEAD)"
