@@ -28,6 +28,13 @@
       "prompt": "THV-862 pane just reported back, see fixtures/done-report.txt. take it from here",
       "expected_output": "Moves ticket to Ready (not Done), runs working-if checks, opens a verifier on the other family with the verifier brief, flags the inferred acceptance line 3 for real evidence, waits for Andres before Done, files the StudentSelect empty state as a follow-up at close.",
       "files": ["fixtures/done-report.txt"]
+    },
+    {
+      "id": 5,
+      "name": "labels-research-dispatch-and-main",
+      "prompt": "first dispatch in the COPPA space: send THV-1050 to a pane. it's a research ticket, compare how three vendors store consent evidence, no code. you're main in claude code, I'm in herdr pane w40:p1.",
+      "expected_output": "Labels main with scripts/label.sh $HERDR_PANE_ID Meta \"COPPA and Data Compliance Audit\" --tab and the new pane with label.sh <pane> Research \"<title>\" THV-1050 --tab, never Build for a research ticket. Brief carries the status line. No hand-typed herdr pane rename.",
+      "files": []
     }
   ]
 }

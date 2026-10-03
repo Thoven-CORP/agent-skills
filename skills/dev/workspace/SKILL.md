@@ -119,11 +119,28 @@ reconciliation ownership.
 6. For capture, close, or log, show one exact Project-scoped write set. Apply only after approval,
    serially. Re-run the snapshot and report its new fingerprint.
 
+## Update from the cockpit
+
+`update THV-n <event> [THV-m <event> ...]` arrives when Andres presses ↻ in the cockpit mod
+(THV-1053). That press is his approval of exactly the write in this table, so skip the snapshot and
+the approval step. Anything the table does not name goes through the Recipe.
+
+| Event | Write |
+|---|---|
+| `started` | `node tools/set-status.js "In Progress" THV-n` |
+| `pr <number>` | `set-status.js "Ready" THV-n`, then one comment: `PR #<number> opened` |
+| `report <STATUS>` | One comment: the report's status line and its Acceptance rows, nothing else |
+| `merged <number>` | `set-status.js "Done" THV-n`, then one comment: `Merged #<number>`. List the open tickets the merge may close; moving them needs the Recipe |
+
+Each write is idempotent: when the issue already sits at or past the target state, skip the move and
+say so. Reply with one line per issue, the state `set-status.js` read back, and stop.
+
 ## Completion
 
 The main session has read the snapshot fingerprint and can account for every mechanical blocker
 and unknown. A write operation is complete only when the approved writes are applied and the
-post-write snapshot has been read.
+post-write snapshot has been read. A cockpit update is complete when every issue in it has its
+read-back line.
 
 ## Compatibility
 

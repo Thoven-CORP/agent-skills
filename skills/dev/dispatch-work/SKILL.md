@@ -29,7 +29,10 @@ edits the pane's code. Fixes go back to a pane.
 
 ## Layout
 
-- **Space** is the Linear Project. **Tab** is one issue: `Build · <issue title> (THV-x)`.
+- **Space** is the Linear Project. **Tab** is one issue: `<Kind> · <issue title> (THV-x)`. Kind is
+  the ticket's work: `Build` for a build, `Research`, `Audit`, `Plan` and so on otherwise. Main's own
+  tab is `Meta · <Project>`. `scripts/label.sh` writes every label and refuses a kind outside its
+  list (`label.sh --kinds`), because the cockpit mod and the herdr sidebar sort work by that word.
 - **Panes** in that tab are the sub-tickets of that issue. Run them in parallel only when their
   `Paths` share no file. Otherwise run them one after another in the same tab.
 - The **verifier** gets its own pane in the same tab at step 5 and closes after it reports.
@@ -73,9 +76,12 @@ you cannot fill means the ticket is not ready. Fix the ticket in Linear, then co
    `<area>/thv-<n>` from `origin/main`, copies the env file and installs dependencies, and its last
    stdout line is the path. Record the base SHA there (`git -C <path> rev-parse HEAD`). Review
    diffs start there.
-2. `herdr worktree open --path <path>` for the issue's tab, or split a pane into it. Rename the
-   pane `Build · <title> (THV-x)`. herdr opens worktrees here and never creates them: its own create
-   (the new-worktree key or `herdr worktree create`) branches from the checkout's local HEAD, and
+2. `herdr worktree open --path <path>` for the issue's tab, or split a pane into it. Label it with
+   `scripts/label.sh <pane> <Kind> "<title>" THV-x --tab` (drop `--tab` for a sub-issue pane in an
+   existing tab). On the first dispatch in a space, also label main:
+   `scripts/label.sh $HERDR_PANE_ID Meta "<Project>" --tab`. herdr opens worktrees here and never
+   creates them: its own create (the new-worktree key or `herdr worktree create`) branches from the
+   checkout's local HEAD, and
    herdr 0.9.1 has no setting for a default base. If herdr must create one, run `git fetch origin`
    and pass `--base origin/main`.
 3. Start the agent with its bypass flag from `agents.md`. Wait for `idle` before prompting.
