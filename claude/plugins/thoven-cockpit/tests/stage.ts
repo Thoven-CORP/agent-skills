@@ -2,6 +2,7 @@
 // hangs), a Map for $.store, and recorders for what the mod opened, closed and ran.
 
 import { mock } from 'claude-code/testing'
+import { PANE_GET_P8W } from './fixtures/herdr.ts'
 import { WORKFLOW_LIVE_SPACES } from './fixtures/workflow.ts'
 
 export const HOME = '/Users/andresmartinez'
@@ -30,8 +31,18 @@ export function relabelPane(snapshot: string, pane: string, label: string | unde
   return JSON.stringify(root)
 }
 
-/** `herdr pane get <id>`, answered with that pane's own entry from the snapshot. */
+/** The live snapshot with one pane gone, as when it closes. */
+export function dropPane(snapshot: string, pane: string): string {
+  const root = JSON.parse(snapshot)
+  const snap = root.result.snapshot
+  snap.panes = snap.panes.filter((p: { pane_id: string }) => p.pane_id !== pane)
+  snap.agents = snap.agents.filter((p: { pane_id: string }) => p.pane_id !== pane)
+  return JSON.stringify(root)
+}
+
+/** `herdr pane get <id>`: the real answer for w18:p8W, else that pane's own entry from the snapshot. */
 function paneGetFrom(snapshot: string, pane: string): string {
+  if (pane === 'w18:p8W') return PANE_GET_P8W
   const entry = JSON.parse(snapshot).result.snapshot.panes.find((p: { pane_id: string }) => p.pane_id === pane)
   return JSON.stringify({ id: 'cli:pane:get', result: { pane: entry, type: 'pane_info' } })
 }
@@ -48,8 +59,10 @@ export type Stage = {
   /** Every `$.clock.every` and `$.clock.after` the mod started, with its period. */
   timers: Array<['every' | 'after', number]>
   storeCalls: { n: number }
-  herdr: { mode: 'ok' | 'fail' | 'hang' }
+  /** What `herdr api snapshot` does now; a test changes `snapshot` to move the space on. */
+  herdr: { mode: 'ok' | 'fail' | 'hang'; snapshot: string }
   snapshots(): number
+  paneGets(): string[]
 }
 
 export function stage(on: any, o: { pane?: string; sid?: string; snapshot: string; store?: Record<string, unknown> }): Stage {
@@ -72,8 +85,9 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
     registered: [],
     timers,
     storeCalls: { n: 0 },
-    herdr: { mode: 'ok' },
+    herdr: { mode: 'ok', snapshot: o.snapshot },
     snapshots: () => s.argvs.filter((a) => a.join(' ') === 'herdr api snapshot').length,
+    paneGets: () => s.argvs.filter((a) => a[1] === 'pane' && a[2] === 'get').map((a) => a[3] ?? ''),
   }
 
   on('process.run', async (_$: unknown, e: { argv: readonly string[] }) => {
@@ -85,9 +99,9 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
         await clock.sleep(40_000)
         return { deny: 'process.run: timed out after 10000 ms' }
       }
-      return out(o.snapshot)
+      return out(s.herdr.snapshot)
     }
-    if (argv[1] === 'pane' && argv[2] === 'get' && argv[3]) return out(paneGetFrom(o.snapshot, argv[3]))
+    if (argv[1] === 'pane' && argv[2] === 'get' && argv[3]) return out(paneGetFrom(s.herdr.snapshot, argv[3]))
     return out('')
   })
   on('store.get', (_$: unknown, e: { key: string }) => (s.storeCalls.n++, { value: s.saved.get(e.key) }))

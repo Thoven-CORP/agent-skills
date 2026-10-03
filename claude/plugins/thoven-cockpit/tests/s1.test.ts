@@ -9,9 +9,9 @@ import type { Main, PaneId, Polled, SessionId, Snapshot, Sources, SpaceId, World
 import { SOURCES, headPathOf, parseHead, parseLiveSpaces } from '../hooks/sources.ts'
 import { cellText, columnsFor } from '../hooks/view.ts'
 import { DOT_GIT_THV_481, DOT_GIT_WORKTREE, HEAD_COCKPIT, HEAD_THV_481 } from './fixtures/git.ts'
-import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
+import { SNAPSHOT_LIVE, TAB_GET_T45 } from './fixtures/herdr.ts'
 import { WORKFLOW_LIVE_SPACES } from './fixtures/workflow.ts'
-import { MAIN_CWD, PANE, cockpit, relabelPane, relabelTab, stage, start } from './stage.ts'
+import { MAIN_CWD, PANE, cockpit, dropPane, relabelPane, relabelTab, stage, start } from './stage.ts'
 
 const CONSENT = 'Build · Consent evidence hardening (THV-1045)'
 /** w18 with its `Mods` tab named the way label.sh names a build tab. p8V sits in it with no pane label. */
@@ -96,6 +96,9 @@ test('the live snapshot parses: 5 spaces, 7 panes, labels only where herdr gave 
   expect(s.panes.filter((p) => p.paneLabel !== undefined).map((p) => p.paneLabel)).toEqual(['Plan · Cockpit spec (THV-1053)', 'UI polish walkthrough (THV-481)'])
   expect(s.panes.find((p) => p.pane === 'w18:p8P')).toMatchObject({ tab: 'w18:t30', tabLabel: 'Research', tool: 'C', status: 'idle', cwd: '/Users/andresmartinez/thoven' })
   expect(s.panes.find((p) => p.pane === 'w54:p1')).toMatchObject({ status: 'blocked', tabLabel: '1', terminalTitle: 'After-cutover cleanup audit' })
+  // The tab label a pane carries is the one `herdr tab get` reports for its tab.
+  expect(JSON.parse(TAB_GET_T45).result.tab.label).toBe('Mods')
+  expect(s.panes.filter((p) => p.tab === 'w18:t45').map((p) => p.tabLabel)).toEqual(['Mods', 'Mods'])
 })
 
 test('a snapshot of an unknown shape is undefined, not a throw', async () => {
@@ -297,6 +300,40 @@ test('after /clear the same pane is main again under its new session id, and dra
   expect(s.snapshots()).toBe(1)
   await s.clock.advance(5_000)
   expect(s.snapshots()).toBe(2)
+})
+
+// ── kit: pane labels (ADR4) ──────────────────────────────────────────────────────────────────
+
+test("a label read with herdr pane get wins over the tab's label", async ($, on) => {
+  // The snapshot leaves p8W's label out, as it does for most panes; `pane get` carries it.
+  const s = stage(on, { pane: 'w18:p8P', snapshot: relabelPane(SNAPSHOT_W18_BUILD, 'w18:p8W', undefined) })
+  await start($)
+  await cockpit($)
+  expect(s.paneGets().sort()).toEqual(['w18:p8V', 'w18:p8W'])
+  const ui = await $.ui.mount(PANE)
+  expect((await ui.find({ key: 'row-THV-1045' }))?.props.label).toBe('Consent evidence hardening')
+  expect(await ui.find({ type: 'Text', text: '○ C' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: '○ C ◐ C' })).toBeUndefined()
+  expect(await ui.find({ type: 'Text', text: 'Plan' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: 'Cockpit spec' })).toBeDefined()
+})
+
+test('pane labels are cached per pane: an unchanged pane is never re-read, a new or retitled one is read once', async ($, on) => {
+  const s = stage(on, { pane: 'w18:p8W', snapshot: dropPane(SNAPSHOT_LIVE, 'w18:p8P') })
+  await start($)
+  await cockpit($)
+  expect(s.paneGets()).toEqual(['w18:p8V'])
+
+  await s.clock.advance(5_000)
+  expect(s.paneGets()).toEqual(['w18:p8V'])
+
+  s.herdr.snapshot = SNAPSHOT_LIVE
+  await s.clock.advance(5_000)
+  expect(s.paneGets()).toEqual(['w18:p8V', 'w18:p8P'])
+
+  s.herdr.snapshot = SNAPSHOT_W18_BUILD
+  await s.clock.advance(5_000)
+  expect(s.paneGets()).toEqual(['w18:p8V', 'w18:p8P', 'w18:p8V'])
 })
 
 // ── kit: crash safety ────────────────────────────────────────────────────────────────────────

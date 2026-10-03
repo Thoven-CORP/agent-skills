@@ -128,11 +128,13 @@ export type Space = { space: SpaceId; label: string }
 
 export type Snapshot = { spaces: Space[]; panes: Pane[] }
 
-/** Pane labels read with `herdr pane get` for panes the snapshot gave none (ADR4). */
+/**
+ * Pane labels read with `herdr pane get` for panes the snapshot gave none (ADR4), one entry per
+ * pane. `seen` is the tab label and title the pane showed when read; a pane is read again only
+ * when they change.
+ */
 export type PaneLabels = {
-  /** The pane ids read, sorted and joined. A different set re-reads every one. */
-  readSet: string
-  byPane: ReadonlyMap<PaneId, string>
+  byPane: ReadonlyMap<PaneId, { seen: string; label: string | undefined }>
 }
 
 /** WORKFLOW.md §8 Live spaces: herdr space label to Linear Project. No row means no Project. */

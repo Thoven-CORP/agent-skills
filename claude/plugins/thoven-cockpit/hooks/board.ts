@@ -30,7 +30,7 @@ export function project(world: World): Board {
 
   const panes = (snap?.panes ?? []).filter((p) => p.space === me.space && p.pane !== me.pane)
   const branches = valueOf(world.sources.branches)
-  const labelled = panes.map((p) => ({ p, label: pickLabel([p.paneLabel ?? labels?.get(p.pane), p.tabLabel, p.terminalTitle], branches?.get(p.cwd)) }))
+  const labelled = panes.map((p) => ({ p, label: pickLabel([p.paneLabel ?? labels?.get(p.pane)?.label, p.tabLabel, p.terminalTitle], branches?.get(p.cwd)) }))
 
   const rows = new Map<Ticket, Row>()
   for (const { p, label } of labelled) {

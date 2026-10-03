@@ -12,8 +12,8 @@ Nothing here is hand-made; a case that needs a shape no log holds is an open gap
 
 Two test inputs are derived from these, not copied, and say so where they are built
 (`tests/stage.ts`): `relabelTab` renames one tab of `SNAPSHOT_LIVE` to a label `label.sh` writes,
-because no snapshot on file holds a `Build ·` tab, and `herdr pane get` is answered with the
-pane's own snapshot entry.
+because no snapshot on file holds a `Build ·` tab, and `herdr pane get` is answered with
+`PANE_GET_P8W` for `w18:p8W` and with the pane's own snapshot entry for any other pane.
 
 Later slices add their sources here as they land: status lines, `send.sh` calls and the inbox (S2),
 Skill events and the Codex rollout (S3), the Linear answer (S4), and the measured event payloads

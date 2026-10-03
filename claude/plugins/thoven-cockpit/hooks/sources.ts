@@ -67,7 +67,14 @@ function unlabelled(world: World): Pane[] {
   return snap.panes.filter((p) => p.space === world.me.space && p.pane !== world.me.pane && p.paneLabel === undefined)
 }
 
-const readSetOf = (panes: readonly Pane[]): string => panes.map((p) => p.pane).sort().join(',')
+/** What a cached pane label was read against: herdr shows no label change, only these. */
+const seenOf = (p: Pane): string => `${p.tabLabel ?? ''}\n${p.terminalTitle ?? ''}`
+
+/** Unlabelled panes with no cached label, or one read when their tab label or title differed. */
+function toRead(world: World): Pane[] {
+  const cache = valueOf(world.sources.labels)?.byPane
+  return unlabelled(world).filter((p) => cache?.get(p.pane)?.seen !== seenOf(p))
+}
 
 // ── WORKFLOW.md §8 Live spaces ─────────────────────────────────────────────────────────────
 
@@ -129,27 +136,23 @@ export const SOURCES: { [K in PolledId]: Source<SourceValues[K]> } = {
     },
   },
 
-  // ADR4: a pane's label is read once and kept until the set of unlabelled panes changes.
+  // ADR4: each pane's label is read once and kept until that pane's tab label or title changes.
+  // A failed read keeps the old entry, so the pane is tried again next tick.
   labels: {
     everyMs: HEARTBEAT_MS,
-    plan: (world) => {
-      const panes = unlabelled(world)
-      return valueOf(world.sources.labels)?.readSet === readSetOf(panes) ? [] : panes.map((p) => paneGetReq(p.pane))
-    },
+    plan: (world) => toRead(world).map((p) => paneGetReq(p.pane)),
     read: (world, resps): PaneLabels => {
-      const panes = unlabelled(world)
-      const prev = valueOf(world.sources.labels)
-      if (prev && prev.readSet === readSetOf(panes)) return prev
-      const byPane = new Map<PaneId, string>()
-      const answered: Pane[] = []
-      panes.forEach((p, i) => {
+      const cache = valueOf(world.sources.labels)?.byPane
+      const byPane = new Map<PaneId, { seen: string; label: string | undefined }>()
+      for (const p of unlabelled(world)) {
+        const kept = cache?.get(p.pane)
+        if (kept) byPane.set(p.pane, kept)
+      }
+      toRead(world).forEach((p, i) => {
         const text = ok(resps[i])
-        if (text === undefined) return
-        answered.push(p)
-        const label = parsePaneLabel(text)
-        if (label) byPane.set(p.pane, label)
+        if (text !== undefined) byPane.set(p.pane, { seen: seenOf(p), label: parsePaneLabel(text) })
       })
-      return { readSet: readSetOf(answered), byPane }
+      return { byPane }
     },
   },
 
