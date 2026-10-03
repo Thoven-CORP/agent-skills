@@ -275,7 +275,7 @@ export type Panes = { k: 'live'; list: NonEmpty<LivePane> } | { k: 'gone' } | { 
 export type ReportCell =
   | { k: 'none' }
   | { k: 'na'; tool: Tool }
-  /** `concerns` counts the report's unmet Acceptance rows (`[~]`, `[ ]`, `✗`); 0 when it lists none. */
+  /** `concerns` counts the report's unmet Acceptance rows (`[~]`, `[ ]`, `✗`) and its concerns table's rows; 0 when it lists none. */
   | { k: 'in'; status: ReportStatus; at: Ms; concerns: number; selfChecked: boolean }
   | { k: 'undelivered'; status: ReportStatus; file: string; selfChecked: boolean }
   | { k: 'escalation'; head: string } // a non-report note herdr's tw_tell_main left in the inbox

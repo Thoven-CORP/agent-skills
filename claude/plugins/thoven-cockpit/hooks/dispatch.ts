@@ -158,7 +158,27 @@ export function briefOf(text: string): Brief | undefined {
 /** An Acceptance row the report marks unmet: `[~]`, `[ ]`, `[!]`, `✗` or `~`. */
 const UNMET_ROW = /^[ \t]*(?:\[[ ~!-]\]|✗|~)[ \t]/gm
 
-/** A status line a prompt carried, and the unmet Acceptance rows under it when it is DONE_WITH_CONCERNS. */
+/** A markdown table row, and the rule under its header (`|---|:--:|`). */
+const TABLE_ROW = /^[ \t]*\|.*\|[ \t]*$/
+const TABLE_RULE = /^[ \t]*\|(?:[ \t]*:?-+:?[ \t]*\|)+[ \t]*$/
+/** A table is the report's concerns when its header or the line above it says so. `WITH_CONCERNS` is no match. */
+const NAMES_CONCERNS = /\bconcerns?\b/i
+
+/** The body rows of each markdown table a report names as its concerns: one row per concern. */
+function concernRows(section: string): number {
+  const lines = section.split('\n')
+  let rows = 0
+  for (const [i, line] of lines.entries()) {
+    const header = lines[i - 1] ?? ''
+    if (!TABLE_RULE.test(line) || !TABLE_ROW.test(header)) continue
+    const above = lines.slice(0, i - 1).reverse().find((l) => l.trim() !== '') ?? ''
+    if (!NAMES_CONCERNS.test(`${header}\n${above}`)) continue
+    for (let j = i + 1; TABLE_ROW.test(lines[j] ?? ''); j++) rows++
+  }
+  return rows
+}
+
+/** A status line a prompt carried, and under it, when it is DONE_WITH_CONCERNS, its unmet Acceptance rows plus its concerns table's rows. */
 export type ReportLine = StatusLine & { concerns: number }
 
 /**
@@ -171,7 +191,7 @@ export function readPrompt(text: string): undefined | { k: 'brief'; brief: Brief
   if (brief) return { k: 'brief', brief }
   const lines = statusSections(unwrapPasted(text)).map(({ line, section }) => ({
     ...line,
-    concerns: line.word === 'DONE_WITH_CONCERNS' ? [...section.matchAll(UNMET_ROW)].length : 0,
+    concerns: line.word === 'DONE_WITH_CONCERNS' ? [...section.matchAll(UNMET_ROW)].length + concernRows(section) : 0,
   }))
   return lines.length > 0 ? { k: 'report', lines } : undefined
 }

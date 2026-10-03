@@ -22,6 +22,7 @@ import {
   PASTED_DONE_FIX_ROUND_THV_1041,
   VERIFY_BRIEF_THV_1016,
 } from './fixtures/reports.ts'
+import { BUILT_CONCERNS_TABLE_THV_1045 } from './fixtures/built.ts'
 import { SEND_1, SEND_2, SEND_3, SEND_4, SEND_5, SEND_6, SEND_FIX2_THV_1004 } from './fixtures/send.ts'
 import { PANE, bash, cockpit, fresh, mainOf, receive, relabelTab, rowOf, stage, start, submit, worldOf } from './stage.ts'
 
@@ -80,6 +81,7 @@ const PROMPTS: ReadonlyArray<[string, string, unknown]> = [
       ],
     },
   ],
+  ['a concerns table counts one concern per row, and an all-✓ Acceptance table none', BUILT_CONCERNS_TABLE_THV_1045, report1('THV-1045', 'DONE_WITH_CONCERNS', 'DONE_WITH_CONCERNS THV-1045 consent evidence holds; two concerns need main.', 2)],
   ['a plain prompt is neither brief nor report', 'just a question about the build', undefined],
   // The quoted `DONE THV-1016` is there, line-anchored, so only the brief rule keeps it out.
   [

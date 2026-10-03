@@ -2,7 +2,7 @@
 
 Each `.ts` file exports real text as string constants, copied byte for byte from the source
 named in the constant's comment. A test has no file access, so embedding is the only way.
-Nothing here is hand-made; a case that needs a shape no log holds is an open gap, not a fixture.
+Nothing here is hand-made except `built.ts`, which says for each constant why no log could supply it.
 
 | File | Constants | Source |
 |---|---|---|
@@ -13,6 +13,7 @@ Nothing here is hand-made; a case that needs a shape no log holds is an open gap
 | `reports.ts` | `PASTED_CONCERNS_THV_1041`, `PASTED_DONE_FIX_ROUND_THV_1041`, `BUILD_BRIEF_THV_1014`, `FIX_ROUND_3_THV_1015`, and six from `status-lines/` | transcript lines named above each constant, and `/tmp/cockpit-fixtures/status-lines/*.txt` |
 | `send.ts` | `SEND_FIX2_THV_1004`, `SEND_1` to `SEND_6` | a main session's Bash `tool_use` (line named in the file), and `/tmp/cockpit-fixtures/send/*.txt` |
 | `inbox.ts` | `OUT_ESCALATION_THV_1004`, `OUT_RESEARCH_THV_1038_HEAD` | `/tmp/cockpit-fixtures/dispatch-out/`, and the head of `$TMPDIR/dispatch/out/THV-1038.md` |
+| `built.ts` | `BUILT_CONCERNS_TABLE_THV_1045` | built by hand, not captured: no log holds a concerns table; shaped on brief.md's REPORT section (`skills/dev/dispatch-work/references/brief.md`), and said so in the file |
 
 Two test inputs are derived from these, not copied, and say so where they are built
 (`tests/stage.ts`): `relabelTab` renames one tab of `SNAPSHOT_LIVE` to a label `label.sh` writes,
