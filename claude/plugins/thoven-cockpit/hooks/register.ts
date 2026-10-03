@@ -22,8 +22,8 @@
 
 import type { EngineInterface, Register, RenderElement } from 'claude-code'
 import { CHECKPOINT_FRESH_MS, briefPath, briefsSent, builderTickets, checkpointOf, checkpointText, isWatching, rulingsFrom, sentLines, statusWarning, watcherWarning, type BackgroundTasks } from './background.ts'
-import { readPrompt, sendCalls } from './dispatch.ts'
-import { answerSeen, bashSeen, promptSeen, readbackSeen, skillSeen, type Observer } from './observe.ts'
+import { readPrompt, sendCalls, statusLines } from './dispatch.ts'
+import { answerSeen, bashSeen, promptSeen, readbackSeen, skillSeen, verdictSeen, type Observer } from './observe.ts'
 import { reviewSkill } from './review.ts'
 import { LINEAR_URL, readbacks, type StateQuery } from './linear.ts'
 import { claimHeldBy } from './facts.ts'
@@ -118,8 +118,9 @@ async function passThenObserve<E, R>($: Api, where: string, e: E, next: (e: E) =
 // ── Top-level effects. Each takes `$` and is the only code that performs its kind of effect. ──
 
 /**
- * Pass on, then add one line under the answer when this turn needs it. A line other than the
- * answer is what Claude Code shows beneath it, so a hook beneath that already added one keeps it.
+ * Pass on, then add one line under the answer when this turn needs it, and note a verdict the
+ * answer gave. A line other than the answer is what Claude Code shows beneath it, so a hook
+ * beneath that already added one keeps it.
  */
 async function endTurn<E extends { answer: string; reason: string; agentId?: string }, R extends { text: string }>($: Api, e: E, next: (e: E) => Promise<R>): Promise<R> {
   const r = await next(e)
@@ -134,6 +135,11 @@ async function endTurn<E extends { answer: string; reason: string; agentId?: str
   let warning: string | undefined
   try {
     if (e.reason === 'answer') warning = await turnWarning($, e.answer, stop)
+  } catch (err) {
+    await debug($, 'turn.complete', err)
+  }
+  try {
+    if (e.reason === 'answer') await noteVerdicts($, e.answer)
   } catch (err) {
     await debug($, 'turn.complete', err)
   }
@@ -453,8 +459,18 @@ async function noteSkillCall($: Api, r: object, e: object): Promise<void> {
 async function noteSkill($: Api, name: string): Promise<void> {
   const skill = reviewSkill(name)
   if (skill === undefined || held.me.k === 'inert') return
-  const briefs = (await loadFacts($, 'brief')).flatMap((f) => (f.kind === 'brief' ? [f] : []))
-  await record($, skillSeen, { skill, briefs })
+  await record($, skillSeen, { skill, briefs: await loadBriefs($) })
+}
+
+/** A verdict this pane's own answer gave makes it that ticket's verifier. Inert and main pay nothing per answer. */
+async function noteVerdicts($: Api, answer: string): Promise<void> {
+  if (held.me.k !== 'pane') return
+  const lines = statusLines(answer)
+  if (lines.length > 0) await record($, verdictSeen, { lines, briefs: await loadBriefs($) })
+}
+
+async function loadBriefs($: Api): Promise<Array<FactOf<'brief'>>> {
+  return (await loadFacts($, 'brief')).flatMap((f) => (f.kind === 'brief' ? [f] : []))
 }
 
 /** Run a pure observer on what a hook saw, keep its `me`, and write its facts. */

@@ -19,7 +19,7 @@ import { GH_BACKEND, GH_FRONTEND } from './fixtures/github.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import * as REPORTS from './fixtures/reports.ts'
 import { ROLLOUT_VERIFY_THV_1000, ROLLOUT_VERIFY_THV_1000_PATH, SKILL_PROMPT_DESLOP, SKILL_TOOL_CALL, SKILL_TOOL_RESULT } from './fixtures/review.ts'
-import { HOME, fakeAsk, fresh, idOf, mainOf, must, relabelTab, rowOf, stage, start, submit, tk, worldOf, type Stage } from './stage.ts'
+import { HOME, cockpit, fakeAsk, fresh, idOf, mainOf, must, relabelTab, rowOf, stage, start, submit, tk, turnEnd, worldOf, type Stage } from './stage.ts'
 
 const P8V_SID = '27c71f2d-e064-4ebc-ae51-e993d40abfac'
 const W18 = mainOf('w18', 'w18:p8W')
@@ -89,6 +89,53 @@ test('a builder session records `self`, never `review`: V stays unlit and the se
   await s.clock.advance(5000)
   await submit($, REPORTS.FIX_ROUND_3_THV_1015.replaceAll('THV-1015', 'THV-1003'))
   expect(cellText(rowOf(world1003([...factsOf(s), report], [BE_142]), 'THV-1003'), 'report')).toBe('✓')
+})
+
+// ── A verifier by its reply (THV-1095) ────────────────────────────────────────────────────────
+
+test('a pane that replies FINDINGS THV-1003 with no brief is its verifier: the skills it runs next write `review`', async ($, on) => {
+  const s = await paneRan($, on, 'Look over the THV-1003 purge diff for me.', [])
+  await turnEnd($, 'FINDINGS THV-1003\n\nThe purge skips an archived learner with a pending booking request.')
+  expect(s.saved.get(`cockpit:brief:THV-1003:${P8V_SID}`)).toEqual({ kind: 'brief', k: 'first', ticket: 'THV-1003', role: 'verifier', sid: P8V_SID, pane: 'w18:p8V', at: 2000 })
+  await s.clock.advance(1000)
+  for (const skill of ['verify-this', 'code-review']) await skillPrompt($, skill)
+  expect(reviewKeys(s)).toEqual([`cockpit:review:THV-1003:${P8V_SID}:code-review`, `cockpit:review:THV-1003:${P8V_SID}:verify-this`])
+  expect(s.saved.get(`cockpit:review:THV-1003:${P8V_SID}:verify-this`)).toEqual({ kind: 'review', ticket: 'THV-1003', sid: P8V_SID, skill: 'verify-this', round: 2000, at: 3000 })
+  expect(cellText(rowOf(world1003(factsOf(s), [FE_137]), 'THV-1003'), 'review')).toBe('V C – –')
+})
+
+test('a builder pane that replies VERIFIED for another ticket verifies that one, and still self-checks its own', async ($, on) => {
+  const s = await paneRan($, on, REPORTS.BUILD_BRIEF_THV_1014, [])
+  await turnEnd($, 'VERIFIED THV-1003')
+  await skillPrompt($, 'verify-this')
+  expect(reviewKeys(s)).toEqual([`cockpit:review:THV-1003:${P8V_SID}:verify-this`, `cockpit:self:THV-1014:${P8V_SID}:verify-this`])
+})
+
+test('a verifier that replies VERIFIED keeps its brief, so the round its skills ran in still lights', async ($, on) => {
+  const s = await paneRan($, on, VERIFY_THV_1003, ['verify-this', 'code-review', 'deslop'])
+  const brief = s.saved.get(`cockpit:brief:THV-1003:${P8V_SID}`)
+  await s.clock.advance(5000)
+  await turnEnd($, 'VERIFIED THV-1003')
+  expect(s.saved.get(`cockpit:brief:THV-1003:${P8V_SID}`)).toEqual(brief)
+  expect(cellText(rowOf(world1003(factsOf(s), [FE_137]), 'THV-1003'), 'review')).toBe('V C – D')
+})
+
+const briefKeys = (s: Stage): string[] => [...s.saved.keys()].filter((k) => k.startsWith('cockpit:brief:'))
+
+test("a subagent's VERIFIED reply is not the session's; the session's own is", async ($, on) => {
+  const s = await paneRan($, on, 'Look over the THV-1003 purge diff for me.', [])
+  await $.turn.complete({ answer: 'VERIFIED THV-1003', reason: 'answer', durationMs: 1_000, isAborted: false, turnId: 'turn-sub', agentId: 'a1b2' })
+  expect(briefKeys(s)).toEqual([])
+  await turnEnd($, 'VERIFIED THV-1003')
+  expect(briefKeys(s)).toEqual([`cockpit:brief:THV-1003:${P8V_SID}`])
+})
+
+test('main relaying a VERIFIED line is not a verifier', async ($, on) => {
+  const s = stage(on, { pane: 'w18:p8W', snapshot: W18_1003 })
+  await start($)
+  await cockpit($)
+  await turnEnd($, 'VERIFIED THV-1003\n\nThe verifier pane signed it off.')
+  expect(briefKeys(s)).toEqual([])
 })
 
 // ── Skill capture rules ───────────────────────────────────────────────────────────────────────
