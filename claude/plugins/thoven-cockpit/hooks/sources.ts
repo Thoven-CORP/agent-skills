@@ -10,7 +10,7 @@ import { COMMANDS, type Req } from './commands.ts'
 import { FIXED_REPOS, configPathOf, parseOrigin, parsePrList } from './github.ts'
 import { parsePaneLabel, parseSnapshot } from './herdr.ts'
 import { inboxFile } from './dispatch.ts'
-import type { Branches, GithubView, HeadPaths, InboxFile, Ms, Origins, Pane, PaneId, PaneLabels, Polled, Pr, Snapshot, SourceId, SourceValues, Sources, SpaceMap, World } from './model.ts'
+import type { Branches, GithubView, HeadPaths, InboxFile, Ms, Origins, Pane, PaneId, PaneLabels, Polled, Pr, HealthId, Snapshot, SourceId, SourceValues, Sources, SpaceMap, World } from './model.ts'
 
 /** One directory entry, as register.ts reduces `$.fs.list`. A folder that does not exist lists `[]`. */
 export type Listing = ReadonlyArray<{ name: string; kind: string; mtimeMs: number }>
@@ -34,14 +34,16 @@ export type Seen = Pick<World, 'me' | 'sources'>
  * stale (or down, if it never answered). `N` keeps `needs` as literals, so stagesOf rejects a
  * need that names no source at compile time.
  */
-export type Source<T, N extends string = string> = {
+export type Source<T, N extends string = string, H extends string = string> = {
   everyMs: Ms
   needs: readonly N[]
+  /** The Health entry this source shares with others; a source without one is its own entry. */
+  shows?: H
   run(world: Seen, ask: Ask): Promise<T | undefined>
 }
 
 /** A SOURCES entry. Its value type is read off `run`'s return type, which SourceValues collects. */
-function source<T, const N extends string>(s: Source<T, N>): Source<T, N> {
+function source<T, const N extends string, const H extends string = never>(s: Source<T, N, H>): Source<T, N, H> {
   return s
 }
 
@@ -214,6 +216,7 @@ export const SOURCES = {
   // asked again next poll rather than cached as a checkout.
   heads: source({
     everyMs: HEARTBEAT_MS,
+    shows: 'git',
     needs: ['herdr'],
     run: async (world, ask): Promise<HeadPaths> => {
       const known = valueOf(world.sources.heads)
@@ -224,6 +227,7 @@ export const SOURCES = {
 
   branches: source({
     everyMs: HEARTBEAT_MS,
+    shows: 'git',
     needs: ['heads'],
     run: async (world, ask): Promise<Branches> => {
       const heads = [...(valueOf(world.sources.heads) ?? [])]
@@ -239,6 +243,7 @@ export const SOURCES = {
 
   origins: source({
     everyMs: HEARTBEAT_MS,
+    shows: 'git',
     needs: ['herdr', 'heads'],
     run: async (world, ask): Promise<Origins> => {
       const read = await Promise.all(unreadConfigs(world).map(async (path): Promise<[string, string | undefined]> => [path, await tolerate(ask.read(path))]))
@@ -313,6 +318,9 @@ function stagesOf(): SourceId[][] {
 
 /** SOURCES seen through SourceValues, so a poll of `id` is typed by `id`. */
 export const BY_ID: { [K in SourceId]: Source<SourceValues[K]> } = SOURCES
+
+/** The sources that share one Health entry, in poll order. */
+export const sharing = (entry: HealthId): SourceId[] => SOURCE_IDS.filter((id) => BY_ID[id].shows === entry)
 
 type Unpolled = { [K in SourceId]: { k: 'never' } }
 const isUnpolled = (o: Readonly<Record<string, { k: 'never' }>>): o is Unpolled => SOURCE_IDS.every((id) => Object.hasOwn(o, id))

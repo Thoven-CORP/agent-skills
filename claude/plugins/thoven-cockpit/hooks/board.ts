@@ -24,7 +24,7 @@ import { indexFacts, newest, type BoardFacts } from './facts.ts'
 import { rowOf } from './cells.ts'
 import { prJoin } from './prs.ts'
 import type { Board, Branches, Health, Kind, LivePane, NonEmpty, OtherItem, Pane, PaneCell, PaneLabels, Panes, Polled, RowIdentity, SourceHealth, SourceId, Sources, SpaceMap, Ticket, World } from './model.ts'
-import { valueOf } from './sources.ts'
+import { sharing, valueOf } from './sources.ts'
 
 /** What ties a pane to its work: its label, else its folder's branch, else what main sent it. */
 type Tie = { kind: Kind | undefined; title: string; tickets: Ticket[]; origin: 'label' | 'branch' | 'dispatch' }
@@ -166,5 +166,5 @@ function health(sources: Sources): Health {
     const p = ids.map((id): Polled<unknown> => sources[id]).find((s) => s.k === 'stale' || s.k === 'down')
     return p?.k === 'stale' ? { k: 'stale', since: p.since } : p?.k === 'down' ? { k: 'unavailable' } : { k: 'ok' }
   }
-  return { herdr: of('herdr'), labels: of('labels'), spaces: of('spaces'), git: of('heads', 'branches', 'origins'), github: of('github'), inbox: of('inbox') }
+  return { herdr: of('herdr'), labels: of('labels'), spaces: of('spaces'), git: of(...sharing('git')), github: of('github'), inbox: of('inbox') }
 }

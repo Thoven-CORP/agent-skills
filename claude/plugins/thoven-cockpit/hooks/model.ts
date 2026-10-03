@@ -337,10 +337,11 @@ export type PrItem = { pr: Pr; tickets: Ticket[] }
 /** One repo's PRs, newest first as gh lists them. Groups follow the repos' poll order: frontend, backend, then the rest. */
 export type PrGroup = { repo: string; items: PrItem[] }
 
-/** heads, branches and origins all read git's own files, so their health is one git entry. */
-export type GitSourceId = 'heads' | 'branches' | 'origins'
+/** The Health entry a source reports under, read off its `shows` in SOURCES: heads, branches and origins all read git's own files, so they share `git`. */
+type ShownAs<K extends SourceId> = (typeof SOURCES)[K] extends Source<unknown, string, infer H> ? ([H] extends [never] ? K : H) : K
+export type HealthId = { [K in SourceId]: ShownAs<K> }[SourceId]
 export type SourceHealth = { k: 'ok' } | { k: 'stale'; since: Ms } | { k: 'unavailable' }
-export type Health = { [S in SourceId as S extends GitSourceId ? 'git' : S]: SourceHealth }
+export type Health = { [S in SourceId as ShownAs<S>]: SourceHealth }
 
 export type Board = {
   space: Space
