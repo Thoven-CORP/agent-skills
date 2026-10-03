@@ -32,37 +32,7 @@
 import { branchTicket, pickLabel } from './dispatch.ts'
 import { aboutTicket, boardFacts, type BoardFacts } from './facts.ts'
 import { configPathOf } from './github.ts'
-import {
-  isOneOf,
-  type Board,
-  type Cells,
-  type CiCell,
-  type FixCell,
-  type Health,
-  type InboxFile,
-  type Kind,
-  type LinearEventId,
-  type LivePane,
-  type NonEmpty,
-  type OtherItem,
-  type Pane,
-  type PaneCell,
-  type PaneId,
-  type Panes,
-  type PaneLabels,
-  type Branches,
-  type Pending,
-  type Polled,
-  type Pr,
-  type PrCell,
-  type PrGroup,
-  type ReportCell,
-  type RowIdentity,
-  type Sources,
-  type SpaceMap,
-  type Ticket,
-  type World,
-} from './model.ts'
+import type { Board, Branches, Cells, CiCell, FixCell, Health, InboxFile, Kind, LinearEventId, LivePane, NonEmpty, OtherItem, Pane, PaneCell, PaneId, PaneLabels, Panes, Pending, Polled, Pr, PrCell, PrGroup, ReportCell, RowIdentity, Sources, SpaceMap, Ticket, World } from './model.ts'
 import { bySource, valueOf } from './sources.ts'
 
 /** What ties a pane to its work: its label, else its folder's branch, else what main sent it. */
@@ -72,16 +42,7 @@ type Tie = { kind: Kind | undefined; title: string; tickets: Ticket[]; origin: '
 type Slot = { k: 'build' | 'review'; tie: Tie; pane: Pane } | { k: 'other'; tie: Tie | undefined; pane: Pane } | { k: 'shell' }
 
 /** The slot a tie naming a ticket takes, by its Kind. A tie with no Kind is an older Build label. */
-const SLOT_OF_KIND: Record<Kind, 'build' | 'review' | 'other'> = {
-  Build: 'build',
-  Fix: 'build',
-  Review: 'review',
-  Meta: 'other',
-  Plan: 'other',
-  Design: 'other',
-  Research: 'other',
-  Audit: 'other',
-}
+const SLOT_OF_KIND: Record<Kind, 'build' | 'review' | 'other'> = { Build: 'build', Fix: 'build', Review: 'review', Meta: 'other', Plan: 'other', Design: 'other', Research: 'other', Audit: 'other' }
 
 function slotOf(tie: Tie | undefined, p: Pane): Slot {
   if (tie === undefined) return p.agent ? { k: 'other', tie, pane: p } : { k: 'shell' }
@@ -120,16 +81,16 @@ export function project(world: World): Board {
   }
 
   const verifierOf = (t: Ticket): PaneCell => {
-    const r = reviews.get(t)
-    return r ? cell(r.verifier) : { k: 'none' }
+    const v = reviews.get(t)?.verifier
+    return v ? cell(v) : { k: 'none' }
   }
-  const held = new Map<Ticket, RowIdentity>()
-  for (const [t, b] of builds) held.set(t, holding(t, b.tie, { k: 'live', list: b.panes }, verifierOf(t)))
-  for (const [t, r] of reviews) if (!held.has(t)) held.set(t, holding(t, r.tie, { k: 'live', list: [live(r.pane)] }, verifierOf(t)))
+  const ids = [
+    ...[...builds].map(([t, b]) => holding(t, b.tie, { k: 'live', list: b.panes }, verifierOf(t))),
+    ...[...reviews].filter(([t]) => !builds.has(t)).map(([t, r]) => holding(t, r.tie, { k: 'live', list: [live(r.pane)] }, verifierOf(t))),
+  ]
   const mine = thisSession(world, snap?.panes.find((p) => p.pane === me.pane))
-  if (mine && !held.has(mine.ticket)) held.set(mine.ticket, mine)
+  if (mine && !ids.some((id) => id.ticket === mine.ticket)) ids.push(mine)
 
-  const ids = [...held.values()]
   const join = prJoin(world, panes, ids)
   const context = { inbox: valueOf(world.sources.inbox) ?? [], join, project: projectName }
 
@@ -329,14 +290,7 @@ function thisSession(world: World, mainPane: Pane | undefined): RowIdentity | un
   return holding(t, { kind: named?.kind, title: named?.title ?? mainPane?.terminalTitle ?? branch, origin: 'this-session' }, panes, { k: 'none' })
 }
 
-const holding = (ticket: Ticket, by: Pick<RowIdentity, 'kind' | 'title' | 'origin'>, panes: Panes, verifierPane: PaneCell): RowIdentity => ({
-  ticket,
-  title: by.title,
-  kind: by.kind,
-  origin: by.origin,
-  panes,
-  verifierPane,
-})
+const holding = (ticket: Ticket, by: Pick<RowIdentity, 'kind' | 'title' | 'origin'>, panes: Panes, verifierPane: PaneCell): RowIdentity => ({ ticket, title: by.title, kind: by.kind, origin: by.origin, panes, verifierPane })
 
 /** herdr's space label and WORKFLOW.md's `COPPA` differ in case (`Coppa`), so the match ignores it. */
 function projectOf(spaces: SpaceMap | undefined, label: string): string | undefined {
