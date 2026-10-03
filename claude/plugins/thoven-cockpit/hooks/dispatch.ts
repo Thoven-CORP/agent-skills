@@ -57,6 +57,16 @@ export function parseLabel(text: string): Label | undefined {
   return { kind, title: rest, tickets }
 }
 
+/**
+ * The tickets of a trailing `(THV-n …)` group and the text before it, or undefined when the text
+ * does not end in one. A PR title's tickets are these only, never ones named in its prose.
+ */
+export function trailingTickets(text: string): { tickets: Ticket[]; rest: string } | undefined {
+  const m = TRAILING_TICKETS.exec(text)
+  if (!m?.[1]) return undefined
+  return { tickets: m[1].split(/[\s,]+/).flatMap((t) => ticket(t) ?? []), rest: text.slice(0, m.index).trim() }
+}
+
 /** The spec's "first match wins": pane label, tab label, terminal title, then the branch. */
 export function pickLabel(candidates: ReadonlyArray<string | undefined>, branch: string | undefined): Label | undefined {
   for (const text of candidates) {

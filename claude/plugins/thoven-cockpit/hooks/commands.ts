@@ -24,3 +24,19 @@ export const herdr = {
   /** `f`: jump to a pane, the same as clicking it in the sidebar. */
   agentFocus: (pane: PaneId): Argv => mint('herdr', 'agent', 'focus', pane),
 } as const
+
+/** The fields every PR read asks for. `mergedAt` is a field name inside `--json`, not a verb. */
+const PR_FIELDS = 'number,title,headRefName,state,statusCheckRollup,mergedAt,url,additions,deletions,files'
+/** `owner/name`, starting with a letter or digit, so a repo operand can never read as a flag. */
+const REPO = /^[A-Za-z0-9][\w.-]*\/[\w.-]+$/
+
+export const gh = {
+  /**
+   * One repo's last 50 PRs every 60 s. `--state all` keeps merged PRs in view, which the Merge
+   * event and the PRs tab need; gh's default lists open PRs only.
+   */
+  prList: (repo: string): Argv => {
+    if (!REPO.test(repo)) throw new Error(`not a GitHub repo: ${repo}`)
+    return mint('gh', 'pr', 'list', '--repo', repo, '--state', 'all', '--json', PR_FIELDS, '--limit', '50')
+  },
+} as const

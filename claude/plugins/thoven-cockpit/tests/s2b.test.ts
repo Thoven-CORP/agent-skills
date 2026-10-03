@@ -57,7 +57,7 @@ function worldOf(me: Main, snapshot: string, facts: Fact[], extra: Partial<Sourc
       inbox: never,
       codex: never,
       ...extra,
-    } as Sources,
+    },
     facts,
     readbacks: new Map(),
     inFlight: new Set(),

@@ -29,6 +29,7 @@ const SOURCE_NAME: Record<SourceId, string> = {
   spaces: 'Live spaces',
   heads: 'git',
   branches: 'git',
+  origins: 'git',
   github: 'gh',
   linear: 'Linear',
   inbox: 'dispatch inbox',

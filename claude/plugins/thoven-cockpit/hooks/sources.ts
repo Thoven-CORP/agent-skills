@@ -7,9 +7,10 @@
 // text without the test kit. A process argv can only be an `Argv` from commands.ts.
 
 import type { Argv } from './commands.ts'
+import { FIXED_REPOS, configPathOf, parseOrigin, parsePrList, prListReq } from './github.ts'
 import { paneGetReq, parsePaneLabel, parseSnapshot, snapshotReq } from './herdr.ts'
 import { inboxFile } from './dispatch.ts'
-import type { Branches, HeadPaths, InboxFile, Ms, Pane, PaneId, PaneLabels, Polled, SourceId, SourceValues, SpaceMap, World } from './model.ts'
+import type { Branches, GithubView, HeadPaths, InboxFile, Ms, Origins, Pane, PaneId, PaneLabels, Polled, Pr, SourceId, SourceValues, SpaceMap, World } from './model.ts'
 
 /** One outside read. `perform($, req)` in register.ts is the only code that turns these into `$` calls. */
 export type Req = { k: 'proc'; argv: Argv; timeoutMs: number } | { k: 'read'; path: string } | { k: 'list'; path: string }
@@ -37,7 +38,7 @@ export type Listing = Array<{ name: string; kind: string; mtimeMs: number }>
 export const HEARTBEAT_MS = 5000
 
 /** Poll order. A source's `plan` reads only sources earlier in this list. */
-export const SOURCE_ORDER = ['herdr', 'labels', 'spaces', 'heads', 'branches', 'inbox'] as const
+export const SOURCE_ORDER = ['herdr', 'labels', 'spaces', 'heads', 'branches', 'origins', 'github', 'inbox'] as const
 export type PolledId = (typeof SOURCE_ORDER)[number]
 
 export function valueOf<T>(p: Polled<T>): T | undefined {
@@ -128,6 +129,29 @@ export function headPathOf(cwd: string, dotGit: string | undefined): string {
 /** `ref: refs/heads/fix/thv-1050` → `fix/thv-1050`. A detached HEAD (a bare sha) has no branch. */
 export function parseHead(text: string): string | undefined {
   return /^ref: refs\/heads\/(.+?)\s*$/m.exec(text)?.[1]
+}
+
+// ── Repos: each tracked folder's origin, plus frontend and backend (synthesis A4) ────────────
+
+/** The `.git/config` of each tracked folder whose HEAD path is known, one entry per repo. */
+function configPaths(world: World): string[] {
+  const heads = valueOf(world.sources.heads)
+  return [...new Set(trackedCwds(world).flatMap((cwd) => {
+    const head = heads?.get(cwd)
+    return head === undefined ? [] : [configPathOf(head)]
+  }))]
+}
+
+/** Configs not read yet. A config is read once: an unreadable one stays cached as no repo. */
+function unreadConfigs(world: World): string[] {
+  const known = valueOf(world.sources.origins)
+  return configPaths(world).filter((path) => !known?.has(path))
+}
+
+/** The repos main asks gh about, frontend and backend first. */
+export function reposOf(world: World): string[] {
+  const origins = valueOf(world.sources.origins)
+  return [...new Set([...FIXED_REPOS, ...configPaths(world).flatMap((path) => origins?.get(path) ?? [])])]
 }
 
 // ── $TMPDIR/dispatch/out, main's inbox ───────────────────────────────────────────────────────
@@ -225,6 +249,36 @@ export const SOURCES: { [K in PolledId]: Source<SourceValues[K]> } = {
         if (branch) branches.set(cwd, branch)
       })
       return branches
+    },
+  },
+
+  origins: {
+    everyMs: HEARTBEAT_MS,
+    plan: (world) => unreadConfigs(world).map((path) => ({ k: 'read', path })),
+    read: (world, resps): Origins => {
+      const origins = new Map(valueOf(world.sources.origins))
+      unreadConfigs(world).forEach((path, i) => {
+        const text = ok(resps[i])
+        origins.set(path, text === undefined ? undefined : parseOrigin(text))
+      })
+      return origins
+    },
+  },
+
+  // One `gh pr list` per repo. Any repo failing marks the whole source stale, so the PR and CI
+  // cells keep the last full answer rather than mixing two polls.
+  github: {
+    everyMs: 60_000,
+    plan: (world) => reposOf(world).map(prListReq),
+    read: (world, resps): GithubView | undefined => {
+      const prs: Pr[] = []
+      for (const [i, repo] of reposOf(world).entries()) {
+        const text = ok(resps[i])
+        const list = text === undefined ? undefined : parsePrList(repo, text)
+        if (!list) return undefined
+        prs.push(...list)
+      }
+      return { prs }
     },
   },
 

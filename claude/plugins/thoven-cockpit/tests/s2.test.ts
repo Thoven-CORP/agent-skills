@@ -58,6 +58,7 @@ function worldOf(me: Main, snapshot: string, facts: Fact[], extra: Partial<Sourc
       spaces: fresh(parseLiveSpaces(WORKFLOW_LIVE_SPACES)),
       heads: never,
       branches: never,
+      origins: never,
       github: never,
       linear: never,
       inbox: never,

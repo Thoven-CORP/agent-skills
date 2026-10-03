@@ -207,6 +207,7 @@ function health(sources: Sources): Health {
     spaces: of(sources.spaces),
     heads: of(sources.heads),
     branches: of(sources.branches),
+    origins: of(sources.origins),
     github: of(sources.github),
     linear: of(sources.linear),
     inbox: of(sources.inbox),

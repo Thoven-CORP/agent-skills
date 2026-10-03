@@ -44,6 +44,7 @@ function worldOf(me: Main, snapshot: Snapshot, extra: Partial<Sources> = {}): Wo
       spaces: fresh(parseLiveSpaces(WORKFLOW_LIVE_SPACES)),
       heads: never,
       branches: never,
+      origins: never,
       github: never,
       linear: never,
       inbox: never,

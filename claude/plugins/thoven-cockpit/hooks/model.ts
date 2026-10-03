@@ -156,24 +156,32 @@ export type SpaceMap = ReadonlyMap<string, string>
 export type HeadPaths = ReadonlyMap<string, string>
 /** cwd → branch, from its HEAD file. A detached HEAD or a folder outside git has no entry. */
 export type Branches = ReadonlyMap<string, string>
+/**
+ * A repo's `.git/config` path → its GitHub `owner/name` (`Thoven-CORP/frontend-remote`), read
+ * once per path. Undefined when the file is unreadable or its origin is not on GitHub.
+ */
+export type Origins = ReadonlyMap<string, string | undefined>
 
-/** One PR from `gh pr list`, already attached to its tickets. */
+/** One PR from `gh pr list`. */
 export type Pr = {
-  repo: RepoTag
+  /** GitHub `owner/name`. */
+  repo: string
   number: number
+  /** The title without its trailing `(THV-n …)` group, which is in `tickets`. */
   title: string
   branch: string
   state: 'OPEN' | 'MERGED' | 'CLOSED'
-  isDraft: boolean
-  /** Tickets named by the branch `thv-(\d+)`, plus every ticket in the title's trailing `(…)`. */
+  /** Tickets named by the branch `thv-(\d+)`, then every ticket in the title's trailing `(…)`. Prose mentions are not tickets. */
   tickets: Ticket[]
   checks: Checks
+  /** additions + deletions. With `topDirs`, S3's amber T reads it. */
   changedLines: number
+  /** Top-level directories the changed files sit under; a file at the root is under none. */
   topDirs: number
   url: string
 }
-export type RepoTag = 'FE' | 'BE' | 'AS'
-export type Checks = { total: number; done: number; failed: number }
+/** `statusCheckRollup`, CheckRuns and StatusContexts alike. `failed` and `running` hold check names. */
+export type Checks = { total: number; done: number; failed: string[]; running: string[] }
 
 export type GithubView = { prs: Pr[] }
 
@@ -207,6 +215,7 @@ export type SourceValues = {
   spaces: SpaceMap
   heads: HeadPaths
   branches: Branches
+  origins: Origins
   github: GithubView
   linear: LinearView
   inbox: InboxFile[]

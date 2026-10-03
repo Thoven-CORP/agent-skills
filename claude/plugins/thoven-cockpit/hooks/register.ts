@@ -41,6 +41,7 @@ let sources: Sources = {
   spaces: { k: 'never' },
   heads: { k: 'never' },
   branches: { k: 'never' },
+  origins: { k: 'never' },
   github: { k: 'never' },
   linear: { k: 'never' },
   inbox: { k: 'never' },
