@@ -5,7 +5,7 @@
 // report, verdict or send.sh call means for the store lives here, not in the shell.
 
 import type { ReportLine, readPrompt } from './dispatch.ts'
-import { VERDICTS, isOneOf, type Engagement, type Fact, type Me, type Ms, type SendCall, type SessionId } from './model.ts'
+import { VERDICTS, isOneOf, type Engagement, type Fact, type Me, type Ms, type ReportStatus, type SendCall, type SessionId, type StatusLine } from './model.ts'
 
 export type Observed = { facts: Fact[]; me: Me }
 export type Observer<I> = (me: Me, input: I, sid: SessionId, at: Ms) => Observed
@@ -41,4 +41,10 @@ function lineFact(l: ReportLine, sid: SessionId, at: Ms): Fact {
 export const bashSeen: Observer<readonly SendCall[]> = (me, calls, _sid, at) => ({
   me,
   facts: me.k === 'inert' ? [] : calls.map((c) => ({ kind: 'send', ...c, at })),
+})
+
+/** The status lines a builder pane's own answer ended its turn with: what it last sent main. Only a pane holds a brief. */
+export const answerSeen: Observer<ReadonlyArray<StatusLine & { word: ReportStatus }>> = (me, lines, sid, at) => ({
+  me,
+  facts: me.k === 'pane' ? lines.map((l) => ({ kind: 'status', ticket: l.ticket, sid, status: l.word, text: l.line, at })) : [],
 })

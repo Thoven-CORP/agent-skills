@@ -9,6 +9,7 @@
 
 import { KINDS, REPORT_STATUSES, ROLES, VERDICTS, isOneOf, isPaneId, isSessionId, isSpaceId, type Fact, type FactKind, type FactOf, type LinearEventId, type Ticket } from './model.ts'
 import { ticket } from './dispatch.ts'
+import { checkpointShape } from './background.ts'
 
 const PREFIX = 'cockpit:'
 
@@ -20,12 +21,15 @@ export function keyOf(fact: Fact): string {
     case 'brief':
     case 'report':
     case 'verdict':
+    case 'status':
       return `${PREFIX}${fact.kind}:${fact.ticket}:${fact.sid}`
     case 'send':
       // Role and round in the key, so a plain send never overwrites the fix round before it.
       return `${PREFIX}send:${fact.ticket}:${fact.pane}:${fact.role}:${fact.round}`
     case 'happened':
       return `${PREFIX}happened:${fact.ticket}:${fact.event}`
+    case 'checkpoint':
+      return `${PREFIX}checkpoint:${fact.sid}`
     default:
       return fact satisfies never
   }
@@ -71,6 +75,11 @@ const SHAPES: { [K in FactKind]: (v: Raw) => FactOf<K> | undefined } = {
       ? { kind: 'send', ticket: v.ticket, pane: v.pane, role: v.role, round: v.round, file: v.file, at: v.at }
       : undefined,
   happened: (v) => (isTicket(v.ticket) && isEvent(v.event) && isNum(v.at) ? { kind: 'happened', ticket: v.ticket, event: v.event, at: v.at } : undefined),
+  status: (v) =>
+    isTicket(v.ticket) && isSessionId(v.sid) && isOneOf(REPORT_STATUSES)(v.status) && typeof v.text === 'string' && isNum(v.at)
+      ? { kind: 'status', ticket: v.ticket, sid: v.sid, status: v.status, text: v.text, at: v.at }
+      : undefined,
+  checkpoint: (v) => checkpointShape(v),
 }
 
 const isRaw = (v: unknown): v is Raw => typeof v === 'object' && v !== null

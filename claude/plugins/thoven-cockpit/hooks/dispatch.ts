@@ -196,6 +196,23 @@ export function readPrompt(text: string): undefined | { k: 'brief'; brief: Brief
   return lines.length > 0 ? { k: 'report', lines } : undefined
 }
 
+/**
+ * brief.md's `RULINGS    <text>` field with its indented continuation lines, which end at the next
+ * field (`ACCESS`). A fix round may carry `RULINGS IN FORCE …`. Undefined when absent or "none".
+ */
+export function rulingsOf(brief: string): string | undefined {
+  const lines = unwrapPasted(brief).split('\n')
+  const at = lines.findIndex((l) => /^RULINGS\b/.test(l))
+  if (at < 0) return undefined
+  const more: string[] = []
+  for (const l of lines.slice(at + 1)) {
+    if (!/^[ \t]+\S/.test(l)) break
+    more.push(l.trim())
+  }
+  const text = [(lines[at] ?? '').replace(/^RULINGS\b[ \t]*/, '').trim(), ...more].filter((l) => l !== '').join('\n')
+  return text === '' || /^none\.?$/i.test(text) ? undefined : text
+}
+
 /** `send.sh <pane-or-agent> <brief-file>`, operands optionally quoted. */
 const SEND_CALL = /send\.sh[ \t]+["']?([^\s"'|;&]+)["']?[ \t]+["']?([^\s"'|;&]+)/g
 /** The brief file names dispatch-work uses: `THV-1004.md`, `THV-1004-fix2.md`, `THV-1030-verify.md`. */

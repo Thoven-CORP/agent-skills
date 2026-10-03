@@ -242,6 +242,9 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
   })
   on('session.start', () => ({ cwd: MAIN_CWD }))
   on('classic.SessionStart', () => ({}))
+  on('session.compact', (_$: unknown, e: { messages: unknown[] }) => ({ messages: e.messages, tokensBefore: 0, tokensAfter: 0 }))
+  on('classic.Stop', () => ({}))
+  on('turn.complete', (_$: unknown, e: { answer: string }) => ({ text: e.answer }))
   on('ui.render', () => ({ type: 'Text', props: {}, children: ['drawn by Claude Code'] }))
   return s
 }
@@ -259,3 +262,6 @@ export const submit = ($: any, text: string) => $.prompt.submit({ text, origin: 
 export const receive = ($: any, text: string) => $.session.receive({ origin: { kind: 'peer' }, text })
 /** Claude running one Bash command. */
 export const bash = ($: any, command: string) => $.tool.call({ tool: 'Bash', command, description: 'send', tool_use_id: 'toolu_s2' })
+/** A main-loop turn ending with this answer, as Claude Code raises it. */
+export const turnEnd = ($: any, answer: string, reason: 'answer' | 'aborted' = 'answer'): Promise<{ text: string; block?: string }> =>
+  $.turn.complete({ answer, reason, durationMs: 1_000, isAborted: reason === 'aborted', turnId: 'turn-s5' })
