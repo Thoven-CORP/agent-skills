@@ -1,7 +1,7 @@
 # Review: main's verify pass
 
 The builder's own report is a claim. The verifier turns it into evidence. It runs in a fresh pane
-on the other model family (`agents.md`), so it is not reviewing its own work.
+on the model `agents.md` names, so it is not reviewing its own work.
 
 ## Working if
 

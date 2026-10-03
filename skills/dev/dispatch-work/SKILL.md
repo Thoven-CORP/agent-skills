@@ -22,7 +22,7 @@ owns its half, and the brief tells the pane which half is main's.
 | Owns Linear: every status move and comment | Commits by exact path on the branch it was given |
 | Keeps a watcher armed on every live pane | Reaches for skills at their moments |
 | Answers questions, rules on blockers, escalates product calls to Andres | Sends one status line to main with `herdr agent prompt` |
-| Verifies with a different model family, then closes | Waits for main's reply or a fix round |
+| Verifies in a fresh pane, then closes | Waits for main's reply or a fix round |
 
 The pane never writes to Linear, never pushes, and never decides a product question. Main never
 edits the pane's code. Fixes go back to a pane.
@@ -128,8 +128,8 @@ reported to Andres. Main ends a turn only while a watcher is armed on every live
 
 ### 5. Verify
 
-Follow [references/review.md](references/review.md). The verifier runs on a different model family
-from the builder, in its own pane, against the base SHA.
+Follow [references/review.md](references/review.md). The verifier runs in its own fresh pane, on
+the model [references/agents.md](references/agents.md) names, against the base SHA.
 
 **Done when:** every Acceptance line has a verdict with evidence, and every item in the review's
 "working if" list is checked.
