@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Bind a herdr space label to one ledger folder. WORKFLOW §8 is the table.
+// Bind a herdr space label to one ledger folder (WORKFLOW §8). The bind is retired, so every
+// label is unbound and both forms below exit 1.
 //
 // node scope.js '<spaceLabel>'
 //   exit 0, print JSON { folder, nowHeading }
@@ -12,29 +13,8 @@ const os = require('node:os');
 
 const THOVEN = path.join(os.homedir(), 'thoven');
 
-// Mirrors the ledger-bind table in ~/.agents/skills/workspace/references/WORKFLOW.md §8. That file is the law;
-// this is the enforcement. Updated 2026-08-27: ~Dashboard and ~Onboarding retired
-// (both shipped through Teacher 2.0 Part 1, so their folders are evidence now), and
-// the three section interiors were promoted out of archive/legacy-projects/ because
-// they still carry live locks. A folder under archive/ must not bind anything.
-const MAP = {
-  '~Business': {
-    folder: 'thoven2.0/teacher-2.0/projects/business',
-    nowHeading: 'Teacher 2.0: Business',
-  },
-  '~Settings': {
-    folder: 'thoven2.0/teacher-2.0/projects/settings',
-    nowHeading: 'Teacher 2.0: Settings',
-  },
-  '~Schedule': {
-    folder: 'thoven2.0/teacher-2.0/projects/schedule',
-    nowHeading: 'Teacher 2.0: Schedule',
-  },
-  '~Parent2.0': {
-    folder: 'thoven2.0/parent-2.0',
-    nowHeading: 'Parent 2.0',
-  },
-};
+// Empty since THV-1038 (2026-10-03), which retired the Project folders it bound.
+const MAP = {};
 
 function normalize(label) {
   return String(label || '')
