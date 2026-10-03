@@ -52,8 +52,9 @@ reconciliation ownership.
    `--stdin` takes the same JSON on standard input. With neither, the snapshot still renders — git,
    Project folder, and Project `STATE.md` are all read — and the ticket ledger carries one
    `ADVISORY linear-input` finding telling you to fetch through the MCP. `--linear-api` is an
-   opt-in escape hatch that uses `LINEAR_API_KEY` or `~/.linear-api-key`; that key is dead, so do
-   not reach for it. `--feature` and `--family` remain supported for the legacy tree views.
+   opt-in path that reads with `LINEAR_API_KEY` or `~/.linear-api-key`. The key works (checked
+   2026-10-03), and `tools/set-status.js` uses it. `--feature` and `--family` remain supported
+   for the legacy tree views.
 
    **The `--linear-json` shape.** One object with `issues` and optional `projects`. The
    `mcp__claude_ai_Linear__list_issues` response drops in unchanged — save its `issues` array as-is.
