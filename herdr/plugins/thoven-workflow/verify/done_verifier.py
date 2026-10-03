@@ -9,9 +9,10 @@ Contract read by board/: $STATE/verify/<pane_id>.json =
 Private bookkeeping (last status for debounce, escalation flag) lives in
 $STATE/verify-internal/<pane_id>.json so the contract file keeps its exact shape.
 
-Safety gate: if $STATE/verify.only-panes exists, --event acts only on the pane ids
-listed in it (whitespace separated; empty file = act on none). Delete the file to
-let the hook act on every pane.
+Scope: --event skips main panes, meaning any pane marked main (main-pane.<ws>) or recorded
+as a dispatcher (dispatch/by-pane/*.json). A main waits on CI and holds watchers, so it is
+not a build pane claiming done. Safety gate: if $STATE/verify.only-panes exists, --event acts
+only on the pane ids listed in it (whitespace separated; empty file = act on none).
 
 Never crashes the hook: everything is caught, logged to $STATE/verify.log, exit 0.
 """
@@ -233,10 +234,25 @@ def record(pane_id, ticket, status, reasons, nudges):
         "reasons": reasons, "nudges": nudges, "checked_at": tw.now_iso()})
 
 
+def is_main(pane_id):
+    """True for a pane marked main in any space, or that dispatched a ticket."""
+    import glob
+    for f in glob.glob(os.path.join(tw.STATE, "main-pane.*")):
+        try:
+            if open(f).read().strip() == pane_id:
+                return True
+        except Exception:
+            pass
+    for f in glob.glob(os.path.join(tw.STATE, "dispatch", "by-pane", "*.json")):
+        if (tw.read_json(f, {}) or {}).get("dispatcher") == pane_id:
+            return True
+    return False
+
+
 def in_scope(pane_id):
     gate = os.path.join(tw.STATE, "verify.only-panes")
     if not os.path.exists(gate):
-        return True
+        return not is_main(pane_id)
     try:
         return pane_id in open(gate).read().split()
     except Exception:
