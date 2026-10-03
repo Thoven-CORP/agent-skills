@@ -300,9 +300,6 @@ export type LinearCell =
   | { k: 'pending'; pending: Pending[]; isInFlight: boolean }
   | { k: 'error'; message: string; pending: Pending[] }
 
-/** A cell some source could not fill this tick: "stale since hh:mm". */
-export type Stale<C> = C | { k: 'stale'; since: Ms }
-
 export type Row = {
   ticket: Ticket
   title: string
@@ -317,8 +314,9 @@ export type Row = {
   report: ReportCell
   fix: FixCell
   review: ReviewCell
-  pr: Stale<PrCell>
-  ci: Stale<CiCell>
+  /** A stale gh source keeps its last answer, so these keep drawing; the health line says since when. */
+  pr: PrCell
+  ci: CiCell
   linear: LinearCell
 }
 
@@ -336,7 +334,10 @@ export type OtherItem = {
   note: 'not in this space' | 'unlabelled' | undefined
 }
 
+/** One PR in the PRs tab, with the on-screen tickets it attached to (none for a ticketless PR on a pane's branch). */
 export type PrItem = { pr: Pr; tickets: Ticket[] }
+/** One repo's PRs, newest first as gh lists them. Groups follow the repos' poll order: frontend, backend, then the rest. */
+export type PrGroup = { repo: string; items: PrItem[] }
 
 export type Health = { [S in SourceId]: { k: 'ok' } | { k: 'stale'; since: Ms } | { k: 'unavailable' } }
 
@@ -348,7 +349,8 @@ export type Board = {
   here: string | undefined
   build: Group[]
   other: OtherItem[]
-  prs: { project: PrItem[]; space: PrItem[] }
+  /** Each PR once: attached to a row by branch or title group, or ticketless on a space folder's branch. */
+  prs: PrGroup[]
   /** Every pending event on screen, for `u`. Parent rows contribute none. */
   pending: Pending[]
   health: Health
@@ -367,6 +369,10 @@ export type Intent =
   | { k: 'update'; pending: Pending[] } // ↻ or `u`: one /workspace update call
   | { k: 'fill'; text: string } // `c` /code-review, `m` "merge it #N": Andres presses Enter
   | { k: 'open-url'; url: string }
+  | { k: 'checks'; pr: string } // `c`, or a PR row pressed: show or hide that PR's unfinished and failed checks
 
-/** `selected` is the key of the row or item whose button holds the focus ring. */
-export type PaneUi = { tab: 'work' | 'prs'; selected: string | undefined }
+/**
+ * `selected` is the ticket of the Work row whose button holds the focus ring, `selectedPr` the
+ * same for a PR row (`owner/name#n`). `checks` is the PR whose checks are listed.
+ */
+export type PaneUi = { tab: 'work' | 'prs'; selected: string | undefined; selectedPr: string | undefined; checks: string | undefined }

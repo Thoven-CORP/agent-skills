@@ -52,7 +52,7 @@ let board: Board | undefined
 let heartbeat: { cancel(): void } | undefined
 let isTicking = false
 let isStoreTimed = false
-let ui: PaneUi = { tab: 'work', selected: undefined }
+let ui: PaneUi = { tab: 'work', selected: undefined, selectedPr: undefined, checks: undefined }
 let sessionCwd = ''
 
 export const register: Register = (on) => {
@@ -139,11 +139,14 @@ export const register: Register = (on) => {
     return next(e)
   }).catch(passThrough)
 
-  // `f` acts on the row whose button holds the focus ring.
+  // `f` acts on the row whose button holds the focus ring, and `c` on the PR whose button does.
   on('ui.focus', async ($, e, next) => {
     try {
-      const ticket = e.requestId === PANE_ID ? /^row-(THV-\d+)$/.exec(e.element ?? '')?.[1] : undefined
+      const element = e.requestId === PANE_ID ? (e.element ?? '') : ''
+      const ticket = /^row-(THV-\d+)$/.exec(element)?.[1]
+      const pr = /^pr-(.+#\d+)$/.exec(element)?.[1]
       if (ticket) ui = { ...ui, selected: ticket }
+      if (pr) ui = { ...ui, selectedPr: pr }
     } catch (err) {
       await debug($, 'ui.focus', err)
     }
@@ -391,10 +394,15 @@ async function act($: Api, intent: Intent): Promise<void> {
         })
         return
       }
+      case 'checks':
+        ui = { ...ui, checks: ui.checks === intent.pr ? undefined : intent.pr }
+        $.ui.invalidate('ui.render')
+        return
       case 'open-report':
+        throw new Error('not implemented (S2): open-report')
       case 'open-url':
       case 'fill':
-        throw new Error(`not implemented (S2): ${intent.k}`)
+        throw new Error(`not implemented (S4): ${intent.k}`)
       case 'update':
         throw new Error('not implemented (S4): update')
       default:

@@ -12,7 +12,7 @@ import { project } from '../hooks/board.ts'
 import { BACKEND, FRONTEND, configPathOf, parseOrigin, parsePrList, titleTickets } from '../hooks/github.ts'
 import { parseSnapshot } from '../hooks/herdr.ts'
 import type { Board, Fact, Main, PaneId, Polled, Pr, Row, SessionId, Snapshot, Sources, SpaceId, World } from '../hooks/model.ts'
-import { SOURCES, headPathOf, parseHead, parseLiveSpaces, type Req } from '../hooks/sources.ts'
+import { SOURCES, headPathOf, parseHead, parseLiveSpaces } from '../hooks/sources.ts'
 import { cellText } from '../hooks/view.ts'
 import { CONFIG_AGENT_SKILLS, CONFIG_BACKEND, CONFIG_FRONTEND, DOT_GIT_THV_481, DOT_GIT_WORKTREE, HEAD_THV_481 } from './fixtures/git.ts'
 import { GH_AGENT_SKILLS, GH_BACKEND, GH_FRONTEND } from './fixtures/github.ts'
@@ -65,6 +65,11 @@ function worldOf(me: Main, snapshot: string, facts: Fact[], extra: Partial<Sourc
   }
 }
 
+function must<T>(v: T | undefined): T {
+  if (v === undefined) throw new Error('expected a value')
+  return v
+}
+
 function prsOf(repo: string, json: string): Pr[] {
   const prs = parsePrList(repo, json)
   if (!prs) throw new Error(`${repo} fixture did not parse`)
@@ -87,7 +92,7 @@ function gitOf(places: Place[]): Partial<Sources> {
     heads: fresh(new Map(places.map((p) => [p.cwd, p.head]))),
     branches: fresh(new Map(places.map((p) => [p.cwd, p.branch]))),
     origins: fresh(new Map(places.map((p) => [configPathOf(p.head), p.config === undefined ? undefined : parseOrigin(p.config)]))),
-  } as Partial<Sources>
+  }
 }
 
 function rowOf(world: World, ticket: string): Row {
@@ -98,7 +103,7 @@ function rowOf(world: World, ticket: string): Row {
   return row
 }
 
-const prItems = (board: Board) => (board.prs as unknown as Array<{ repo: string; items: Array<{ pr: Pr; tickets: string[] }> }>).flatMap((g) => g.items)
+const prItems = (board: Board) => board.prs.flatMap((g) => g.items)
 
 /** Derived: one pane's herdr status changed, as the next snapshot shows. */
 function withStatus(snapshot: string, pane: string, status: string): string {
@@ -167,36 +172,35 @@ test('repos are each space folder’s origin, read once, plus frontend and backe
     [THOVEN, `${THOVEN}/.git/HEAD`],
     [MAIN_CWD, `${MAIN_CWD}/.git/HEAD`],
   ])
-  const w1 = worldOf(mainOf('w18', 'w18:p8W', asCwd), SNAPSHOT_LIVE, [], { heads: fresh(heads) } as Partial<Sources>)
-  const origins = SOURCES as unknown as Record<string, { plan(w: World): Req[]; read(w: World, r: unknown[]): unknown }>
-  expect(origins.origins?.plan(w1)).toEqual([
+  const w1 = worldOf(mainOf('w18', 'w18:p8W', asCwd), SNAPSHOT_LIVE, [], { heads: fresh(heads) })
+  expect(SOURCES.origins.plan(w1)).toEqual([
     { k: 'read', path: '/Users/andresmartinez/thoven/agent-skills/.git/config' },
     { k: 'read', path: '/Users/andresmartinez/thoven/.git/config' },
     { k: 'read', path: '/Users/andresmartinez/thoven/frontend/.git/config' },
   ])
-  const read = origins.origins?.read(w1, [
+  const read = must(SOURCES.origins.read(w1, [
     { k: 'ok', text: CONFIG_AGENT_SKILLS },
     { k: 'fail', error: 'ENOENT' },
     { k: 'ok', text: CONFIG_FRONTEND },
-  ]) as Map<string, string | undefined>
+  ]))
   expect([...read]).toEqual([
     ['/Users/andresmartinez/thoven/agent-skills/.git/config', AGENT_SKILLS],
     ['/Users/andresmartinez/thoven/.git/config', undefined],
     ['/Users/andresmartinez/thoven/frontend/.git/config', FRONTEND],
   ])
-  const w2 = worldOf(mainOf('w18', 'w18:p8W', asCwd), SNAPSHOT_LIVE, [], { heads: fresh(heads), origins: fresh(read) } as Partial<Sources>)
-  expect(origins.origins?.plan(w2)).toEqual([])
-  const plan = origins.github?.plan(w2) ?? []
+  const w2 = worldOf(mainOf('w18', 'w18:p8W', asCwd), SNAPSHOT_LIVE, [], { heads: fresh(heads), origins: fresh(read) })
+  expect(SOURCES.origins.plan(w2)).toEqual([])
+  const plan = SOURCES.github.plan(w2)
   expect(plan.map((r) => (r.k === 'proc' ? [...r.argv] : r))).toEqual(
     [FRONTEND, BACKEND, AGENT_SKILLS].map((repo) => ['gh', 'pr', 'list', '--repo', repo, '--state', 'all', '--json', JSON_FIELDS, '--limit', '50']),
   )
-  const view = origins.github?.read(w2, [
+  const view = SOURCES.github.read(w2, [
     { k: 'ok', text: GH_FRONTEND },
     { k: 'ok', text: GH_BACKEND },
     { k: 'ok', text: GH_AGENT_SKILLS },
-  ]) as { prs: Pr[] }
-  expect(view.prs.map((p) => `${p.repo}#${p.number}`).slice(9, 12)).toEqual(['Thoven-CORP/frontend-remote#133', 'Thoven-CORP/backend-remote#149', 'Thoven-CORP/backend-remote#148'])
-  expect(origins.github?.read(w2, [{ k: 'ok', text: GH_FRONTEND }, { k: 'fail', error: 'gh pr list exited 1' }, { k: 'ok', text: GH_AGENT_SKILLS }])).toBeUndefined()
+  ])
+  expect(view?.prs.map((p) => `${p.repo}#${p.number}`).slice(9, 12)).toEqual(['Thoven-CORP/frontend-remote#133', 'Thoven-CORP/backend-remote#149', 'Thoven-CORP/backend-remote#148'])
+  expect(SOURCES.github.read(w2, [{ k: 'ok', text: GH_FRONTEND }, { k: 'fail', error: 'gh pr list exited 1' }, { k: 'ok', text: GH_AGENT_SKILLS }])).toBeUndefined()
 })
 
 // ── unit: PRs on the board ──────────────────────────────────────────────────────────────────

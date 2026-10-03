@@ -20,12 +20,20 @@
 //   5. Per row: Report is the newest report fact by `at`, from whichever session received it,
 //      unless the inbox still holds a newer file for the ticket (unsent, or herdr's escalation
 //      note). Fix is main's highest send.sh fix round, else the pane's highest FIX ROUND brief.
-//   6. Every report status a row's ticket has had, with no `happened` fact yet, is a new event
-//      for main to record once (synthesis A1), so S4's ↻ survives a later report replacing it.
+//   6. PRs attach to a row by branch, then by ticket (design: "branch ticket ∪ the title's
+//      trailing `(…)` group only"). A PR whose head branch is checked out in one of the row's
+//      folders (in the same repo, when the folder's origin is known) wins; else a PR whose
+//      `tickets` name the row's. Open beats merged beats closed. When panes of several tickets sit
+//      on that branch, each of their PR cells says `in #N`.
+//   7. Every report status a row's ticket has had, and every merged PR attached to it, with no
+//      `happened` fact yet, is a new event for main to record once (synthesis A1), so S4's ↻
+//      survives a later report replacing it or the PR falling out of gh's last 50.
 
 import { branchTicket, pickLabel } from './dispatch.ts'
+import { configPathOf } from './github.ts'
 import type {
   Board,
+  CiCell,
   Fact,
   FactOf,
   FixCell,
@@ -37,8 +45,12 @@ import type {
   OtherItem,
   Pane,
   PaneCell,
+  PaneId,
   Pending,
   Polled,
+  Pr,
+  PrCell,
+  PrGroup,
   ReportCell,
   Row,
   SourceId,
@@ -93,7 +105,11 @@ export function project(world: World): Board {
   if (mine && !rows.has(mine.ticket)) rows.set(mine.ticket, mine)
 
   const inbox = valueOf(world.sources.inbox) ?? []
-  for (const [t, r] of rows) rows.set(t, { ...r, report: reportCell(t, world.facts, inbox), fix: fixCell(t, world.facts) })
+  const join = prJoin(world, panes, [...rows.values()])
+  for (const [t, r] of rows) {
+    const pr = join.cell(t)
+    rows.set(t, { ...r, report: reportCell(t, world.facts, inbox), fix: fixCell(t, world.facts), pr, ci: pr.k === 'none' ? { k: 'none' } : ciCell(pr.pr) })
+  }
 
   return {
     space,
@@ -101,12 +117,99 @@ export function project(world: World): Board {
     here: undefined,
     build: [...rows.values()].map((r) => ({ k: 'single', row: r })),
     other,
-    prs: { project: [], space: [] },
+    prs: join.groups(),
     pending: [],
     health: health(world.sources),
     working: panes.filter((p) => p.status === 'working').map((p) => p.pane),
-    newEvents: [...rows.keys()].flatMap((t) => newReportEvents(t, world.facts)),
+    newEvents: [...rows.keys()].flatMap((t) => [...newReportEvents(t, world.facts), ...newMergedEvents(t, join.attached(t), world.facts)]),
   }
+}
+
+// ── PRs ──────────────────────────────────────────────────────────────────────────────────────
+
+/** A folder on a branch. `repo` is its origin, undefined until (or unless) its config names one. */
+type Place = { repo: string | undefined; branch: string }
+
+const STATE_RANK: Record<Pr['state'], number> = { OPEN: 0, MERGED: 1, CLOSED: 2 }
+const best = (prs: readonly Pr[]): Pr | undefined => [...prs].sort((a, b) => STATE_RANK[a.state] - STATE_RANK[b.state])[0]
+const keyOf = (pr: Pr): string => `${pr.repo}#${pr.number}`
+const isOn = (pr: Pr, places: readonly Place[]): boolean => places.some((p) => p.branch === pr.branch && (p.repo === undefined || p.repo === pr.repo))
+
+/**
+ * Where each row's panes are, and which PRs that ties to it. A stale gh source still joins on its
+ * last answer; a gh that never answered joins nothing.
+ */
+function prJoin(world: World, panes: readonly Pane[], rows: readonly Row[]) {
+  const prs = valueOf(world.sources.github)?.prs ?? []
+  const heads = valueOf(world.sources.heads)
+  const branches = valueOf(world.sources.branches)
+  const origins = valueOf(world.sources.origins)
+  const placeOf = (cwd: string): Place[] => {
+    const branch = branches?.get(cwd)
+    const head = heads?.get(cwd)
+    return branch === undefined ? [] : [{ repo: head === undefined ? undefined : origins?.get(configPathOf(head)), branch }]
+  }
+  // Main's own folder is its session cwd, which the snapshot may not show.
+  const cwdOf = new Map<PaneId, string>([...panes.map((p): [PaneId, string] => [p.pane, p.cwd]), [world.me.pane, world.me.cwd]])
+  const placesOf = (r: Row): Place[] =>
+    [r.pane, ...r.extraPanes, r.verifierPane].flatMap((c) => {
+      const cwd = c.k === 'live' ? cwdOf.get(c.pane) : undefined
+      return cwd === undefined ? [] : placeOf(cwd)
+    })
+  const places = new Map(rows.map((r) => [r.ticket, placesOf(r)]))
+
+  const byBranch = (t: Ticket) => prs.filter((pr) => isOn(pr, places.get(t) ?? []))
+  const byTicket = (t: Ticket) => prs.filter((pr) => pr.tickets.includes(t))
+  const attached = (t: Ticket): Pr[] => [...new Set([...byBranch(t), ...byTicket(t)])]
+
+  const cell = (t: Ticket): PrCell => {
+    const onBranch = best(byBranch(t))
+    if (onBranch) return rows.filter((r) => isOn(onBranch, places.get(r.ticket) ?? [])).length > 1 ? { k: 'shared', pr: onBranch } : { k: 'own', pr: onBranch }
+    const named = best(byTicket(t))
+    return named ? { k: 'own', pr: named } : { k: 'none' }
+  }
+
+  /** Each PR once, with the rows it attached to, plus ticketless PRs on any space folder's branch. */
+  const groups = (): PrGroup[] => {
+    const tickets = new Map<string, Ticket[]>()
+    for (const r of rows) for (const pr of attached(r.ticket)) tickets.set(keyOf(pr), [...(tickets.get(keyOf(pr)) ?? []), r.ticket])
+    const spacePlaces = [...cwdOf.values()].flatMap(placeOf)
+    for (const pr of prs) if (pr.tickets.length === 0 && !tickets.has(keyOf(pr)) && isOn(pr, spacePlaces)) tickets.set(keyOf(pr), [])
+    const out: PrGroup[] = []
+    for (const pr of prs) {
+      const ts = tickets.get(keyOf(pr))
+      if (ts === undefined) continue
+      let group = out.find((g) => g.repo === pr.repo)
+      if (!group) {
+        group = { repo: pr.repo, items: [] }
+        out.push(group)
+      }
+      group.items.push({ pr, tickets: ts })
+    }
+    return out
+  }
+
+  return { cell, attached, groups }
+}
+
+/** Any failed check fails CI, even while others run. A PR with no checks has no CI cell. */
+export function ciCell(pr: Pr): CiCell {
+  const { total, done, failed } = pr.checks
+  if (total === 0) return { k: 'none' }
+  if (failed.length > 0) return { k: 'fail', failed: failed.length }
+  return done < total ? { k: 'running', done, total } : { k: 'pass' }
+}
+
+/** `merged <n>` for each merged PR attached to the ticket, not yet recorded. */
+function newMergedEvents(t: Ticket, prs: readonly Pr[], facts: readonly Fact[]): Pending[] {
+  const recorded = new Set(factsOf(facts, 'happened', t).map((f) => f.event))
+  const ids = new Set<string>()
+  return prs.flatMap((pr) => {
+    const id = `merged-${pr.number}` as LinearEventId
+    if (pr.state !== 'MERGED' || recorded.has(id) || ids.has(id)) return []
+    ids.add(id)
+    return [{ ticket: t, event: { k: 'merged', number: pr.number }, id }]
+  })
 }
 
 const factsOf = <K extends Fact['kind']>(facts: readonly Fact[], kind: K, ticket: Ticket): Array<FactOf<K>> =>

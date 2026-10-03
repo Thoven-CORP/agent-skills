@@ -431,7 +431,7 @@ test('the Work tab draws kind, title, Pane glyph and tool tag; 2 switches to PRs
   expect(await ui.find({ type: 'Text', text: 'idle C' })).toBeDefined()
 
   await ui.press({ key: 'tab-prs' })
-  expect(await ui.find({ type: 'Text', text: 'PRs arrive in S2' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: 'No PRs for this space.' })).toBeDefined()
   expect(await ui.find({ key: 'row-THV-1045' })).toBeUndefined()
 
   await ui.press({ key: 'tab-work' })

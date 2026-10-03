@@ -10,6 +10,7 @@ import type { Req } from './sources.ts'
 
 export const FRONTEND = 'Thoven-CORP/frontend-remote'
 export const BACKEND = 'Thoven-CORP/backend-remote'
+export const AGENT_SKILLS = 'Thoven-CORP/agent-skills'
 /** Every space's PRs cover these, whatever folders its panes are in (synthesis A4). */
 export const FIXED_REPOS: readonly string[] = [FRONTEND, BACKEND]
 
