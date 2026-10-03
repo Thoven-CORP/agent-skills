@@ -194,9 +194,7 @@ function drawPrs(el: El, board: Board, ui: PaneUi, columns: number, act: Act): R
         flexDirection: 'row',
         columnGap: 3,
         children: [
-          Text({ dimColor: true, children: ['o open'] }),
           Button({ key: 'checks', label: 'checks', hotkey: 'c', plain: true, onPress: () => (focused === undefined ? undefined : act({ k: 'checks', pr: prKey(focused.pr) })) }),
-          Text({ dimColor: true, children: [focused === undefined ? 'm merge it' : `m merge it #${focused.pr.number}`] }),
         ],
       }),
     ],

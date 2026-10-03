@@ -321,14 +321,15 @@ test('a merged PR writes happened merged-<n> once, however many gh polls see it'
   expect(s.setKeys.filter((k) => k.startsWith('cockpit:happened:'))).toEqual(['cockpit:happened:THV-1038:merged-138', 'cockpit:happened:THV-1038:merged-144'])
 })
 
-test('the PRs tab groups by repo with state, CI and key hints; c lists the failing checks; no gh argv merges', async ($, on) => {
+test('the PRs tab groups by repo with state and CI, hints no key it cannot act on; c lists the failing checks; no gh argv merges', async ($, on) => {
   const s = stage(on, { pane: 'w18:p8W', snapshot: relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Consent evidence hardening (THV-1045)') })
   s.gh.byRepo = { [FRONTEND]: GH_FRONTEND, [BACKEND]: GH_BACKEND }
   await start($)
   await cockpit($)
   const ui = await $.ui.mount(PANE)
   await ui.press({ key: 'tab-prs' })
-  for (const text of ['FE', 'BE', 'held', 'merged', '✗ 4', '✓', 'o open', 'm merge it #141']) expect(await ui.find({ type: 'Text', text })).toBeDefined()
+  for (const text of ['FE', 'BE', 'held', 'merged', '✗ 4', '✓']) expect(await ui.find({ type: 'Text', text })).toBeDefined()
+  for (const text of ['o open', 'm merge it', 'm merge it #141']) expect(await ui.find({ type: 'Text', text })).toBeUndefined()
   expect((await ui.findAll({ type: 'Button' })).map((b) => b.key)).toEqual(['tab-work', 'tab-prs', `pr-${FRONTEND}#141`, `pr-${BACKEND}#148`, 'checks'])
   expect(await ui.find({ type: 'Text', text: 'vitest shard 1/4' })).toBeUndefined()
   await ui.press({ key: 'checks' })
