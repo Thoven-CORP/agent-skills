@@ -52,8 +52,9 @@ reconciliation ownership.
    `--stdin` takes the same JSON on standard input. With neither, the snapshot still renders — git,
    Project folder, and Project `STATE.md` are all read — and the ticket ledger carries one
    `ADVISORY linear-input` finding telling you to fetch through the MCP. `--linear-api` is an
-   opt-in escape hatch that uses `LINEAR_API_KEY` or `~/.linear-api-key`; that key is dead, so do
-   not reach for it. `--feature` and `--family` remain supported for the legacy tree views.
+   opt-in path that reads with `LINEAR_API_KEY` or `~/.linear-api-key`. The key works (checked
+   2026-10-03), and `tools/set-status.js` uses it. `--feature` and `--family` remain supported
+   for the legacy tree views.
 
    **The `--linear-json` shape.** One object with `issues` and optional `projects`. The
    `mcp__claude_ai_Linear__list_issues` response drops in unchanged — save its `issues` array as-is.
@@ -119,11 +120,28 @@ reconciliation ownership.
 6. For capture, close, or log, show one exact Project-scoped write set. Apply only after approval,
    serially. Re-run the snapshot and report its new fingerprint.
 
+## Update from the cockpit
+
+`update THV-n <event> [THV-m <event> ...]` arrives when Andres presses ↻ in the cockpit mod
+(THV-1053). That press is his approval of exactly the write in this table, so skip the snapshot and
+the approval step. Anything the table does not name goes through the Recipe.
+
+| Event | Write |
+|---|---|
+| `started` | `node tools/set-status.js "In Progress" THV-n` |
+| `pr <number>` | `set-status.js "Ready" THV-n`, then one comment: `PR #<number> opened` |
+| `report <STATUS>` | One comment: the report's status line and its Acceptance rows, nothing else |
+| `merged <number>` | `set-status.js "Done" THV-n`, then one comment: `Merged #<number>`. List the open tickets the merge may close; moving them needs the Recipe |
+
+Each write is idempotent: when the issue already sits at or past the target state, skip the move and
+say so. Reply with one line per issue, the state `set-status.js` read back, and stop.
+
 ## Completion
 
 The main session has read the snapshot fingerprint and can account for every mechanical blocker
 and unknown. A write operation is complete only when the approved writes are applied and the
-post-write snapshot has been read.
+post-write snapshot has been read. A cockpit update is complete when every issue in it has its
+read-back line.
 
 ## Compatibility
 

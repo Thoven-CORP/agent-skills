@@ -26,8 +26,11 @@ Opus 5 is retired. Pick a tier-2 model instead.
 
 ## Verifier and fix rounds
 
-- The verifier runs on the other family, or one tier above the builder when the other family is
-  not available. Agreement across families is the signal worth having.
+- The verifier is a fresh tier-2 pane that did not build the ticket: Opus 5.5 from a Claude Code
+  main, Sol from a Codex main. A fresh pane is the independence that matters (Andres, 2026-09-27).
+  Claude Code is the default because the cockpit mod (THV-1053) sees which review skills ran only
+  in Claude panes. A Codex verifier shows a partial Review cell. Use one when Andres asks for a
+  second family.
 - Fix rounds 1 to 3 go back to the builder's pane. Rounds 4 and 5 go to a fresh pane one tier up,
   told: "A prior agent attempted this N times. Read its commits and the findings."
 

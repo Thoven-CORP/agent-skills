@@ -12,16 +12,23 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 
 pending="$TW_STATE/pending-dispatch.json"
 n="${TW_DISPATCH_TICKET:-}" url=""
-if [ -z "$n" ] && [ -s "$pending" ]; then
-  # Ignore a parked ticket older than 15 minutes: it belongs to a click that never opened a popup.
-  IFS=$'\t' read -r n url < <(python3 -c '
+dispatcher="${TW_DISPATCHER:-}" space="${TW_DISPATCH_WS:-}"
+if [ -s "$pending" ]; then
+  # Ignore a parked click older than 15 minutes: it belongs to a click that never opened a popup.
+  IFS=$'\t' read -r pn url pd ps < <(python3 -c '
 import json, sys, time
 d = json.load(open(sys.argv[1]))
 fresh = time.time() - d.get("created_at", 0) < 900
-print(str(d["n"]) + "\t" + d.get("url", "") if fresh else "\t")
+f = [str(d.get("n", "")), d.get("url", ""), d.get("dispatcher", ""), d.get("workspace", "")] if fresh else ["", "", "", ""]
+print("\t".join(x or "-" for x in f))
 ' "$pending") || true
   rm -f "$pending"
+  [ -n "$n" ] || { [ "${pn:--}" != - ] && n="$pn"; }
+  [ "${url:--}" != - ] || url=""
+  [ -n "$dispatcher" ] || { [ "${pd:--}" != - ] && dispatcher="$pd"; }
+  [ -n "$space" ] || { [ "${ps:--}" != - ] && space="$ps"; }
 fi
+export TW_DISPATCHER="$dispatcher" TW_DISPATCH_WS="$space"
 
 cancel() { printf '\n  Cancelled. Nothing was dispatched.\n'; sleep 1; exit 0; }
 trap cancel INT

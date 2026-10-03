@@ -22,14 +22,17 @@ owns its half, and the brief tells the pane which half is main's.
 | Owns Linear: every status move and comment | Commits by exact path on the branch it was given |
 | Keeps a watcher armed on every live pane | Reaches for skills at their moments |
 | Answers questions, rules on blockers, escalates product calls to Andres | Sends one status line to main with `herdr agent prompt` |
-| Verifies with a different model family, then closes | Waits for main's reply or a fix round |
+| Verifies in a fresh pane, then closes | Waits for main's reply or a fix round |
 
 The pane never writes to Linear, never pushes, and never decides a product question. Main never
 edits the pane's code. Fixes go back to a pane.
 
 ## Layout
 
-- **Space** is the Linear Project. **Tab** is one issue: `Build · <issue title> (THV-x)`.
+- **Space** is the Linear Project. **Tab** is one issue: `<Kind> · <issue title> (THV-x)`. Kind is
+  the ticket's work: `Build` for a build, `Research`, `Audit`, `Plan` and so on otherwise. Main's own
+  tab is `Meta · <Project>`. `scripts/label.sh` writes every label and refuses a kind outside its
+  list (`label.sh --kinds`), because the cockpit mod and the herdr sidebar sort work by that word.
 - **Panes** in that tab are the sub-tickets of that issue. Run them in parallel only when their
   `Paths` share no file. Otherwise run them one after another in the same tab.
 - The **verifier** gets its own pane in the same tab at step 5 and closes after it reports.
@@ -73,9 +76,12 @@ you cannot fill means the ticket is not ready. Fix the ticket in Linear, then co
    `<area>/thv-<n>` from `origin/main`, copies the env file and installs dependencies, and its last
    stdout line is the path. Record the base SHA there (`git -C <path> rev-parse HEAD`). Review
    diffs start there.
-2. `herdr worktree open --path <path>` for the issue's tab, or split a pane into it. Rename the
-   pane `Build · <title> (THV-x)`. herdr opens worktrees here and never creates them: its own create
-   (the new-worktree key or `herdr worktree create`) branches from the checkout's local HEAD, and
+2. `herdr worktree open --path <path>` for the issue's tab, or split a pane into it. Label it with
+   `scripts/label.sh <pane> <Kind> "<title>" THV-x --tab` (drop `--tab` for a sub-issue pane in an
+   existing tab). On the first dispatch in a space, also label main:
+   `scripts/label.sh $HERDR_PANE_ID Meta "<Project>" --tab`. herdr opens worktrees here and never
+   creates them: its own create (the new-worktree key or `herdr worktree create`) branches from the
+   checkout's local HEAD, and
    herdr 0.9.1 has no setting for a default base. If herdr must create one, run `git fetch origin`
    and pass `--base origin/main`.
 3. Start the agent with its bypass flag from `agents.md`. Wait for `idle` before prompting.
@@ -122,8 +128,8 @@ reported to Andres. Main ends a turn only while a watcher is armed on every live
 
 ### 5. Verify
 
-Follow [references/review.md](references/review.md). The verifier runs on a different model family
-from the builder, in its own pane, against the base SHA.
+Follow [references/review.md](references/review.md). The verifier runs in its own fresh pane, on
+the model [references/agents.md](references/agents.md) names, against the base SHA.
 
 **Done when:** every Acceptance line has a verdict with evidence, and every item in the review's
 "working if" list is checked.
