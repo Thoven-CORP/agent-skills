@@ -3,13 +3,13 @@
 # THV-1064), one agent that reaches every chosen repo (THV-1065), and the self-brief. picker.sh starts this detached so the session-modal popup can close while a
 # fresh worktree installs dependencies.
 #
-#   run.sh <n> <fe|be|both> <claude|codex|devin> <area> [url]
+#   run.sh <n> <fe|be|both> <cli> <model> <effort|-> <area> [url]   cli/model/effort from agents.toml (THV-1077)
 #   TW_DISPATCH_DRYRUN=1  print every command that would run, run nothing that writes
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 . "$HERE/../lib/common.sh"
 
-n="$1" repo_choice="$2" cli="$3" area="$4" url="${5:-}"
+n="$1" repo_choice="$2" cli="$3" pick_model="$4" effort="${5#-}" area="$6" url="${7:-}"
 ticket="THV-$n"
 dry="${TW_DISPATCH_DRYRUN:-0}"
 THOVEN_ROOT="${THOVEN_ROOT:-$HOME/thoven}"
@@ -18,7 +18,8 @@ WORKTREE_BIN="${TW_WORKTREE_BIN:-$HOME/thoven/agent-skills/enforcement/bin/thove
 [[ "$n" =~ ^[0-9]+$ ]] || { echo "ticket number must be digits, got '$n'" >&2; exit 2; }
 [[ "$area" =~ ^[a-z0-9][a-z0-9-]*$ ]] || { echo "area must match ^[a-z0-9][a-z0-9-]*\$, got '$area'" >&2; exit 2; }
 case "$repo_choice" in fe) repos=(fe) ;; be) repos=(be) ;; both) repos=(fe be) ;; *) echo "repo must be fe, be or both" >&2; exit 2 ;; esac
-IFS=$'\t' read -r kind cli_label model < <(python3 "$HERE/compose.py" meta "$cli")
+IFS=$'\t' read -r kind cli_label model < <(python3 "$HERE/compose.py" meta "$cli" "$pick_model" "$effort")
+[ -n "$kind" ] || { echo "no launch for $cli $pick_model ${effort:-}; check agents.toml" >&2; exit 2; }
 
 log() { printf '[%s] %s\n' "$(date +%H:%M:%S)" "$*" >&2; }
 show() { printf '+'; printf ' %q' "$@"; printf '\n'; }
@@ -34,7 +35,7 @@ fail() {
 repo_dir() { case "$1" in fe) echo frontend ;; be) echo backend ;; esac; }
 
 flags=()
-while IFS= read -r -d '' a; do flags+=("$a"); done < <(python3 "$HERE/compose.py" flags "$cli")
+while IFS= read -r -d '' a; do flags+=("$a"); done < <(python3 "$HERE/compose.py" flags "$cli" "$pick_model" "$effort")
 
 # Reports go to the pane that dispatched (TW_DISPATCHER), else the space's main, else the inbox.
 space="${TW_DISPATCH_WS:-}"

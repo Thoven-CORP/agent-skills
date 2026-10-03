@@ -1,74 +1,42 @@
 #!/usr/bin/env python3
 """Launch arguments and the self-brief for a dispatched pane.
 
-Both are read at runtime from the installed dispatch-work skill, so the skill stays the one
-source of truth:
-  launch flags  <skill>/references/agents.md, table "Launch lines"
-  STANDING and REPORT  <skill>/references/brief.md, the fenced brief block
+Both come from the dispatch-work skill at runtime, so nothing here names a model:
+  CLI, model, effort, launch flags  agents.py over config/agents.toml (THV-1077)
+  STANDING and REPORT               <skill>/references/brief.md, the fenced brief block
 
-  compose.py flags <cli>          NUL-separated argv after `--` for `herdr agent start`
-  compose.py brief <cli> <json>   the self-brief text; <json> carries ticket/where/main fields
+  compose.py flags <cli> <model> [effort]   NUL-separated argv after `--` for `herdr agent start`
+  compose.py meta <cli> <model> [effort]    kind, label, model (TSV)
+  compose.py brief <cli> <json>             the self-brief text; <json> carries ticket/where/main fields
 """
 import json
 import os
 import re
-import shlex
 import sys
 
 SKILL_REFS = os.environ.get(
     "TW_DISPATCH_SKILL_REFS", os.path.expanduser("~/.agents/skills/dispatch-work/references")
 )
 
-# One row per CLI the picker offers. The model id fills agents.md's `<id>`; `fallback` is used only
-# when agents.md cannot be read or its row cannot be parsed, and mirrors agents.md as of THV-1047.
-CLIS = {
-    "claude": {
-        "label": "Claude Opus 5.5 high",
-        "row": "Claude Code",
-        "kind": "claude",
-        "model": "claude-opus-5-5",
-        "skill_prefix": "/",
-        "fallback": "--model <id> --effort high --dangerously-skip-permissions",
-    },
-    "codex": {
-        "label": "Codex gpt-6-sol high",
-        "row": "Codex CLI",
-        "kind": "codex",
-        "model": "gpt-6-sol",
-        "skill_prefix": "$",
-        "fallback": '-m <id> -c model_reasoning_effort="high" --dangerously-bypass-approvals-and-sandbox',
-    },
-    "devin": {
-        "label": "Devin swe-2-high",
-        "row": "Devin",
-        "kind": "devin",
-        "model": "swe-2-high",
-        "skill_prefix": "/",
-        "fallback": "--model swe-2-high --permission-mode dangerous",
-    },
-}
+def agents():
+    """agents.py from the checkout this plugin is linked from, else the installed skill."""
+    import importlib.util
+    here = os.path.dirname(os.path.abspath(__file__))
+    for path in (
+        os.path.normpath(os.path.join(here, "..", "..", "..", "..", "skills", "dev", "dispatch-work", "scripts", "agents.py")),
+        os.path.expanduser("~/.agents/skills/dispatch-work/scripts/agents.py"),
+    ):
+        if os.path.exists(path):
+            spec = importlib.util.spec_from_file_location("agents", path)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            return mod
+    sys.exit("compose: agents.py not found in the checkout or the installed dispatch-work skill")
 
 
 def read(name):
     with open(os.path.join(SKILL_REFS, name), encoding="utf-8") as f:
         return f.read()
-
-
-def launch_args(cli):
-    spec = CLIS[cli]
-    source = "agents.md"
-    raw = None
-    try:
-        for line in read("agents.md").splitlines():
-            cells = [c.strip() for c in line.strip().strip("|").split("|")]
-            if len(cells) >= 3 and cells[0] == spec["row"] and cells[1].strip("`") == spec["kind"]:
-                raw = cells[2].strip().strip("`")
-                break
-    except OSError:
-        pass
-    if not raw:
-        raw, source = spec["fallback"], "built-in fallback (agents.md row not found)"
-    return shlex.split(raw.replace("<id>", spec["model"])), source
 
 
 def brief_block():
@@ -112,7 +80,8 @@ def label_script():
 
 
 def brief(cli, ctx):
-    spec = CLIS[cli]
+    ag = agents()
+    prefix = ag.cli_spec(ag.load(), cli).get("skill_prefix", "/")
     t = ctx["ticket"]
     main = ctx.get("main_pane") or ""
     inbox_file = ctx["inbox_file"]
@@ -133,7 +102,7 @@ def brief(cli, ctx):
     else:
         label_cmd = f"(label.sh not found; skip labelling and say so in your MODE message)"
     # First line carries the task: Devin drops a prompt whose first line is only a slash command.
-    head = f"{spec['skill_prefix']}poteto-mode {t}: read the ticket and all its comments in Linear, pick a mode, label your tab, tell the dispatcher, then work."
+    head = f"{prefix}poteto-mode {t}: read the ticket and all its comments in Linear, pick a mode, label your tab, tell the dispatcher, then work."
     body = f"""
 TICKET     {t}  {ctx.get('url') or 'https://linear.app/thoven/issue/' + t}
 WHERE      Repo {ctx['path']} ({ctx['repo']}), branch {ctx['branch']}, base {ctx['base']}.{where_other}
@@ -157,18 +126,19 @@ MODE       Choose one:
 
 
 def main():
-    cmd = sys.argv[1] if len(sys.argv) > 1 else ""
-    if cmd == "flags" and len(sys.argv) == 3 and sys.argv[2] in CLIS:
-        args, source = launch_args(sys.argv[2])
-        sys.stderr.write(f"compose: launch flags from {source}\n")
-        sys.stdout.write("\0".join(args) + "\0")
-    elif cmd == "brief" and len(sys.argv) == 4 and sys.argv[2] in CLIS:
-        sys.stdout.write(brief(sys.argv[2], json.loads(sys.argv[3])))
-    elif cmd == "meta" and len(sys.argv) == 3 and sys.argv[2] in CLIS:
-        s = CLIS[sys.argv[2]]
-        print(f"{s['kind']}\t{s['label']}\t{s['model']}")
+    cmd, args = (sys.argv[1], sys.argv[2:]) if len(sys.argv) > 1 else ("", [])
+    if cmd in ("flags", "meta") and len(args) in (2, 3):
+        ag = agents()
+        cfg = ag.load()
+        cli, model, effort = args[0], args[1], args[2] if len(args) == 3 else ""
+        if cmd == "flags":
+            sys.stdout.write("\0".join(ag.launch(cfg, cli, model, effort)) + "\0")
+        else:
+            print(f"{ag.cli_spec(cfg, cli)['kind']}\t{ag.label(cfg, cli, model, effort)}\t{model}")
+    elif cmd == "brief" and len(args) == 2:
+        sys.stdout.write(brief(args[0], json.loads(args[1])))
     else:
-        sys.stderr.write("usage: compose.py flags|meta <claude|codex|devin> | brief <cli> <json>\n")
+        sys.stderr.write("usage: compose.py flags|meta <cli> <model> [effort] | brief <cli> <json>\n")
         sys.exit(2)
 
 

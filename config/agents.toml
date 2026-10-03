@@ -1,0 +1,55 @@
+# Who runs a dispatched ticket (THV-1077). Skills route by tier number only, and this file says
+# what each tier runs today. Change a [tiers] line and every skill, picker and launch follows.
+#
+# effort is a number counted from 1 = the lowest level in that model's list: Claude 1 low,
+# 2 medium, 3 high, 4 xhigh, 5 max. A CLI with no levels carries effort in the model id (Devin's
+# swe-2-medium, swe-2-high), so its tiers leave effort out.
+#
+# Check it against what the CLIs offer today:
+#   python3 ~/thoven/agent-skills/skills/dev/dispatch-work/scripts/agents.py check
+
+[tiers]
+1 = { cli = "claude", model = "claude-fable-5-1", effort = 3 }
+2 = { cli = "claude", model = "claude-opus-5-5", effort = 3 }
+3 = { cli = "devin", model = "swe-2-high" }
+4 = { cli = "claude", model = "claude-sonnet-5", effort = 3 }
+
+# One block per CLI. herdr already knows how to run the CLI (`herdr agent start --kind`); a block
+# adds what herdr cannot know: the launch flags, the skill prefix and where the models come from.
+#   launch       arguments after `--`, with {model} and {effort} filled in
+#   efforts      the CLI's effort words, lowest first; a model's own list wins when the CLI has one
+#   models       ids offered even when no live list exists
+#   models_from  a live list: "codex-cache", or a command plus a regex with (id) and (label) groups
+
+[cli.claude]
+kind = "claude"
+label = "Claude"
+skill_prefix = "/"
+launch = "--model {model} --effort {effort} --dangerously-skip-permissions"
+efforts = ["low", "medium", "high", "xhigh", "max"]
+models = ["claude-fable-5-1", "claude-opus-5-5", "claude-sonnet-5-5", "claude-sonnet-5", "claude-haiku-4-5-20251001"]
+
+[cli.codex]
+kind = "codex"
+label = "Codex"
+skill_prefix = "$"
+launch = '-m {model} -c model_reasoning_effort="{effort}" --dangerously-bypass-approvals-and-sandbox'
+efforts = ["low", "medium", "high", "xhigh", "max"]
+models = ["gpt-6-astra", "gpt-6-sol", "gpt-6-luna"]
+models_from = "codex-cache"
+
+[cli.devin]
+kind = "devin"
+label = "Devin"
+skill_prefix = "/"
+launch = "--model {model} --permission-mode dangerous"
+models = ["swe-2-high", "swe-2-medium", "swe-2-max"]
+models_from = { cmd = "devin models list", pattern = '^  ([a-z0-9][a-z0-9.-]+)\s{2,}(.+?)\s{2,}\[' }
+
+[cli.cursor]
+kind = "cursor"
+label = "Cursor"
+skill_prefix = "/"
+launch = "--model {model} --force"
+models = []
+models_from = { cmd = "cursor-agent --list-models", pattern = '^([a-z0-9][a-z0-9.-]+) - (.+)$' }

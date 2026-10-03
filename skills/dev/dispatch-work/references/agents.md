@@ -1,19 +1,21 @@
 # Agents: which one runs the ticket
 
-## The harness picks the family
+## Tiers
 
-Main runs in either Claude Code or Codex CLI. That harness decides the model family for tiers 1, 2
-and 4, so a pane speaks the same skill syntax and reads the same skill installs as main. Tier 3 is
-the same in both.
+Skills route by tier number. What each tier runs today (CLI, model, effort) lives in
+`~/thoven/agent-skills/config/agents.toml`, the one place a model name is written (THV-1077).
 
-| Tier | Work | Claude Code main | Codex CLI main |
-| -- | -- | -- | -- |
-| 1 | Hard or extremely complex: cross-cutting design, concurrency, a large unit, a fix loop that failed three rounds | Fable, high | Astra (`gpt-6-astra`), high |
-| 2 | Build, design, orchestration, verification | Opus 5.5 (`claude-opus-5-5`), high | Sol (`gpt-6-sol`), high |
-| 3 | Easy mechanical bulk writes, quick work | Devin SWE-2, or Cursor Grok 4.7 high fast | same |
-| 4 | Quick writes, exploration, comments, Linear updates, monitoring | Sonnet (`claude-sonnet-5`) | Luna (`gpt-6-luna`) |
+| Tier | Work |
+| -- | -- |
+| 1 | Hard or extremely complex: cross-cutting design, concurrency, a large unit, a fix loop that failed three rounds |
+| 2 | Build, design, orchestration, verification |
+| 3 | Easy mechanical bulk writes, quick work |
+| 4 | Quick writes, exploration, comments, Linear updates, monitoring |
 
-Opus 5 is retired. Pick a tier-2 model instead.
+`python3 <this skill>/scripts/agents.py tiers` prints what each tier resolves to. A ticket that
+needs something outside the tiers gets an explicit CLI, model and effort: `agents.py models <cli>`
+and `agents.py efforts <cli> <model>` list the choices. To change a tier, edit its line in
+`agents.toml`, run `agents.py check`, and merge it.
 
 ## Complexity signals
 
@@ -26,28 +28,19 @@ Opus 5 is retired. Pick a tier-2 model instead.
 
 ## Verifier and fix rounds
 
-- The verifier is a fresh tier-2 pane that did not build the ticket: Opus 5.5 from a Claude Code
-  main, Sol from a Codex main. A fresh pane is the independence that matters (Andres, 2026-09-27).
-  Claude Code is the default because the cockpit mod (THV-1053) sees which review skills ran only
-  in Claude panes. A Codex verifier shows a partial Review cell. Use one when Andres asks for a
-  second family.
+- The verifier is a fresh tier-2 pane that did not build the ticket. A fresh pane is the
+  independence that matters (Andres, 2026-09-27). The cockpit mod (THV-1053) sees which review
+  skills ran only in Claude panes, so a verifier on another CLI shows a partial Review cell. Use
+  one when Andres asks for a second family.
 - Fix rounds 1 to 3 go back to the builder's pane. Rounds 4 and 5 go to a fresh pane one tier up,
   told: "A prior agent attempted this N times. Read its commits and the findings."
 
 ## Launch lines
 
-Every pane launches with its permissions bypassed. Put the model id in the flag, then confirm it on
-the pane's first screen.
-
-| CLI | herdr kind | Launch arguments after `--` | Skill prefix |
-| -- | -- | -- | -- |
-| Claude Code | `claude` | `--model <id> --effort high --dangerously-skip-permissions` | `/skill` |
-| Codex CLI | `codex` | `-m <id> -c model_reasoning_effort="high" --dangerously-bypass-approvals-and-sandbox` | `$skill` |
-| Devin | `devin` | `--model swe-2-high --permission-mode dangerous` | `/skill` |
-| Cursor | `cursor` | `--model <grok-4.7 high fast id> --force` | `/skill` |
-
-`herdr agent start <name> --kind <kind> --pane <pane> -- <arguments>` starts it. Tier-3 model ids:
-`devin models`, `cursor-agent --list-models`.
+Every pane launches with its permissions bypassed. `agents.py launch-line <tier>` prints the
+`herdr agent start` line, with the model, the effort and the bypass flag filled in from
+`agents.toml`. Confirm the model on the pane's first screen. A CLI herdr runs but `agents.toml`
+lacks shows as unwired in `agents.py clis`; it needs a `[cli.<name>]` block before it can launch.
 
 ## Gotchas by CLI
 
