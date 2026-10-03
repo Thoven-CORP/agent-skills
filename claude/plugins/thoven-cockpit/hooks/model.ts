@@ -1,0 +1,348 @@
+// model.ts: the cockpit's data shape. Types only, no behaviour.
+//
+// Three layers, read top to bottom:
+//   1. Fact   what one session saw, stored at a key only that session writes (store.ts owns keys)
+//   2. World  everything main knows at one instant: facts + the polled sources, each maybe stale
+//   3. Board  the pure projection of a World (board.ts), which view.ts draws
+//
+// Invariants this file encodes:
+//   - A Fact is a whole value with its writer in its key. No fact is ever read-modified-written.
+//   - Nothing on the Board is stored. Every cell is recomputed from the World each tick, so a
+//     reload, /clear, /resume or compaction loses only caches.
+//   - Wire shapes (herdr JSON, gh JSON, GraphQL, rollout JSONL) never appear here. Parsers turn
+//     them into these types at the boundary.
+//   - Every cell type a later slice fills exists now; until its slice lands it is `{ k: 'none' }`.
+
+// ── Identity ────────────────────────────────────────────────────────────────────────────────
+
+declare const brand: unique symbol
+type Brand<T, B extends string> = T & { readonly [brand]: B }
+
+/** `THV-1045`. Made only by `ticket()` in dispatch.ts, which normalises `thv-1045` and `1045`. */
+export type Ticket = Brand<`THV-${number}`, 'Ticket'>
+/** herdr pane id, `w18:p8W`. */
+export type PaneId = Brand<string, 'PaneId'>
+/** herdr tab id, `w18:t45`. */
+export type TabId = Brand<string, 'TabId'>
+/** herdr workspace id, `w18`. A herdr workspace is what the spec calls a space. */
+export type SpaceId = Brand<string, 'SpaceId'>
+/** Claude (or Codex) session id. herdr's `agent_session.value` carries the same value. */
+export type SessionId = Brand<string, 'SessionId'>
+/** Epoch milliseconds, always read from `$.clock.now()` so tests can drive it with mock.clock. */
+export type Ms = number
+
+// ── The dispatch-work vocabulary (dispatch.ts parses it) ───────────────────────────────────
+
+/** label.sh's KINDS. Anything else is not a Kind. */
+export type Kind = 'Meta' | 'Plan' | 'Design' | 'Build' | 'Review' | 'Research' | 'Audit' | 'Fix'
+/** The tool tag in the Pane cell: Claude, Codex, Devin, Cursor. */
+export type Tool = 'C' | 'X' | 'D' | 'R'
+/** herdr `agent_status`. `done` is idle with an unseen completion. */
+export type PaneStatus = 'idle' | 'working' | 'blocked' | 'done' | 'unknown'
+
+/** brief.md REPORT words. */
+export type ReportStatus = 'DONE_WITH_CONCERNS' | 'DONE' | 'NEEDS_CONTEXT' | 'BLOCKED'
+/** review.md reply words. */
+export type Verdict = 'VERIFIED' | 'FINDINGS'
+export type StatusWord = ReportStatus | Verdict
+
+/** One line-anchored status line. */
+export type StatusLine = { ticket: Ticket; word: StatusWord; line: string }
+
+export type Role = 'builder' | 'verifier'
+
+/**
+ * What a prompt told a pane to do. A prompt that is a brief is never also a report: status lines
+ * quoted inside it (the verifier brief pastes the builder's `DONE THV-n`) are its content.
+ */
+export type Brief = { ticket: Ticket; role: Role; round: number }
+
+/** A pane or tab label as label.sh writes it, or an older form that still names a ticket. */
+export type Label = { kind: Kind | undefined; title: string; tickets: Ticket[] }
+
+// ── 1. Facts ───────────────────────────────────────────────────────────────────────────────
+//
+// Each variant names its writer. store.ts builds the key from the variant's subject and writer
+// fields, so two sessions never write one key, except `main`, where last claim wins (ADR3).
+
+export type Fact =
+  /** `main:<space>`. Contested by design: the newest claim is the main. Matched on `pane`, because `/clear` changes `sid`. */
+  | { kind: 'main'; space: SpaceId; sid: SessionId; pane: PaneId; at: Ms }
+  /** `brief:<ticket>:<sid>`. The session that received the brief. */
+  | { kind: 'brief'; ticket: Ticket; sid: SessionId; pane: PaneId; role: Role; round: number; at: Ms }
+  /** `report:<ticket>:<sid>`. A session that received a builder's status line. */
+  | { kind: 'report'; ticket: Ticket; sid: SessionId; status: ReportStatus; text: string; at: Ms }
+  /** `verdict:<ticket>:<sid>`. A session that received a verifier's reply. */
+  | { kind: 'verdict'; ticket: Ticket; sid: SessionId; verdict: Verdict; text: string; at: Ms }
+  /** `sent:<ticket>:<sid>`. A briefed session's own outbound status line. */
+  | { kind: 'sent'; ticket: Ticket; sid: SessionId; word: StatusWord; at: Ms }
+  /** `send:<ticket>:<pane>`. Main's own `send.sh <pane> …/THV-n[-fixN|-verify].md` call. */
+  | { kind: 'send'; ticket: Ticket; pane: PaneId; role: Role; round: number; file: string; at: Ms }
+  /** `ran:<sid>:<skill>`. A skill the main loop of an engaged session ran (not a subagent). */
+  | { kind: 'ran'; sid: SessionId; skill: string; isReadOnly: boolean; at: Ms }
+  /** `happened:<ticket>:<event>`. Set once, the first time main sees the event, so a ↻ cannot vanish when its evidence leaves a source. */
+  | { kind: 'happened'; ticket: Ticket; event: LinearEventId; at: Ms }
+  /** `ack:<ticket>:<event>`. Main saw `/workspace update` read back this event without ERROR. */
+  | { kind: 'ack'; ticket: Ticket; event: LinearEventId; state: string; at: Ms }
+  /** `checkpoint:<sid>`. Main's compaction checkpoint, handed back by SessionStart(compact). */
+  | { kind: 'checkpoint'; sid: SessionId; text: string; at: Ms }
+
+export type FactKind = Fact['kind']
+export type FactOf<K extends FactKind> = Extract<Fact, { kind: K }>
+
+// ── 2. The World: polled sources ───────────────────────────────────────────────────────────
+
+/**
+ * A polled source's last result.
+ *   never  not polled yet
+ *   fresh  the last poll answered
+ *   stale  the last poll failed; `value` is the last good answer, so other columns keep drawing
+ *   down   no poll has ever answered ("herdr unavailable")
+ */
+export type Polled<T> =
+  | { k: 'never' }
+  | { k: 'fresh'; value: T; at: Ms }
+  | { k: 'stale'; value: T; at: Ms; since: Ms; error: string }
+  | { k: 'down'; since: Ms; error: string }
+
+/** One herdr pane, parsed from `herdr api snapshot` (herdr.ts). */
+export type Pane = {
+  pane: PaneId
+  tab: TabId
+  space: SpaceId
+  /** `agent_session.value`. Undefined for a shell pane. */
+  sid: SessionId | undefined
+  /** herdr's `agent`, raw. `tool` is its tag; a shell pane has neither. */
+  agent: string | undefined
+  tool: Tool | undefined
+  status: PaneStatus
+  /** Where the pane's agent runs: herdr's `foreground_cwd`, else `cwd`. */
+  cwd: string
+  /** Label candidates in first-match-wins order (spec "Work title, kind"). */
+  paneLabel: string | undefined
+  tabLabel: string | undefined
+  terminalTitle: string | undefined
+}
+
+export type Space = { space: SpaceId; label: string }
+
+export type Snapshot = { spaces: Space[]; panes: Pane[] }
+
+/**
+ * Pane labels read with `herdr pane get` for panes the snapshot gave none (ADR4), one entry per
+ * pane. `seen` is the tab label and title the pane showed when read; a pane is read again only
+ * when they change.
+ */
+export type PaneLabels = {
+  byPane: ReadonlyMap<PaneId, { seen: string; label: string | undefined }>
+}
+
+/** WORKFLOW.md §8 Live spaces: herdr space label to Linear Project. No row means no Project. */
+export type SpaceMap = ReadonlyMap<string, string>
+
+/** Where each cwd's HEAD file is: `<cwd>/.git/HEAD`, or the worktree gitdir's HEAD. */
+export type HeadPaths = ReadonlyMap<string, string>
+/** cwd → branch, from its HEAD file. A detached HEAD or a folder outside git has no entry. */
+export type Branches = ReadonlyMap<string, string>
+
+/** One PR from `gh pr list`, already attached to its tickets. */
+export type Pr = {
+  repo: RepoTag
+  number: number
+  title: string
+  branch: string
+  state: 'OPEN' | 'MERGED' | 'CLOSED'
+  isDraft: boolean
+  /** Tickets named by the branch `thv-(\d+)`, plus every ticket in the title's trailing `(…)`. */
+  tickets: Ticket[]
+  checks: Checks
+  changedLines: number
+  topDirs: number
+  url: string
+}
+export type RepoTag = 'FE' | 'BE' | 'AS'
+export type Checks = { total: number; done: number; failed: number }
+
+export type GithubView = { prs: Pr[] }
+
+/** Linear, as the 5-minute read or a `/workspace update` read-back last saw one issue. */
+export type LinearIssue = {
+  ticket: Ticket
+  state: string
+  stateType: 'backlog' | 'unstarted' | 'started' | 'completed' | 'canceled'
+  parent: Ticket | undefined
+  project: string | undefined
+}
+export type LinearView = ReadonlyMap<Ticket, LinearIssue>
+
+/** A file in `$TMPDIR/dispatch/out/`. A status line inside means an undelivered report. */
+export type InboxFile = { name: string; ticket: Ticket | undefined; line: StatusLine | undefined; head: string }
+
+/** Best-effort read of one Codex verifier rollout. */
+export type CodexReview = {
+  sid: SessionId
+  ticket: Ticket | undefined
+  /** `spawn_agent` task names: proof a reviewer started. */
+  spawned: string[]
+  /** `skills.selected_skill_instructions`: injected, not proof of a run. */
+  selected: string[]
+}
+
+/** What each source yields when it answers. The order of `SOURCES` in sources.ts is the poll order. */
+export type SourceValues = {
+  herdr: Snapshot
+  labels: PaneLabels
+  spaces: SpaceMap
+  heads: HeadPaths
+  branches: Branches
+  github: GithubView
+  linear: LinearView
+  inbox: InboxFile[]
+  codex: CodexReview[]
+}
+export type SourceId = keyof SourceValues
+export type Sources = { [K in SourceId]: Polled<SourceValues[K]> }
+
+/** Who this session is. Decided in session.start, refreshed by classic.SessionStart. */
+export type Me =
+  | { k: 'inert' } // no HERDR_PANE_ID: every hook passes through untouched
+  | { k: 'pane'; pane: PaneId; sid: SessionId; engagements: Brief[] }
+  | { k: 'main'; pane: PaneId; sid: SessionId; space: SpaceId; cwd: string; home: string }
+
+export type Main = Extract<Me, { k: 'main' }>
+
+export type World = {
+  now: Ms
+  me: Main
+  sources: Sources
+  facts: Fact[]
+  /** Read-backs newer than the last Linear read, folded over `sources.linear` by board.ts. */
+  readbacks: ReadonlyMap<Ticket, LinearIssue | { error: string }>
+  /** Update events main has handed to `$.command.run` and not yet seen read back. */
+  inFlight: ReadonlySet<string>
+  /** The skill main itself ran last, for "You are here". */
+  mainSkill: string | undefined
+}
+
+// ── Linear events (derived; only `happened` and `ack` facts are stored) ─────────────────────
+
+export type LinearEvent =
+  | { k: 'started' }
+  | { k: 'pr'; number: number }
+  | { k: 'report'; status: ReportStatus }
+  | { k: 'merged'; number: number }
+/** `started`, `pr-141`, `report-DONE`, `merged-138`. The last segment of `happened:` and `ack:` keys. */
+export type LinearEventId = Brand<string, 'LinearEventId'>
+export type Pending = { ticket: Ticket; event: LinearEvent; id: LinearEventId }
+
+// ── 3. The Board (board.ts builds it, view.ts draws it) ────────────────────────────────────
+
+export type PaneCell =
+  | { k: 'live'; status: PaneStatus; tool: Tool | undefined; pane: PaneId }
+  | { k: 'gone' } // the row has facts but its pane left the snapshot
+  | { k: 'none' }
+
+export type ReportCell =
+  | { k: 'none' }
+  | { k: 'na'; tool: Tool }
+  | { k: 'in'; status: ReportStatus; at: Ms; selfChecked: boolean }
+  | { k: 'undelivered'; status: ReportStatus | undefined; file: string; selfChecked: boolean }
+  | { k: 'escalation'; head: string } // a non-report note herdr's tw_tell_main left in the inbox
+
+export type FixCell = { k: 'none' } | { k: 'round'; round: number; of: 5 }
+
+/** One Review letter. `amber` exists only for T: thermo was due and did not run. */
+export type Light = 'lit' | 'dim' | 'off' | 'amber' | 'na'
+export type ReviewCell =
+  | { k: 'none'; offer: 'code-review' | undefined } // hotfix space: `c` fills /code-review
+  | {
+      k: 'review'
+      V: Light
+      C: Light
+      T: Light
+      D: Light
+      round: number
+      tool: Tool | undefined
+      /** Letters a VERIFIED line claimed that the verifier session never ran. */
+      claimedNotRun: Array<'V' | 'C' | 'T' | 'D'>
+    }
+
+export type PrCell = { k: 'none' } | { k: 'own'; pr: Pr } | { k: 'shared'; pr: Pr } // "in #N"
+export type CiCell = { k: 'none' } | { k: 'pass' } | { k: 'fail'; failed: number } | { k: 'running'; done: number; total: number }
+
+export type LinearCell =
+  | { k: 'hidden' } // the space has no Project, so the column is not drawn
+  | { k: 'none' } // not read yet
+  | { k: 'stale'; since: Ms }
+  | { k: 'ok' }
+  | { k: 'pending'; pending: Pending[]; isInFlight: boolean }
+  | { k: 'error'; message: string; pending: Pending[] }
+
+/** A cell some source could not fill this tick: "stale since hh:mm". */
+export type Stale<C> = C | { k: 'stale'; since: Ms }
+
+export type Row = {
+  ticket: Ticket
+  title: string
+  /** Undefined for an older label that names a ticket and no Kind (`UI polish walkthrough (THV-481)`). */
+  kind: Kind | undefined
+  /** `label`: a pane's label names the ticket. `this-session`: main's own branch does. */
+  origin: 'dispatch' | 'this-session' | 'label'
+  pane: PaneCell
+  /** Further panes whose label names this ticket as Build work, in snapshot order. The Pane cell lists them after `pane`. */
+  extraPanes: Array<Extract<PaneCell, { k: 'live' }>>
+  verifierPane: PaneCell
+  report: ReportCell
+  fix: FixCell
+  review: ReviewCell
+  pr: Stale<PrCell>
+  ci: Stale<CiCell>
+  linear: LinearCell
+}
+
+/** A parent and its on-screen children, or one parentless row. */
+export type Group =
+  | { k: 'single'; row: Row }
+  | { k: 'parent'; parent: Ticket; title: string; done: number; total: number; needsYou: number; children: Row[] }
+
+export type OtherItem = {
+  /** The label's title, or for an unlabelled pane its tab's name. */
+  label: string
+  kind: Kind | undefined
+  ticket: Ticket | undefined
+  pane: PaneCell
+  note: 'not in this space' | 'unlabelled' | undefined
+}
+
+export type PrItem = { pr: Pr; tickets: Ticket[] }
+
+export type Health = { [S in SourceId]: { k: 'ok' } | { k: 'stale'; since: Ms } | { k: 'unavailable' } }
+
+export type Board = {
+  space: Space
+  /** The Linear Project of this space; undefined hides the Linear column. */
+  project: string | undefined
+  /** "planning (/grill-with-docs)". Undefined until main runs a skill. */
+  here: string | undefined
+  build: Group[]
+  other: OtherItem[]
+  prs: { project: PrItem[]; space: PrItem[] }
+  /** Every pending event on screen, for `u`. Parent rows contribute none. */
+  pending: Pending[]
+  health: Health
+  /** Panes working in this space now, for the watcher warning. */
+  working: PaneId[]
+}
+
+// ── Intents: what a press asks for, as data (view.ts emits, register.ts performs) ──────────
+
+export type Intent =
+  | { k: 'tab'; tab: 'work' | 'prs' }
+  | { k: 'focus-pane'; pane: PaneId }
+  | { k: 'open-report'; ticket: Ticket }
+  | { k: 'update'; pending: Pending[] } // ↻ or `u`: one /workspace update call
+  | { k: 'fill'; text: string } // `c` /code-review, `m` "merge it #N": Andres presses Enter
+  | { k: 'open-url'; url: string }
+
+/** `selected` is the key of the row or item whose button holds the focus ring. */
+export type PaneUi = { tab: 'work' | 'prs'; selected: string | undefined }
