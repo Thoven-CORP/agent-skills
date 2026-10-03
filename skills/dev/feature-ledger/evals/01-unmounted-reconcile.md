@@ -1,5 +1,8 @@
 # Reconcile an unmounted component
 
+Every path, snapshot and commit below is a stub the prompt supplies. `docs/Teacher_Settings` is not on
+frontend main, and the eval does not need it to be.
+
 ## Prompt
 
 > $feature-ledger reconcile Linear Project `Teacher: Settings`, folder

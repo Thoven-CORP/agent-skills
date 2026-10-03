@@ -1,5 +1,8 @@
 # Lifecycle write approval
 
+Every path, snapshot and commit below is a stub the prompt supplies. `docs/Teacher_Settings` is not on
+frontend main, and the eval does not need it to be.
+
 ## Prompt
 
 > We finished THV-900 in Linear Project `Teacher: Settings`. The current snapshot is `snap-before`
