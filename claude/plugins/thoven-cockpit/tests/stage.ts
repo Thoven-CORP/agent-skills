@@ -2,6 +2,7 @@
 // hangs), a Map for $.store, and recorders for what the mod opened, closed and ran.
 
 import { mock } from 'claude-code/testing'
+import type { Answer, Ask, Listing } from '../hooks/sources.ts'
 import { PANE_GET_P8W } from './fixtures/herdr.ts'
 import { WORKFLOW_LIVE_SPACES } from './fixtures/workflow.ts'
 
@@ -48,6 +49,27 @@ function paneGetFrom(snapshot: string, pane: string): string {
   if (pane === 'w18:p8W') return PANE_GET_P8W
   const entry = JSON.parse(snapshot).result.snapshot.panes.find((p: { pane_id: string }) => p.pane_id === pane)
   return JSON.stringify({ id: 'cli:pane:get', result: { pane: entry, type: 'pane_info' } })
+}
+
+/**
+ * What a fake `ask` answers: process stdout by its argv joined with spaces, file text and folder
+ * entries by path. Anything not in the table fails, as a missing file does.
+ */
+export type AskTable = { proc?: Record<string, string>; read?: Record<string, string>; list?: Record<string, Listing> }
+
+/** A source's `ask` with no kit under it. `asked` records each read in the order asked: `read <path>`, `list <path>`, or the argv. */
+export function fakeAsk(table: AskTable): Ask & { asked: string[] } {
+  const asked: string[] = []
+  const answer = <T>(what: string, value: T | undefined): Promise<Answer<T>> => {
+    asked.push(what)
+    return Promise.resolve(value === undefined ? { k: 'fail', error: `ENOENT: ${what}` } : { k: 'ok', value })
+  }
+  return {
+    asked,
+    proc: (req) => answer(req.argv.join(' '), table.proc?.[req.argv.join(' ')]),
+    read: (path) => answer(`read ${path}`, table.read?.[path]),
+    list: (path) => answer(`list ${path}`, table.list?.[path]),
+  }
 }
 
 const out = (stdout: string, exitCode = 0, stderr = '') => ({ value: { exitCode, stdout, stderr, isStdoutTruncated: false, isStderrTruncated: false } })

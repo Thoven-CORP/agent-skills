@@ -11,7 +11,7 @@ import { cellText, columnsFor } from '../hooks/view.ts'
 import { DOT_GIT_THV_481, DOT_GIT_WORKTREE, HEAD_COCKPIT, HEAD_THV_481 } from './fixtures/git.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import { WORKFLOW_LIVE_SPACES } from './fixtures/workflow.ts'
-import { MAIN_CWD, PANE, cockpit, dropPane, relabelPane, relabelTab, stage, start } from './stage.ts'
+import { MAIN_CWD, PANE, cockpit, dropPane, fakeAsk, relabelPane, relabelTab, stage, start } from './stage.ts'
 
 const CONSENT = 'Build · Consent evidence hardening (THV-1045)'
 /** w18 with its `Mods` tab named the way label.sh names a build tab. p8V sits in it with no pane label. */
@@ -216,17 +216,14 @@ test("a pane known only by its folder's branch is a Build row for the branch's t
   const json = relabelTab(relabelPane(SNAPSHOT_LIVE, 'w4D:pH', undefined), 'w4D:tB', '1')
   const cwd = '/Users/andresmartinez/thoven/frontend-thv-481'
   const w0 = worldOf(mainOf('w4D', 'w18:p8W'), snap(json))
-  expect(SOURCES.heads.plan(w0)).toEqual([
-    { k: 'read', path: `${MAIN_CWD}/.git` },
-    { k: 'read', path: `${cwd}/.git` },
-  ])
-  const heads = must(SOURCES.heads.read(w0, [{ k: 'fail', error: 'EISDIR' }, { k: 'ok', text: DOT_GIT_THV_481 }]))
+  const worktreeHead = '/Users/andresmartinez/thoven/frontend/.git/worktrees/frontend-thv-481/HEAD'
+  // MAIN_CWD's `.git` is a folder, so reading it as text fails and its HEAD is `.git/HEAD`.
+  const ask = fakeAsk({ read: { [`${cwd}/.git`]: DOT_GIT_THV_481, [`${MAIN_CWD}/.git/HEAD`]: 'ref: refs/heads/main\n', [worktreeHead]: HEAD_THV_481 } })
+  const heads = must(await SOURCES.heads.run(w0, ask))
+  expect(ask.asked).toEqual([`read ${MAIN_CWD}/.git`, `read ${cwd}/.git`])
   const w1 = worldOf(w0.me, snap(json), { heads: fresh(heads) })
-  expect(SOURCES.branches.plan(w1)).toEqual([
-    { k: 'read', path: `${MAIN_CWD}/.git/HEAD` },
-    { k: 'read', path: '/Users/andresmartinez/thoven/frontend/.git/worktrees/frontend-thv-481/HEAD' },
-  ])
-  const branches = must(SOURCES.branches.read(w1, [{ k: 'ok', text: 'ref: refs/heads/main\n' }, { k: 'ok', text: HEAD_THV_481 }]))
+  const branches = must(await SOURCES.branches.run(w1, ask))
+  expect(ask.asked.slice(2)).toEqual([`read ${MAIN_CWD}/.git/HEAD`, `read ${worktreeHead}`])
   const board = project(worldOf(w0.me, snap(json), { heads: fresh(heads), branches: fresh(branches) }))
   expect(board.build.map((g) => (g.k === 'single' ? [g.row.ticket, g.row.title, g.row.kind, g.row.origin, g.row.pane] : []))).toEqual([
     ['THV-481', 'ui/thv-481', undefined, 'label', { k: 'live', status: 'idle', tool: 'C', pane: 'w4D:pH' }],

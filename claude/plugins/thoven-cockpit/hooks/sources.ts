@@ -1,43 +1,43 @@
-// sources.ts: every outside read the cockpit makes, described as data.
+// sources.ts: every outside read the cockpit makes.
 //
 // The mods validator only lets `$` reach top-level functions of register.ts, so effects live
-// there. Each source here says what to ask (`plan`) and how to read the answers (`read`), and
-// register.ts runs them through one executor, `perform($, req)`. That gives one place where a
-// failure becomes "stale since hh:mm" for that source only, and parsers that tests feed real
-// text without the test kit. A process can only be one commands.ts built.
+// there. Each source here is one `run(world, ask)`: it reads through `ask`, which register.ts
+// builds over `$` for each poll, and says what the answers mean. That gives one place where a
+// failure becomes "stale since hh:mm" for that source only, and sources that tests run against a
+// table of real answers without the test kit. A process can only be one commands.ts built.
 
-import { COMMANDS, type Req as Proc } from './commands.ts'
+import { COMMANDS, type Req } from './commands.ts'
 import { FIXED_REPOS, configPathOf, parseOrigin, parsePrList } from './github.ts'
 import { parsePaneLabel, parseSnapshot } from './herdr.ts'
 import { inboxFile, inboxTicket } from './dispatch.ts'
-import type { Branches, GithubView, HeadPaths, InboxFile, Ms, Origins, Pane, PaneId, PaneLabels, Polled, Pr, SourceId, SourceValues, SpaceMap, World } from './model.ts'
+import type { Branches, GithubView, HeadPaths, InboxFile, Ms, Origins, Pane, PaneLabels, Polled, Pr, SourceId, SourceValues, SpaceMap, World } from './model.ts'
 
-/** One outside read. `perform($, req)` in register.ts is the only code that turns these into `$` calls. */
-export type Req = Proc | { k: 'read'; path: string } | { k: 'list'; path: string }
+/** What one outside read gave: its value, or why there is none. */
+export type Answer<T> = { k: 'ok'; value: T } | { k: 'fail'; error: string }
 
-/** What came back, already reduced to text so parsers never see a `$` result type. A `list` answers `Listing` as JSON. */
-export type Resp = { k: 'ok'; text: string } | { k: 'fail'; error: string }
+/** One directory entry, as register.ts reduces `$.fs.list`. A folder that does not exist lists `[]`. */
+export type Listing = ReadonlyArray<{ name: string; kind: string; mtimeMs: number }>
+
+/** The reads a source may make. Each answers, never throws, so a source decides what a failure means. */
+export type Ask = {
+  proc(req: Req): Promise<Answer<string>>
+  read(path: string): Promise<Answer<string>>
+  list(path: string): Promise<Answer<Listing>>
+}
 
 /**
- * One polled source. `plan` may read sources polled before it in this tick. `read` gets one
- * Resp per planned Req, in order, and returns undefined to mean "unusable", which marks the
- * source stale (or down, if it never answered).
+ * One polled source. `run` may read sources polled before it in this tick, and returns undefined
+ * to mean "unusable", which marks the source stale (or down, if it never answered).
  */
 export type Source<T> = {
   everyMs: Ms
-  plan(world: World): Req[]
-  /** Reads that depend on `plan`'s answers. `read` gets plan's Resps, then these, in order. */
-  follow?(world: World, resps: readonly Resp[]): Req[]
-  read(world: World, resps: readonly Resp[]): T | undefined
+  run(world: World, ask: Ask): Promise<T | undefined>
 }
-
-/** One directory entry, as `perform` reduces `$.fs.list`. A folder that does not exist lists `[]`. */
-export type Listing = Array<{ name: string; kind: string; mtimeMs: number }>
 
 /** The heartbeat period: the shortest `everyMs`. One timer drives every source. */
 export const HEARTBEAT_MS = 5000
 
-/** Poll order. A source's `plan` reads only sources earlier in this list. */
+/** Poll order. A source's `run` reads only sources earlier in this list. */
 const SOURCE_ORDER = ['herdr', 'labels', 'spaces', 'heads', 'branches', 'origins', 'github', 'inbox'] as const
 export type PolledId = (typeof SOURCE_ORDER)[number]
 
@@ -63,7 +63,7 @@ export function due(lastRun: Partial<Record<SourceId, Ms>>, now: Ms): PolledId[]
   })
 }
 
-const ok = (r: Resp | undefined): string | undefined => (r?.k === 'ok' ? r.text : undefined)
+const ok = <T>(a: Answer<T>): T | undefined => (a.k === 'ok' ? a.value : undefined)
 
 // ── herdr ──────────────────────────────────────────────────────────────────────────────────
 
@@ -159,34 +159,16 @@ function reposOf(world: World): string[] {
 /** macOS's TMPDIR ends in `/`. No TMPDIR, no inbox. */
 const inboxDir = (tmp: string): string | undefined => (tmp === '' ? undefined : `${tmp.replace(/\/+$/, '')}/dispatch/out`)
 
-function listingOf(r: Resp | undefined): Listing | undefined {
-  const text = ok(r)
-  if (text === undefined) return undefined
-  try {
-    const parsed: unknown = JSON.parse(text)
-    return Array.isArray(parsed) ? (parsed as Listing) : undefined
-  } catch {
-    return undefined
-  }
-}
-
 /** Files whose name names a ticket: no row can show another (`w40-p1.md`), so it is never read. */
 const ticketFiles = (listing: Listing): Listing => listing.filter((e) => e.kind === 'file' && inboxTicket(e.name) !== undefined)
-
-/** Files not yet read at this mtime. An unchanged file keeps its last read, so a 46 KB deliverable is read once. */
-function unread(world: World, listing: Listing): Listing {
-  const known = valueOf(world.sources.inbox) ?? []
-  return ticketFiles(listing).filter((e) => !known.some((f) => f.name === e.name && f.at === e.mtimeMs))
-}
 
 // ── The registry ─────────────────────────────────────────────────────────────────────────────
 
 export const SOURCES: { [K in PolledId]: Source<SourceValues[K]> } = {
   herdr: {
     everyMs: HEARTBEAT_MS,
-    plan: () => [COMMANDS['herdr api snapshot']()],
-    read: (_world, [r]) => {
-      const text = ok(r)
+    run: async (_world, ask) => {
+      const text = ok(await ask.proc(COMMANDS['herdr api snapshot']()))
       return text === undefined ? undefined : parseSnapshot(text)
     },
   },
@@ -195,72 +177,59 @@ export const SOURCES: { [K in PolledId]: Source<SourceValues[K]> } = {
   // A failed read keeps the old entry, so the pane is tried again next tick.
   labels: {
     everyMs: HEARTBEAT_MS,
-    plan: (world) => toRead(world).map((p) => COMMANDS['herdr pane get'](p.pane)),
-    read: (world, resps): PaneLabels => {
+    run: async (world, ask): Promise<PaneLabels> => {
+      const read = await Promise.all(toRead(world).map(async (p) => [p, ok(await ask.proc(COMMANDS['herdr pane get'](p.pane)))] as const))
       const cache = valueOf(world.sources.labels)?.byPane
-      const byPane = new Map<PaneId, { seen: string; label: string | undefined }>()
-      for (const p of unlabelled(world)) {
+      const byPane = new Map(unlabelled(world).flatMap((p) => {
         const kept = cache?.get(p.pane)
-        if (kept) byPane.set(p.pane, kept)
-      }
-      toRead(world).forEach((p, i) => {
-        const text = ok(resps[i])
-        if (text !== undefined) byPane.set(p.pane, { seen: seenOf(p), label: parsePaneLabel(text) })
-      })
+        return kept ? [[p.pane, kept] as const] : []
+      }))
+      for (const [p, text] of read) if (text !== undefined) byPane.set(p.pane, { seen: seenOf(p), label: parsePaneLabel(text) })
       return { byPane }
     },
   },
 
   spaces: {
     everyMs: 5 * 60_000,
-    plan: (world) => [{ k: 'read', path: workflowPath(world.me.home) }],
-    read: (_world, [r]) => {
-      const text = ok(r)
+    run: async (world, ask) => {
+      const text = ok(await ask.read(workflowPath(world.me.home)))
       return text === undefined ? undefined : parseLiveSpaces(text)
     },
   },
 
   heads: {
     everyMs: HEARTBEAT_MS,
-    plan: (world) => {
+    run: async (world, ask): Promise<HeadPaths> => {
       const known = valueOf(world.sources.heads)
-      return trackedCwds(world)
-        .filter((cwd) => !known?.has(cwd))
-        .map((cwd) => ({ k: 'read', path: `${cwd}/.git` }))
-    },
-    read: (world, resps): HeadPaths => {
-      const known = valueOf(world.sources.heads)
-      const heads = new Map(known)
-      trackedCwds(world)
-        .filter((cwd) => !known?.has(cwd))
-        .forEach((cwd, i) => heads.set(cwd, headPathOf(cwd, ok(resps[i]))))
-      return heads
+      const found = await Promise.all(
+        trackedCwds(world)
+          .filter((cwd) => !known?.has(cwd))
+          .map(async (cwd) => [cwd, headPathOf(cwd, ok(await ask.read(`${cwd}/.git`)))] as const),
+      )
+      return new Map([...(known ?? []), ...found])
     },
   },
 
   branches: {
     everyMs: HEARTBEAT_MS,
-    plan: (world) => [...(valueOf(world.sources.heads) ?? new Map<string, string>()).values()].map((path) => ({ k: 'read', path })),
-    read: (world, resps): Branches => {
+    run: async (world, ask): Promise<Branches> => {
+      const heads = [...(valueOf(world.sources.heads) ?? [])]
+      const read = await Promise.all(heads.map(async ([cwd, path]) => [cwd, ok(await ask.read(path))] as const))
       const branches = new Map<string, string>()
-      ;[...(valueOf(world.sources.heads) ?? new Map<string, string>()).keys()].forEach((cwd, i) => {
-        const text = ok(resps[i])
+      for (const [cwd, text] of read) {
         const branch = text === undefined ? undefined : parseHead(text)
         if (branch) branches.set(cwd, branch)
-      })
+      }
       return branches
     },
   },
 
   origins: {
     everyMs: HEARTBEAT_MS,
-    plan: (world) => unreadConfigs(world).map((path) => ({ k: 'read', path })),
-    read: (world, resps): Origins => {
+    run: async (world, ask): Promise<Origins> => {
+      const read = await Promise.all(unreadConfigs(world).map(async (path) => [path, ok(await ask.read(path))] as const))
       const origins = new Map(valueOf(world.sources.origins))
-      unreadConfigs(world).forEach((path, i) => {
-        const text = ok(resps[i])
-        origins.set(path, text === undefined ? undefined : parseOrigin(text))
-      })
+      for (const [path, text] of read) origins.set(path, text === undefined ? undefined : parseOrigin(text))
       return origins
     },
   },
@@ -269,12 +238,13 @@ export const SOURCES: { [K in PolledId]: Source<SourceValues[K]> } = {
   // cells keep the last full answer rather than mixing two polls.
   github: {
     everyMs: 60_000,
-    plan: (world) => reposOf(world).map((repo) => COMMANDS['gh pr list'](repo)),
-    read: (world, resps): GithubView | undefined => {
+    run: async (world, ask): Promise<GithubView | undefined> => {
+      const lists = await Promise.all(reposOf(world).map(async (repo) => {
+        const text = ok(await ask.proc(COMMANDS['gh pr list'](repo)))
+        return text === undefined ? undefined : parsePrList(repo, text)
+      }))
       const prs: Pr[] = []
-      for (const [i, repo] of reposOf(world).entries()) {
-        const text = ok(resps[i])
-        const list = text === undefined ? undefined : parsePrList(repo, text)
+      for (const list of lists) {
         if (!list) return undefined
         prs.push(...list)
       }
@@ -282,30 +252,23 @@ export const SOURCES: { [K in PolledId]: Source<SourceValues[K]> } = {
     },
   },
 
+  // An unchanged file keeps its last read, so a 46 KB deliverable is read once.
   inbox: {
     everyMs: 10_000,
-    plan: (world) => {
+    run: async (world, ask): Promise<InboxFile[] | undefined> => {
       const dir = inboxDir(world.me.tmp)
-      return dir === undefined ? [] : [{ k: 'list', path: dir }]
-    },
-    follow: (world, [list]) => {
-      const dir = inboxDir(world.me.tmp)
-      const listing = listingOf(list)
-      return dir === undefined || !listing ? [] : unread(world, listing).map((e) => ({ k: 'read', path: `${dir}/${e.name}` }))
-    },
-    read: (world, [list, ...reads]): InboxFile[] | undefined => {
-      if (inboxDir(world.me.tmp) === undefined) return []
-      const listing = listingOf(list)
+      if (dir === undefined) return []
+      const listing = ok(await ask.list(dir))
       if (!listing) return undefined
       const known = valueOf(world.sources.inbox) ?? []
-      const fresh = unread(world, listing)
-      return ticketFiles(listing).flatMap((e) => {
-        const i = fresh.findIndex((f) => f.name === e.name)
-        if (i < 0) return known.filter((f) => f.name === e.name && f.at === e.mtimeMs)
-        const text = ok(reads[i])
+      const files = await Promise.all(ticketFiles(listing).map(async (e) => {
+        const kept = known.filter((f) => f.name === e.name && f.at === e.mtimeMs)
+        if (kept.length > 0) return kept
+        const text = ok(await ask.read(`${dir}/${e.name}`))
         const file = text === undefined ? undefined : inboxFile(e.name, text, e.mtimeMs)
         return file ? [file] : []
-      })
+      }))
+      return files.flat()
     },
   },
 }

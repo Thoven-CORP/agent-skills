@@ -13,10 +13,10 @@ declare const argvBrand: unique symbol
 export type Argv = readonly string[] & { readonly [argvBrand]: true }
 
 /** One process to run, and how long it may take. */
-export type Req = { k: 'proc'; argv: Argv; timeoutMs: number }
+export type Req = { argv: Argv; timeoutMs: number }
 
 function mint(timeoutMs: number, ...argv: string[]): Req {
-  return { k: 'proc', argv: argv as readonly string[] as Argv, timeoutMs }
+  return { argv: argv as readonly string[] as Argv, timeoutMs }
 }
 
 const HERDR_MS = 10_000

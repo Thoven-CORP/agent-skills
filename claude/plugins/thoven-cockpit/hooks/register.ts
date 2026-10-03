@@ -22,10 +22,10 @@ import type { EngineInterface, Register } from 'claude-code'
 import { project } from './board.ts'
 import { readPrompt, sendCalls } from './dispatch.ts'
 import { claimHeldBy, claimOf } from './facts.ts'
-import { COMMANDS } from './commands.ts'
+import { COMMANDS, type Req } from './commands.ts'
 import { findMe, parseSnapshot, spaceOfPane } from './herdr.ts'
 import { VERDICTS, isOneOf, type Board, type Engagement, type Fact, type FactKind, type Intent, type Main, type Me, type Ms, type PaneId, type PaneUi, type Polled, type SessionId, type SourceId, type Sources, type SourceValues, type World } from './model.ts'
-import { HEARTBEAT_MS, SOURCES, due, settle, type Listing, type PolledId, type Req, type Resp, type Source } from './sources.ts'
+import { HEARTBEAT_MS, SOURCES, due, settle, type Answer, type Ask, type Listing, type PolledId, type Source } from './sources.ts'
 import { isFactKey, keyOf, parseFact } from './store.ts'
 import { drawCockpit } from './view.ts'
 
@@ -205,8 +205,8 @@ async function resolveMe($: Api, sid: SessionId): Promise<void> {
 async function claimAndOpen($: Api): Promise<string> {
   const envPane = await $.env.get('HERDR_PANE_ID')
   const sid = (await $.session.id()) as SessionId
-  const resp = await perform($, COMMANDS['herdr api snapshot']())
-  const snap = resp.k === 'ok' ? parseSnapshot(resp.text) : undefined
+  const resp = await runProc($, COMMANDS['herdr api snapshot']())
+  const snap = resp.k === 'ok' ? parseSnapshot(resp.value) : undefined
   const mine = snap ? findMe(snap, envPane, sid) : undefined
   const pane = mine?.pane ?? (snap ? undefined : (envPane as PaneId | undefined))
   const space = mine?.space ?? (snap ? undefined : spaceOfPane(envPane))
@@ -281,14 +281,12 @@ async function loseClaim($: Api, main: Main): Promise<void> {
 /** One source, one poll. A throw or an unusable answer marks this source stale and no other. */
 async function poll<K extends PolledId>($: Api, id: K, world: World): Promise<void> {
   const source = SOURCES[id] as Source<SourceValues[K]>
+  const answers: Array<Promise<Answer<unknown>>> = []
   let value: SourceValues[K] | undefined
   let error = 'unreadable answer'
   try {
-    const resps: Resp[] = []
-    for (const req of source.plan(world)) resps.push(await perform($, req))
-    for (const req of source.follow?.(world, resps) ?? []) resps.push(await perform($, req))
-    value = source.read(world, resps)
-    const failed = resps.find((r) => r.k === 'fail')
+    value = await source.run(world, askOf($, answers))
+    const failed = (await Promise.all(answers)).find((a) => a.k === 'fail')
     if (failed?.k === 'fail') error = failed.error
   } catch (err) {
     error = messageOf(err)
@@ -297,21 +295,46 @@ async function poll<K extends PolledId>($: Api, id: K, world: World): Promise<vo
   lastRun = { ...lastRun, [id]: world.now }
 }
 
-/** The single executor. `$.process.run`, `$.fs.read` and `$.fs.list` appear only here. */
-async function perform($: Api, req: Req): Promise<Resp> {
+/** The reads one poll may make, over `$`. Each answer is kept in `answers`, in the order asked, so the poll can name the first failure. */
+function askOf($: Api, answers: Array<Promise<Answer<unknown>>>): Ask {
+  const kept = <T>(answer: Promise<Answer<T>>): Promise<Answer<T>> => {
+    answers.push(answer)
+    return answer
+  }
+  return {
+    proc: (req) => kept(runProc($, req)),
+    read: (path) => kept(readFile($, path)),
+    list: (path) => kept(listDir($, path)),
+  }
+}
+
+/** `$.process.run` appears only here. */
+async function runProc($: Api, req: Req): Promise<Answer<string>> {
   try {
-    if (req.k === 'read') return { k: 'ok', text: await $.fs.read(req.path) }
-    if (req.k === 'list') {
-      // No folder yet means nothing was ever left undelivered, not a failed source.
-      if (!(await $.fs.exists(req.path))) return { k: 'ok', text: '[]' }
-      const listing: Listing = (await $.fs.list(req.path)).map((e) => ({ name: e.name, kind: e.kind, mtimeMs: e.mtimeMs }))
-      return { k: 'ok', text: JSON.stringify(listing) }
-    }
     const r = await $.process.run(req.argv, { timeoutMs: req.timeoutMs })
     const what = req.argv.slice(0, 3).join(' ')
     if (r.exitCode !== 0) return { k: 'fail', error: `${what} exited ${r.exitCode}: ${r.stderr.split('\n')[0] ?? ''}` }
     if (r.isStdoutTruncated) return { k: 'fail', error: `${what}: output truncated` }
-    return { k: 'ok', text: r.stdout }
+    return { k: 'ok', value: r.stdout }
+  } catch (err) {
+    return { k: 'fail', error: messageOf(err) }
+  }
+}
+
+/** `$.fs.read` appears only here. */
+async function readFile($: Api, path: string): Promise<Answer<string>> {
+  try {
+    return { k: 'ok', value: await $.fs.read(path) }
+  } catch (err) {
+    return { k: 'fail', error: messageOf(err) }
+  }
+}
+
+/** `$.fs.list` appears only here. No folder yet means nothing was ever left undelivered, not a failed source. */
+async function listDir($: Api, path: string): Promise<Answer<Listing>> {
+  try {
+    if (!(await $.fs.exists(path))) return { k: 'ok', value: [] }
+    return { k: 'ok', value: (await $.fs.list(path)).map((e) => ({ name: e.name, kind: e.kind, mtimeMs: e.mtimeMs })) }
   } catch (err) {
     return { k: 'fail', error: messageOf(err) }
   }
@@ -405,7 +428,7 @@ async function act($: Api, intent: Intent): Promise<void> {
 }
 
 async function focusPane($: Api, req: Req): Promise<void> {
-  const r = await perform($, req)
+  const r = await runProc($, req)
   if (r.k === 'fail') await debug($, 'focus', r.error)
 }
 

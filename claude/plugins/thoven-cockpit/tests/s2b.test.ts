@@ -18,7 +18,7 @@ import { CONFIG_AGENT_SKILLS, CONFIG_BACKEND, CONFIG_FRONTEND, DOT_GIT_THV_481, 
 import { GH_AGENT_SKILLS, GH_BACKEND, GH_FRONTEND } from './fixtures/github.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import { WORKFLOW_LIVE_SPACES } from './fixtures/workflow.ts'
-import { HOME, MAIN_CWD, PANE, TMPDIR, cockpit, relabelPane, relabelTab, stage, start } from './stage.ts'
+import { HOME, MAIN_CWD, PANE, TMPDIR, cockpit, fakeAsk, relabelPane, relabelTab, stage, start } from './stage.ts'
 
 const AGENT_SKILLS = 'Thoven-CORP/agent-skills'
 const JSON_FIELDS = 'number,title,headRefName,state,statusCheckRollup,mergedAt,url,additions,deletions,files'
@@ -173,34 +173,30 @@ test('repos are each space folder’s origin, read once, plus frontend and backe
     [MAIN_CWD, `${MAIN_CWD}/.git/HEAD`],
   ])
   const w1 = worldOf(mainOf('w18', 'w18:p8W', asCwd), SNAPSHOT_LIVE, [], { heads: fresh(heads) })
-  expect(SOURCES.origins.plan(w1)).toEqual([
-    { k: 'read', path: '/Users/andresmartinez/thoven/agent-skills/.git/config' },
-    { k: 'read', path: '/Users/andresmartinez/thoven/.git/config' },
-    { k: 'read', path: '/Users/andresmartinez/thoven/frontend/.git/config' },
+  const ask1 = fakeAsk({
+    read: { '/Users/andresmartinez/thoven/agent-skills/.git/config': CONFIG_AGENT_SKILLS, '/Users/andresmartinez/thoven/frontend/.git/config': CONFIG_FRONTEND },
+  })
+  const read = must(await SOURCES.origins.run(w1, ask1))
+  expect(ask1.asked).toEqual([
+    'read /Users/andresmartinez/thoven/agent-skills/.git/config',
+    'read /Users/andresmartinez/thoven/.git/config',
+    'read /Users/andresmartinez/thoven/frontend/.git/config',
   ])
-  const read = must(SOURCES.origins.read(w1, [
-    { k: 'ok', text: CONFIG_AGENT_SKILLS },
-    { k: 'fail', error: 'ENOENT' },
-    { k: 'ok', text: CONFIG_FRONTEND },
-  ]))
   expect([...read]).toEqual([
     ['/Users/andresmartinez/thoven/agent-skills/.git/config', AGENT_SKILLS],
     ['/Users/andresmartinez/thoven/.git/config', undefined],
     ['/Users/andresmartinez/thoven/frontend/.git/config', FRONTEND],
   ])
   const w2 = worldOf(mainOf('w18', 'w18:p8W', asCwd), SNAPSHOT_LIVE, [], { heads: fresh(heads), origins: fresh(read) })
-  expect(SOURCES.origins.plan(w2)).toEqual([])
-  const plan = SOURCES.github.plan(w2)
-  expect(plan.map((r) => (r.k === 'proc' ? [...r.argv] : r))).toEqual(
-    [FRONTEND, BACKEND, AGENT_SKILLS].map((repo) => ['gh', 'pr', 'list', '--repo', repo, '--state', 'all', '--json', JSON_FIELDS, '--limit', '50']),
-  )
-  const view = SOURCES.github.read(w2, [
-    { k: 'ok', text: GH_FRONTEND },
-    { k: 'ok', text: GH_BACKEND },
-    { k: 'ok', text: GH_AGENT_SKILLS },
-  ])
+  const ask2 = fakeAsk({})
+  expect([...must(await SOURCES.origins.run(w2, ask2))]).toEqual([...read])
+  expect(ask2.asked).toEqual([])
+  const argvOf = (repo: string) => ['gh', 'pr', 'list', '--repo', repo, '--state', 'all', '--json', JSON_FIELDS, '--limit', '50'].join(' ')
+  const ask3 = fakeAsk({ proc: { [argvOf(FRONTEND)]: GH_FRONTEND, [argvOf(BACKEND)]: GH_BACKEND, [argvOf(AGENT_SKILLS)]: GH_AGENT_SKILLS } })
+  const view = await SOURCES.github.run(w2, ask3)
+  expect(ask3.asked).toEqual([FRONTEND, BACKEND, AGENT_SKILLS].map(argvOf))
   expect(view?.prs.map((p) => `${p.repo}#${p.number}`).slice(9, 12)).toEqual(['Thoven-CORP/frontend-remote#133', 'Thoven-CORP/backend-remote#149', 'Thoven-CORP/backend-remote#148'])
-  expect(SOURCES.github.read(w2, [{ k: 'ok', text: GH_FRONTEND }, { k: 'fail', error: 'gh pr list exited 1' }, { k: 'ok', text: GH_AGENT_SKILLS }])).toBeUndefined()
+  expect(await SOURCES.github.run(w2, fakeAsk({ proc: { [argvOf(FRONTEND)]: GH_FRONTEND, [argvOf(AGENT_SKILLS)]: GH_AGENT_SKILLS } }))).toBeUndefined()
 })
 
 // ── unit: PRs on the board ──────────────────────────────────────────────────────────────────
