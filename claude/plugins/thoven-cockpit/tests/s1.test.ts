@@ -11,7 +11,7 @@ import { cellText, columnsFor } from '../hooks/view.ts'
 import { DOT_GIT_WORKTREE, HEAD_COCKPIT } from './fixtures/git.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import { WORKFLOW_LIVE_SPACES } from './fixtures/workflow.ts'
-import { MAIN_CWD, PANE, relabelTab, stage, start } from './stage.ts'
+import { MAIN_CWD, PANE, cockpit, relabelTab, stage, start } from './stage.ts'
 
 const CONSENT = 'Build · Consent evidence hardening (THV-1045)'
 /** w18 with its `Mods` tab named the way label.sh names a build tab. p8V sits in it with no pane label. */
@@ -193,7 +193,7 @@ test('only the session that ran /cockpit starts polling', async ($, on) => {
   await s.clock.advance(15_000)
   expect(s.snapshots()).toBe(0)
 
-  const answer = await $.command.run({ command: 'cockpit', args: '' })
+  const answer = await cockpit($)
   expect(answer.text).toBe('Cockpit is main of Research.')
   expect(s.saved.get('cockpit:main:w18')).toEqual({ kind: 'main', space: 'w18', sid: 'sid-a', pane: 'w18:p8W', at: 15_000 })
   expect(s.opened).toEqual([{ id: 'cockpit', title: 'Cockpit', focus: true }])
@@ -206,7 +206,7 @@ test('only the session that ran /cockpit starts polling', async ($, on) => {
 test('a session whose claim was taken by another session stops polling and closes its pane', async ($, on) => {
   const s = stage(on, { pane: 'w18:p8W', sid: 'sid-a', snapshot: SNAPSHOT_LIVE })
   await start($)
-  await $.command.run({ command: 'cockpit', args: '' })
+  await cockpit($)
   s.saved.set('cockpit:main:w18', { kind: 'main', space: 'w18', sid: 'sid-b', pane: 'w18:p8V', at: 1 })
   await s.clock.advance(10_000)
   expect(s.snapshots()).toBe(1)
@@ -231,7 +231,7 @@ test('after /clear the same pane is main again under its new session id', async 
 test('herdr exits 1: the pane says herdr unavailable, keeps the last rows, and nothing throws', async ($, on) => {
   const s = stage(on, { pane: 'w18:p8W', snapshot: SNAPSHOT_W18_BUILD })
   await start($)
-  await $.command.run({ command: 'cockpit', args: '' })
+  await cockpit($)
   s.herdr.mode = 'fail'
   await s.clock.advance(5_000)
   const ui = await $.ui.mount(PANE)
@@ -251,7 +251,7 @@ test('herdr down since a reload: the pane says herdr unavailable', async ($, on)
 test('herdr hangs: ticks never overlap, and the pane says herdr unavailable once it times out', async ($, on) => {
   const s = stage(on, { pane: 'w18:p8W', snapshot: SNAPSHOT_W18_BUILD })
   await start($)
-  await $.command.run({ command: 'cockpit', args: '' })
+  await cockpit($)
   s.herdr.mode = 'hang'
   await s.clock.advance(15_000)
   expect(s.snapshots()).toBe(2)
@@ -265,7 +265,7 @@ test('herdr hangs: ticks never overlap, and the pane says herdr unavailable once
 test('the Work tab draws kind, title, Pane glyph and tool tag; 2 switches to PRs; f focuses the pane', async ($, on) => {
   const s = stage(on, { pane: 'w18:p8W', snapshot: SNAPSHOT_W18_BUILD })
   await start($)
-  await $.command.run({ command: 'cockpit', args: '' })
+  await cockpit($)
   const ui = await $.ui.mount(PANE)
 
   expect(await ui.find({ type: 'Text', text: 'Research' })).toBeDefined()

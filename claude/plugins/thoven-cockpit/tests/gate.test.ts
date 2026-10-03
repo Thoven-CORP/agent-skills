@@ -5,7 +5,7 @@
 import { expect, test } from 'claude-code/testing'
 import { herdr } from '../hooks/commands.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
-import { PANE, relabelTab, stage, start } from './stage.ts'
+import { PANE, cockpit, relabelTab, stage, start } from './stage.ts'
 
 const SNAPSHOT = relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Consent evidence hardening (THV-1045)')
 
@@ -17,7 +17,7 @@ test('no process argv carries merge, and S1 runs only the three herdr reads', as
     return { deny: 'no http in S1' }
   })
   await start($)
-  await $.command.run({ command: 'cockpit', args: '' })
+  await cockpit($)
   await s.clock.advance(6 * 60_000)
   const ui = await $.ui.mount(PANE)
   for (const key of ['row-THV-1045', 'focus-row', 'tab-prs', 'tab-work']) await ui.press({ key })

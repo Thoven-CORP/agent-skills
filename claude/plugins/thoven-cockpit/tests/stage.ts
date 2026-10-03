@@ -89,3 +89,5 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
 }
 
 export const start = ($: any) => $.session.start({ surface: 'terminal', isInteractive: true, cwd: MAIN_CWD })
+/** `/cockpit`, typed at the prompt. */
+export const cockpit = ($: any): Promise<{ text?: string }> => $.command.run({ command: 'cockpit', args: '' })
