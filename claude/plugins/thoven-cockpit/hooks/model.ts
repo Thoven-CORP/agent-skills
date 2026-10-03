@@ -13,6 +13,8 @@
 //     them into these types at the boundary.
 //   - Every cell type a later slice fills exists now; until its slice lands it is `{ k: 'none' }`.
 
+import type { SOURCES, Source } from './sources.ts'
+
 // ── Identity ────────────────────────────────────────────────────────────────────────────────
 
 declare const brand: unique symbol
@@ -237,17 +239,8 @@ export type CodexReview = {
   selected: string[]
 }
 
-/** What each source yields when it answers. `SOURCES` in sources.ts implements each, in poll order; a source with no code yet has no entry. */
-export type SourceValues = {
-  herdr: Snapshot
-  labels: PaneLabels
-  spaces: SpaceMap
-  heads: HeadPaths
-  branches: Branches
-  origins: Origins
-  github: GithubView
-  inbox: InboxFile[]
-}
+/** What each source yields when it answers, read off `SOURCES` in sources.ts: a source cannot be added without its value type. */
+export type SourceValues = { [K in keyof typeof SOURCES]: (typeof SOURCES)[K] extends Source<infer T> ? T : never }
 export type SourceId = keyof SourceValues
 export type Sources = { [K in SourceId]: Polled<SourceValues[K]> }
 

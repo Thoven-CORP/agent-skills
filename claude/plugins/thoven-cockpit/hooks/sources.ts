@@ -10,7 +10,7 @@ import { COMMANDS, type Req } from './commands.ts'
 import { FIXED_REPOS, configPathOf, parseOrigin, parsePrList } from './github.ts'
 import { parsePaneLabel, parseSnapshot } from './herdr.ts'
 import { inboxFile, inboxTicket } from './dispatch.ts'
-import type { Branches, GithubView, HeadPaths, InboxFile, Ms, Origins, Pane, PaneLabels, Polled, Pr, SourceId, SourceValues, Sources, SpaceMap, World } from './model.ts'
+import type { Branches, GithubView, HeadPaths, InboxFile, Ms, Origins, Pane, PaneLabels, Polled, Pr, Snapshot, SourceId, Sources, SpaceMap, World } from './model.ts'
 
 /** One directory entry, as register.ts reduces `$.fs.list`. A folder that does not exist lists `[]`. */
 export type Listing = ReadonlyArray<{ name: string; kind: string; mtimeMs: number }>
@@ -31,12 +31,18 @@ export type Seen = Pick<World, 'me' | 'sources'>
 /**
  * One polled source. `run` reads its own last value and the sources named in `needs`, which a
  * tick polls in an earlier stage. It returns undefined to mean "unusable", which marks the source
- * stale (or down, if it never answered).
+ * stale (or down, if it never answered). `N` keeps `needs` as literals, so stagesOf rejects a
+ * need that names no source at compile time.
  */
-export type Source<T> = {
+export type Source<T, N extends string = string> = {
   everyMs: Ms
-  needs: readonly SourceId[]
+  needs: readonly N[]
   run(world: Seen, ask: Ask): Promise<T | undefined>
+}
+
+/** A SOURCES entry. Its value type is read off `run`'s return type, which SourceValues collects. */
+function source<T, const N extends string>(s: Source<T, N>): Source<T, N> {
+  return s
 }
 
 /** The heartbeat period: the shortest `everyMs`. One timer drives every source. */
@@ -177,16 +183,16 @@ const ticketFiles = (listing: Listing): Listing => listing.filter((e) => e.kind 
 // ── The registry ─────────────────────────────────────────────────────────────────────────────
 
 /** A source's `needs` are listed above it, so STAGES can be read off in one pass. */
-export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
-  herdr: {
+export const SOURCES = {
+  herdr: source({
     everyMs: HEARTBEAT_MS,
     needs: [],
-    run: async (_world, ask) => parseSnapshot(await ask.proc(COMMANDS['herdr api snapshot']())),
-  },
+    run: async (_world, ask): Promise<Snapshot | undefined> => parseSnapshot(await ask.proc(COMMANDS['herdr api snapshot']())),
+  }),
 
   // ADR4: each pane's label is read once and kept until that pane's tab label or title changes.
   // A failed read keeps the old entry, so the pane is tried again next tick.
-  labels: {
+  labels: source({
     everyMs: HEARTBEAT_MS,
     needs: ['herdr'],
     run: async (world, ask): Promise<PaneLabels> => {
@@ -199,17 +205,17 @@ export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
       for (const [p, text] of read) if (text !== undefined) byPane.set(p.pane, { seen: seenOf(p), label: parsePaneLabel(text) })
       return { byPane }
     },
-  },
+  }),
 
-  spaces: {
+  spaces: source({
     everyMs: 5 * 60_000,
     needs: [],
-    run: async (world, ask) => parseLiveSpaces(await ask.read(workflowPath(world.me.home))),
-  },
+    run: async (world, ask): Promise<SpaceMap> => parseLiveSpaces(await ask.read(workflowPath(world.me.home))),
+  }),
 
   // Rebuilt from the tracked folders each poll. A folder whose read failed is left out, so it is
   // asked again next poll rather than cached as a checkout.
-  heads: {
+  heads: source({
     everyMs: HEARTBEAT_MS,
     needs: ['herdr'],
     run: async (world, ask): Promise<HeadPaths> => {
@@ -217,9 +223,9 @@ export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
       const found = await Promise.all(trackedCwds(world).map(async (cwd) => [cwd, known?.get(cwd) ?? (await tolerate(headOf(cwd, ask)))] as const))
       return new Map(found.flatMap(([cwd, head]) => (head === undefined ? [] : [[cwd, head] as const])))
     },
-  },
+  }),
 
-  branches: {
+  branches: source({
     everyMs: HEARTBEAT_MS,
     needs: ['heads'],
     run: async (world, ask): Promise<Branches> => {
@@ -232,9 +238,9 @@ export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
       }
       return branches
     },
-  },
+  }),
 
-  origins: {
+  origins: source({
     everyMs: HEARTBEAT_MS,
     needs: ['herdr', 'heads'],
     run: async (world, ask): Promise<Origins> => {
@@ -243,12 +249,12 @@ export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
       for (const [path, text] of read) origins.set(path, text === undefined ? undefined : parseOrigin(text))
       return origins
     },
-  },
+  }),
 
   // One `gh pr list` per repo. Any repo failing marks the whole source stale, so the PR and CI
   // cells keep the last full answer rather than mixing two polls. allSettled, so a failed repo
   // does not end the poll while another repo's gh still runs into the next one.
-  github: {
+  github: source({
     everyMs: 60_000,
     needs: ['herdr', 'heads', 'origins'],
     run: async (world, ask): Promise<GithubView | undefined> => {
@@ -261,10 +267,10 @@ export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
       }
       return { prs }
     },
-  },
+  }),
 
   // An unchanged file keeps its last read, so a 46 KB deliverable is read once.
-  inbox: {
+  inbox: source({
     everyMs: 10_000,
     needs: [],
     run: async (world, ask): Promise<InboxFile[] | undefined> => {
@@ -281,7 +287,7 @@ export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
       }))
       return files.flat()
     },
-  },
+  }),
 }
 
 const SOURCE_IDS = Object.keys(SOURCES).filter((k): k is SourceId => Object.hasOwn(SOURCES, k))
