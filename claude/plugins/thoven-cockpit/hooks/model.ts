@@ -127,6 +127,22 @@ export type Fact =
   | ({ kind: 'send' } & SendCall & { at: Ms })
   /** `happened:<ticket>:<event>`. Set once, the first time main sees the event, so a ↻ cannot vanish when its evidence leaves a source. */
   | { kind: 'happened'; ticket: Ticket; event: LinearEventId; at: Ms }
+  /** `status:<ticket>:<sid>`. A builder session's own answer: the last status line it sent main (S5). */
+  | { kind: 'status'; ticket: Ticket; sid: SessionId; status: ReportStatus; text: string; at: Ms }
+  /** `checkpoint:<sid>`. Main's state when it last compacted, handed back after the compaction (S5). */
+  | ({ kind: 'checkpoint'; sid: SessionId; at: Ms } & Checkpoint)
+
+/** What main hands itself back after a compaction. Each row's state is already words, so the hand-back needs no board. */
+export type Checkpoint = {
+  /** The herdr space's label. */
+  space: string
+  /** One wave per board group: a parent and its children, or one row. */
+  waves: Array<{ parent?: Ticket; title?: string; rows: Array<{ ticket: Ticket; title: string; state: string }> }>
+  panes: Array<{ pane: PaneId; status: PaneStatus; tickets: Ticket[] }>
+  /** The RULINGS field of each brief main sent for a ticket on the board. */
+  rulings: Array<{ ticket: Ticket; file: string; text: string }>
+  next: string[]
+}
 
 export type FactKind = Fact['kind']
 export type FactOf<K extends FactKind> = Extract<Fact, { kind: K }>

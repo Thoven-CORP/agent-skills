@@ -13,6 +13,7 @@ Nothing here is hand-made except `built.ts`, which says for each constant why no
 | `reports.ts` | `PASTED_CONCERNS_THV_1041`, `PASTED_DONE_FIX_ROUND_THV_1041`, `BUILD_BRIEF_THV_1014`, `FIX_ROUND_3_THV_1015`, and six from `status-lines/` | transcript lines named above each constant, and `/tmp/cockpit-fixtures/status-lines/*.txt` |
 | `send.ts` | `SEND_FIX2_THV_1004`, `SEND_1` to `SEND_6` | a main session's Bash `tool_use` (line named in the file), and `/tmp/cockpit-fixtures/send/*.txt` |
 | `inbox.ts` | `OUT_ESCALATION_THV_1004`, `OUT_RESEARCH_THV_1038_HEAD` | `/tmp/cockpit-fixtures/dispatch-out/`, and the head of `$TMPDIR/dispatch/out/THV-1038.md` |
+| `turns.ts` | `ANSWER_DONE_THV_978`, `ANSWER_NO_STATUS_THV_1082`, `BRIEF_FILE_THV_978`, `STOP_TASKS_SLEEP`, `WATCH_BASH_INPUT` | builder transcripts' last `text` block (lines named in the file), `$TMPDIR/dispatch/THV-978.md`, the S0 spike's `classic.Stop` log, and a main session's Bash `tool_use` |
 | `built.ts` | `BUILT_CONCERNS_TABLE_THV_1045` | built by hand, not captured: no log holds a concerns table; shaped on brief.md's REPORT section (`skills/dev/dispatch-work/references/brief.md`), and said so in the file |
 
 Two test inputs are derived from these, not copied, and say so where they are built

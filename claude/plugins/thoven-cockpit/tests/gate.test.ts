@@ -19,9 +19,10 @@ const BUILT: { [K in CommandName]: () => Req } = {
   'herdr pane get': () => COMMANDS['herdr pane get'](idOf(isPaneId, 'w18:p8V')),
   'herdr agent focus': () => COMMANDS['herdr agent focus'](idOf(isPaneId, 'w18:p8V')),
   'gh pr list': () => COMMANDS['gh pr list']('Thoven-CORP/frontend-remote'),
+  'herdr pane report-metadata': () => COMMANDS['herdr pane report-metadata'](idOf(isPaneId, 'w18:p8V'), { title: 'Build · Consent evidence hardening (THV-1045)', states: [{ status: 'idle', text: 'DONE' }] }),
 }
 
-test('no process argv carries merge, and the cockpit runs only the three herdr reads and gh pr list', async ($, on) => {
+test('no process argv carries merge, and the cockpit runs only the three herdr reads, the label push and gh pr list', async ($, on) => {
   const s = stage(on, { pane: 'w18:p8W', snapshot: SNAPSHOT })
   const bodies: string[] = []
   on('http.fetch', (_$: unknown, e: { init?: { body?: unknown } }) => {
@@ -36,7 +37,10 @@ test('no process argv carries merge, and the cockpit runs only the three herdr r
   await s.clock.settle()
 
   expect(s.argvs.flat().some(isMerging)).toBe(false)
-  expect([...new Set(s.argvs.map((a) => a.slice(0, 3).join(' ')))].sort()).toEqual(['gh pr list', 'herdr agent focus', 'herdr api snapshot', 'herdr pane get'])
+  expect([...new Set(s.argvs.map((a) => a.slice(0, 3).join(' ')))].sort()).toEqual(['gh pr list', 'herdr agent focus', 'herdr api snapshot', 'herdr pane get', 'herdr pane report-metadata'])
+  // ADR9: the cockpit reports under its own source and never sets the verifier's badge.
+  expect(s.argvs.flat().filter((a) => a.includes('display-agent'))).toEqual([])
+  expect(s.argvs.filter((a) => a[2] === 'report-metadata').every((a) => a[4] === '--source' && a[5] === 'cockpit')).toBe(true)
   // `mergedAt` is a field inside `--json`; no element is a merge verb or flag.
   expect(s.argvs.filter((a) => a[0] === 'gh').every((a) => a.includes('--json') && a.some((x) => x.includes('mergedAt')))).toBe(true)
   expect(bodies).toEqual([])
@@ -50,7 +54,7 @@ test('every command in commands.ts starts with its own name and holds no merge v
   }
 })
 
-test('commands.ts builds only read-only herdr and gh argvs', async () => {
+test('commands.ts builds only read-only herdr and gh argvs, and the one herdr label push', async () => {
   expect([...BUILT['gh pr list']().argv]).toEqual([
     'gh', 'pr', 'list', '--repo', 'Thoven-CORP/frontend-remote', '--state', 'all',
     '--json', 'number,title,headRefName,state,statusCheckRollup,mergedAt,url,additions,deletions,files', '--limit', '50',
@@ -59,5 +63,9 @@ test('commands.ts builds only read-only herdr and gh argvs', async () => {
   expect([...BUILT['herdr api snapshot']().argv]).toEqual(['herdr', 'api', 'snapshot'])
   expect([...BUILT['herdr pane get']().argv]).toEqual(['herdr', 'pane', 'get', 'w18:p8V'])
   expect([...BUILT['herdr agent focus']().argv]).toEqual(['herdr', 'agent', 'focus', 'w18:p8V'])
-  expect(Object.values(BUILT).map((build) => build().timeoutMs)).toEqual([10_000, 10_000, 10_000, 30_000])
+  expect([...BUILT['herdr pane report-metadata']().argv]).toEqual([
+    'herdr', 'pane', 'report-metadata', 'w18:p8V', '--source', 'cockpit', '--title', 'Build · Consent evidence hardening (THV-1045)', '--state-label', 'idle=DONE',
+  ])
+  expect(() => COMMANDS['herdr pane report-metadata'](idOf(isPaneId, '--clear-title'), { title: 'x', states: [] })).toThrow()
+  expect(Object.values(BUILT).map((build) => build().timeoutMs)).toEqual([10_000, 10_000, 10_000, 30_000, 10_000])
 })

@@ -21,8 +21,9 @@
 
 import type { EngineInterface, Register, RenderElement } from 'claude-code'
 import { project } from './board.ts'
+import { CHECKPOINT_FRESH_MS, briefPath, briefsSent, builderTickets, checkpointOf, checkpointText, isWatching, labelRecords, recordKey, rulingsFrom, sentLines, statusWarning, watcherWarning, type BackgroundTasks } from './background.ts'
 import { readPrompt, sendCalls } from './dispatch.ts'
-import { bashSeen, promptSeen, type Observer } from './observe.ts'
+import { answerSeen, bashSeen, promptSeen, type Observer } from './observe.ts'
 import { claimHeldBy, claimOf } from './facts.ts'
 import { COMMANDS, type Req } from './commands.ts'
 import { findMe, parseSnapshot, spaceOfPane } from './herdr.ts'
@@ -51,19 +52,32 @@ type MainState = {
   isDrawing: boolean
   /** When the last expiry pass ran; undefined runs one on the first tick that drew. */
   expiredAt: Ms | undefined
+  /** The label record last pushed to each pane, so a push happens only on change (ADR9). */
+  pushed: Map<PaneId, string>
 }
 
 // ── Module state: caches only. Everything here can be lost on reload and rebuilt in one tick. ──
 let me: Me = { k: 'inert' }
 let main: MainState | undefined
 let ui: PaneUi = { tab: 'work', selected: undefined, selectedPr: undefined, checks: undefined }
+/** What main's `classic.Stop` saw, for the `turn.complete` that follows it about 200 ms later (spike check 4). */
+let stopped: { watching: boolean } | undefined
 
 export const register: Register = (on) => {
   on('session.start', ($, e, next) => observeThenPass($, 'session.start', e, next, () => startSession($))).catch(passThrough)
 
   // Fires before session.start at startup (measured), and after /clear, /resume, /branch, compact.
-  // The compaction checkpoint arrives in S5.
-  on('classic.SessionStart', ($, e, next) => passThenObserve($, 'classic.SessionStart', e, next, async () => resolveMe($, await sessionId($)))).catch(passThrough)
+  // After a compaction it hands main's checkpoint back as additionalContext (spike check 5).
+  on('classic.SessionStart', ($, e, next) => sessionStarted($, e, next)).catch(passThrough)
+
+  // Main writes its checkpoint before the summarizer runs; a subagent's compaction is not main's.
+  on('session.compact', ($, e, next) => observeThenPass($, 'session.compact', e, next, () => (e.agentId === undefined ? writeCheckpoint($) : Promise.resolve()))).catch(passThrough)
+
+  // Fires about 200 ms before turn.complete, and only it lists background tasks (spike check 4).
+  on('classic.Stop', ($, e, next) => passThenObserve($, 'classic.Stop', e, next, async () => noteStop(e.background_tasks))).catch(passThrough)
+
+  // A line under the answer, never a block (ADR8): the status-line warning in a builder pane, the watcher warning in main.
+  on('turn.complete', ($, e, next) => endTurn($, e, next)).catch(passThrough)
 
   // A report, verdict or brief can reach any session: herdr's `agent prompt` arrives here (origin
   // composer, pastes expanded), and so does a typed paste.
@@ -112,6 +126,39 @@ async function passThenObserve<E, R>($: Api, where: string, e: E, next: (e: E) =
 // ── Top-level effects. Each takes `$` and is the only code that performs its kind of effect. ──
 
 /** The `.catch` for every registration. `next` is replay-safe here, so a hook that already called it is not run twice. */
+/**
+ * Pass on, then add one line under the answer when this turn needs it. A line other than the
+ * answer is what Claude Code shows beneath it, so a hook beneath that already added one keeps it.
+ */
+async function endTurn<E extends { answer: string; reason: string; agentId?: string }, R extends { text: string }>($: Api, e: E, next: (e: E) => Promise<R>): Promise<R> {
+  const r = await next(e)
+  if (e.agentId !== undefined) return r
+  const stop = stopped
+  stopped = undefined
+  let warning: string | undefined
+  try {
+    if (e.reason === 'answer') warning = await turnWarning($, e.answer, stop)
+  } catch (err) {
+    await debug($, 'turn.complete', err)
+  }
+  if (warning === undefined) return r
+  return { ...r, text: r.text === e.answer ? warning : `${r.text}\n${warning}` }
+}
+
+/** Pass on, then decide `me`, and after a compaction add the checkpoint main wrote for it. */
+async function sessionStarted<E extends { session_id: string; source: string }, R extends { additionalContext?: string[] }>($: Api, e: E, next: (e: E) => Promise<R>): Promise<R> {
+  const r = await next(e)
+  let back: string | undefined
+  try {
+    const sid = await sessionId($)
+    await resolveMe($, sid)
+    if (e.source === 'compact') back = await checkpointBack($, [sid, e.session_id])
+  } catch (err) {
+    await debug($, 'classic.SessionStart', err)
+  }
+  return back === undefined ? r : { ...r, additionalContext: [...(r.additionalContext ?? []), back] }
+}
+
 async function passThrough<E, R>(_$: Api, e: E, next: (e: E) => Promise<R>): Promise<R> {
   return next(e)
 }
@@ -186,13 +233,15 @@ async function resolveMe($: Api, sid: SessionId): Promise<void> {
  */
 async function becomeMain($: Api, claim: FactOf<'main'>, cwd: string, herdr?: Sources['herdr']): Promise<void> {
   main?.heartbeat.cancel()
+  // A re-resolve on the same pane (compaction, /clear) keeps what herdr was told, so nothing is re-pushed.
+  const pushed = main?.who.pane === claim.pane ? main.pushed : new Map<PaneId, string>()
   const who: Main = { k: 'main', pane: claim.pane, sid: claim.sid, space: claim.space, cwd, home: (await $.env.get('HOME')) ?? '', tmp: (await $.env.get('TMPDIR')) ?? '' }
   const heartbeat = $.clock.every(HEARTBEAT_MS, () => {
     void tick($)
   })
   me = who
   const sources = herdr ? { ...unpolled(), herdr } : unpolled()
-  main = { who, sources, lastRun: herdr ? { herdr: claim.at } : {}, polling: new Set(), board: undefined, heartbeat, isDrawing: false, expiredAt: undefined }
+  main = { who, sources, lastRun: herdr ? { herdr: claim.at } : {}, polling: new Set(), board: undefined, heartbeat, isDrawing: false, expiredAt: undefined, pushed }
   void tick($)
 }
 
@@ -249,9 +298,66 @@ async function tick($: Api): Promise<void> {
       m.expiredAt = now
       await expire($, m, now)
     }
+    await pushLabels($, m)
   } catch (err) {
     await debug($, 'tick', err)
   }
+}
+
+/** ADR9: each Build or Review pane's whole record, sent only when it differs from the last one sent. A failed push is retried next tick. */
+async function pushLabels($: Api, m: MainState): Promise<void> {
+  if (!m.board || main !== m) return
+  for (const [pane, label] of labelRecords(m.board)) {
+    const key = recordKey(label)
+    if (m.pushed.get(pane) === key) continue
+    m.pushed.set(pane, key)
+    try {
+      await runProc($, COMMANDS['herdr pane report-metadata'](pane, label))
+    } catch (err) {
+      if (m.pushed.get(pane) === key) m.pushed.delete(pane)
+      await debug($, 'label push', err)
+    }
+  }
+}
+
+/** Main's state before a compaction, with the RULINGS of every brief it sent for a ticket on the board. A brief file gone is skipped. */
+async function writeCheckpoint($: Api): Promise<void> {
+  const m = main
+  if (!m?.board) return
+  const board = m.board
+  const sent = briefsSent(await loadFacts($, 'send'), board)
+  const texts = await Promise.all(sent.map((s) => readFile($, briefPath(m.who.tmp, s.file)).catch(() => undefined)))
+  await writeFact($, checkpointOf(await sessionId($), board, rulingsFrom(sent, texts), await $.clock.now()))
+}
+
+/** The checkpoint written for this compaction, as text. One older than CHECKPOINT_FRESH_MS was written for another. */
+async function checkpointBack($: Api, sids: readonly string[]): Promise<string | undefined> {
+  const now = await $.clock.now()
+  const mine = (await loadFacts($, 'checkpoint')).flatMap((f) => (f.kind === 'checkpoint' && sids.includes(f.sid) && now - f.at <= CHECKPOINT_FRESH_MS ? [f] : []))
+  const c = mine.reduce<(typeof mine)[number] | undefined>((a, f) => (a === undefined || f.at > a.at ? f : a), undefined)
+  if (!c) return undefined
+  const d = new Date(c.at)
+  return checkpointText(c, `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`)
+}
+
+/** Main's Stop: is a watcher armed? Only main warns, so a pane keeps nothing. */
+function noteStop(tasks: BackgroundTasks): void {
+  stopped = main ? { watching: isWatching(tasks) } : undefined
+}
+
+/**
+ * The line this turn ends with, if any. Main: panes working and no watch.sh at its Stop. A pane
+ * holding a builder brief: no status line for a ticket it holds, else the line is its status fact.
+ */
+async function turnWarning($: Api, answer: string, stop: { watching: boolean } | undefined): Promise<string | undefined> {
+  if (main) return stop === undefined ? undefined : watcherWarning(main.board?.working ?? [], stop.watching)
+  if (me.k !== 'pane') return undefined
+  const held = builderTickets(await loadFacts($, 'brief'), me.sid)
+  if (held.length === 0) return undefined
+  const lines = sentLines(held, answer)
+  if (lines.length === 0) return statusWarning(held)
+  await record($, answerSeen, lines)
+  return undefined
 }
 
 /**

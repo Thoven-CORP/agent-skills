@@ -13,7 +13,7 @@ type Lists = { [K in TicketKind]: Array<FactOf<K>> }
 /** Every fact that names a ticket, and the same facts per ticket. Built once per tick. */
 export type FactIndex = { all: BoardFacts; about(t: Ticket): BoardFacts }
 
-const lists = (): Lists => ({ brief: [], report: [], verdict: [], send: [], happened: [] })
+const lists = (): Lists => ({ brief: [], report: [], verdict: [], send: [], happened: [], status: [] })
 const NONE: BoardFacts = lists()
 
 const put = <K extends TicketKind>(into: Lists, kind: K, f: FactOf<K>): void => {
