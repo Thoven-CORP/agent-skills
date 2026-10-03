@@ -8,12 +8,13 @@
 
 import type { Argv } from './commands.ts'
 import { paneGetReq, parsePaneLabel, parseSnapshot, snapshotReq } from './herdr.ts'
-import type { Branches, HeadPaths, Ms, Pane, PaneId, PaneLabels, Polled, SourceId, SourceValues, SpaceMap, World } from './model.ts'
+import { inboxFile } from './dispatch.ts'
+import type { Branches, HeadPaths, InboxFile, Ms, Pane, PaneId, PaneLabels, Polled, SourceId, SourceValues, SpaceMap, World } from './model.ts'
 
 /** One outside read. `perform($, req)` in register.ts is the only code that turns these into `$` calls. */
-export type Req = { k: 'proc'; argv: Argv; timeoutMs: number } | { k: 'read'; path: string }
+export type Req = { k: 'proc'; argv: Argv; timeoutMs: number } | { k: 'read'; path: string } | { k: 'list'; path: string }
 
-/** What came back, already reduced to text so parsers never see a `$` result type. */
+/** What came back, already reduced to text so parsers never see a `$` result type. A `list` answers `Listing` as JSON. */
 export type Resp = { k: 'ok'; text: string } | { k: 'fail'; error: string }
 
 /**
@@ -24,14 +25,19 @@ export type Resp = { k: 'ok'; text: string } | { k: 'fail'; error: string }
 export type Source<T> = {
   everyMs: Ms
   plan(world: World): Req[]
+  /** Reads that depend on `plan`'s answers. `read` gets plan's Resps, then these, in order. */
+  follow?(world: World, resps: readonly Resp[]): Req[]
   read(world: World, resps: readonly Resp[]): T | undefined
 }
+
+/** One directory entry, as `perform` reduces `$.fs.list`. A folder that does not exist lists `[]`. */
+export type Listing = Array<{ name: string; kind: string; mtimeMs: number }>
 
 /** The heartbeat period: the shortest `everyMs`. One timer drives every source. */
 export const HEARTBEAT_MS = 5000
 
 /** Poll order. A source's `plan` reads only sources earlier in this list. */
-export const SOURCE_ORDER = ['herdr', 'labels', 'spaces', 'heads', 'branches'] as const
+export const SOURCE_ORDER = ['herdr', 'labels', 'spaces', 'heads', 'branches', 'inbox'] as const
 export type PolledId = (typeof SOURCE_ORDER)[number]
 
 export function valueOf<T>(p: Polled<T>): T | undefined {
@@ -124,6 +130,31 @@ export function parseHead(text: string): string | undefined {
   return /^ref: refs\/heads\/(.+?)\s*$/m.exec(text)?.[1]
 }
 
+// ── $TMPDIR/dispatch/out, main's inbox ───────────────────────────────────────────────────────
+
+/** macOS's TMPDIR ends in `/`. No TMPDIR, no inbox. */
+export const inboxDir = (tmp: string): string | undefined => (tmp === '' ? undefined : `${tmp.replace(/\/+$/, '')}/dispatch/out`)
+
+function listingOf(r: Resp | undefined): Listing | undefined {
+  const text = ok(r)
+  if (text === undefined) return undefined
+  try {
+    const parsed: unknown = JSON.parse(text)
+    return Array.isArray(parsed) ? (parsed as Listing) : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/** `THV-n.md` files only: other names (`w40-p1.md`) name no ticket, so no row can show them. */
+const ticketFiles = (listing: Listing): Listing => listing.filter((e) => e.kind === 'file' && /^THV-\d+\.md$/i.test(e.name))
+
+/** Files not yet read at this mtime. An unchanged file keeps its last read, so a 46 KB deliverable is read once. */
+function unread(world: World, listing: Listing): Listing {
+  const known = valueOf(world.sources.inbox) ?? []
+  return ticketFiles(listing).filter((e) => !known.some((f) => f.name === e.name && f.at === e.mtimeMs))
+}
+
 // ── The registry ─────────────────────────────────────────────────────────────────────────────
 
 export const SOURCES: { [K in PolledId]: Source<SourceValues[K]> } = {
@@ -194,6 +225,32 @@ export const SOURCES: { [K in PolledId]: Source<SourceValues[K]> } = {
         if (branch) branches.set(cwd, branch)
       })
       return branches
+    },
+  },
+
+  inbox: {
+    everyMs: 10_000,
+    plan: (world) => {
+      const dir = inboxDir(world.me.tmp)
+      return dir === undefined ? [] : [{ k: 'list', path: dir }]
+    },
+    follow: (world, [list]) => {
+      const dir = inboxDir(world.me.tmp)
+      const listing = listingOf(list)
+      return dir === undefined || !listing ? [] : unread(world, listing).map((e) => ({ k: 'read', path: `${dir}/${e.name}` }))
+    },
+    read: (world, [list, ...reads]): InboxFile[] | undefined => {
+      if (inboxDir(world.me.tmp) === undefined) return []
+      const listing = listingOf(list)
+      if (!listing) return undefined
+      const known = valueOf(world.sources.inbox) ?? []
+      const fresh = unread(world, listing)
+      return ticketFiles(listing).flatMap((e) => {
+        const i = fresh.findIndex((f) => f.name === e.name)
+        if (i < 0) return known.filter((f) => f.name === e.name && f.at === e.mtimeMs)
+        const text = ok(reads[i])
+        return text === undefined ? [] : [inboxFile(e.name, text, e.mtimeMs)]
+      })
     },
   },
 }

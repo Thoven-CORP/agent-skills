@@ -7,7 +7,7 @@
 // No other module builds or parses a key string. If reading ~50 keys per tick proves too slow
 // (synthesis A2), this file is the only one that changes.
 
-import type { Fact, FactKind, LinearEventId, PaneId, SessionId, SpaceId, Ticket } from './model.ts'
+import type { Fact, FactKind, LinearEventId, PaneId, ReportStatus, Role, SessionId, SpaceId, Ticket, Verdict } from './model.ts'
 import { ticket } from './dispatch.ts'
 
 export const PREFIX = 'cockpit:'
@@ -84,6 +84,10 @@ export function parseKey(key: string): KeyInfo | undefined {
 }
 
 const isStr = (v: unknown): v is string => typeof v === 'string' && v !== ''
+const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
+const isRole = (v: unknown): v is Role => v === 'builder' || v === 'verifier'
+const isStatus = (v: unknown): v is ReportStatus => v === 'DONE_WITH_CONCERNS' || v === 'DONE' || v === 'NEEDS_CONTEXT' || v === 'BLOCKED'
+const isVerdict = (v: unknown): v is Verdict => v === 'VERIFIED' || v === 'FINDINGS'
 
 /**
  * Validate a stored value into a Fact. The store is a boundary: a value an older version wrote,
@@ -97,6 +101,36 @@ export function parseFact(info: KeyInfo, value: unknown): Fact | undefined {
     case 'main':
       return v.kind === 'main' && v.space === info.space && isStr(v.sid) && isStr(v.pane) && typeof v.at === 'number'
         ? { kind: 'main', space: info.space, sid: v.sid as SessionId, pane: v.pane as PaneId, at: v.at }
+        : undefined
+    case 'brief':
+      return v.kind === 'brief' && v.ticket === info.ticket && v.sid === info.sid && isStr(v.pane) && isRole(v.role) && isNum(v.round) && isNum(v.at)
+        ? {
+            kind: 'brief',
+            ticket: info.ticket,
+            sid: info.sid,
+            pane: v.pane as PaneId,
+            role: v.role,
+            round: v.round,
+            ...(isStr(v.playbook) ? { playbook: v.playbook } : {}),
+            ...(isStr(v.title) ? { title: v.title } : {}),
+            at: v.at,
+          }
+        : undefined
+    case 'report':
+      return v.kind === 'report' && v.ticket === info.ticket && v.sid === info.sid && isStatus(v.status) && typeof v.text === 'string' && isNum(v.concerns) && isNum(v.at)
+        ? { kind: 'report', ticket: info.ticket, sid: info.sid, status: v.status, text: v.text, concerns: v.concerns, at: v.at }
+        : undefined
+    case 'verdict':
+      return v.kind === 'verdict' && v.ticket === info.ticket && v.sid === info.sid && isVerdict(v.verdict) && typeof v.text === 'string' && isNum(v.at)
+        ? { kind: 'verdict', ticket: info.ticket, sid: info.sid, verdict: v.verdict, text: v.text, at: v.at }
+        : undefined
+    case 'send':
+      return v.kind === 'send' && v.ticket === info.ticket && v.pane === info.pane && isRole(v.role) && isNum(v.round) && isStr(v.file) && isNum(v.at)
+        ? { kind: 'send', ticket: info.ticket, pane: info.pane, role: v.role, round: v.round, file: v.file, at: v.at }
+        : undefined
+    case 'happened':
+      return v.kind === 'happened' && v.ticket === info.ticket && v.event === info.event && isNum(v.at)
+        ? { kind: 'happened', ticket: info.ticket, event: info.event, at: v.at }
         : undefined
     default:
       return undefined

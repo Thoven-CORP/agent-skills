@@ -7,7 +7,9 @@
 //
 // Cost by role (the plugin loads in every session):
 //   inert  (no HERDR_PANE_ID)  every hook returns next(e) after one comparison
-//   pane                       S2 adds its regex over prompts; no timers, no processes
+//   inert, pane (not engaged)  one regex per prompt, one substring test per Bash command; a store
+//                              write only on a match. No timers, no processes
+//   pane (engaged)             the same today; S3 and S5 add their observers here
 //   main   (claimed a space)   one 5 s heartbeat timer; all polling, projection, drawing
 //
 // Crash safety: every hook is one of two shapes, and the try/catch never wraps `next`:
@@ -18,9 +20,10 @@
 
 import type { EngineInterface, Register } from 'claude-code'
 import { project } from './board.ts'
+import { isVerdict, isWorthReading, readPrompt, sendCalls } from './dispatch.ts'
 import { findMe, focusReq, parseSnapshot, snapshotReq, spaceOfPane } from './herdr.ts'
 import type { Board, Fact, FactKind, Intent, Main, Me, Ms, PaneId, PaneUi, Polled, SessionId, SourceId, Sources, SourceValues, World } from './model.ts'
-import { HEARTBEAT_MS, SOURCES, due, settle, type PolledId, type Req, type Resp, type Source } from './sources.ts'
+import { HEARTBEAT_MS, SOURCES, due, settle, type Listing, type PolledId, type Req, type Resp, type Source } from './sources.ts'
 import { claimHeldBy, claimOf, keyOf, parseFact, parseKey } from './store.ts'
 import { drawCockpit } from './view.ts'
 
@@ -77,6 +80,40 @@ export const register: Register = (on) => {
       await resolveMe($, e.session_id as SessionId)
     } catch (err) {
       await debug($, 'classic.SessionStart', err)
+    }
+    return r
+  }).catch(passThrough)
+
+  // A report, verdict or brief can reach any session: herdr's `agent prompt` arrives here (origin
+  // composer, pastes expanded), and so does a typed paste.
+  on('prompt.submit', async ($, e, next) => {
+    try {
+      await observePrompt($, e.text)
+    } catch (err) {
+      await debug($, 'prompt.submit', err)
+    }
+    return next(e)
+  }).catch(passThrough)
+
+  // A peer's or subagent's hand-back (synthesis A6). Writes are idempotent, so arriving here and in
+  // prompt.submit as well costs one more set of the same key.
+  on('session.receive', async ($, e, next) => {
+    try {
+      await observePrompt($, e.text)
+    } catch (err) {
+      await debug($, 'session.receive', err)
+    }
+    return next(e)
+  }).catch(passThrough)
+
+  // send.sh is how a brief or fix round reaches a pane. Observed after it ran: a refused or failed
+  // call sent nothing.
+  on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
+    const r = await next(e)
+    try {
+      if (!('deny' in r && r.deny !== undefined) && r.isError !== true) await observeBash($, (e as { command?: unknown }).command)
+    } catch (err) {
+      await debug($, 'tool.call', err)
     }
     return r
   }).catch(passThrough)
@@ -147,7 +184,7 @@ async function resolveMe($: Api, sid: SessionId): Promise<void> {
     return
   }
   if (claim.sid !== sid) await writeFact($, { ...claim, sid })
-  me = { k: 'main', pane, sid, space: claim.space, cwd: sessionCwd, home: (await $.env.get('HOME')) ?? '' }
+  me = { k: 'main', pane, sid, space: claim.space, cwd: sessionCwd, home: (await $.env.get('HOME')) ?? '', tmp: (await $.env.get('TMPDIR')) ?? '' }
   startHeartbeat($)
   $.clock.after(0, () => {
     void tick($)
@@ -171,7 +208,7 @@ async function claimAndOpen($: Api): Promise<string> {
 
   const now = await $.clock.now()
   await writeFact($, { kind: 'main', space, sid, pane, at: now })
-  me = { k: 'main', pane, sid, space, cwd: sessionCwd || (mine?.cwd ?? ''), home: (await $.env.get('HOME')) ?? '' }
+  me = { k: 'main', pane, sid, space, cwd: sessionCwd || (mine?.cwd ?? ''), home: (await $.env.get('HOME')) ?? '', tmp: (await $.env.get('TMPDIR')) ?? '' }
   const error = resp.k === 'fail' ? resp.error : 'the snapshot has a shape this cockpit does not know'
   sources = { ...sources, herdr: settle(sources.herdr, snap, now, error) }
   lastRun = { ...lastRun, herdr: now }
@@ -241,6 +278,7 @@ async function poll<K extends PolledId>($: Api, id: K, world: World): Promise<vo
   try {
     const resps: Resp[] = []
     for (const req of source.plan(world)) resps.push(await perform($, req))
+    for (const req of source.follow?.(world, resps) ?? []) resps.push(await perform($, req))
     value = source.read(world, resps)
     const failed = resps.find((r) => r.k === 'fail')
     if (failed?.k === 'fail') error = failed.error
@@ -251,10 +289,16 @@ async function poll<K extends PolledId>($: Api, id: K, world: World): Promise<vo
   lastRun = { ...lastRun, [id]: world.now }
 }
 
-/** The single executor. `$.process.run` and `$.fs.read` appear only here. */
+/** The single executor. `$.process.run`, `$.fs.read` and `$.fs.list` appear only here. */
 async function perform($: Api, req: Req): Promise<Resp> {
   try {
     if (req.k === 'read') return { k: 'ok', text: await $.fs.read(req.path) }
+    if (req.k === 'list') {
+      // No folder yet means nothing was ever left undelivered, not a failed source.
+      if (!(await $.fs.exists(req.path))) return { k: 'ok', text: '[]' }
+      const listing: Listing = (await $.fs.list(req.path)).map((e) => ({ name: e.name, kind: e.kind, mtimeMs: e.mtimeMs }))
+      return { k: 'ok', text: JSON.stringify(listing) }
+    }
     const r = await $.process.run(req.argv, { timeoutMs: req.timeoutMs })
     const what = req.argv.slice(0, 3).join(' ')
     if (r.exitCode !== 0) return { k: 'fail', error: `${what} exited ${r.exitCode}: ${r.stderr.split('\n')[0] ?? ''}` }
@@ -273,6 +317,52 @@ async function loadFacts($: Api, only?: FactKind): Promise<{ facts: Fact[]; read
   })
   const values = await Promise.all(infos.map(({ key }) => $.store.get(key)))
   return { facts: infos.flatMap(({ info }, i) => parseFact(info, values[i]) ?? []), reads: infos.length }
+}
+
+/**
+ * A prompt or hand-back any session received. The regex is all a session pays for a prompt that
+ * holds no status line and no brief. A brief ties this pane to its ticket and engages it; an inert
+ * session (outside herdr) has no pane to tie, so it records only reports and verdicts (synthesis B2).
+ */
+async function observePrompt($: Api, text: unknown): Promise<void> {
+  if (typeof text !== 'string' || !isWorthReading(text)) return
+  const { briefs, lines, concerns } = readPrompt(text)
+  if (briefs.length === 0 && lines.length === 0) return
+  const sid = me.k === 'inert' ? ((await $.session.id()) as SessionId) : me.sid
+  const at = await $.clock.now()
+  for (const b of briefs) {
+    if (me.k === 'inert') continue
+    const { playbook, title } = b
+    await writeFact($, {
+      kind: 'brief',
+      ticket: b.ticket,
+      sid,
+      pane: me.pane,
+      role: b.role,
+      round: b.round,
+      ...(playbook === undefined ? {} : { playbook }),
+      ...(title === undefined ? {} : { title }),
+      at,
+    })
+    if (me.k === 'pane') me = { ...me, engagements: [...me.engagements.filter((x) => x.ticket !== b.ticket), b] }
+  }
+  for (const l of lines) {
+    await writeFact(
+      $,
+      isVerdict(l.word)
+        ? { kind: 'verdict', ticket: l.ticket, sid, verdict: l.word, text: l.line, at }
+        : { kind: 'report', ticket: l.ticket, sid, status: l.word, text: l.line, concerns, at },
+    )
+  }
+}
+
+/** A Bash command this session ran. Only send.sh calls matter; send.sh itself needs HERDR_PANE_ID. */
+async function observeBash($: Api, command: unknown): Promise<void> {
+  if (me.k === 'inert' || typeof command !== 'string' || !command.includes('send.sh')) return
+  const calls = sendCalls(command)
+  if (calls.length === 0) return
+  const at = await $.clock.now()
+  for (const c of calls) await writeFact($, { kind: 'send', ...c, at })
 }
 
 /** Whole value, writer-owned key: never get-then-set. */
