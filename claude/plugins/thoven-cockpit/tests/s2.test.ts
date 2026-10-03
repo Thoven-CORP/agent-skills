@@ -216,9 +216,10 @@ test('Fix cell: main send.sh round wins; without one, the pane FIX ROUND brief g
 
 test('a report on a row asks main to record report STATUS once; a recorded one is not asked again', async () => {
   const done = report('THV-1041', 'sid-b', 'DONE', 5000)
-  expect(project(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: [done] })).newEvents).toEqual([{ ticket: 'THV-1041', event: { k: 'report', status: 'DONE' }, id: 'report-DONE' }])
+  const reports = (facts: Fact[]) => project(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts })).newEvents.filter((e) => e.event.k === 'report')
+  expect(reports([done])).toEqual([{ ticket: 'THV-1041', event: { k: 'report', status: 'DONE' }, id: 'report-DONE' }])
   const happened: Fact = { kind: 'happened', ticket: tk('THV-1041'), event: idOf(isLinearEventId, 'report-DONE'), at: 5000 }
-  expect(project(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: [done, happened] })).newEvents).toEqual([])
+  expect(reports([done, happened])).toEqual([])
 })
 
 // ── kit: the hooks write facts ─────────────────────────────────────────────────────────────

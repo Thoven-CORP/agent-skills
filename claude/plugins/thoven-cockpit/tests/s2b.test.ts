@@ -259,15 +259,16 @@ test('a PR with no ticket is listed only while a space pane has its branch check
   expect(project(here).prs).toEqual([{ repo: BACKEND, items: [{ pr: prOf(BACKEND, GH_BACKEND, 145), tickets: [] }] }])
 })
 
-test('a merged PR on a row is a new merged-<n> event until its happened fact exists', async () => {
+test('a merged PR on a row is a new merged-<repo>-<n> event until its happened fact exists', async () => {
   const json = relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Design system and specs move out of thoven2.0 (THV-1038)')
   const sources = { github: fresh({ prs: [...prsOf(FRONTEND, GH_FRONTEND), ...prsOf(BACKEND, GH_BACKEND)] }) }
-  expect(project(worldOf(mainOf('w18', 'w18:p8W'), json, { sources })).newEvents).toEqual([
-    { ticket: 'THV-1038', event: { k: 'merged', number: 138 }, id: 'merged-138' },
-    { ticket: 'THV-1038', event: { k: 'merged', number: 144 }, id: 'merged-144' },
+  const merged = (facts: Fact[]) => project(worldOf(mainOf('w18', 'w18:p8W'), json, { facts, sources })).newEvents.filter((e) => e.event.k === 'merged')
+  expect(merged([])).toEqual([
+    { ticket: 'THV-1038', event: { k: 'merged', number: 138 }, id: `merged-${FRONTEND}-138` },
+    { ticket: 'THV-1038', event: { k: 'merged', number: 144 }, id: `merged-${BACKEND}-144` },
   ])
-  const seen: Fact = { kind: 'happened', ticket: tk('THV-1038'), event: idOf(isLinearEventId, 'merged-138'), at: 0 }
-  expect(project(worldOf(mainOf('w18', 'w18:p8W'), json, { facts: [seen], sources })).newEvents.map((e) => e.id)).toEqual(['merged-144'])
+  const seen: Fact = { kind: 'happened', ticket: tk('THV-1038'), event: idOf(isLinearEventId, `merged-${FRONTEND}-138`), at: 0 }
+  expect(merged([seen]).map((e) => e.id)).toEqual([`merged-${BACKEND}-144`])
 })
 
 // ── kit: main polls gh ───────────────────────────────────────────────────────────────────────
@@ -309,16 +310,16 @@ test('a hanging gh holds up no other source: the next tick draws the Pane column
   expect([FRONTEND, BACKEND].map((repo) => ranTimes(s, COMMANDS['gh pr list'](repo)))).toEqual([1, 1])
 })
 
-test('a merged PR writes happened merged-<n> once, however many gh polls see it', async ($, on) => {
+test('a merged PR writes happened merged-<repo>-<n> once, however many gh polls see it', async ($, on) => {
   const s = stage(on, { pane: 'w18:p8W', snapshot: relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Design system and specs move out of thoven2.0 (THV-1038)') })
   s.gh.byRepo = { [FRONTEND]: GH_FRONTEND, [BACKEND]: GH_BACKEND }
   await start($)
   await cockpit($)
   await s.clock.advance(130_000)
   expect(ranTimes(s, COMMANDS['gh pr list'](FRONTEND))).toBe(3)
-  expect(s.saved.get('cockpit:happened:THV-1038:merged-138')).toEqual({ kind: 'happened', ticket: 'THV-1038', event: 'merged-138', at: 0 })
-  expect(s.saved.get('cockpit:happened:THV-1038:merged-144')).toEqual({ kind: 'happened', ticket: 'THV-1038', event: 'merged-144', at: 0 })
-  expect(s.setKeys.filter((k) => k.startsWith('cockpit:happened:'))).toEqual(['cockpit:happened:THV-1038:merged-138', 'cockpit:happened:THV-1038:merged-144'])
+  expect(s.saved.get(`cockpit:happened:THV-1038:merged-${FRONTEND}-138`)).toEqual({ kind: 'happened', ticket: 'THV-1038', event: `merged-${FRONTEND}-138`, at: 0 })
+  expect(s.saved.get(`cockpit:happened:THV-1038:merged-${BACKEND}-144`)).toEqual({ kind: 'happened', ticket: 'THV-1038', event: `merged-${BACKEND}-144`, at: 0 })
+  expect(s.setKeys.filter((k) => k.startsWith('cockpit:happened:THV-1038:merged-'))).toEqual([`cockpit:happened:THV-1038:merged-${FRONTEND}-138`, `cockpit:happened:THV-1038:merged-${BACKEND}-144`])
 })
 
 test('the PRs tab groups by repo with state and CI, hints no key it cannot act on; c lists the failing checks; no gh argv merges', async ($, on) => {

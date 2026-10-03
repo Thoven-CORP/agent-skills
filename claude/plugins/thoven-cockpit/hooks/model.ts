@@ -135,6 +135,10 @@ export type Fact =
   | ({ kind: 'review' } & SkillRun)
   /** `self:<ticket>:<sid>:<skill>`. The same, under any other brief: the builder's own check (ADR12). */
   | ({ kind: 'self' } & SkillRun)
+  /** `update:<ticket>:<event>`. Main handed the event to `/workspace update` at `at`; a second press replaces it. */
+  | { kind: 'update'; ticket: Ticket; event: LinearEventId; at: Ms }
+  /** `readback:<ticket>:<sid>`. The newest `THV-n <State>` or `THV-n ERROR <reason>` line main saw. */
+  | { kind: 'readback'; ticket: Ticket; sid: SessionId; isError: boolean; text: string; at: Ms }
 
 /** What main hands itself back after a compaction. Each row's state is already words, so the hand-back needs no board. */
 export type Checkpoint = {
@@ -270,18 +274,18 @@ export type World = {
   facts: Fact[]
 }
 
-// ── Linear events (derived; only `happened` and `ack` facts are stored) ─────────────────────
+// ── Linear events (derived; only `happened`, `update` and `readback` facts are stored) ──────
 
 export type LinearEvent =
   | { k: 'started' }
   | { k: 'pr'; number: number }
   | { k: 'report'; status: ReportStatus }
   | { k: 'merged'; number: number }
-/** `started`, `pr-141`, `report-DONE`, `merged-138`. The last segment of a `happened:` key. */
+/** `started`, `pr-<repo>-141`, `report-DONE`, `merged-<repo>-138`. The last segment of a `happened:` key. */
 export type LinearEventId = Brand<string, 'LinearEventId'>
 
-/** The one place an event id is made: `merged-141`, `report-DONE`. */
-export const eventId = (k: 'merged' | 'report', v: string | number): LinearEventId => `${k}-${v}` as LinearEventId
+/** The one place an event id is made: `started`, `merged-Thoven-CORP/frontend-remote-138`, `report-DONE`. */
+export const eventId = (k: LinearEvent['k'], v?: string | number): LinearEventId => (v === undefined ? k : `${k}-${v}`) as LinearEventId
 export type Pending = { ticket: Ticket; event: LinearEvent; id: LinearEventId }
 
 // ── 3. The Board (board.ts builds it, view.ts draws it) ────────────────────────────────────
@@ -396,6 +400,7 @@ export type Intent =
   | { k: 'tab'; tab: 'work' | 'prs' }
   | { k: 'focus-pane'; pane: PaneId }
   | { k: 'checks'; pr: string } // `c`, or a PR row pressed: show or hide that PR's unfinished and failed checks
+  | { k: 'update'; pending: Pending[] } // ↻ on a row, or `u` for every row: hand the events to `/workspace update`
 
 /**
  * `selected` is the ticket of the Work row whose button holds the focus ring, `selectedPr` the

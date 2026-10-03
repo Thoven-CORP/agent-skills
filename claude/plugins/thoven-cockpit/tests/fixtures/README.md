@@ -15,6 +15,7 @@ Nothing here is hand-made except `built.ts`, which says for each constant why no
 | `inbox.ts` | `OUT_ESCALATION_THV_1004`, `OUT_RESEARCH_THV_1038_HEAD` | `/tmp/cockpit-fixtures/dispatch-out/`, and the head of `$TMPDIR/dispatch/out/THV-1038.md` |
 | `turns.ts` | `ANSWER_DONE_THV_978`, `ANSWER_NO_STATUS_THV_1082`, `BRIEF_FILE_THV_978`, `STOP_TASKS_SLEEP`, `WATCH_BASH_INPUT` | builder transcripts' last `text` block (lines named in the file), `$TMPDIR/dispatch/THV-978.md`, the S0 spike's `classic.Stop` log, and a main session's Bash `tool_use` |
 | `review.ts` | `SKILL_PROMPT_DESLOP`, `SKILL_TOOL_CALL`, `SKILL_TOOL_RESULT`, `ROLLOUT_VERIFY_THV_1000` | `/tmp/cockpit-spike/log/events.jsonl` lines 81 and 88, `/tmp/cockpit-fixtures/skills/skill-tool-result.jsonl`, and seven lines of a real Codex verifier rollout (path in the file; its `session_meta` drops `base_instructions` and the creator account ids) |
+| `linear.ts` | `LINEAR_STATES_945_1038`, `READBACK_DONE_THV_1038`, `READBACK_ERROR_THV_1038` | the answer to `STATE_QUERY` from `api.linear.app/graphql` on 2026-10-03 (read only); the read-back lines are set-status.js's printed form with the spec's literals, since no transcript holds one yet, and the file says so |
 | `built.ts` | `BUILT_CONCERNS_TABLE_THV_1045` | built by hand, not captured: no log holds a concerns table; shaped on brief.md's REPORT section (`skills/dev/dispatch-work/references/brief.md`), and said so in the file |
 
 Two test inputs are derived from these, not copied, and say so where they are built

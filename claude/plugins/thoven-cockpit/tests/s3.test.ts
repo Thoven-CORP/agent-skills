@@ -182,7 +182,10 @@ test('the codex source reads the newest day folders only while a Codex pane is i
     list: { [root]: dir('2026'), [`${root}/2026`]: dir('09', '10'), [`${root}/2026/10`]: dir('01'), [`${root}/2026/09`]: dir('28', '29', '30'), [`${root}/2026/10/01`]: [{ name, kind: 'file', mtimeMs: 7 }] },
     read: { [ROLLOUT_VERIFY_THV_1000_PATH]: ROLLOUT_VERIFY_THV_1000 },
   })
-  const seen = (snapshot: string, codex: World['sources']['codex']) => ({ me: W18, sources: { ...worldOf(W18, snapshot).sources, codex } })
+  const seen = (snapshot: string, codex: World['sources']['codex']) => {
+    const w = worldOf(W18, snapshot)
+    return { me: W18, now: w.now, sources: { ...w.sources, codex } }
+  }
   expect(await SOURCES.codex.run(seen(SNAPSHOT_LIVE, { k: 'never' }), ask)).toEqual([])
   expect(ask.asked).toEqual([])
 

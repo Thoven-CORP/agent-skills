@@ -3,8 +3,9 @@
 // Report is the newest report fact by `at`, from whichever session received it, unless the inbox
 // still holds a newer file for the ticket (unsent, or herdr's escalation note). Fix is main's
 // highest send.sh fix round, else the pane's highest FIX ROUND brief. PR and CI come from the PR
-// join (prs.ts). Every report status a row's ticket has had, and every merged PR attached to it,
-// with no `happened` fact yet, is a new event for main to record once (synthesis A1), so S4's ↻
+// join (prs.ts). The row itself (`started`), every report status its ticket has had, and every
+// open or merged PR attached to it, with no `happened` fact yet, is a new event for main to record
+// once (synthesis A1), so the ↻ (linear.ts)
 // survives a later report replacing it or the PR falling out of gh's last 50.
 
 import { newest, type BoardFacts } from './facts.ts'
@@ -18,7 +19,7 @@ export type RowContext = { facts: BoardFacts; inbox: readonly InboxFile[]; join:
 /** A row's cells, and the events on it main has not recorded yet, from one pass over its context. */
 export function rowOf(id: RowIdentity, c: RowContext): { row: Row; events: Pending[] } {
   const t = id.ticket
-  return { row: { ...id, cells: cellsOf(id, c) }, events: [...newReportEvents(t, c.facts), ...newMergedEvents(t, c.join.attached(t), c.facts)] }
+  return { row: { ...id, cells: cellsOf(id, c) }, events: [...newStartedEvent(t, c.facts), ...newReportEvents(t, c.facts), ...newPrEvents(t, c.join.attached(t), c.facts)] }
 }
 
 /** Every cell of a row, from the facts about its ticket and what the sources say. */
@@ -43,16 +44,27 @@ export function ciCell(pr: Pr): CiCell {
   return done < total ? { k: 'running', done, total } : { k: 'pass' }
 }
 
-/** `merged <n>` for each merged PR attached to the ticket, not yet recorded. */
-function newMergedEvents(t: Ticket, prs: readonly Pr[], about: BoardFacts): Pending[] {
-  const recorded = new Set(about.happened.map((f) => f.event))
-  const ids = new Set<string>()
-  return prs.flatMap((pr) => {
-    const id = eventId('merged', pr.number)
-    if (pr.state !== 'MERGED' || recorded.has(id) || ids.has(id)) return []
-    ids.add(id)
-    return [{ ticket: t, event: { k: 'merged', number: pr.number }, id }]
-  })
+/** A row on the board is work under way: `started`, once. */
+function newStartedEvent(t: Ticket, about: BoardFacts): Pending[] {
+  const id = eventId('started')
+  return about.happened.some((f) => f.event === id) ? [] : [{ ticket: t, event: { k: 'started' }, id }]
+}
+
+/**
+ * `pr <n>` for each open or merged PR attached to the ticket, and `merged <n>` for each merged one,
+ * not yet recorded. The id carries the repo, so FE #138 and BE #138 are two events (THV-1061).
+ */
+function newPrEvents(t: Ticket, prs: readonly Pr[], about: BoardFacts): Pending[] {
+  const recorded = new Set<string>(about.happened.map((f) => f.event))
+  const out = new Map<string, Pending>()
+  for (const pr of prs) {
+    if (pr.state === 'CLOSED') continue
+    const opened = eventId('pr', `${pr.repo}-${pr.number}`)
+    if (!recorded.has(opened)) out.set(opened, { ticket: t, event: { k: 'pr', number: pr.number }, id: opened })
+    const merged = eventId('merged', `${pr.repo}-${pr.number}`)
+    if (pr.state === 'MERGED' && !recorded.has(merged)) out.set(merged, { ticket: t, event: { k: 'merged', number: pr.number }, id: merged })
+  }
+  return [...out.values()]
 }
 
 

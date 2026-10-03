@@ -10,8 +10,9 @@ import { COMMANDS, type Req } from './commands.ts'
 import { FIXED_REPOS, configPathOf, parseOrigin, parsePrList } from './github.ts'
 import { parsePaneLabel, parseSnapshot } from './herdr.ts'
 import { inboxFile } from './dispatch.ts'
+import { carry, keyPath, parseStates, stateQuery, ticketsOn, type LinearView, type StateQuery } from './linear.ts'
 import { readRollouts } from './codex.ts'
-import type { Branches, CodexRollout, GithubView, HeadPaths, InboxFile, Ms, Origins, Pane, PaneId, PaneLabels, Polled, Pr, HealthId, Snapshot, SourceId, SourceValues, Sources, SpaceMap, World } from './model.ts'
+import type { Board, Branches, CodexRollout, GithubView, HeadPaths, InboxFile, Ms, Origins, Pane, PaneId, PaneLabels, Polled, Pr, HealthId, Snapshot, SourceId, SourceValues, Sources, SpaceMap, Ticket, World } from './model.ts'
 
 /** One directory entry, as register.ts reduces `$.fs.list`. A folder that does not exist lists `[]`. */
 export type Listing = ReadonlyArray<{ name: string; kind: string; mtimeMs: number }>
@@ -24,10 +25,15 @@ export type Ask = {
   proc(req: Req): Promise<string>
   read(path: string): Promise<string>
   list(path: string): Promise<Listing>
+  /** POST the one Linear body there is to LINEAR_URL with `key`, and answer the response text. */
+  linear(body: StateQuery, key: string): Promise<string>
 }
 
-/** What a source may read: who main is, and what each source last gave. */
-export type Seen = Pick<World, 'me' | 'sources'>
+/**
+ * What a source may read: who main is, what each source last gave, and the rows and Project of the
+ * board last drawn. Only those two fields: Board's Health is read off SOURCES, which reads Seen.
+ */
+export type Seen = Pick<World, 'me' | 'sources' | 'now'> & { board?: Pick<Board, 'project' | 'build'> | undefined }
 
 /**
  * One polled source. `run` reads its own last value and the sources named in `needs`, which a
@@ -40,6 +46,8 @@ export type Source<T, N extends string = string, H extends string = string> = {
   needs: readonly N[]
   /** The Health entry this source shares with others; a source without one is its own entry. */
   shows?: H
+  /** Due now as well as every `everyMs`, when this says so. */
+  dueIf?: (world: Seen) => boolean
   run(world: Seen, ask: Ask): Promise<T | undefined>
 }
 
@@ -64,12 +72,12 @@ export function settle<T>(prev: Polled<T>, value: T | undefined, now: Ms, error:
 }
 
 /** Which sources are due. A source never run is due now, so a reload or a new claim fills every column at once. */
-export function due(lastRun: Partial<Record<SourceId, Ms>>, now: Ms): SourceId[] {
+export function due(lastRun: Partial<Record<SourceId, Ms>>, now: Ms, world?: Seen): SourceId[] {
   // Timer callbacks drift a few ms either way; without the slack a 5 s source would skip alternate beats.
   const slack = HEARTBEAT_MS / 2
   return SOURCE_IDS.filter((id) => {
     const last = lastRun[id]
-    return last === undefined || now - last >= SOURCES[id].everyMs - slack
+    return last === undefined || now - last >= SOURCES[id].everyMs - slack || (world !== undefined && BY_ID[id].dueIf?.(world) === true)
   })
 }
 
@@ -179,6 +187,13 @@ function reposOf(world: Seen): string[] {
 
 /** macOS's TMPDIR ends in `/`. No TMPDIR, no inbox. */
 const inboxDir = (tmp: string): string | undefined => (tmp === '' ? undefined : `${tmp.replace(/\/+$/, '')}/dispatch/out`)
+
+// ── Linear (ADR10) ─────────────────────────────────────────────────────────────────────────────
+
+const NOTHING_ASKED: LinearView = { asked: [], issues: new Map(), states: [] }
+
+/** The tickets the state read is for: those on the board, in a space with a Project. None before the first board. */
+const linearTickets = (world: Seen): Ticket[] => (world.board?.project === undefined ? [] : ticketsOn(world.board))
 
 // ── The registry ─────────────────────────────────────────────────────────────────────────────
 
@@ -301,6 +316,29 @@ export const SOURCES = {
       const panes = valueOf(world.sources.herdr)?.panes ?? []
       if (!panes.some((p) => p.space === world.me.space && p.tool === 'X')) return []
       return readRollouts(ask, world.me.home, valueOf(world.sources.codex) ?? [])
+    },
+  }),
+  // Every 5 minutes, and at once when a ticket comes on screen that no read has asked about, unless
+  // the last read failed: a failing Linear is retried on the 5-minute beat only. A read asks about
+  // the tickets on screen only and carries every other entry forward (carry in linear.ts).
+  // `NOTHING_ASKED` is the value before the first board; it adds nothing to carry.
+  linear: source({
+    everyMs: 5 * 60_000,
+    needs: [],
+    dueIf: (world): boolean => {
+      const last = world.sources.linear
+      if (last.k === 'stale' || last.k === 'down') return false
+      const asked = valueOf(last)?.asked ?? []
+      return linearTickets(world).some((t) => !asked.includes(t))
+    },
+    run: async (world, ask): Promise<LinearView | undefined> => {
+      const tickets = linearTickets(world)
+      const last = valueOf(world.sources.linear)
+      if (tickets.length === 0) return last ?? NOTHING_ASKED
+      const key = (await ask.read(keyPath(world.me.home))).trim()
+      if (key === '') throw new Error('~/.linear-api-key is empty')
+      const read = parseStates(await ask.linear(stateQuery(tickets), key), tickets, world.now)
+      return read && carry(last, read)
     },
   }),
 }

@@ -88,7 +88,7 @@ test('FE #138 merged and THV-1038 reads Done: every fresh THV-1038 key goes once
 
 // ── unit: the doctor report ──────────────────────────────────────────────────────────────────
 
-const HEALTH: Health = { herdr: { k: 'ok' }, labels: { k: 'ok' }, spaces: { k: 'ok' }, git: { k: 'ok' }, github: { k: 'unavailable' }, inbox: { k: 'ok' }, codex: { k: 'ok' } }
+const HEALTH: Health = { herdr: { k: 'ok' }, labels: { k: 'ok' }, spaces: { k: 'ok' }, git: { k: 'ok' }, github: { k: 'unavailable' }, inbox: { k: 'ok' }, codex: { k: 'ok' }, linear: { k: 'ok' } }
 
 test('doctor lists keys older than 14 days first, oldest first, then the rest, undated last', async () => {
   const r = doctor({
@@ -109,7 +109,7 @@ test('doctor lists keys older than 14 days first, oldest first, then the rest, u
   expect(r.claim).toEqual({ k: 'held', space: 'w18', pane: 'w18:p8W', sid: 'sid-other-main', ageMs: DAY, isMine: true })
   expect(r.plugin.isMainCheckout).toBe(true)
   const text = doctorText(r)
-  expect(text.split('\n').slice(0, 12)).toEqual([
+  expect(text.split('\n').slice(0, 13)).toEqual([
     'Cockpit doctor',
     `Plugin: ${HOME}/thoven/agent-skills/claude/plugins/thoven-cockpit, the main checkout. CLAUDE_CODE_PLUGIN_DIRS: ${HOME}/thoven/agent-skills/claude/plugins/thoven-cockpit.`,
     'Main of w18: this session, claimed 1 d ago.',
@@ -121,9 +121,10 @@ test('doctor lists keys older than 14 days first, oldest first, then the rest, u
     '  gh: unavailable',
     '  dispatch inbox: ok',
     '  Codex rollouts: ok',
+    '  Linear: ok',
     'Store: 5 cockpit keys.',
   ])
-  expect(text.split('\n').slice(12)).toEqual([
+  expect(text.split('\n').slice(13)).toEqual([
     '  16 d   cockpit:report:THV-9:sid-gone  older than 14 days, main deletes it  (unreadable)',
     '  15 d   cockpit:report:THV-1041:sid-b  older than 14 days, main deletes it',
     '  13 d   cockpit:verdict:THV-1003:sid-c',
@@ -169,9 +170,10 @@ test('Expiry: doctor lists the 15-day-old key first, then main deletes it and wr
 
   await cockpit($)
   await s.clock.advance(0)
-  expect([...s.saved.keys()].sort()).toEqual(['cockpit:main:w18', 'cockpit:main:w4D', 'cockpit:note', 'cockpit:verdict:THV-1003:sid-c', 'spike:ping'])
+  expect([...s.saved.keys()].sort()).toEqual(['cockpit:happened:THV-1045:started', 'cockpit:main:w18', 'cockpit:main:w4D', 'cockpit:note', 'cockpit:verdict:THV-1003:sid-c', 'spike:ping'])
   // Deleting wrote no value back: the only sets are main's own claim.
-  expect(s.setKeys).toEqual(['cockpit:main:w18'])
+  // Main writes only its own keys: its claim, and the set-once started event S4 records for the row on screen.
+  expect(s.setKeys).toEqual(['cockpit:main:w18', 'cockpit:happened:THV-1045:started'])
 
   const after = must((await cockpit($, 'doctor')).text).split('\n')
   expect(after[2]).toBe('Main of w18: this session, claimed 0 s ago.')

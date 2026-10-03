@@ -33,6 +33,10 @@ export function keyOf(fact: Fact): string {
     case 'review':
     case 'self':
       return `${PREFIX}${fact.kind}:${fact.ticket}:${fact.sid}:${fact.skill}`
+    case 'update':
+      return `${PREFIX}${fact.kind}:${fact.ticket}:${fact.event}`
+    case 'readback':
+      return `${PREFIX}readback:${fact.ticket}:${fact.sid}`
     default:
       return fact satisfies never
   }
@@ -91,6 +95,11 @@ const SHAPES: { [K in FactKind]: (v: Raw) => FactOf<K> | undefined } = {
     const run = skillRun(v)
     return run && { kind: 'self', ...run }
   },
+  update: (v) => (isTicket(v.ticket) && isEvent(v.event) && isNum(v.at) ? { kind: 'update', ticket: v.ticket, event: v.event, at: v.at } : undefined),
+  readback: (v) =>
+    isTicket(v.ticket) && isSessionId(v.sid) && typeof v.isError === 'boolean' && isStr(v.text) && isNum(v.at)
+      ? { kind: 'readback', ticket: v.ticket, sid: v.sid, isError: v.isError, text: v.text, at: v.at }
+      : undefined,
 }
 
 function skillRun(v: Raw): SkillRun | undefined {

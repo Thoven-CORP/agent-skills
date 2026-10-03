@@ -5,6 +5,7 @@
 // report, verdict or send.sh call means for the store lives here, not in the shell.
 
 import type { ReportLine, readPrompt } from './dispatch.ts'
+import type { Readback } from './linear.ts'
 import { VERDICTS, isOneOf, type Engagement, type Fact, type FactOf, type Me, type Ms, type ReportStatus, type ReviewSkill, type SendCall, type SessionId, type StatusLine } from './model.ts'
 
 export type Observed = { facts: Fact[]; me: Me }
@@ -36,6 +37,12 @@ function lineFact(l: ReportLine, sid: SessionId, at: Ms): Fact {
     ? { kind: 'verdict', ticket: l.ticket, sid, verdict: l.word, text: l.line, at }
     : { kind: 'report', ticket: l.ticket, sid, status: l.word, text: l.line, concerns: l.concerns, at }
 }
+
+/** Read-back lines `/workspace update` printed. Only main hands events to it, so only main records them. */
+export const readbackSeen: Observer<readonly Readback[]> = (me, lines, sid, at) => ({
+  me,
+  facts: me.k === 'main' ? lines.map((l) => ({ kind: 'readback', ticket: l.ticket, sid, isError: l.isError, text: l.text, at })) : [],
+})
 
 /** The send.sh calls a Bash command made. send.sh itself needs HERDR_PANE_ID, so an inert session records none. */
 export const bashSeen: Observer<readonly SendCall[]> = (me, calls, _sid, at) => ({

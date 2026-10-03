@@ -22,6 +22,7 @@
 import { branchTicket, pickLabel } from './dispatch.ts'
 import { indexFacts, newest, type BoardFacts } from './facts.ts'
 import { rowOf } from './cells.ts'
+import { groupRows, linearOf, pendingOf } from './linear.ts'
 import { prJoin } from './prs.ts'
 import type { Board, Branches, CodexRollout, Health, Ms, Kind, LivePane, NonEmpty, OtherItem, Pane, PaneCell, PaneLabels, Panes, Polled, RowIdentity, SourceHealth, SourceId, Sources, SpaceMap, Ticket, World } from './model.ts'
 import { sharing, valueOf } from './sources.ts'
@@ -86,15 +87,19 @@ export function project(world: World): Board {
   const inbox = valueOf(world.sources.inbox) ?? []
   const codex = codexOf(valueOf(world.sources.codex), panes, world.now)
   const rows = ids.map((id) => rowOf(id, { facts: facts.about(id.ticket), inbox, join, codex }))
+  // No Project, no Linear column (spec "Spaces"), so no state read, no ↻ and no parent groups.
+  const view = projectName === undefined ? undefined : valueOf(world.sources.linear)
+  const linear = rows.map(({ row, events }) => ({ ...row, cells: { ...row.cells, linear: linearOf(row.ticket, facts.about(row.ticket), events, view) } }))
+  const build = groupRows(linear, view)
 
   return {
     space,
     project: projectName,
     here: undefined,
-    build: rows.map(({ row }) => ({ k: 'single', row })),
+    build,
     other,
     prs: join.groups(),
-    pending: [],
+    pending: build.flatMap((g) => (g.k === 'single' ? [g.row] : g.children)).flatMap((r) => pendingOf(r.cells.linear)),
     health: health(world.sources),
     working: panes.filter((p) => p.status === 'working').map((p) => p.pane),
     newEvents: rows.flatMap(({ events }) => events),
@@ -174,5 +179,5 @@ function health(sources: Sources): Health {
     const p = ids.map((id): Polled<unknown> => sources[id]).find((s) => s.k === 'stale' || s.k === 'down')
     return p?.k === 'stale' ? { k: 'stale', since: p.since } : p?.k === 'down' ? { k: 'unavailable' } : { k: 'ok' }
   }
-  return { herdr: of('herdr'), labels: of('labels'), spaces: of('spaces'), git: of(...sharing('git')), github: of('github'), inbox: of('inbox'), codex: of('codex') }
+  return { herdr: of('herdr'), labels: of('labels'), spaces: of('spaces'), git: of(...sharing('git')), github: of('github'), inbox: of('inbox'), codex: of('codex'), linear: of('linear') }
 }
