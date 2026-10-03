@@ -1,9 +1,10 @@
-// board.ts: World → Board. The one place tickets are joined.
+// board.ts: World → Board. Which pane goes in which slot, and the rows that makes.
 //
 // Pure and total: every World, however stale or half-empty, gives a Board. A failed source
 // keeps its last answer, which view.ts dims in the columns naming it, and leaves the others drawing.
+// Each row's cells and unrecorded events come from cells.ts, its PRs from prs.ts.
 //
-// The join, as far as S1 reaches:
+// The slot fold:
 //   1. Space panes: snapshot panes with `space === me.space`, minus main's own pane.
 //   2. Each pane's label, first match wins: pane label (snapshot, else `herdr pane get`), tab
 //      label, terminal title, then the `thv-(\d+)` of the branch its folder is on. A label naming
@@ -17,17 +18,6 @@
 //      received, else from the newest send.sh call main made to it: a hand-typed or self-brief
 //      ties a pane as surely as a label (spec "Failure handling").
 //   4. Main's own branch ticket, when no row has it yet, is the "this session" row.
-//   5. Per row: Report is the newest report fact by `at`, from whichever session received it,
-//      unless the inbox still holds a newer file for the ticket (unsent, or herdr's escalation
-//      note). Fix is main's highest send.sh fix round, else the pane's highest FIX ROUND brief.
-//   6. PRs attach to a row by branch, then by ticket (design: "branch ticket ∪ the title's
-//      trailing `(…)` group only"). A PR whose head branch is checked out in one of the row's
-//      folders (in the same repo, when the folder's origin is known) wins; else a PR whose
-//      `tickets` name the row's. Open beats merged beats closed. When panes of several tickets sit
-//      on that branch, each of their PR cells says `in #N`.
-//   7. Every report status a row's ticket has had, and every merged PR attached to it, with no
-//      `happened` fact yet, is a new event for main to record once (synthesis A1), so S4's ↻
-//      survives a later report replacing it or the PR falling out of gh's last 50.
 
 import { branchTicket, pickLabel } from './dispatch.ts'
 import { indexFacts, newest, type BoardFacts } from './facts.ts'
