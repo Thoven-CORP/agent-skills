@@ -113,7 +113,7 @@ export type Fact =
   /** `sent:<ticket>:<sid>`. A briefed session's own outbound status line. */
   | { kind: 'sent'; ticket: Ticket; sid: SessionId; word: StatusWord; at: Ms }
   /** `send:<ticket>:<pane>`. Main's own `send.sh <pane> …/THV-n[-fixN|-verify].md` call. */
-  | { kind: 'send'; ticket: Ticket; pane: PaneId; role: Role; round: number; file: string; at: Ms }
+  | ({ kind: 'send' } & SendCall & { at: Ms })
   /** `ran:<sid>:<skill>`. A skill the main loop of an engaged session ran (not a subagent). */
   | { kind: 'ran'; sid: SessionId; skill: string; isReadOnly: boolean; at: Ms }
   /** `happened:<ticket>:<event>`. Set once, the first time main sees the event, so a ↻ cannot vanish when its evidence leaves a source. */
