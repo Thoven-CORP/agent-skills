@@ -32,7 +32,7 @@
 import { branchTicket, pickLabel } from './dispatch.ts'
 import { indexFacts, type BoardFacts } from './facts.ts'
 import { configPathOf } from './github.ts'
-import type { Board, Branches, Cells, CiCell, FixCell, Health, InboxFile, Kind, LinearEventId, LivePane, NonEmpty, OtherItem, Pane, PaneCell, PaneId, PaneLabels, Panes, Pending, Polled, Pr, PrCell, PrGroup, ReportCell, RowIdentity, SourceHealth, SourceId, Sources, SpaceMap, Ticket, World } from './model.ts'
+import type { Board, Branches, Cells, CiCell, FixCell, Health, InboxFile, Kind, LinearEventId, LivePane, NonEmpty, OtherItem, Pane, PaneCell, PaneId, PaneLabels, Panes, Pending, Polled, Pr, PrCell, PrGroup, ReportCell, Row, RowIdentity, SourceHealth, SourceId, Sources, SpaceMap, Ticket, World } from './model.ts'
 import { valueOf } from './sources.ts'
 
 /** What ties a pane to its work: its label, else its folder's branch, else what main sent it. */
@@ -92,31 +92,38 @@ export function project(world: World): Board {
   if (mine && !ids.some((id) => id.ticket === mine.ticket)) ids.push(mine)
 
   const join = prJoin(world, panes, ids)
-  const context = { inbox: valueOf(world.sources.inbox) ?? [], join }
+  const inbox = valueOf(world.sources.inbox) ?? []
+  const rows = ids.map((id) => rowOf(id, { facts: facts.about(id.ticket), inbox, join }))
 
   return {
     space,
     project: projectName,
     here: undefined,
-    build: ids.map((id) => ({ k: 'single', row: { ...id, cells: cellsOf(id.ticket, facts.about(id.ticket), context) } })),
+    build: rows.map(({ row }) => ({ k: 'single', row })),
     other,
     prs: join.groups(),
     pending: [],
     health: health(world.sources),
     working: panes.filter((p) => p.status === 'working').map((p) => p.pane),
-    newEvents: ids.flatMap(({ ticket: t }) => {
-      const about = facts.about(t)
-      return [...newReportEvents(t, about), ...newMergedEvents(t, join.attached(t), about)]
-    }),
+    newEvents: rows.flatMap(({ events }) => events),
   }
 }
 
+/** What a row is built from besides its identity: the facts about its ticket, the inbox, and where PRs attach. */
+type RowContext = { facts: BoardFacts; inbox: readonly InboxFile[]; join: ReturnType<typeof prJoin> }
+
+/** A row's cells, and the events on it main has not recorded yet, from one pass over its context. */
+function rowOf(id: RowIdentity, c: RowContext): { row: Row; events: Pending[] } {
+  const t = id.ticket
+  return { row: { ...id, cells: cellsOf(t, c) }, events: [...newReportEvents(t, c.facts), ...newMergedEvents(t, c.join.attached(t), c.facts)] }
+}
+
 /** Every cell of a row, from the facts about its ticket and what the sources say. */
-function cellsOf(t: Ticket, about: BoardFacts, s: { inbox: readonly InboxFile[]; join: ReturnType<typeof prJoin> }): Cells {
-  const pr = s.join.cell(t)
+function cellsOf(t: Ticket, c: RowContext): Cells {
+  const pr = c.join.cell(t)
   return {
-    report: reportCell(t, about, s.inbox),
-    fix: fixCell(about),
+    report: reportCell(t, c.facts, c.inbox),
+    fix: fixCell(c.facts),
     review: { k: 'none' },
     pr,
     ci: pr.k === 'none' ? { k: 'none' } : ciCell(pr.pr),
