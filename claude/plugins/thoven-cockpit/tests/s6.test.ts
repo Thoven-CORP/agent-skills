@@ -109,7 +109,7 @@ test('doctor lists keys older than 14 days first, oldest first, then the rest, u
   expect(r.claim).toEqual({ k: 'held', space: 'w18', pane: 'w18:p8W', sid: 'sid-other-main', ageMs: DAY, isMine: true })
   expect(r.plugin.isMainCheckout).toBe(true)
   const text = doctorText(r)
-  expect(text.split('\n').slice(0, 11)).toEqual([
+  expect(text.split('\n').slice(0, 12)).toEqual([
     'Cockpit doctor',
     `Plugin: ${HOME}/thoven/agent-skills/claude/plugins/thoven-cockpit, the main checkout. CLAUDE_CODE_PLUGIN_DIRS: ${HOME}/thoven/agent-skills/claude/plugins/thoven-cockpit.`,
     'Main of w18: this session, claimed 1 d ago.',
@@ -123,7 +123,7 @@ test('doctor lists keys older than 14 days first, oldest first, then the rest, u
     '  Codex rollouts: ok',
     'Store: 5 cockpit keys.',
   ])
-  expect(text.split('\n').slice(11)).toEqual([
+  expect(text.split('\n').slice(12)).toEqual([
     '  16 d   cockpit:report:THV-9:sid-gone  older than 14 days, main deletes it  (unreadable)',
     '  15 d   cockpit:report:THV-1041:sid-b  older than 14 days, main deletes it',
     '  13 d   cockpit:verdict:THV-1003:sid-c',
