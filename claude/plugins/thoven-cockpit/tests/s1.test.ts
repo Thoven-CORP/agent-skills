@@ -31,7 +31,7 @@ function snap(json: string): Snapshot {
 }
 
 function mainOf(space: string, pane: string, cwd = MAIN_CWD): Main {
-  return { k: 'main', space: space as SpaceId, pane: pane as PaneId, sid: 'sid-a' as SessionId, cwd, home: '/Users/andresmartinez' }
+  return { k: 'main', space: space as SpaceId, pane: pane as PaneId, sid: 'sid-a' as SessionId, cwd, home: '/Users/andresmartinez', tmp: '' }
 }
 
 function worldOf(me: Main, snapshot: Snapshot, extra: Partial<Sources> = {}): World {

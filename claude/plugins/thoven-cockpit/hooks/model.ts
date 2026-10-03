@@ -55,7 +55,19 @@ export type Role = 'builder' | 'verifier'
  * What a prompt told a pane to do. A prompt that is a brief is never also a report: status lines
  * quoted inside it (the verifier brief pastes the builder's `DONE THV-n`) are its content.
  */
-export type Brief = { ticket: Ticket; role: Role; round: number }
+export type Brief = {
+  ticket: Ticket
+  role: Role
+  /** 0 for a first brief; n for `FIX ROUND n/5`. */
+  round: number
+  /** The `/poteto-mode <playbook>` word, raw (`Build`, `Verify`, `Feature`). Absent on a fix round. */
+  playbook?: string
+  /** The quoted ticket title on the brief's first line, when it has one. */
+  title?: string
+}
+
+/** One `send.sh <pane> …/<THV-n>[-fixN|-verify[N]].md` in a Bash command. */
+export type SendCall = { pane: PaneId; ticket: Ticket; role: Role; round: number; file: string }
 
 /** A pane or tab label as label.sh writes it, or an older form that still names a ticket. */
 export type Label = { kind: Kind | undefined; title: string; tickets: Ticket[] }
@@ -69,9 +81,9 @@ export type Fact =
   /** `main:<space>`. Contested by design: the newest claim is the main. Matched on `pane`, because `/clear` changes `sid`. */
   | { kind: 'main'; space: SpaceId; sid: SessionId; pane: PaneId; at: Ms }
   /** `brief:<ticket>:<sid>`. The session that received the brief. */
-  | { kind: 'brief'; ticket: Ticket; sid: SessionId; pane: PaneId; role: Role; round: number; at: Ms }
+  | { kind: 'brief'; ticket: Ticket; sid: SessionId; pane: PaneId; role: Role; round: number; playbook?: string; title?: string; at: Ms }
   /** `report:<ticket>:<sid>`. A session that received a builder's status line. */
-  | { kind: 'report'; ticket: Ticket; sid: SessionId; status: ReportStatus; text: string; at: Ms }
+  | { kind: 'report'; ticket: Ticket; sid: SessionId; status: ReportStatus; text: string; concerns: number; at: Ms }
   /** `verdict:<ticket>:<sid>`. A session that received a verifier's reply. */
   | { kind: 'verdict'; ticket: Ticket; sid: SessionId; verdict: Verdict; text: string; at: Ms }
   /** `sent:<ticket>:<sid>`. A briefed session's own outbound status line. */
@@ -176,7 +188,7 @@ export type LinearIssue = {
 export type LinearView = ReadonlyMap<Ticket, LinearIssue>
 
 /** A file in `$TMPDIR/dispatch/out/`. A status line inside means an undelivered report. */
-export type InboxFile = { name: string; ticket: Ticket | undefined; line: StatusLine | undefined; head: string }
+export type InboxFile = { name: string; ticket: Ticket | undefined; line: StatusLine | undefined; head: string; at: Ms }
 
 /** Best-effort read of one Codex verifier rollout. */
 export type CodexReview = {
@@ -207,7 +219,7 @@ export type Sources = { [K in SourceId]: Polled<SourceValues[K]> }
 export type Me =
   | { k: 'inert' } // no HERDR_PANE_ID: every hook passes through untouched
   | { k: 'pane'; pane: PaneId; sid: SessionId; engagements: Brief[] }
-  | { k: 'main'; pane: PaneId; sid: SessionId; space: SpaceId; cwd: string; home: string }
+  | { k: 'main'; pane: PaneId; sid: SessionId; space: SpaceId; cwd: string; home: string; tmp: string }
 
 export type Main = Extract<Me, { k: 'main' }>
 
@@ -245,7 +257,8 @@ export type PaneCell =
 export type ReportCell =
   | { k: 'none' }
   | { k: 'na'; tool: Tool }
-  | { k: 'in'; status: ReportStatus; at: Ms; selfChecked: boolean }
+  /** `concerns` counts the report's unmet Acceptance rows (`[~]`, `[ ]`, `✗`); 0 when it lists none. */
+  | { k: 'in'; status: ReportStatus; at: Ms; concerns: number; selfChecked: boolean }
   | { k: 'undelivered'; status: ReportStatus | undefined; file: string; selfChecked: boolean }
   | { k: 'escalation'; head: string } // a non-report note herdr's tw_tell_main left in the inbox
 
@@ -332,6 +345,8 @@ export type Board = {
   health: Health
   /** Panes working in this space now, for the watcher warning. */
   working: PaneId[]
+  /** Events on screen with no `happened` fact yet. Main writes each once (synthesis A1). */
+  newEvents: Pending[]
 }
 
 // ── Intents: what a press asks for, as data (view.ts emits, register.ts performs) ──────────
