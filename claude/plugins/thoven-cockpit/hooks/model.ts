@@ -285,10 +285,16 @@ export type Pending = { ticket: Ticket; event: LinearEvent; id: LinearEventId }
 
 // ── 3. The Board (board.ts builds it, view.ts draws it) ────────────────────────────────────
 
+export type LivePane = { status: PaneStatus; tool: Tool | undefined; pane: PaneId }
+export type NonEmpty<T> = [T, ...T[]]
+
 export type PaneCell =
-  | { k: 'live'; status: PaneStatus; tool: Tool | undefined; pane: PaneId }
+  | ({ k: 'live' } & LivePane)
   | { k: 'gone' } // the row has facts but its pane left the snapshot
   | { k: 'none' }
+
+/** A row's Build panes, in snapshot order: the first is the one `f` focuses. */
+export type Panes = { k: 'live'; list: NonEmpty<LivePane> } | { k: 'gone' } | { k: 'none' }
 
 export type ReportCell =
   | { k: 'none' }
@@ -334,9 +340,7 @@ export type Row = {
   kind: Kind | undefined
   /** `label`: a pane's label names the ticket. `this-session`: main's own branch does. */
   origin: 'dispatch' | 'this-session' | 'label'
-  pane: PaneCell
-  /** Further panes whose label names this ticket as Build work, in snapshot order. The Pane cell lists them after `pane`. */
-  extraPanes: Array<Extract<PaneCell, { k: 'live' }>>
+  panes: Panes
   verifierPane: PaneCell
   report: ReportCell
   fix: FixCell

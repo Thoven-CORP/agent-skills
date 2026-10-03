@@ -44,10 +44,12 @@ import {
   type Kind,
   type Label,
   type LinearEventId,
+  type LivePane,
   type OtherItem,
   type Pane,
   type PaneCell,
   type PaneId,
+  type Panes,
   type Pending,
   type Polled,
   type Pr,
@@ -85,20 +87,20 @@ export function project(world: World): Board {
     if (!label || !BUILD_KINDS.includes(label.kind)) continue
     for (const t of label.tickets) {
       const r = rows.get(t)
-      rows.set(t, r ? { ...r, extraPanes: [...r.extraPanes, live(p)] } : row(t, label, origin, live(p), projectName))
+      rows.set(t, r?.panes.k === 'live' ? { ...r, panes: { k: 'live', list: [...r.panes.list, live(p)] } } : row(t, label, origin, { k: 'live', list: [live(p)] }, projectName))
     }
   }
 
   for (const { p, label, origin } of labelled) {
     if (label?.kind !== 'Review') continue
-    for (const t of label.tickets) rows.set(t, { ...(rows.get(t) ?? row(t, label, origin, live(p), projectName)), verifierPane: live(p) })
+    for (const t of label.tickets) rows.set(t, { ...(rows.get(t) ?? row(t, label, origin, { k: 'live', list: [live(p)] }, projectName)), verifierPane: cell(p) })
   }
 
   const other: OtherItem[] = []
   for (const { p, label } of labelled) {
     if (label && (BUILD_KINDS.includes(label.kind) || label.kind === 'Review') && label.tickets.length > 0) continue
-    if (label) other.push({ label: label.title, kind: label.kind, ticket: label.tickets[0], pane: live(p), note: undefined })
-    else if (p.agent) other.push({ label: `tab "${p.tabLabel ?? p.tab}"`, kind: undefined, ticket: undefined, pane: live(p), note: 'unlabelled' })
+    if (label) other.push({ label: label.title, kind: label.kind, ticket: label.tickets[0], pane: cell(p), note: undefined })
+    else if (p.agent) other.push({ label: `tab "${p.tabLabel ?? p.tab}"`, kind: undefined, ticket: undefined, pane: cell(p), note: 'unlabelled' })
   }
 
   const mine = thisSession(world, snap?.panes.find((p) => p.pane === me.pane), projectName)
@@ -152,8 +154,8 @@ function prJoin(world: World, panes: readonly Pane[], rows: readonly Row[]) {
   // Main's own folder is its session cwd, which the snapshot may not show.
   const cwdOf = new Map<PaneId, string>([...panes.map((p): [PaneId, string] => [p.pane, p.cwd]), [world.me.pane, world.me.cwd]])
   const placesOf = (r: Row): Place[] =>
-    [r.pane, ...r.extraPanes, r.verifierPane].flatMap((c) => {
-      const cwd = c.k === 'live' ? cwdOf.get(c.pane) : undefined
+    [...(r.panes.k === 'live' ? r.panes.list : []), ...(r.verifierPane.k === 'live' ? [r.verifierPane] : [])].flatMap((c) => {
+      const cwd = cwdOf.get(c.pane)
       return cwd === undefined ? [] : placeOf(cwd)
     })
   const places = new Map(rows.map((r) => [r.ticket, placesOf(r)]))
@@ -268,17 +270,16 @@ function thisSession(world: World, mainPane: Pane | undefined, projectName: stri
   if (!t || !branch) return undefined
   const label = pickLabel([mainPane?.paneLabel, mainPane?.tabLabel])
   const title = label?.tickets.includes(t) ? label.title : (mainPane?.terminalTitle ?? branch)
-  return row(t, { kind: label?.tickets.includes(t) ? label.kind : undefined, title, tickets: [t] }, 'this-session', mainPane ? live(mainPane) : { k: 'none' }, projectName)
+  return row(t, { kind: label?.tickets.includes(t) ? label.kind : undefined, title, tickets: [t] }, 'this-session', mainPane ? { k: 'live', list: [live(mainPane)] } : { k: 'none' }, projectName)
 }
 
-function row(ticket: Ticket, label: Label, origin: Row['origin'], pane: PaneCell, projectName: string | undefined): Row {
+function row(ticket: Ticket, label: Label, origin: Row['origin'], panes: Panes, projectName: string | undefined): Row {
   return {
     ticket,
     title: label.title,
     kind: label.kind,
     origin,
-    pane,
-    extraPanes: [],
+    panes,
     verifierPane: { k: 'none' },
     report: { k: 'none' },
     fix: { k: 'none' },
@@ -296,7 +297,8 @@ function projectOf(spaces: SpaceMap | undefined, label: string): string | undefi
   return undefined
 }
 
-const live = (p: Pane): Extract<PaneCell, { k: 'live' }> => ({ k: 'live', status: p.status, tool: p.tool, pane: p.pane })
+const live = (p: Pane): LivePane => ({ status: p.status, tool: p.tool, pane: p.pane })
+const cell = (p: Pane): PaneCell => ({ k: 'live', ...live(p) })
 
 function health(sources: Sources): Health {
   return bySource((id) => {

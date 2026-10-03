@@ -357,11 +357,11 @@ test('the tie: p8V, whose Mods tab has no label, is the THV-1014 Build row and l
   const brief = storedFact(`cockpit:brief:THV-1014:${P8V_SID}`, { kind: 'brief', k: 'first', ticket: 'THV-1014', sid: P8V_SID, pane: 'w18:p8V', role: 'builder', labelKind: 'Build', title: TITLE_1014, at: 1 })
   const board = project(worldOf(W18_MAIN, SNAPSHOT_LIVE, [brief]))
   const row = rowOf(worldOf(W18_MAIN, SNAPSHOT_LIVE, [brief]), 'THV-1014')
-  expect([row.title, row.kind, row.origin, row.pane]).toEqual([
+  expect([row.title, row.kind, row.origin, row.panes]).toEqual([
     TITLE_1014,
     'Build',
     'dispatch',
-    { k: 'live', status: 'idle', tool: 'C', pane: 'w18:p8V' },
+    { k: 'live', list: [{ status: 'idle', tool: 'C', pane: 'w18:p8V' }] },
   ])
   expect(board.other.map((o) => o.label)).toEqual(['tab "Research"'])
 })

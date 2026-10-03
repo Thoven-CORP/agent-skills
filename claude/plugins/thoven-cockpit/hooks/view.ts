@@ -8,7 +8,7 @@
 import type { Elements, RenderElement } from 'claude-code'
 import { ciCell } from './board.ts'
 import { AGENT_SKILLS, BACKEND, FRONTEND } from './github.ts'
-import type { Board, Group, Health, Intent, Ms, OtherItem, PaneCell, PaneStatus, PaneUi, Pr, PrItem, Row, SourceId } from './model.ts'
+import type { Board, Group, Health, Intent, Ms, LivePane, OtherItem, PaneCell, PaneStatus, PaneUi, Pr, PrItem, Row, SourceId } from './model.ts'
 
 /** The three elements the cockpit draws with, on whichever surface resolved them. */
 type El = Pick<Elements[keyof Elements], 'Box' | 'Text' | 'Button'>
@@ -72,7 +72,7 @@ function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): 
   const widths = columnsFor(columns, hasLinear)
   const rows = board.build.flatMap(rowsOf)
   const selected = rows.find((r) => r.ticket === ui.selected) ?? rows[0]
-  const focusTarget = selected?.pane.k === 'live' ? selected.pane.pane : undefined
+  const focusTarget = selected?.panes.k === 'live' ? selected.panes.list[0].pane : undefined
 
   const cells = (texts: string[], from: number, dim: boolean, colors: ReadonlyArray<string | undefined> = []) =>
     texts.map((t, i) => Box({ width: widths[from + i] ?? 0, flexShrink: 0, children: [Text({ dimColor: dim, color: colors[i], wrap: 'truncate-end', children: [t] })] }))
@@ -89,7 +89,7 @@ function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): 
   const isGhStale = board.health.github.k === 'stale'
   const buildRow = (row: Row) => {
     const t = cellText(row)
-    const pane = row.pane
+    const lead = row.panes.k === 'live' ? row.panes.list[0] : undefined
     const subtitle = [row.kind, row.ticket].filter((x) => x !== undefined).join(' ') + (row.origin === 'this-session' ? ' (this session)' : '')
     return Box({
       flexDirection: 'row',
@@ -103,12 +103,12 @@ function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): 
               key: `row-${row.ticket}`,
               label: clip(row.title, (widths[0] ?? MIN_WORK) - 1),
               plain: true,
-              onPress: () => (pane.k === 'live' ? act({ k: 'focus-pane', pane: pane.pane }) : undefined),
+              onPress: () => (lead === undefined ? undefined : act({ k: 'focus-pane', pane: lead.pane })),
             }),
             Text({ dimColor: true, children: [subtitle] }),
           ],
         }),
-        Box({ width: widths[1] ?? 0, flexShrink: 0, children: [Text({ color: pane.k === 'live' ? PANE_COLOR[pane.status] : undefined, children: [t.pane] })] }),
+        Box({ width: widths[1] ?? 0, flexShrink: 0, children: [Text({ color: lead === undefined ? undefined : PANE_COLOR[lead.status], children: [t.pane] })] }),
         ...cells([t.report, t.fix, t.review], 2, false, [reportColor(row.report)]),
         ...cells([t.pr, t.ci], 5, isGhStale, isGhStale ? [] : [prColor(row.pr), ciColor(row.ci)]),
         ...(hasLinear ? cells([t.linear], 7, false) : []),
@@ -220,7 +220,7 @@ function checkLines(el: El, pr: Pr): RenderElement {
 /** Cell glyphs live here and nowhere else. */
 export function cellText(row: Row): Record<'pane' | 'report' | 'fix' | 'review' | 'pr' | 'ci' | 'linear', string> {
   return {
-    pane: [row.pane, ...row.extraPanes].map(paneText).join(' '),
+    pane: row.panes.k === 'live' ? row.panes.list.map(liveText).join(' ') : paneText(row.panes),
     report: reportText(row.report),
     fix: row.fix.k === 'round' ? `${row.fix.round}/${row.fix.of}` : DASH,
     review: reviewText(row.review),
@@ -254,8 +254,10 @@ function otherLine(el: El, o: OtherItem, columns: number): RenderElement {
   })
 }
 
+const liveText = (p: LivePane): string => (p.tool === undefined ? PANE_GLYPH[p.status] : `${PANE_GLYPH[p.status]} ${p.tool}`)
+
 function paneText(p: PaneCell): string {
-  if (p.k === 'live') return p.tool === undefined ? PANE_GLYPH[p.status] : `${PANE_GLYPH[p.status]} ${p.tool}`
+  if (p.k === 'live') return liveText(p)
   return p.k === 'gone' ? 'gone' : DASH
 }
 
