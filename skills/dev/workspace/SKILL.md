@@ -108,6 +108,8 @@ reconciliation ownership.
      descriptions usually wrap the path in backticks, and the parsed value keeps them; strip before
      using the string as a path.
    - Milestone and assignee are both read by the session gate; missing either is `BLOCKED`.
+   - Status-only moves go through `node tools/set-status.js "<state name>" THV-1 [THV-2 ...]`,
+     which prints one line per issue. The Linear MCP `save_issue` echoes the full issue body.
 4. Account for every `BLOCKED`, `CONTRADICTED`, and `UNKNOWN` finding. Linear data that was never
    supplied is `ADVISORY linear-input` — fetch it through the MCP connector and re-run. A Linear
    fetch that was attempted and failed is `UNKNOWN`. Neither is ever inferred from local prose.
