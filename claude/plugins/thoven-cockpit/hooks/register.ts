@@ -1,4 +1,6 @@
-// register.ts: the shell. The only file that touches `$`.
+// register.ts: the shell, and the only file that takes `$`. It wires every hook and performs
+// every effect: store, processes, files, timers, the pane. What a hook or a poll saw means is
+// decided elsewhere, in pure code: observe.ts, sources.ts, board.ts, view.ts.
 //
 // Validator rules this file is shaped by (docs/create.md "Check what Claude Code reads"):
 //   - `$` may be passed only to functions declared at the top level of THIS file, so every effect
@@ -6,117 +8,107 @@
 //   - every `on(...)` names its event as a string literal; one registration per event+matcher.
 //
 // Cost by role (the plugin loads in every session):
-//   inert  (no HERDR_PANE_ID)  every hook returns next(e) after one comparison
-//   pane                       S2 adds its regex over prompts; no timers, no processes
+//   inert  (no HERDR_PANE_ID)  one regex per prompt and one substring test per Bash command; a
+//                              store write only for a report or verdict. No timers, no processes
+//   pane   (not main)          the same, and a brief or send.sh call is written too
 //   main   (claimed a space)   one 5 s heartbeat timer; all polling, projection, drawing
 //
-// Crash safety: every hook is one of two shapes, and the try/catch never wraps `next`:
-//   observe-then-pass   try { await observe… } catch (err) { debug(err) }  return next(e)
-//   pass-then-observe   const r = await next(e); try { … } catch (err) { debug(err) }  return r
-// Every registration also gets `.catch(passThrough)`. The heartbeat catches per source, so one
-// failing source never stops another.
+// Crash safety: every hook is one line over a shape below, and no try/catch wraps `next`:
+//   observeThenPass   try { await observe() } catch (err) { debug(err) }  return next(e)
+//   passThenObserve   const r = await next(e); try { await observe(r) } catch (err) { debug(err) }  return r
+// Every registration also gets `.catch(passThrough)`. Each poll catches its own source's failure,
+// so one failing or hung source never stops another.
 
-import type { EngineInterface, Register } from 'claude-code'
+import type { EngineInterface, Register, RenderElement } from 'claude-code'
 import { project } from './board.ts'
-import { findMe, focusReq, parseSnapshot, snapshotReq, spaceOfPane } from './herdr.ts'
-import type { Board, Fact, FactKind, Intent, Main, Me, Ms, PaneId, PaneUi, Polled, SessionId, SourceId, Sources, SourceValues, World } from './model.ts'
-import { HEARTBEAT_MS, SOURCES, due, settle, type PolledId, type Req, type Resp, type Source } from './sources.ts'
-import { claimHeldBy, claimOf, keyOf, parseFact, parseKey } from './store.ts'
+import { readPrompt, sendCalls } from './dispatch.ts'
+import { bashSeen, promptSeen, type Observer } from './observe.ts'
+import { claimHeldBy, claimOf } from './facts.ts'
+import { COMMANDS, type Req } from './commands.ts'
+import { findMe, parseSnapshot, spaceOfPane } from './herdr.ts'
+import { isPaneId, isSessionId, type Board, type Fact, type FactKind, type FactOf, type Intent, type Main, type Me, type Ms, type PaneId, type PaneUi, type SessionId, type SourceId, type Snapshot, type Sources, type SourceValues, type World } from './model.ts'
+import { BY_ID, HEARTBEAT_MS, STAGES, due, settle, unpolled, type Ask, type Listing } from './sources.ts'
+import { isFactKey, keyOf, parseFact } from './store.ts'
 import { drawCockpit } from './view.ts'
 
 type Api = EngineInterface
 
 const PANE_ID = 'cockpit'
-/** Synthesis A2: above this, facts move to per-session logs. Logged so the debug log shows it. */
-const STORE_SLOW_MS = 50
+/** `/cockpit` answers within about this long, herdr up, down or hung. */
+const CLAIM_SNAPSHOT_MS = 3_000
+
+/** What only main holds. becomeMain builds it fresh and loseClaim drops it, so a re-claim polls every source at once. */
+type MainState = {
+  who: Main
+  sources: Sources
+  lastRun: Partial<Record<SourceId, Ms>>
+  /** Sources whose poll has not settled. A source never overlaps itself, and a hung one holds up no other. */
+  polling: Set<SourceId>
+  board: Board | undefined
+  heartbeat: { cancel(): void }
+  isDrawing: boolean
+}
 
 // ── Module state: caches only. Everything here can be lost on reload and rebuilt in one tick. ──
 let me: Me = { k: 'inert' }
-let sources: Sources = {
-  herdr: { k: 'never' },
-  labels: { k: 'never' },
-  spaces: { k: 'never' },
-  heads: { k: 'never' },
-  branches: { k: 'never' },
-  github: { k: 'never' },
-  linear: { k: 'never' },
-  inbox: { k: 'never' },
-  codex: { k: 'never' },
-}
-let lastRun: Partial<Record<SourceId, Ms>> = {}
-let board: Board | undefined
-let heartbeat: { cancel(): void } | undefined
-let isTicking = false
-let isStoreTimed = false
-let ui: PaneUi = { tab: 'work', selected: undefined }
-let sessionCwd = ''
+let main: MainState | undefined
+let ui: PaneUi = { tab: 'work', selected: undefined, selectedPr: undefined, checks: undefined }
 
 export const register: Register = (on) => {
-  on('session.start', async ($, e, next) => {
-    // Its own try: a register that throws (as a re-registration can) must not keep main dark.
-    try {
-      await $.command.register({ name: 'cockpit', description: 'Open the Thoven cockpit for this herdr space', immediate: true })
-    } catch (err) {
-      await debug($, 'command.register', err)
-    }
-    try {
-      sessionCwd = e.cwd
-      await resolveMe($, (await $.session.id()) as SessionId)
-    } catch (err) {
-      await debug($, 'session.start', err)
-    }
-    return next(e)
-  }).catch(passThrough)
+  on('session.start', ($, e, next) => observeThenPass($, 'session.start', e, next, () => startSession($))).catch(passThrough)
 
   // Fires before session.start at startup (measured), and after /clear, /resume, /branch, compact.
   // The compaction checkpoint arrives in S5.
-  on('classic.SessionStart', async ($, e, next) => {
-    const r = await next(e)
-    try {
-      if (e.cwd) sessionCwd = e.cwd
-      await resolveMe($, e.session_id as SessionId)
-    } catch (err) {
-      await debug($, 'classic.SessionStart', err)
-    }
-    return r
-  }).catch(passThrough)
+  on('classic.SessionStart', ($, e, next) => passThenObserve($, 'classic.SessionStart', e, next, async () => resolveMe($, await sessionId($)))).catch(passThrough)
+
+  // A report, verdict or brief can reach any session: herdr's `agent prompt` arrives here (origin
+  // composer, pastes expanded), and so does a typed paste.
+  on('prompt.submit', ($, e, next) => observeThenPass($, 'prompt.submit', e, next, () => notePrompt($, e.text))).catch(passThrough)
+
+  // A peer's or subagent's hand-back (synthesis A6). Writes are idempotent, so arriving here and in
+  // prompt.submit as well costs one more set of the same key.
+  on('session.receive', ($, e, next) => observeThenPass($, 'session.receive', e, next, () => notePrompt($, e.text))).catch(passThrough)
+
+  // send.sh is how a brief or fix round reaches a pane. Observed after it ran: a refused or failed
+  // call sent nothing.
+  on('tool.call', { tool: 'Bash' }, ($, e, next) => passThenObserve($, 'tool.call', e, next, (r) => noteBash($, r, e.command))).catch(passThrough)
 
   // `/cockpit doctor` arrives in S6; until then every argument is ignored.
-  on('command.run', { command: 'cockpit' }, async ($) => {
-    try {
-      return { text: await claimAndOpen($) }
-    } catch (err) {
-      await debug($, 'command.run', err)
-      return { text: `Cockpit failed: ${messageOf(err)}` }
-    }
-  }).catch(passThrough)
+  on('command.run', { command: 'cockpit' }, ($) => runCockpit($)).catch(passThrough)
 
-  on('ui.render', { component: 'Pane' }, async ($, e, next) => {
-    if (e.requestId !== PANE_ID) return next(e)
-    try {
-      return drawCockpit($.ui.resolve(e), board, ui, e.props.bodyColumns, (intent) => act($, intent))
-    } catch (err) {
-      await debug($, 'ui.render', err)
-    }
-    return next(e)
-  }).catch(passThrough)
+  on('ui.render', { component: 'Pane' }, ($, e, next) => (e.requestId === PANE_ID ? drawOrPass($, e, next) : next(e))).catch(passThrough)
 
-  // `f` acts on the row whose button holds the focus ring.
-  on('ui.focus', async ($, e, next) => {
-    try {
-      const ticket = e.requestId === PANE_ID ? /^row-(THV-\d+)$/.exec(e.element ?? '')?.[1] : undefined
-      if (ticket) ui = { ...ui, selected: ticket }
-    } catch (err) {
-      await debug($, 'ui.focus', err)
-    }
-    return next(e)
-  }).catch(passThrough)
+  // `f` acts on the row whose button holds the focus ring, and `c` on the PR whose button does.
+  on('ui.focus', ($, e, next) => observeThenPass($, 'ui.focus', e, next, async () => noteFocus(e.requestId === PANE_ID ? (e.element ?? '') : ''))).catch(passThrough)
+}
+
+// ── The hook shapes. `next` is never inside a try, so the cockpit never hides a failure beneath it. ──
+
+/** Observe, then pass on. A failing observer is logged and the event goes on untouched. */
+async function observeThenPass<E, R>($: Api, where: string, e: E, next: (e: E) => Promise<R>, observe: () => Promise<void>): Promise<R> {
+  try {
+    await observe()
+  } catch (err) {
+    await debug($, where, err)
+  }
+  return next(e)
+}
+
+/** Pass on, then observe what came back. A failing observer is logged and the result returned untouched. */
+async function passThenObserve<E, R>($: Api, where: string, e: E, next: (e: E) => Promise<R>, observe: (r: R) => Promise<void>): Promise<R> {
+  const r = await next(e)
+  try {
+    await observe(r)
+  } catch (err) {
+    await debug($, where, err)
+  }
+  return r
 }
 
 // ── Top-level effects. Each takes `$` and is the only code that performs its kind of effect. ──
 
 /** The `.catch` for every registration. `next` is replay-safe here, so a hook that already called it is not run twice. */
-async function passThrough(_$: Api, e: any, next: any): Promise<any> {
+async function passThrough<E, R>(_$: Api, e: E, next: (e: E) => Promise<R>): Promise<R> {
   return next(e)
 }
 
@@ -128,151 +120,246 @@ async function debug($: Api, where: string, err: unknown): Promise<void> {
   }
 }
 
-/**
- * Decide `me`. No HERDR_PANE_ID → inert. A claim whose pane is ours makes us main (its sid is
- * refreshed when /clear changed it) and starts the heartbeat; otherwise we are a pane session.
- * Idempotent, because classic.SessionStart and session.start both run it at startup.
- */
-async function resolveMe($: Api, sid: SessionId): Promise<void> {
-  const pane = (await $.env.get('HERDR_PANE_ID')) as PaneId | undefined
-  if (!pane) {
-    stopHeartbeat()
-    me = { k: 'inert' }
-    return
+/** Register `/cockpit`, then decide `me`. Its own try: a register that throws (as a re-registration can) must not keep main dark. */
+async function startSession($: Api): Promise<void> {
+  try {
+    await $.command.register({ name: 'cockpit', description: 'Open the Thoven cockpit for this herdr space', immediate: true })
+  } catch (err) {
+    await debug($, 'command.register', err)
   }
-  const claim = claimHeldBy((await loadFacts($, 'main')).facts, pane)
-  if (!claim) {
-    stopHeartbeat()
-    me = { k: 'pane', pane, sid, engagements: me.k === 'pane' ? me.engagements : [] }
-    return
+  await resolveMe($, await sessionId($))
+}
+
+/** `/cockpit`. It has no `next`, so a failure is the answer. */
+async function runCockpit($: Api): Promise<{ text: string }> {
+  try {
+    return { text: await claimAndOpen($) }
+  } catch (err) {
+    await debug($, 'command.run', err)
+    return { text: `Cockpit failed: ${messageOf(err)}` }
   }
-  if (claim.sid !== sid) await writeFact($, { ...claim, sid })
-  me = { k: 'main', pane, sid, space: claim.space, cwd: sessionCwd, home: (await $.env.get('HOME')) ?? '' }
-  startHeartbeat($)
-  $.clock.after(0, () => {
-    void tick($)
-  })
+}
+
+/** The cockpit pane, or what is beneath when drawing it threw. */
+async function drawOrPass<E extends Parameters<Api['ui']['resolve']>[0] & { props: { bodyColumns: number } }, R>($: Api, e: E, next: (e: E) => Promise<R>): Promise<RenderElement | R> {
+  try {
+    return drawCockpit($.ui.resolve(e), main?.board, ui, e.props.bodyColumns, (intent) => act($, intent))
+  } catch (err) {
+    await debug($, 'ui.render', err)
+  }
+  return next(e)
+}
+
+/** The focused element's key: `row-THV-n` selects a row, `pr-owner/name#n` a PR. */
+function noteFocus(element: string): void {
+  const ticket = /^row-(THV-\d+)$/.exec(element)?.[1]
+  const pr = /^pr-(.+#\d+)$/.exec(element)?.[1]
+  if (ticket) ui = { ...ui, selected: ticket }
+  if (pr) ui = { ...ui, selectedPr: pr }
 }
 
 /**
- * `/cockpit`: claim this session's space (last claim wins, ADR3) and open the pane. The claim's
- * snapshot doubles as the first herdr poll, so the first tick does not read herdr again. With
- * herdr down, the space comes from HERDR_PANE_ID and the pane opens saying "herdr unavailable".
+ * Decide `me`. No HERDR_PANE_ID → inert. A claim whose pane is ours makes us main (its sid is
+ * refreshed when /clear changed it); otherwise we are a pane session.
+ * Safe to repeat, because classic.SessionStart and session.start both run it at startup.
+ */
+async function resolveMe($: Api, sid: SessionId): Promise<void> {
+  const pane = await envPane($)
+  const claim = pane ? claimHeldBy(await loadFacts($, 'main'), pane) : undefined
+  if (claim) {
+    if (claim.sid !== sid) await writeFact($, { ...claim, sid })
+    await becomeMain($, { ...claim, sid }, await $.session.cwd())
+    return
+  }
+  await loseClaim($)
+  me = pane ? { k: 'pane', pane, sid, engagements: me.k === 'pane' ? me.engagements : [] } : { k: 'inert' }
+}
+
+/**
+ * The one way into main: fresh state, a heartbeat, and the first tick started, never awaited.
+ * `herdr` is a snapshot the caller already read at `claim.at`, so that tick does not read it again.
+ */
+async function becomeMain($: Api, claim: FactOf<'main'>, cwd: string, herdr?: Sources['herdr']): Promise<void> {
+  main?.heartbeat.cancel()
+  const who: Main = { k: 'main', pane: claim.pane, sid: claim.sid, space: claim.space, cwd, home: (await $.env.get('HOME')) ?? '', tmp: (await $.env.get('TMPDIR')) ?? '' }
+  const heartbeat = $.clock.every(HEARTBEAT_MS, () => {
+    void tick($)
+  })
+  me = who
+  const sources = herdr ? { ...unpolled(), herdr } : unpolled()
+  main = { who, sources, lastRun: herdr ? { herdr: claim.at } : {}, polling: new Set(), board: undefined, heartbeat, isDrawing: false }
+  void tick($)
+}
+
+/**
+ * `/cockpit`: claim this session's space (last claim wins, ADR3) and open the pane. One snapshot,
+ * bounded by CLAIM_SNAPSHOT_MS, is all it waits for: it doubles as the first herdr poll, and the
+ * first tick runs after the answer. With herdr down, the space comes from HERDR_PANE_ID and the
+ * pane opens saying "herdr unavailable".
  */
 async function claimAndOpen($: Api): Promise<string> {
-  const envPane = await $.env.get('HERDR_PANE_ID')
-  const sid = (await $.session.id()) as SessionId
-  const resp = await perform($, snapshotReq())
-  const snap = resp.k === 'ok' ? parseSnapshot(resp.text) : undefined
-  const mine = snap ? findMe(snap, envPane, sid) : undefined
-  const pane = mine?.pane ?? (snap ? undefined : (envPane as PaneId | undefined))
-  const space = mine?.space ?? (snap ? undefined : spaceOfPane(envPane))
+  const herePane = await envPane($)
+  const sid = await sessionId($)
+  let snap: Snapshot | undefined
+  let error = 'the snapshot has a shape this cockpit does not know'
+  try {
+    snap = parseSnapshot(await runProc($, COMMANDS['herdr api snapshot'](CLAIM_SNAPSHOT_MS)))
+  } catch (err) {
+    error = messageOf(err)
+  }
+  const mine = snap ? findMe(snap, herePane, sid) : undefined
+  const pane = mine?.pane ?? (snap ? undefined : herePane)
+  const space = mine?.space ?? (snap ? undefined : spaceOfPane(herePane))
   if (!pane || !space) return 'Cockpit needs a herdr pane, and this session is not in one.'
 
   const now = await $.clock.now()
-  await writeFact($, { kind: 'main', space, sid, pane, at: now })
-  me = { k: 'main', pane, sid, space, cwd: sessionCwd || (mine?.cwd ?? ''), home: (await $.env.get('HOME')) ?? '' }
-  const error = resp.k === 'fail' ? resp.error : 'the snapshot has a shape this cockpit does not know'
-  sources = { ...sources, herdr: settle(sources.herdr, snap, now, error) }
-  lastRun = { ...lastRun, herdr: now }
-  isStoreTimed = false
-  startHeartbeat($)
-  await tick($)
+  const claim: FactOf<'main'> = { kind: 'main', space, sid, pane, at: now }
+  await writeFact($, claim)
+  await becomeMain($, claim, await $.session.cwd(), settle({ k: 'never' }, snap, now, error))
   await $.ui.open({ id: PANE_ID, title: 'Cockpit', focus: true })
   if (!snap) return `Cockpit is main of ${space}, but herdr is unavailable.`
   return `Cockpit is main of ${snap.spaces.find((s) => s.space === space)?.label ?? space}.`
 }
 
-function startHeartbeat($: Api): void {
-  heartbeat ??= $.clock.every(HEARTBEAT_MS, () => {
-    void tick($)
-  })
-}
-
-function stopHeartbeat(): void {
-  heartbeat?.cancel()
-  heartbeat = undefined
-}
-
 /**
- * The heartbeat body. Skips while the previous tick still runs, so a hung source never stacks
- * ticks. Still main? → poll each due source → project → redraw.
+ * The heartbeat body. Still main? → poll the due sources stage by stage → draw. Ticks may
+ * overlap: a source still polling from an earlier tick is skipped, so a hung `gh` holds up only
+ * the tick that started it, and the next tick polls and draws everything else.
  */
 async function tick($: Api): Promise<void> {
-  if (isTicking || me.k !== 'main') return
-  isTicking = true
+  const m = main
+  if (!m) return
   try {
-    const main: Main = me
-    const t0 = await $.clock.now()
-    const { facts, reads } = await loadFacts($)
-    const readMs = (await $.clock.now()) - t0
-    if (!isStoreTimed || readMs > STORE_SLOW_MS) {
-      isStoreTimed = true
-      $.ui.log(`cockpit store: keys() and ${reads} gets in ${readMs} ms`, { to: 'debug' })
-    }
-
-    if (claimOf(facts, main.space)?.pane !== main.pane) {
-      await loseClaim($, main)
+    if (claimOf(await loadFacts($, 'main'), m.who.space)?.pane !== m.who.pane) {
+      if (main === m) await loseClaim($)
       return
     }
     const now = await $.clock.now()
-    for (const id of due(lastRun, now)) await poll($, id, worldOf(main, now, facts))
-    board = project(worldOf(main, now, facts))
-    $.ui.invalidate('ui.render')
+    for (const stage of STAGES) {
+      const ids = due(m.lastRun, now).filter((id) => stage.includes(id) && !m.polling.has(id))
+      await Promise.all(ids.map((id) => poll($, m, id, now)))
+    }
+    await draw($, m)
   } catch (err) {
     await debug($, 'tick', err)
-  } finally {
-    isTicking = false
   }
 }
 
-async function loseClaim($: Api, main: Main): Promise<void> {
-  stopHeartbeat()
-  me = { k: 'pane', pane: main.pane, sid: main.sid, engagements: [] }
-  board = undefined
+/**
+ * Project and redraw. One draw at a time, from facts loaded now: two overlapping ticks never
+ * write one `happened` twice, and a tick that waited on a hung source draws no stale facts.
+ */
+async function draw($: Api, m: MainState): Promise<void> {
+  if (m.isDrawing || main !== m) return
+  m.isDrawing = true
+  try {
+    const facts = await loadFacts($)
+    const now = await $.clock.now()
+    const board = project(worldOf(m, now, facts))
+    m.board = board
+    // Set once: the board lists only events with no `happened` fact in what this draw loaded.
+    for (const e of board.newEvents) await writeFact($, { kind: 'happened', ticket: e.ticket, event: e.id, at: now })
+    $.ui.invalidate('ui.render')
+  } finally {
+    m.isDrawing = false
+  }
+}
+
+/** The one way out of main. A session that is not main does nothing. */
+async function loseClaim($: Api): Promise<void> {
+  if (!main) return
+  main.heartbeat.cancel()
+  me = { k: 'pane', pane: main.who.pane, sid: main.who.sid, engagements: [] }
+  main = undefined
   await $.ui.close({ id: PANE_ID })
 }
 
 /** One source, one poll. A throw or an unusable answer marks this source stale and no other. */
-async function poll<K extends PolledId>($: Api, id: K, world: World): Promise<void> {
-  const source = SOURCES[id] as Source<SourceValues[K]>
+async function poll<K extends SourceId>($: Api, m: MainState, id: K, now: Ms): Promise<void> {
+  const source = BY_ID[id]
+  m.polling.add(id)
   let value: SourceValues[K] | undefined
   let error = 'unreadable answer'
   try {
-    const resps: Resp[] = []
-    for (const req of source.plan(world)) resps.push(await perform($, req))
-    value = source.read(world, resps)
-    const failed = resps.find((r) => r.k === 'fail')
-    if (failed?.k === 'fail') error = failed.error
+    value = await source.run({ me: m.who, sources: m.sources }, askOf($))
   } catch (err) {
     error = messageOf(err)
   }
-  sources = { ...sources, [id]: settle(sources[id] as Polled<SourceValues[K]>, value, world.now, error) }
-  lastRun = { ...lastRun, [id]: world.now }
+  m.sources = { ...m.sources, [id]: settle(m.sources[id], value, now, error) }
+  m.lastRun[id] = now
+  m.polling.delete(id)
 }
 
-/** The single executor. `$.process.run` and `$.fs.read` appear only here. */
-async function perform($: Api, req: Req): Promise<Resp> {
-  try {
-    if (req.k === 'read') return { k: 'ok', text: await $.fs.read(req.path) }
-    const r = await $.process.run(req.argv, { timeoutMs: req.timeoutMs })
-    const what = req.argv.slice(0, 3).join(' ')
-    if (r.exitCode !== 0) return { k: 'fail', error: `${what} exited ${r.exitCode}: ${r.stderr.split('\n')[0] ?? ''}` }
-    if (r.isStdoutTruncated) return { k: 'fail', error: `${what}: output truncated` }
-    return { k: 'ok', text: r.stdout }
-  } catch (err) {
-    return { k: 'fail', error: messageOf(err) }
+/** The reads one poll may make, over `$`. Each throws when its read fails. */
+function askOf($: Api): Ask {
+  return {
+    proc: (req) => runProc($, req),
+    read: (path) => readFile($, path),
+    list: (path) => listDir($, path),
   }
 }
 
+/** `$.process.run` appears only here. A process that exits non-zero or truncates its output throws. */
+async function runProc($: Api, req: Req): Promise<string> {
+  const r = await $.process.run(req.argv, { timeoutMs: req.timeoutMs })
+  const what = req.argv.slice(0, 3).join(' ')
+  if (r.exitCode !== 0) throw new Error(`${what} exited ${r.exitCode}: ${r.stderr.split('\n')[0] ?? ''}`)
+  if (r.isStdoutTruncated) throw new Error(`${what}: output truncated`)
+  return r.stdout
+}
+
+/** `$.fs.read` appears only here. */
+async function readFile($: Api, path: string): Promise<string> {
+  return $.fs.read(path)
+}
+
+/** `$.fs.list` appears only here. No folder yet means nothing was ever left undelivered, not a failed source. */
+async function listDir($: Api, path: string): Promise<Listing> {
+  if (!(await $.fs.exists(path))) return []
+  return (await $.fs.list(path)).map((e) => ({ name: e.name, kind: e.kind, mtimeMs: e.mtimeMs }))
+}
+
+/** The herdr pane this session runs in, branded once here. */
+async function envPane($: Api): Promise<PaneId | undefined> {
+  const pane = await $.env.get('HERDR_PANE_ID')
+  return isPaneId(pane) ? pane : undefined
+}
+
+/** This session's id, branded once here. `/clear` changes it, so read it fresh each time. */
+async function sessionId($: Api): Promise<SessionId> {
+  const sid = await $.session.id()
+  if (!isSessionId(sid)) throw new Error('this session has no id')
+  return sid
+}
+
 /** Every `cockpit:` fact, or only one kind's. Values that do not validate are skipped, never thrown on. */
-async function loadFacts($: Api, only?: FactKind): Promise<{ facts: Fact[]; reads: number }> {
-  const infos = (await $.store.keys()).flatMap((key) => {
-    const info = parseKey(key)
-    return info && (only === undefined || info.kind === only) ? [{ key, info }] : []
-  })
-  const values = await Promise.all(infos.map(({ key }) => $.store.get(key)))
-  return { facts: infos.flatMap(({ info }, i) => parseFact(info, values[i]) ?? []), reads: infos.length }
+async function loadFacts($: Api, only?: FactKind): Promise<Fact[]> {
+  const keys = (await $.store.keys()).filter((key) => isFactKey(key, only))
+  const values = await Promise.all(keys.map((key) => $.store.get(key)))
+  return keys.flatMap((key, i) => parseFact(key, values[i]) ?? [])
+}
+
+/** A prompt or hand-back any session received. The regex is all a session pays for a prompt that holds no status line and no brief. */
+async function notePrompt($: Api, text: unknown): Promise<void> {
+  const read = typeof text === 'string' ? readPrompt(text) : undefined
+  if (read) await record($, promptSeen, read)
+}
+
+/** A Bash command this session ran. A refused or failed call sent nothing. */
+async function noteBash($: Api, r: object, command: unknown): Promise<void> {
+  if (('deny' in r && r.deny !== undefined) || ('isError' in r && r.isError === true) || typeof command !== 'string') return
+  const calls = sendCalls(command)
+  if (calls.length > 0) await record($, bashSeen, calls)
+}
+
+/** Run a pure observer on what a hook saw, keep its `me`, and write its facts. */
+async function record<I>($: Api, observer: Observer<I>, input: I): Promise<void> {
+  const sid = me.k === 'inert' ? (await sessionId($)) : me.sid
+  const at = await $.clock.now()
+  // Read and replace `me` in one synchronous step, so a resolveMe between the awaits is not undone.
+  const seen = observer(me, input, sid, at)
+  me = seen.me
+  for (const fact of seen.facts) await writeFact($, fact)
 }
 
 /** Whole value, writer-owned key: never get-then-set. */
@@ -289,18 +376,16 @@ async function act($: Api, intent: Intent): Promise<void> {
         $.ui.invalidate('ui.render')
         return
       case 'focus-pane': {
-        const req = focusReq(intent.pane)
+        const req = COMMANDS['herdr agent focus'](intent.pane)
         $.clock.after(0, () => {
           void focusPane($, req)
         })
         return
       }
-      case 'open-report':
-      case 'open-url':
-      case 'fill':
-        throw new Error(`not implemented (S2): ${intent.k}`)
-      case 'update':
-        throw new Error('not implemented (S4): update')
+      case 'checks':
+        ui = { ...ui, checks: ui.checks === intent.pr ? undefined : intent.pr }
+        $.ui.invalidate('ui.render')
+        return
       default:
         return intent satisfies never
     }
@@ -310,12 +395,15 @@ async function act($: Api, intent: Intent): Promise<void> {
 }
 
 async function focusPane($: Api, req: Req): Promise<void> {
-  const r = await perform($, req)
-  if (r.k === 'fail') await debug($, 'focus', r.error)
+  try {
+    await runProc($, req)
+  } catch (err) {
+    await debug($, 'focus', err)
+  }
 }
 
-function worldOf(main: Main, now: Ms, facts: Fact[]): World {
-  return { now, me: main, sources, facts, readbacks: new Map(), inFlight: new Set(), mainSkill: undefined }
+function worldOf(m: MainState, now: Ms, facts: Fact[]): World {
+  return { now, me: m.who, sources: m.sources, facts }
 }
 
 function messageOf(err: unknown): string {

@@ -1,38 +1,64 @@
 // view.ts: Board → element tree. No Table exists, so a table is a column of row Boxes whose
-// cells are fixed-width Boxes (widths from `bodyColumns`).
+// cells are fixed-width Boxes (widths from `COLUMNS`).
 //
 // The view never calls `$`. It takes the element constructors `$.ui.resolve(e)` returned and one
 // `act(intent)` callback, so a drawing test presses a key and register.ts alone decides what the
 // Intent does. Every glyph the cockpit shows is in this file.
 
 import type { Elements, RenderElement } from 'claude-code'
-import type { Board, Group, Health, Intent, Ms, OtherItem, PaneCell, PaneStatus, PaneUi, Row, SourceId } from './model.ts'
+import { ciCell } from './cells.ts'
+import { AGENT_SKILLS, BACKEND, FRONTEND } from './github.ts'
+import { LETTERS } from './model.ts'
+import type { Board, Cells, CiCell, Group, Health, Intent, Letter, Light, Ms, LivePane, OtherItem, PaneStatus, PaneUi, Pr, PrCell, PrItem, ReportStatus, Row } from './model.ts'
 
 /** The three elements the cockpit draws with, on whichever surface resolved them. */
 type El = Pick<Elements[keyof Elements], 'Box' | 'Text' | 'Button'>
 type Act = (i: Intent) => void | Promise<void>
 
 const DASH = '–'
-/** Pane, Report, Fix, Review, PR, CI. */
-const FIXED = [5, 7, 5, 9, 9, 6]
-const LINEAR_WIDTH = 7
 const MIN_WORK = 10
 const KIND_WIDTH = 9
-const HEADINGS = ['Work', 'Pane', 'Report', 'Fix', 'Review', 'PR', 'CI', 'Linear']
+
+/** What one cell reads, and its colour. */
+type Drawn = { text: string; color?: string | undefined }
+
+/** One Work-tab column after Work. While its `source` is stale the column keeps its last answer, dimmed and uncoloured. */
+type Column = { heading: string; width: number; draw(row: Row): Drawn; shownIf?: (board: Board) => boolean; source?: keyof Health; wrap?: 'wrap' }
+
+/** The Work tab's columns after Work, in order. Report fits `blocked` and a space before Fix. */
+const COLUMNS = {
+  // Several panes outgrow the column, so they wrap onto the next line rather than truncate.
+  pane: { heading: 'Pane', width: 5, wrap: 'wrap', draw: ({ panes: p }) => (p.k === 'live' ? { text: p.list.map(liveText).join(' '), color: PANE_COLOR[p.list[0].status] } : { text: absent(p) }) },
+  report: { heading: 'Report', width: 8, draw: (r) => reportDrawn(r.cells.report) },
+  fix: { heading: 'Fix', width: 5, draw: ({ cells: { fix } }) => ({ text: fix.k === 'round' ? `${fix.round}/${fix.of}` : DASH }) },
+  review: { heading: 'Review', width: 9, draw: (r) => ({ text: reviewText(r.cells.review) }) },
+  pr: { heading: 'PR', width: 9, source: 'github', draw: (r) => prDrawn(r.cells.pr) },
+  ci: { heading: 'CI', width: 6, source: 'github', draw: (r) => ciDrawn(r.cells.ci) },
+  linear: { heading: 'Linear', width: 7, shownIf: (b) => b.project !== undefined, draw: (r) => ({ text: linearText(r.cells.linear) }) },
+} satisfies Record<string, Column>
+export type ColumnId = keyof typeof COLUMNS
+
+/** PRs tab: State and CI widths. The PR column takes what is left. */
+const STATE_WIDTH = 8
+const PR_CI_WIDTH = 7
+const REPO_TAG: Readonly<Record<string, string>> = { [FRONTEND]: 'FE', [BACKEND]: 'BE', [AGENT_SKILLS]: 'AS' }
+const PR_STATE: Record<Pr['state'], Drawn> = {
+  OPEN: { text: 'held', color: 'yellow' },
+  MERGED: { text: 'merged', color: 'green' },
+  CLOSED: { text: 'closed', color: undefined },
+}
 
 const PANE_GLYPH: Record<PaneStatus, string> = { working: '◐', done: '✓', idle: '○', blocked: '!', unknown: '?' }
 const PANE_COLOR: Partial<Record<PaneStatus, string>> = { working: 'blue', done: 'green', blocked: 'red' }
 
-const SOURCE_NAME: Record<SourceId, string> = {
-  herdr: 'herdr',
-  labels: 'pane labels',
-  spaces: 'Live spaces',
-  heads: 'git',
-  branches: 'git',
-  github: 'gh',
-  linear: 'Linear',
-  inbox: 'dispatch inbox',
-  codex: 'Codex',
+/** Each health entry's name, and the word for it once a source that answered has failed. herdr is only ever unavailable. */
+const HEALTH_WORDS: Record<keyof Health, { name: string; down: string }> = {
+  herdr: { name: 'herdr', down: 'unavailable' },
+  labels: { name: 'pane labels', down: 'stale' },
+  spaces: { name: 'Live spaces', down: 'stale' },
+  git: { name: 'git', down: 'stale' },
+  github: { name: 'gh', down: 'stale' },
+  inbox: { name: 'dispatch inbox', down: 'stale' },
 }
 
 export function drawCockpit(el: El, board: Board | undefined, ui: PaneUi, columns: number, act: Act): RenderElement {
@@ -46,58 +72,47 @@ export function drawCockpit(el: El, board: Board | undefined, ui: PaneUi, column
       Box({
         flexDirection: 'row',
         columnGap: 2,
-        children: [Text({ bold: true, children: [board.space.label] }), Text({ dimColor: true, children: [board.project === undefined ? 'no project' : 'Linear project'] })],
+        children: [Text({ bold: true, children: [board.space.label] }), Text({ dimColor: true, children: [board.project ?? 'no project'] })],
       }),
       Box({ flexDirection: 'row', columnGap: 3, children: [tab('work', 'Work', '1'), tab('prs', 'PRs', '2')] }),
       ...healthLines(board.health).map((line) => Text({ color: 'yellow', children: [line] })),
       Text({ children: [' '] }),
-      ui.tab === 'work' ? drawWork(el, board, ui, columns, act) : drawPrs(el, board, columns, act),
+      ui.tab === 'work' ? drawWork(el, board, ui, columns, act) : drawPrs(el, board, ui, columns, act),
     ],
   })
 }
 
-export function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): RenderElement {
+function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): RenderElement {
   const { Box, Text, Button } = el
-  const hasLinear = board.project !== undefined
-  const widths = columnsFor(columns, hasLinear)
+  const { work, shown } = columnsFor(columns, board)
   const rows = board.build.flatMap(rowsOf)
   const selected = rows.find((r) => r.ticket === ui.selected) ?? rows[0]
-  const focusTarget = selected?.pane.k === 'live' ? selected.pane.pane : undefined
+  const focusTarget = selected?.panes.k === 'live' ? selected.panes.list[0].pane : undefined
 
-  const cells = (texts: string[], from: number, dim: boolean) =>
-    texts.map((t, i) => Box({ width: widths[from + i] ?? 0, flexShrink: 0, children: [Text({ dimColor: dim, wrap: 'truncate-end', children: [t] })] }))
-
-  const headingRow = Box({
-    flexDirection: 'row',
-    children: [
-      Box({ width: widths[0] ?? MIN_WORK, flexShrink: 0, children: [Text({ dimColor: true, children: [HEADINGS[0] ?? ''] })] }),
-      ...cells(HEADINGS.slice(1, widths.length), 1, true),
-    ],
-  })
+  const isStale = (c: Column) => c.source !== undefined && board.health[c.source].k === 'stale'
+  const headingRow = Box({ flexDirection: 'row', children: [cell(el, work, { text: 'Work' }, true), ...shown.map((c) => cell(el, c.width, { text: c.heading }, true))] })
 
   const buildRow = (row: Row) => {
-    const t = cellText(row)
-    const pane = row.pane
+    const lead = row.panes.k === 'live' ? row.panes.list[0] : undefined
     const subtitle = [row.kind, row.ticket].filter((x) => x !== undefined).join(' ') + (row.origin === 'this-session' ? ' (this session)' : '')
     return Box({
       flexDirection: 'row',
       children: [
         Box({
-          width: widths[0] ?? MIN_WORK,
+          width: work,
           flexShrink: 0,
           flexDirection: 'column',
           children: [
             Button({
               key: `row-${row.ticket}`,
-              label: clip(row.title, (widths[0] ?? MIN_WORK) - 1),
+              label: clip(row.title, work - 1),
               plain: true,
-              onPress: () => (pane.k === 'live' ? act({ k: 'focus-pane', pane: pane.pane }) : undefined),
+              onPress: () => (lead === undefined ? undefined : act({ k: 'focus-pane', pane: lead.pane })),
             }),
             Text({ dimColor: true, children: [subtitle] }),
           ],
         }),
-        Box({ width: widths[1] ?? 0, flexShrink: 0, children: [Text({ color: pane.k === 'live' ? PANE_COLOR[pane.status] : undefined, children: [t.pane] })] }),
-        ...cells([t.report, t.fix, t.review, t.pr, t.ci, ...(hasLinear ? [t.linear] : [])], 2, false),
+        ...shown.map((c) => cell(el, c.width, c.draw(row), isStale(c), c.wrap)),
       ],
     })
   }
@@ -108,7 +123,7 @@ export function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act:
   return Box({
     flexDirection: 'column',
     children: [
-      board.here === undefined ? null : Text({ dimColor: true, children: [`You are here: ${board.here}`] }),
+      board.here === undefined ? null : Text({ dimColor: true, children: [`You are here: /${board.here.skill}`] }),
       Text({ dimColor: true, children: ['BUILD'] }),
       rows.length === 0
         ? Text({ dimColor: true, children: ['No build work in this space.'] })
@@ -126,27 +141,90 @@ export function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act:
   })
 }
 
-export function drawPrs(el: El, _board: Board, _columns: number, _act: Act): RenderElement {
-  return el.Text({ dimColor: true, children: ['PRs arrive in S2'] })
-}
+/** `owner/name#n`: a PR's key in PaneUi and in its Button's key. */
+const prKey = (pr: Pr): string => `${pr.repo}#${pr.number}`
 
-/** Cell glyphs live here and nowhere else. */
-export function cellText(row: Row): Record<'pane' | 'report' | 'fix' | 'review' | 'pr' | 'ci' | 'linear', string> {
-  return {
-    pane: [row.pane, ...row.extraPanes].map(paneText).join(' '),
-    report: reportText(row.report),
-    fix: row.fix.k === 'round' ? `${row.fix.round}/${row.fix.of}` : DASH,
-    review: reviewText(row.review),
-    pr: prText(row.pr),
-    ci: ciText(row.ci),
-    linear: linearText(row.linear),
+/**
+ * The PRs tab: one block per repo, each PR's state and CI. `c` (or pressing a PR) lists the
+ * checks still red or running. `o` and `m` are shown as hints only; they arrive with S4.
+ */
+function drawPrs(el: El, board: Board, ui: PaneUi, columns: number, act: Act): RenderElement {
+  const { Box, Text, Button } = el
+  const items = board.prs.flatMap((g) => g.items)
+  const heading = board.project === undefined ? "THIS SPACE'S PRS" : "THIS PROJECT'S PRS"
+  if (items.length === 0) return Box({ flexDirection: 'column', children: [Text({ dimColor: true, children: [heading] }), Text({ dimColor: true, children: ['No PRs for this space.'] })] })
+
+  const prWidth = Math.max(MIN_WORK, columns - STATE_WIDTH - PR_CI_WIDTH)
+  const focused = items.find((i) => prKey(i.pr) === ui.selectedPr) ?? items[0]
+
+  const prRow = ({ pr, tickets }: PrItem) => {
+    const isOpen = ui.checks === prKey(pr)
+    return Box({
+      flexDirection: 'column',
+      children: [
+        Box({
+          flexDirection: 'row',
+          children: [
+            Box({
+              width: prWidth,
+              flexShrink: 0,
+              flexDirection: 'column',
+              children: [
+                Button({ key: `pr-${prKey(pr)}`, label: clip(`#${pr.number} ${pr.title}`, prWidth - 1), plain: true, onPress: () => act({ k: 'checks', pr: prKey(pr) }) }),
+                Text({ dimColor: true, children: [tickets.length > 0 ? tickets.join(' ') : pr.branch] }),
+              ],
+            }),
+            cell(el, STATE_WIDTH, PR_STATE[pr.state]),
+            cell(el, PR_CI_WIDTH, ciDrawn(ciCell(pr))),
+          ],
+        }),
+        isOpen ? checkLines(el, pr) : null,
+      ],
+    })
   }
+
+  return Box({
+    flexDirection: 'column',
+    children: [
+      Text({ dimColor: true, children: [heading] }),
+      Box({ flexDirection: 'row', children: [cell(el, prWidth, { text: 'PR' }, true), cell(el, STATE_WIDTH, { text: 'State' }, true), cell(el, PR_CI_WIDTH, { text: 'CI' }, true)] }),
+      ...board.prs.flatMap((g) => [Text({ bold: true, children: [REPO_TAG[g.repo] ?? g.repo.split('/').pop() ?? g.repo] }), ...g.items.map(prRow)]),
+      Text({ children: [' '] }),
+      Box({
+        flexDirection: 'row',
+        columnGap: 3,
+        children: [
+          Button({ key: 'checks', label: 'checks', hotkey: 'c', plain: true, onPress: () => (focused === undefined ? undefined : act({ k: 'checks', pr: prKey(focused.pr) })) }),
+        ],
+      }),
+    ],
+  })
 }
 
-/** Column widths for the pane's body width; the Work column takes what is left. */
-export function columnsFor(width: number, hasLinear: boolean): number[] {
-  const fixed = hasLinear ? [...FIXED, LINEAR_WIDTH] : FIXED
-  return [Math.max(MIN_WORK, width - fixed.reduce((a, b) => a + b, 0)), ...fixed]
+/** Under an open PR: its failed checks, then those still running, else that all passed. */
+function checkLines(el: El, pr: Pr): RenderElement {
+  const { Box, Text } = el
+  const { failed, running, total } = pr.checks
+  const lines = [...failed.map((name) => Text({ color: 'red', children: [name] })), ...running.map((name) => Text({ color: 'blue', children: [name] }))]
+  return Box({
+    flexDirection: 'column',
+    paddingLeft: 2,
+    children: lines.length > 0 ? lines : [Text({ dimColor: true, children: [total === 0 ? 'no checks' : `all ${total} checks passed`] })],
+  })
+}
+
+/** One fixed-width cell. A dimmed cell drops its colour. */
+function cell({ Box, Text }: El, width: number, { text, color }: Drawn, dim = false, wrap: 'wrap' | 'truncate-end' = 'truncate-end'): RenderElement {
+  return Box({ width, flexShrink: 0, children: [Text({ dimColor: dim, color: dim ? undefined : color, wrap, children: [text] })] })
+}
+
+/** What a row's cell in one column reads. Cell glyphs live in COLUMNS and nowhere else. */
+export const cellText = (row: Row, id: ColumnId): string => COLUMNS[id].draw(row).text
+
+/** The columns this board shows, and the Work column's width: what the pane's width leaves, never under 10. */
+export function columnsFor(width: number, board: Board): { work: number; shown: Column[] } {
+  const shown = Object.values(COLUMNS).filter((c: Column) => c.shownIf === undefined || c.shownIf(board))
+  return { work: Math.max(MIN_WORK, width - shown.reduce((sum, c) => sum + c.width, 0)), shown }
 }
 
 function rowsOf(g: Group): Row[] {
@@ -155,76 +233,69 @@ function rowsOf(g: Group): Row[] {
 
 function otherLine(el: El, o: OtherItem, columns: number): RenderElement {
   const { Box, Text } = el
-  const status = o.pane.k === 'live' ? [o.pane.status, o.pane.tool].filter((x) => x !== undefined).join(' ') : paneText(o.pane)
-  const label = o.note === undefined ? o.label : `${o.label} (${o.note})`
+  const status = o.pane.k === 'live' ? [o.pane.status, o.pane.tool].filter((x) => x !== undefined).join(' ') : absent(o.pane)
+  const label = o.k === 'labelled' ? o.title : `tab "${o.tab}" (unlabelled)`
   return Box({
     flexDirection: 'row',
     children: [
-      Box({ width: KIND_WIDTH, flexShrink: 0, children: [Text({ dimColor: true, children: [o.kind ?? ''] })] }),
+      Box({ width: KIND_WIDTH, flexShrink: 0, children: [Text({ dimColor: true, children: [o.k === 'labelled' ? (o.kind ?? '') : ''] })] }),
       Box({ width: Math.max(MIN_WORK, columns - KIND_WIDTH - 12), flexShrink: 0, children: [Text({ wrap: 'truncate-end', children: [label] })] }),
       Text({ dimColor: true, children: [status] }),
     ],
   })
 }
 
-function paneText(p: PaneCell): string {
-  if (p.k === 'live') return p.tool === undefined ? PANE_GLYPH[p.status] : `${PANE_GLYPH[p.status]} ${p.tool}`
-  return p.k === 'gone' ? 'gone' : DASH
+const liveText = (p: LivePane): string => (p.tool === undefined ? PANE_GLYPH[p.status] : `${PANE_GLYPH[p.status]} ${p.tool}`)
+
+const absent = (p: { k: 'gone' | 'none' }): string => (p.k === 'gone' ? 'gone' : DASH)
+
+/** The mock's Report copy and classes: ✓ green, `2 !` concerns amber, what needs Andres red. A report still in the inbox is `unsent`. */
+const REPORT_IN: Record<ReportStatus, (concerns: number) => Drawn> = {
+  DONE: () => ({ text: '✓', color: 'green' }),
+  DONE_WITH_CONCERNS: (n) => ({ text: n > 0 ? `${n} !` : '!', color: 'yellow' }),
+  NEEDS_CONTEXT: () => ({ text: 'ask', color: 'red' }),
+  BLOCKED: () => ({ text: 'blocked', color: 'red' }),
 }
 
-function reportText(r: Row['report']): string {
-  switch (r.k) {
-    case 'none':
-      return DASH
-    case 'na':
-      return 'n/a'
-    case 'in':
-    case 'undelivered':
-      if (r.status === undefined) return 'unsent'
-      return r.status === 'DONE' ? '✓' : r.status === 'DONE_WITH_CONCERNS' ? '!' : 'ask'
-    case 'escalation':
-      return 'note'
-  }
+function reportDrawn(r: Cells['report']): Drawn {
+  if (r.k === 'in') return REPORT_IN[r.status](r.concerns)
+  if (r.k === 'undelivered') return { text: 'unsent', color: 'yellow' }
+  if (r.k === 'escalation') return { text: 'note', color: 'yellow' }
+  return { text: r.k === 'na' ? 'n/a' : DASH }
 }
 
-function reviewText(r: Row['review']): string {
-  if (r.k === 'none') return `${DASH} ${DASH} ${DASH} ${DASH}`
-  const light = (letter: 'V' | 'C' | 'T' | 'D') => {
-    const l = r[letter]
-    return l === 'lit' || l === 'dim' ? letter : l === 'amber' ? '·' : l === 'na' ? 'n/a' : DASH
-  }
-  return (['V', 'C', 'T', 'D'] as const).map(light).join(' ')
+const LIGHT_TEXT: Record<Light, (letter: Letter) => string> = { lit: (l) => l, dim: (l) => l, claimed: (l) => l, amber: () => '·', na: () => 'n/a', off: () => DASH }
+
+/** Until a verifier reports, and while the offer stands, every letter is a dash. */
+function reviewText(r: Cells['review']): string {
+  return LETTERS.map((l) => (r.k === 'review' ? LIGHT_TEXT[r.lights[l]](l) : DASH)).join(' ')
 }
 
-function prText(p: Row['pr']): string {
-  if (p.k === 'own') return `#${p.pr.number}`
-  if (p.k === 'shared') return `in #${p.pr.number}`
-  return p.k === 'stale' ? 'stale' : DASH
+/** The mock's classes: an open PR blue, a merged one green. */
+const PR_COLOR: Record<Pr['state'], string | undefined> = { OPEN: 'blue', MERGED: 'green', CLOSED: undefined }
+
+function prDrawn(p: PrCell): Drawn {
+  if (p.k === 'none') return { text: DASH }
+  return { text: p.k === 'own' ? `#${p.pr.number}` : `in #${p.pr.number}`, color: PR_COLOR[p.pr.state] }
 }
 
-function ciText(c: Row['ci']): string {
+function ciDrawn(c: CiCell): Drawn {
   switch (c.k) {
     case 'pass':
-      return '✓'
+      return { text: '✓', color: 'green' }
     case 'fail':
-      return `✗ ${c.failed}`
+      return { text: `✗ ${c.failed}`, color: 'red' }
     case 'running':
-      return `◐ ${c.done}/${c.total}`
-    case 'stale':
-      return 'stale'
+      return { text: `◐ ${c.done}/${c.total}`, color: 'blue' }
     case 'none':
-      return DASH
+      return { text: DASH }
   }
 }
 
-function linearText(l: Row['linear']): string {
+function linearText(l: Cells['linear']): string {
   switch (l.k) {
-    case 'hidden':
-      return ''
     case 'none':
       return DASH
-    case 'stale':
-      return 'stale'
     case 'ok':
       return '✓'
     case 'pending':
@@ -235,14 +306,11 @@ function linearText(l: Row['linear']): string {
 }
 
 function healthLines(health: Health): string[] {
-  const seen = new Set<string>()
-  return (Object.keys(health) as SourceId[]).flatMap((id) => {
+  return (Object.keys(health) as Array<keyof Health>).flatMap((id) => {
     const h = health[id]
-    const name = SOURCE_NAME[id]
-    if (h.k === 'ok' || seen.has(name)) return []
-    seen.add(name)
-    if (id === 'herdr') return [h.k === 'stale' ? `herdr unavailable since ${hhmm(h.since)}` : 'herdr unavailable']
-    return [h.k === 'stale' ? `${name} stale since ${hhmm(h.since)}` : `${name} unavailable`]
+    const { name, down } = HEALTH_WORDS[id]
+    if (h.k === 'ok') return []
+    return [h.k === 'stale' ? `${name} ${down} since ${hhmm(h.since)}` : `${name} unavailable`]
   })
 }
 
