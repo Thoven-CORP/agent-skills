@@ -7,7 +7,7 @@ import { project } from '../hooks/board.ts'
 import { COMMANDS, type Req } from '../hooks/commands.ts'
 import { parseSnapshot } from '../hooks/herdr.ts'
 import type { Board, Fact, Main, PaneId, Polled, Row, SessionId, Sources, SpaceId, World } from '../hooks/model.ts'
-import { parseLiveSpaces, unpolled, type Answer, type Ask, type Listing } from '../hooks/sources.ts'
+import { parseLiveSpaces, unpolled, type Ask, type Listing } from '../hooks/sources.ts'
 import { PANE_GET_P8W } from './fixtures/herdr.ts'
 import { WORKFLOW_LIVE_SPACES } from './fixtures/workflow.ts'
 
@@ -93,16 +93,16 @@ function paneGetFrom(snapshot: string, pane: string): string {
 
 /**
  * What a fake `ask` answers: process stdout by its argv joined with spaces, file text and folder
- * entries by path. Anything not in the table fails, as a missing file does.
+ * entries by path. Anything not in the table throws, as a missing file does.
  */
 export type AskTable = { proc?: Record<string, string>; read?: Record<string, string>; list?: Record<string, Listing> }
 
 /** A source's `ask` with no kit under it. `asked` records each read in the order asked: `read <path>`, `list <path>`, or the argv. */
 export function fakeAsk(table: AskTable): Ask & { asked: string[] } {
   const asked: string[] = []
-  const answer = <T>(what: string, value: T | undefined): Promise<Answer<T>> => {
+  const answer = <T>(what: string, value: T | undefined): Promise<T> => {
     asked.push(what)
-    return Promise.resolve(value === undefined ? { k: 'fail', error: `ENOENT: ${what}` } : { k: 'ok', value })
+    return value === undefined ? Promise.reject(new Error(`ENOENT: ${what}`)) : Promise.resolve(value)
   }
   return {
     asked,

@@ -12,17 +12,17 @@ import { parsePaneLabel, parseSnapshot } from './herdr.ts'
 import { inboxFile, inboxTicket } from './dispatch.ts'
 import type { Branches, GithubView, HeadPaths, InboxFile, Ms, Origins, Pane, PaneLabels, Polled, Pr, SourceId, SourceValues, Sources, SpaceMap, World } from './model.ts'
 
-/** What one outside read gave: its value, or why there is none. */
-export type Answer<T> = { k: 'ok'; value: T } | { k: 'fail'; error: string }
-
 /** One directory entry, as register.ts reduces `$.fs.list`. A folder that does not exist lists `[]`. */
 export type Listing = ReadonlyArray<{ name: string; kind: string; mtimeMs: number }>
 
-/** The reads a source may make. Each answers, never throws, so a source decides what a failure means. */
+/**
+ * The reads a source may make. Each throws when its read fails, and a throw out of `run` marks
+ * the whole source stale. A read the source can do without is wrapped in `tolerate`.
+ */
 export type Ask = {
-  proc(req: Req): Promise<Answer<string>>
-  read(path: string): Promise<Answer<string>>
-  list(path: string): Promise<Answer<Listing>>
+  proc(req: Req): Promise<string>
+  read(path: string): Promise<string>
+  list(path: string): Promise<Listing>
 }
 
 /** What a source may read: who main is, and what each source last gave. */
@@ -64,7 +64,8 @@ export function due(lastRun: Partial<Record<SourceId, Ms>>, now: Ms): SourceId[]
   })
 }
 
-const ok = <T>(a: Answer<T>): T | undefined => (a.k === 'ok' ? a.value : undefined)
+/** A read this source can do without: a failure is undefined here, and the read is tried again next poll. */
+const tolerate = <T>(read: Promise<T>): Promise<T | undefined> => read.catch(() => undefined)
 
 // ── herdr ──────────────────────────────────────────────────────────────────────────────────
 
@@ -128,15 +129,13 @@ export function headPathOf(cwd: string, dotGit: string | undefined): string {
 }
 
 /**
- * Where `cwd`'s HEAD lives, or undefined when a read failed. Only a `.git` that lists as a file
- * is read: a checkout's is a folder, and a folder outside git has none.
+ * Where `cwd`'s HEAD lives. Only a `.git` that lists as a file is read: a checkout's is a folder,
+ * and a folder outside git has none.
  */
-async function headOf(cwd: string, ask: Ask): Promise<string | undefined> {
-  const entries = ok(await ask.list(cwd))
-  if (!entries) return undefined
+async function headOf(cwd: string, ask: Ask): Promise<string> {
+  const entries = await ask.list(cwd)
   if (entries.find((e) => e.name === '.git')?.kind !== 'file') return headPathOf(cwd, undefined)
-  const dotGit = ok(await ask.read(`${cwd}/.git`))
-  return dotGit === undefined ? undefined : headPathOf(cwd, dotGit)
+  return headPathOf(cwd, await ask.read(`${cwd}/.git`))
 }
 
 /** `ref: refs/heads/fix/thv-1050` → `fix/thv-1050`. A detached HEAD (a bare sha) has no branch. */
@@ -182,10 +181,7 @@ export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
   herdr: {
     everyMs: HEARTBEAT_MS,
     needs: [],
-    run: async (_world, ask) => {
-      const text = ok(await ask.proc(COMMANDS['herdr api snapshot']()))
-      return text === undefined ? undefined : parseSnapshot(text)
-    },
+    run: async (_world, ask) => parseSnapshot(await ask.proc(COMMANDS['herdr api snapshot']())),
   },
 
   // ADR4: each pane's label is read once and kept until that pane's tab label or title changes.
@@ -194,7 +190,7 @@ export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
     everyMs: HEARTBEAT_MS,
     needs: ['herdr'],
     run: async (world, ask): Promise<PaneLabels> => {
-      const read = await Promise.all(toRead(world).map(async (p) => [p, ok(await ask.proc(COMMANDS['herdr pane get'](p.pane)))] as const))
+      const read = await Promise.all(toRead(world).map(async (p) => [p, await tolerate(ask.proc(COMMANDS['herdr pane get'](p.pane)))] as const))
       const cache = valueOf(world.sources.labels)?.byPane
       const byPane = new Map(unlabelled(world).flatMap((p) => {
         const kept = cache?.get(p.pane)
@@ -208,10 +204,7 @@ export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
   spaces: {
     everyMs: 5 * 60_000,
     needs: [],
-    run: async (world, ask) => {
-      const text = ok(await ask.read(workflowPath(world.me.home)))
-      return text === undefined ? undefined : parseLiveSpaces(text)
-    },
+    run: async (world, ask) => parseLiveSpaces(await ask.read(workflowPath(world.me.home))),
   },
 
   // Rebuilt from the tracked folders each poll. A folder whose read failed is left out, so it is
@@ -221,7 +214,7 @@ export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
     needs: ['herdr'],
     run: async (world, ask): Promise<HeadPaths> => {
       const known = valueOf(world.sources.heads)
-      const found = await Promise.all(trackedCwds(world).map(async (cwd) => [cwd, known?.get(cwd) ?? (await headOf(cwd, ask))] as const))
+      const found = await Promise.all(trackedCwds(world).map(async (cwd) => [cwd, known?.get(cwd) ?? (await tolerate(headOf(cwd, ask)))] as const))
       return new Map(found.flatMap(([cwd, head]) => (head === undefined ? [] : [[cwd, head] as const])))
     },
   },
@@ -231,7 +224,7 @@ export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
     needs: ['heads'],
     run: async (world, ask): Promise<Branches> => {
       const heads = [...(valueOf(world.sources.heads) ?? [])]
-      const read = await Promise.all(heads.map(async ([cwd, path]) => [cwd, ok(await ask.read(path))] as const))
+      const read = await Promise.all(heads.map(async ([cwd, path]) => [cwd, await tolerate(ask.read(path))] as const))
       const branches = new Map<string, string>()
       for (const [cwd, text] of read) {
         const branch = text === undefined ? undefined : parseHead(text)
@@ -245,7 +238,7 @@ export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
     everyMs: HEARTBEAT_MS,
     needs: ['herdr', 'heads'],
     run: async (world, ask): Promise<Origins> => {
-      const read = await Promise.all(unreadConfigs(world).map(async (path) => [path, ok(await ask.read(path))] as const))
+      const read = await Promise.all(unreadConfigs(world).map(async (path) => [path, await tolerate(ask.read(path))] as const))
       const origins = new Map(valueOf(world.sources.origins))
       for (const [path, text] of read) origins.set(path, text === undefined ? undefined : parseOrigin(text))
       return origins
@@ -253,19 +246,18 @@ export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
   },
 
   // One `gh pr list` per repo. Any repo failing marks the whole source stale, so the PR and CI
-  // cells keep the last full answer rather than mixing two polls.
+  // cells keep the last full answer rather than mixing two polls. allSettled, so a failed repo
+  // does not end the poll while another repo's gh still runs into the next one.
   github: {
     everyMs: 60_000,
     needs: ['herdr', 'heads', 'origins'],
     run: async (world, ask): Promise<GithubView | undefined> => {
-      const lists = await Promise.all(reposOf(world).map(async (repo) => {
-        const text = ok(await ask.proc(COMMANDS['gh pr list'](repo)))
-        return text === undefined ? undefined : parsePrList(repo, text)
-      }))
+      const lists = await Promise.allSettled(reposOf(world).map(async (repo) => parsePrList(repo, await ask.proc(COMMANDS['gh pr list'](repo)))))
       const prs: Pr[] = []
       for (const list of lists) {
-        if (!list) return undefined
-        prs.push(...list)
+        if (list.status === 'rejected') throw list.reason
+        if (!list.value) return undefined
+        prs.push(...list.value)
       }
       return { prs }
     },
@@ -278,13 +270,12 @@ export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
     run: async (world, ask): Promise<InboxFile[] | undefined> => {
       const dir = inboxDir(world.me.tmp)
       if (dir === undefined) return []
-      const listing = ok(await ask.list(dir))
-      if (!listing) return undefined
+      const listing = await ask.list(dir)
       const known = valueOf(world.sources.inbox) ?? []
       const files = await Promise.all(ticketFiles(listing).map(async (e) => {
         const kept = known.filter((f) => f.name === e.name && f.at === e.mtimeMs)
         if (kept.length > 0) return kept
-        const text = ok(await ask.read(`${dir}/${e.name}`))
+        const text = await tolerate(ask.read(`${dir}/${e.name}`))
         const file = text === undefined ? undefined : inboxFile(e.name, text, e.mtimeMs)
         return file ? [file] : []
       }))

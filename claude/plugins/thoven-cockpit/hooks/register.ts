@@ -26,8 +26,8 @@ import { bashSeen, promptSeen, type Observer } from './observe.ts'
 import { claimHeldBy, claimOf } from './facts.ts'
 import { COMMANDS, type Req } from './commands.ts'
 import { findMe, parseSnapshot, spaceOfPane } from './herdr.ts'
-import { type Board, type Fact, type FactKind, type FactOf, type Intent, type Main, type Me, type Ms, type PaneId, type PaneUi, type Polled, type SessionId, type SourceId, type Sources, type SourceValues, type World } from './model.ts'
-import { HEARTBEAT_MS, SOURCES, STAGES, due, settle, unpolled, type Answer, type Ask, type Listing, type Source } from './sources.ts'
+import { type Board, type Fact, type FactKind, type FactOf, type Intent, type Main, type Me, type Ms, type PaneId, type PaneUi, type Polled, type SessionId, type SourceId, type Snapshot, type Sources, type SourceValues, type World } from './model.ts'
+import { HEARTBEAT_MS, SOURCES, STAGES, due, settle, unpolled, type Ask, type Listing, type Source } from './sources.ts'
 import { isFactKey, keyOf, parseFact } from './store.ts'
 import { drawCockpit } from './view.ts'
 
@@ -211,8 +211,13 @@ async function becomeMain($: Api, claim: FactOf<'main'>, cwd: string, herdr?: So
 async function claimAndOpen($: Api): Promise<string> {
   const herePane = await envPane($)
   const sid = await sessionId($)
-  const resp = await runProc($, COMMANDS['herdr api snapshot'](CLAIM_SNAPSHOT_MS))
-  const snap = resp.k === 'ok' ? parseSnapshot(resp.value) : undefined
+  let snap: Snapshot | undefined
+  let error = 'the snapshot has a shape this cockpit does not know'
+  try {
+    snap = parseSnapshot(await runProc($, COMMANDS['herdr api snapshot'](CLAIM_SNAPSHOT_MS)))
+  } catch (err) {
+    error = messageOf(err)
+  }
   const mine = snap ? findMe(snap, herePane, sid) : undefined
   const pane = mine?.pane ?? (snap ? undefined : herePane)
   const space = mine?.space ?? (snap ? undefined : spaceOfPane(herePane))
@@ -221,7 +226,6 @@ async function claimAndOpen($: Api): Promise<string> {
   const now = await $.clock.now()
   const claim: FactOf<'main'> = { kind: 'main', space, sid, pane, at: now }
   await writeFact($, claim)
-  const error = resp.k === 'fail' ? resp.error : 'the snapshot has a shape this cockpit does not know'
   await becomeMain($, claim, await $.session.cwd(), settle({ k: 'never' }, snap, now, error))
   await $.ui.open({ id: PANE_ID, title: 'Cockpit', focus: true })
   if (!snap) return `Cockpit is main of ${space}, but herdr is unavailable.`
@@ -285,13 +289,10 @@ async function loseClaim($: Api): Promise<void> {
 async function poll<K extends SourceId>($: Api, m: MainState, id: K, now: Ms): Promise<void> {
   const source = SOURCES[id] as Source<SourceValues[K]>
   m.polling.add(id)
-  const answers: Array<Promise<Answer<unknown>>> = []
   let value: SourceValues[K] | undefined
   let error = 'unreadable answer'
   try {
-    value = await source.run({ me: m.who, sources: m.sources }, askOf($, answers))
-    const failed = (await Promise.all(answers)).find((a) => a.k === 'fail')
-    if (failed?.k === 'fail') error = failed.error
+    value = await source.run({ me: m.who, sources: m.sources }, askOf($))
   } catch (err) {
     error = messageOf(err)
   }
@@ -300,49 +301,33 @@ async function poll<K extends SourceId>($: Api, m: MainState, id: K, now: Ms): P
   m.polling.delete(id)
 }
 
-/** The reads one poll may make, over `$`. Each answer is kept in `answers`, in the order asked, so the poll can name the first failure. */
-function askOf($: Api, answers: Array<Promise<Answer<unknown>>>): Ask {
-  const kept = <T>(answer: Promise<Answer<T>>): Promise<Answer<T>> => {
-    answers.push(answer)
-    return answer
-  }
+/** The reads one poll may make, over `$`. Each throws when its read fails. */
+function askOf($: Api): Ask {
   return {
-    proc: (req) => kept(runProc($, req)),
-    read: (path) => kept(readFile($, path)),
-    list: (path) => kept(listDir($, path)),
+    proc: (req) => runProc($, req),
+    read: (path) => readFile($, path),
+    list: (path) => listDir($, path),
   }
 }
 
-/** `$.process.run` appears only here. */
-async function runProc($: Api, req: Req): Promise<Answer<string>> {
-  try {
-    const r = await $.process.run(req.argv, { timeoutMs: req.timeoutMs })
-    const what = req.argv.slice(0, 3).join(' ')
-    if (r.exitCode !== 0) return { k: 'fail', error: `${what} exited ${r.exitCode}: ${r.stderr.split('\n')[0] ?? ''}` }
-    if (r.isStdoutTruncated) return { k: 'fail', error: `${what}: output truncated` }
-    return { k: 'ok', value: r.stdout }
-  } catch (err) {
-    return { k: 'fail', error: messageOf(err) }
-  }
+/** `$.process.run` appears only here. A process that exits non-zero or truncates its output throws. */
+async function runProc($: Api, req: Req): Promise<string> {
+  const r = await $.process.run(req.argv, { timeoutMs: req.timeoutMs })
+  const what = req.argv.slice(0, 3).join(' ')
+  if (r.exitCode !== 0) throw new Error(`${what} exited ${r.exitCode}: ${r.stderr.split('\n')[0] ?? ''}`)
+  if (r.isStdoutTruncated) throw new Error(`${what}: output truncated`)
+  return r.stdout
 }
 
 /** `$.fs.read` appears only here. */
-async function readFile($: Api, path: string): Promise<Answer<string>> {
-  try {
-    return { k: 'ok', value: await $.fs.read(path) }
-  } catch (err) {
-    return { k: 'fail', error: messageOf(err) }
-  }
+async function readFile($: Api, path: string): Promise<string> {
+  return $.fs.read(path)
 }
 
 /** `$.fs.list` appears only here. No folder yet means nothing was ever left undelivered, not a failed source. */
-async function listDir($: Api, path: string): Promise<Answer<Listing>> {
-  try {
-    if (!(await $.fs.exists(path))) return { k: 'ok', value: [] }
-    return { k: 'ok', value: (await $.fs.list(path)).map((e) => ({ name: e.name, kind: e.kind, mtimeMs: e.mtimeMs })) }
-  } catch (err) {
-    return { k: 'fail', error: messageOf(err) }
-  }
+async function listDir($: Api, path: string): Promise<Listing> {
+  if (!(await $.fs.exists(path))) return []
+  return (await $.fs.list(path)).map((e) => ({ name: e.name, kind: e.kind, mtimeMs: e.mtimeMs }))
 }
 
 /** The herdr pane this session runs in, branded once here. */
@@ -425,8 +410,11 @@ async function act($: Api, intent: Intent): Promise<void> {
 }
 
 async function focusPane($: Api, req: Req): Promise<void> {
-  const r = await runProc($, req)
-  if (r.k === 'fail') await debug($, 'focus', r.error)
+  try {
+    await runProc($, req)
+  } catch (err) {
+    await debug($, 'focus', err)
+  }
 }
 
 function worldOf(m: MainState, now: Ms, facts: Fact[]): World {

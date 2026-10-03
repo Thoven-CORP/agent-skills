@@ -144,7 +144,7 @@ test('repos are each space folder’s origin, read once, plus frontend and backe
   const view = await SOURCES.github.run(w2, ask3)
   expect(ask3.asked).toEqual([FRONTEND, BACKEND, AGENT_SKILLS].map(argvOf))
   expect(view?.prs.map((p) => `${p.repo}#${p.number}`).slice(9, 12)).toEqual(['Thoven-CORP/frontend-remote#133', 'Thoven-CORP/backend-remote#149', 'Thoven-CORP/backend-remote#148'])
-  expect(await SOURCES.github.run(w2, fakeAsk({ proc: { [argvOf(FRONTEND)]: GH_FRONTEND, [argvOf(AGENT_SKILLS)]: GH_AGENT_SKILLS } }))).toBeUndefined()
+  await expect(SOURCES.github.run(w2, fakeAsk({ proc: { [argvOf(FRONTEND)]: GH_FRONTEND, [argvOf(AGENT_SKILLS)]: GH_AGENT_SKILLS } }))).rejects.toThrow(`ENOENT: ${argvOf(BACKEND)}`)
 })
 
 // ── unit: PRs on the board ──────────────────────────────────────────────────────────────────
