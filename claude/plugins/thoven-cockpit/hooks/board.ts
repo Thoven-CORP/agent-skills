@@ -29,7 +29,7 @@
 //      `happened` fact yet, is a new event for main to record once (synthesis A1), so S4's ↻
 //      survives a later report replacing it or the PR falling out of gh's last 50.
 
-import { branchTicket, pickLabel } from './dispatch.ts'
+import { branchTicket, labelOfBranch, pickLabel } from './dispatch.ts'
 import { configPathOf } from './github.ts'
 import {
   KINDS,
@@ -76,7 +76,7 @@ export function project(world: World): Board {
   const panes = (snap?.panes ?? []).filter((p) => p.space === me.space && p.pane !== me.pane)
   const branches = valueOf(world.sources.branches)
   const labelled = panes.map((p) => {
-    const label = pickLabel([p.paneLabel ?? labels?.get(p.pane)?.label, p.tabLabel, p.terminalTitle], branches?.get(p.cwd))
+    const label = pickLabel([p.paneLabel ?? labels?.get(p.pane)?.label, p.tabLabel, p.terminalTitle]) ?? labelOfBranch(branches?.get(p.cwd))
     if (label && label.tickets.length > 0) return { p, label, origin: 'label' as const }
     const tied = tiedLabel(world.facts, p)
     return tied ? { p, label: tied, origin: 'dispatch' as const } : { p, label, origin: 'label' as const }
@@ -271,7 +271,7 @@ function thisSession(world: World, mainPane: Pane | undefined, projectName: stri
   const branch = valueOf(world.sources.branches)?.get(world.me.cwd)
   const t = branch === undefined ? undefined : branchTicket(branch)
   if (!t || !branch) return undefined
-  const label = pickLabel([mainPane?.paneLabel, mainPane?.tabLabel], undefined)
+  const label = pickLabel([mainPane?.paneLabel, mainPane?.tabLabel])
   const title = label?.tickets.includes(t) ? label.title : (mainPane?.terminalTitle ?? branch)
   return row(t, { kind: label?.tickets.includes(t) ? label.kind : undefined, title, tickets: [t] }, 'this-session', mainPane ? live(mainPane) : { k: 'none' }, projectName)
 }

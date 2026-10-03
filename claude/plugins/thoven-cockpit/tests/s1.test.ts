@@ -3,7 +3,7 @@
 
 import { expect, test } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
-import { parseLabel, pickLabel } from '../hooks/dispatch.ts'
+import { labelOfBranch, parseLabel, pickLabel } from '../hooks/dispatch.ts'
 import { parseSnapshot } from '../hooks/herdr.ts'
 import type { Main, PaneId, Polled, SessionId, Snapshot, Sources, SpaceId, World } from '../hooks/model.ts'
 import { SOURCES, headPathOf, parseHead, parseLiveSpaces } from '../hooks/sources.ts'
@@ -71,11 +71,13 @@ const NO_LATER_CELLS = {
 
 test('a Build tab label with a null pane label gives a Build row titled from the tab', async () => {
   expect(parseLabel(CONSENT)).toEqual({ kind: 'Build', title: 'Consent evidence hardening', tickets: ['THV-1045'] })
-  expect(pickLabel([undefined, CONSENT, 'Cockpit availability for main orchestrator'], 'legal/thv-1045')).toEqual({
+  expect(pickLabel([undefined, CONSENT, 'Cockpit availability for main orchestrator'])).toEqual({
     kind: 'Build',
     title: 'Consent evidence hardening',
     tickets: ['THV-1045'],
   })
+  expect(pickLabel([undefined, '1', undefined]) ?? labelOfBranch('legal/thv-1045')).toEqual({ kind: undefined, title: 'legal/thv-1045', tickets: ['THV-1045'] })
+  expect(labelOfBranch('sentry-error')).toBeUndefined()
 })
 
 test('a multi-ticket label gives three tickets', async () => {

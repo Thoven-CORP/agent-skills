@@ -65,12 +65,17 @@ export function trailingTickets(text: string): { tickets: Ticket[]; rest: string
   return { tickets: m[1].split(/[\s,]+/).flatMap((t) => ticket(t) ?? []), rest: text.slice(0, m.index).trim() }
 }
 
-/** The spec's "first match wins": pane label, tab label, terminal title, then the branch. */
-export function pickLabel(candidates: ReadonlyArray<string | undefined>, branch: string | undefined): Label | undefined {
+/** The spec's "first match wins" over a pane's texts: pane label, tab label, terminal title. */
+export function pickLabel(candidates: ReadonlyArray<string | undefined>): Label | undefined {
   for (const text of candidates) {
     const label = text === undefined ? undefined : parseLabel(text)
     if (label) return label
   }
+  return undefined
+}
+
+/** The last fallback, after `pickLabel`: the ticket the folder's branch names, titled by the branch. */
+export function labelOfBranch(branch: string | undefined): Label | undefined {
   const t = branch === undefined ? undefined : branchTicket(branch)
   return t && branch ? { kind: undefined, title: branch, tickets: [t] } : undefined
 }
