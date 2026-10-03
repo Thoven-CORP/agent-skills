@@ -1,4 +1,4 @@
-// model.ts: the cockpit's data shape. Types only, no behaviour.
+// model.ts: the cockpit's data shape. Types, and the fixed word lists two of them are read against.
 //
 // Three layers, read top to bottom:
 //   1. Fact   what one session saw, stored at a key only that session writes (store.ts owns keys)
@@ -33,23 +33,38 @@ export type Ms = number
 
 // ── The dispatch-work vocabulary (dispatch.ts parses it) ───────────────────────────────────
 
-/** label.sh's KINDS. Anything else is not a Kind. */
-export type Kind = 'Meta' | 'Plan' | 'Design' | 'Build' | 'Review' | 'Research' | 'Audit' | 'Fix'
-/** The tool tag in the Pane cell: Claude, Codex, Devin, Cursor. */
-export type Tool = 'C' | 'X' | 'D' | 'R'
-/** herdr `agent_status`. `done` is idle with an unseen completion. */
-export type PaneStatus = 'idle' | 'working' | 'blocked' | 'done' | 'unknown'
+// Each fixed word list is written once, below. Its type is derived from it, and `isOneOf(list)`
+// is the one guard that reads outside text against it.
 
-/** brief.md REPORT words. */
-export type ReportStatus = 'DONE_WITH_CONCERNS' | 'DONE' | 'NEEDS_CONTEXT' | 'BLOCKED'
+/** label.sh's KINDS. Anything else is not a Kind. */
+export const KINDS = ['Meta', 'Plan', 'Design', 'Build', 'Review', 'Research', 'Audit', 'Fix'] as const
+export type Kind = (typeof KINDS)[number]
+/** The tool tag in the Pane cell: Claude, Codex, Devin, Cursor. */
+export const TOOLS = ['C', 'X', 'D', 'R'] as const
+export type Tool = (typeof TOOLS)[number]
+/** herdr `agent_status`. `done` is idle with an unseen completion. */
+export const PANE_STATUSES = ['idle', 'working', 'blocked', 'done', 'unknown'] as const
+export type PaneStatus = (typeof PANE_STATUSES)[number]
+
+/** brief.md REPORT words. DONE_WITH_CONCERNS is first, so a pattern built from the list tries it before DONE. */
+export const REPORT_STATUSES = ['DONE_WITH_CONCERNS', 'DONE', 'NEEDS_CONTEXT', 'BLOCKED'] as const
+export type ReportStatus = (typeof REPORT_STATUSES)[number]
 /** review.md reply words. */
-export type Verdict = 'VERIFIED' | 'FINDINGS'
-export type StatusWord = ReportStatus | Verdict
+export const VERDICTS = ['VERIFIED', 'FINDINGS'] as const
+export type Verdict = (typeof VERDICTS)[number]
+export const STATUS_WORDS = [...REPORT_STATUSES, ...VERDICTS] as const
+export type StatusWord = (typeof STATUS_WORDS)[number]
+
+export const ROLES = ['builder', 'verifier'] as const
+export type Role = (typeof ROLES)[number]
+
+/** A guard for one of the lists above: is this outside value one of its words? */
+export function isOneOf<L extends readonly string[]>(list: L): (v: unknown) => v is L[number] {
+  return (v): v is L[number] => list.some((word) => word === v)
+}
 
 /** One line-anchored status line. */
 export type StatusLine = { ticket: Ticket; word: StatusWord; line: string }
-
-export type Role = 'builder' | 'verifier'
 
 /**
  * What a prompt told a pane to do. A prompt that is a brief is never also a report: status lines

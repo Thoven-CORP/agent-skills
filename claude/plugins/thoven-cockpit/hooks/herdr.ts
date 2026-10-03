@@ -4,7 +4,7 @@
 // Panes carry `label` only sometimes, so a missing one is read with `herdr pane get` (ADR4).
 
 import { herdr } from './commands.ts'
-import type { Pane, PaneId, PaneStatus, SessionId, Snapshot, SpaceId, TabId, Tool } from './model.ts'
+import { PANE_STATUSES, isOneOf, type Pane, type PaneId, type PaneStatus, type SessionId, type Snapshot, type SpaceId, type TabId, type Tool } from './model.ts'
 import type { Req } from './sources.ts'
 
 const TIMEOUT_MS = 10_000
@@ -75,11 +75,9 @@ export function toolOf(agent: string | undefined): Tool | undefined {
   return agent === undefined ? undefined : TOOLS[agent]
 }
 
-const STATUSES: readonly PaneStatus[] = ['idle', 'working', 'blocked', 'done', 'unknown']
-
 /** herdr `agent_status`, with anything unknown as `unknown`. */
 export function statusOf(raw: string | undefined): PaneStatus {
-  return STATUSES.find((s) => s === raw) ?? 'unknown'
+  return isOneOf(PANE_STATUSES)(raw) ? raw : 'unknown'
 }
 
 /** The pane this session runs in: HERDR_PANE_ID, else the pane whose agent_session is our sid. */

@@ -20,9 +20,9 @@
 
 import type { EngineInterface, Register } from 'claude-code'
 import { project } from './board.ts'
-import { isVerdict, readPrompt, sendCalls } from './dispatch.ts'
+import { readPrompt, sendCalls } from './dispatch.ts'
 import { findMe, focusReq, parseSnapshot, snapshotReq, spaceOfPane } from './herdr.ts'
-import type { Board, Fact, FactKind, Intent, Main, Me, Ms, PaneId, PaneUi, Polled, SessionId, SourceId, Sources, SourceValues, World } from './model.ts'
+import { VERDICTS, isOneOf, type Board, type Fact, type FactKind, type Intent, type Main, type Me, type Ms, type PaneId, type PaneUi, type Polled, type SessionId, type SourceId, type Sources, type SourceValues, type World } from './model.ts'
 import { HEARTBEAT_MS, SOURCES, due, settle, type Listing, type PolledId, type Req, type Resp, type Source } from './sources.ts'
 import { claimHeldBy, claimOf, keyOf, parseFact, parseKey } from './store.ts'
 import { drawCockpit } from './view.ts'
@@ -358,7 +358,7 @@ async function observePrompt($: Api, text: unknown): Promise<void> {
   for (const l of lines) {
     await writeFact(
       $,
-      isVerdict(l.word)
+      isOneOf(VERDICTS)(l.word)
         ? { kind: 'verdict', ticket: l.ticket, sid, verdict: l.word, text: l.line, at }
         : { kind: 'report', ticket: l.ticket, sid, status: l.word, text: l.line, concerns, at },
     )

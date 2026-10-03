@@ -4,9 +4,7 @@
 // inbox file grammar. If dispatch-work changes a format, this is
 // the only file that changes. Every function is pure and is tested on real text.
 
-import type { Brief, InboxFile, Kind, Label, PaneId, Role, SendCall, StatusLine, StatusWord, Ticket, Verdict } from './model.ts'
-
-const KINDS: readonly Kind[] = ['Meta', 'Plan', 'Design', 'Build', 'Review', 'Research', 'Audit', 'Fix']
+import { KINDS, STATUS_WORDS, isOneOf, type Brief, type InboxFile, type Kind, type Label, type PaneId, type Role, type SendCall, type StatusLine, type Ticket } from './model.ts'
 
 /** `THV-1045`, `thv-1045`, `1045` → Ticket. Undefined for anything else. */
 export function ticket(raw: string): Ticket | undefined {
@@ -33,8 +31,8 @@ export function parseLabel(text: string): Label | undefined {
   const sep = rest.indexOf(' · ')
   if (sep > 0) {
     const word = rest.slice(0, sep)
-    if ((KINDS as readonly string[]).includes(word)) {
-      kind = word as Kind
+    if (isOneOf(KINDS)(word)) {
+      kind = word
       rest = rest.slice(sep + 3).trim()
     }
   }
@@ -90,7 +88,7 @@ export function branchTicket(branch: string): Ticket | undefined {
  * The one regex a session that is neither main nor engaged runs per prompt: could this text hold
  * a status line or a brief? `readPrompt` reads further only when it says yes.
  */
-const WORTH_READING = /^[ \t]*(?:DONE|NEEDS_CONTEXT|BLOCKED|VERIFIED|FINDINGS|FIX ROUND|[/$]poteto-mode[ \t]|Verify[ \t]+THV-)/m
+const WORTH_READING = new RegExp(String.raw`^[ \t]*(?:${STATUS_WORDS.join('|')}|FIX ROUND|[/$]poteto-mode[ \t]|Verify[ \t]+THV-)`, 'm')
 
 /** herdr's `agent prompt` arrives pasted: `<pasted_content id="f722">` … `</pasted_content id="f722">`. */
 export function unwrapPasted(text: string): string {
@@ -102,7 +100,7 @@ export function unwrapPasted(text: string): string {
  * text allowed (`DONE THV-1041 (fix round 1)`). DONE_WITH_CONCERNS is tried before DONE, and the
  * word must be followed by a space, so `DONE_WITH_CONCERNS THV-7` can never read as DONE.
  */
-const STATUS_LINE = /^[ \t]*(DONE_WITH_CONCERNS|DONE|NEEDS_CONTEXT|BLOCKED|VERIFIED|FINDINGS)[ \t]+(THV-\d+)\b[^\n]*/gm
+const STATUS_LINE = new RegExp(String.raw`^[ \t]*(${STATUS_WORDS.join('|')})[ \t]+(THV-\d+)\b[^\n]*`, 'gm')
 const LINE_MAX = 200
 
 /** Every status line in the text, the first per ticket, pastes unwrapped. */
@@ -111,9 +109,10 @@ export function statusLines(text: string): StatusLine[] {
   const lines: StatusLine[] = []
   for (const m of unwrapPasted(text).matchAll(STATUS_LINE)) {
     const t = m[2] ? ticket(m[2]) : undefined
-    if (!t || seen.has(t)) continue
+    const word = m[1]
+    if (!t || !isOneOf(STATUS_WORDS)(word) || seen.has(t)) continue
     seen.add(t)
-    lines.push({ ticket: t, word: m[1] as StatusWord, line: m[0].replace(/\s+$/, '').slice(0, LINE_MAX) })
+    lines.push({ ticket: t, word, line: m[0].replace(/\s+$/, '').slice(0, LINE_MAX) })
   }
   return lines
 }
@@ -155,10 +154,6 @@ export function readPrompt(text: string): { briefs: Brief[]; lines: StatusLine[]
   if (brief) return { briefs: [brief], lines: [], concerns: 0 }
   const lines = statusLines(text)
   return { briefs: [], lines, concerns: lines.some((l) => l.word === 'DONE_WITH_CONCERNS') ? [...unwrapPasted(text).matchAll(UNMET_ROW)].length : 0 }
-}
-
-export function isVerdict(word: StatusWord): word is Verdict {
-  return word === 'VERIFIED' || word === 'FINDINGS'
 }
 
 /** `send.sh <pane-or-agent> <brief-file>`, operands optionally quoted. */

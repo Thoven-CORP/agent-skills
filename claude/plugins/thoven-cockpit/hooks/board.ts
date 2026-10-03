@@ -31,38 +31,40 @@
 
 import { branchTicket, pickLabel } from './dispatch.ts'
 import { configPathOf } from './github.ts'
-import type {
-  Board,
-  CiCell,
-  Fact,
-  FactOf,
-  FixCell,
-  Health,
-  InboxFile,
-  Kind,
-  Label,
-  LinearEventId,
-  OtherItem,
-  Pane,
-  PaneCell,
-  PaneId,
-  Pending,
-  Polled,
-  Pr,
-  PrCell,
-  PrGroup,
-  ReportCell,
-  Row,
-  SourceId,
-  Sources,
-  SpaceMap,
-  Ticket,
-  World,
+import {
+  KINDS,
+  VERDICTS,
+  isOneOf,
+  type Board,
+  type CiCell,
+  type Fact,
+  type FactOf,
+  type FixCell,
+  type Health,
+  type InboxFile,
+  type Kind,
+  type Label,
+  type LinearEventId,
+  type OtherItem,
+  type Pane,
+  type PaneCell,
+  type PaneId,
+  type Pending,
+  type Polled,
+  type Pr,
+  type PrCell,
+  type PrGroup,
+  type ReportCell,
+  type Row,
+  type SourceId,
+  type Sources,
+  type SpaceMap,
+  type Ticket,
+  type World,
 } from './model.ts'
 import { valueOf } from './sources.ts'
 
 const BUILD_KINDS: ReadonlyArray<Kind | undefined> = ['Build', 'Fix', undefined]
-const KINDS: readonly string[] = ['Meta', 'Plan', 'Design', 'Build', 'Review', 'Research', 'Audit', 'Fix']
 
 export function project(world: World): Board {
   const { me } = world
@@ -227,7 +229,7 @@ function tiedLabel(facts: readonly Fact[], p: Pane): Label | undefined {
   if (latest) {
     const titled = newest(briefs.filter((b) => b.title !== undefined))
     return {
-      kind: latest.role === 'verifier' ? 'Review' : KINDS.includes(latest.playbook ?? '') ? (latest.playbook as Kind) : undefined,
+      kind: latest.role === 'verifier' ? 'Review' : isOneOf(KINDS)(latest.playbook) ? latest.playbook : undefined,
       title: titled?.title ?? p.terminalTitle ?? latest.ticket,
       tickets: [...new Set(briefs.map((b) => b.ticket))],
     }
@@ -242,7 +244,7 @@ const ESCALATION = /^\[thoven verify\]/
 function reportCell(t: Ticket, facts: readonly Fact[], inbox: readonly InboxFile[]): ReportCell {
   const report = newest(factsOf(facts, 'report', t))
   const file = inbox.find((f) => f.ticket === t && (report === undefined || f.at > report.at))
-  if (file?.line) return { k: 'undelivered', status: file.line.word === 'VERIFIED' || file.line.word === 'FINDINGS' ? undefined : file.line.word, file: file.name, selfChecked: false }
+  if (file?.line) return { k: 'undelivered', status: isOneOf(VERDICTS)(file.line.word) ? undefined : file.line.word, file: file.name, selfChecked: false }
   if (file && ESCALATION.test(file.head)) return { k: 'escalation', head: file.head }
   return report ? { k: 'in', status: report.status, at: report.at, concerns: report.concerns, selfChecked: false } : { k: 'none' }
 }
