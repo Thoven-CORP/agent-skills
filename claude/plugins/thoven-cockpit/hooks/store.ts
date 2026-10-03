@@ -22,7 +22,8 @@ export function keyOf(fact: Fact): string {
     case 'verdict':
       return `${PREFIX}${fact.kind}:${fact.ticket}:${fact.sid}`
     case 'send':
-      return `${PREFIX}send:${fact.ticket}:${fact.pane}`
+      // Role and round in the key, so a plain send never overwrites the fix round before it.
+      return `${PREFIX}send:${fact.ticket}:${fact.pane}:${fact.role}:${fact.round}`
     case 'happened':
       return `${PREFIX}happened:${fact.ticket}:${fact.event}`
     default:

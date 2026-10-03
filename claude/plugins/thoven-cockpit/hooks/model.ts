@@ -119,7 +119,7 @@ export type Fact =
   | { kind: 'report'; ticket: Ticket; sid: SessionId; status: ReportStatus; text: string; concerns: number; at: Ms }
   /** `verdict:<ticket>:<sid>`. A session that received a verifier's reply. */
   | { kind: 'verdict'; ticket: Ticket; sid: SessionId; verdict: Verdict; text: string; at: Ms }
-  /** `send:<ticket>:<pane>`. Main's own `send.sh <pane> …/THV-n[-fixN|-verify].md` call. */
+  /** `send:<ticket>:<pane>:<role>:<round>`. Main's own `send.sh <pane> …/THV-n[-fixN|-verify].md` call. */
   | ({ kind: 'send' } & SendCall & { at: Ms })
   /** `happened:<ticket>:<event>`. Set once, the first time main sees the event, so a ↻ cannot vanish when its evidence leaves a source. */
   | { kind: 'happened'; ticket: Ticket; event: LinearEventId; at: Ms }

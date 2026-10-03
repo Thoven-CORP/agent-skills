@@ -49,11 +49,11 @@ const TITLE_1014 = "Compiled-CSS tests can't fail: Tailwind builds the sheet fro
 
 test('a stored fact is read back only at its own key', async () => {
   const fact = { kind: 'send', ticket: 'THV-1004', pane: 'w40:pC', role: 'builder', round: 2, file: 'THV-1004-fix2.md', at: 1 }
-  expect(parseFact('cockpit:send:THV-1004:w40:pC', fact)).toEqual(fact)
-  expect(parseFact('cockpit:send:THV-1004:w40:pD', fact)).toBeUndefined()
+  expect(parseFact('cockpit:send:THV-1004:w40:pC:builder:2', fact)).toEqual(fact)
+  expect(parseFact('cockpit:send:THV-1004:w40:pD:builder:2', fact)).toBeUndefined()
   expect(parseFact('cockpit:brief:THV-1004:w40:pC', fact)).toBeUndefined()
-  expect(parseFact('cockpit:send:THV-1004:w40:pC', { ...fact, ticket: 'thv-1004' })).toBeUndefined()
-  expect(parseFact('cockpit:send:THV-1004:w40:pC', { ...fact, round: '2' })).toBeUndefined()
+  expect(parseFact('cockpit:send:THV-1004:w40:pC:builder:2', { ...fact, ticket: 'thv-1004' })).toBeUndefined()
+  expect(parseFact('cockpit:send:THV-1004:w40:pC:builder:2', { ...fact, round: '2' })).toBeUndefined()
 })
 
 const W18_MAIN = mainOf('w18', 'w18:p8W')
@@ -108,7 +108,7 @@ test('a fix round brief draws its own denominator', async () => {
 })
 
 test('a send.sh fix round takes its denominator from the FIX ROUND brief, and 5 when no brief gave one', async () => {
-  const send = storedFact('cockpit:send:THV-1041:w40:pC', { kind: 'send', ticket: 'THV-1041', pane: 'w40:pC', role: 'builder', round: 2, file: 'THV-1041-fix2.md', at: 3 })
+  const send = storedFact('cockpit:send:THV-1041:w40:pC:builder:2', { kind: 'send', ticket: 'THV-1041', pane: 'w40:pC', role: 'builder', round: 2, file: 'THV-1041-fix2.md', at: 3 })
   const brief = storedFact(`cockpit:brief:THV-1041:${P8V_SID}`, { kind: 'brief', k: 'fix', ticket: 'THV-1041', round: 1, of: 3, sid: P8V_SID, pane: 'w18:p8V', at: 1 })
   expect(cellText(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: [send, brief] }), 'THV-1041'), 'fix')).toBe('2/3')
   expect(cellText(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: [send] }), 'THV-1041'), 'fix')).toBe('2/5')
@@ -204,7 +204,7 @@ test('an inbox file newer than any delivered report shows unsent; an older one d
 })
 
 test('Fix cell: main send.sh round wins; without one, the pane FIX ROUND brief gives it', async () => {
-  const send = storedFact('cockpit:send:THV-1041:w40:pC', { kind: 'send', ticket: 'THV-1041', pane: 'w40:pC', role: 'builder', round: 2, file: 'THV-1041-fix2.md', at: 1 })
+  const send = storedFact('cockpit:send:THV-1041:w40:pC:builder:2', { kind: 'send', ticket: 'THV-1041', pane: 'w40:pC', role: 'builder', round: 2, file: 'THV-1041-fix2.md', at: 1 })
   const brief = storedFact(`cockpit:brief:THV-1041:${P8V_SID}`, { kind: 'brief', k: 'fix', ticket: 'THV-1041', round: 3, of: 5, sid: P8V_SID, pane: 'w18:p8V', at: 2 })
   expect(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: [send, brief] }), 'THV-1041').cells.fix).toEqual({ k: 'round', round: 2, of: 5 })
   expect(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: [brief] }), 'THV-1041').cells.fix).toEqual({ k: 'round', round: 3, of: 5 })
@@ -267,11 +267,20 @@ test('Bash send.sh of THV-1004-fix2.md writes the send fact, and the Fix cell re
   const s = stage(on, { pane: 'w56:p2', sid: 'sid-main', snapshot: SNAPSHOT_LIVE })
   await start($)
   await bash($, SEND_FIX2_THV_1004)
-  expect(s.saved.get('cockpit:send:THV-1004:w40:pC')).toEqual({ kind: 'send', ticket: 'THV-1004', pane: 'w40:pC', role: 'builder', round: 2, file: 'THV-1004-fix2.md', at: 0 })
+  expect(s.saved.get('cockpit:send:THV-1004:w40:pC:builder:2')).toEqual({ kind: 'send', ticket: 'THV-1004', pane: 'w40:pC', role: 'builder', round: 2, file: 'THV-1004-fix2.md', at: 0 })
   // w56:p1's terminal title names THV-1004.
   const row = rowOf(worldOf(mainOf('w56', 'w56:p2'), SNAPSHOT_LIVE, { facts: factsIn(s.saved) }), 'THV-1004')
   expect(row.cells.fix).toEqual({ k: 'round', round: 2, of: 5 })
   expect(cellText(row, 'fix')).toBe('2/5')
+})
+
+test('a plain send.sh after a fix-2 send to the same pane keeps the Fix cell at 2', async ($, on) => {
+  const s = stage(on, { pane: 'w56:p2', sid: 'sid-main', snapshot: SNAPSHOT_LIVE })
+  await start($)
+  await bash($, SEND_FIX2_THV_1004)
+  await bash($, '~/.claude/skills/dispatch-work/scripts/send.sh w40:pC $TMPDIR/dispatch/THV-1004.md 2>&1 | tail -1')
+  const row = rowOf(worldOf(mainOf('w56', 'w56:p2'), SNAPSHOT_LIVE, { facts: factsIn(s.saved) }), 'THV-1004')
+  expect(row.cells.fix).toEqual({ k: 'round', round: 2, of: 5 })
 })
 
 test('a Bash tool that throws beneath the cockpit still fails through it, and the cockpit neither logs nor records it', async ($, on) => {
