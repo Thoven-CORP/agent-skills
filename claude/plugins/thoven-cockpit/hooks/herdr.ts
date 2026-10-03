@@ -3,7 +3,7 @@
 // Snapshot envelope (herdr 0.9.0, protocol 22): `.result.snapshot.{workspaces,tabs,panes}`.
 // Panes carry `label` only sometimes, so a missing one is read with `herdr pane get` (ADR4).
 
-import { herdr, type Argv } from './commands.ts'
+import { herdr } from './commands.ts'
 import type { Pane, PaneId, PaneStatus, SessionId, Snapshot, SpaceId, TabId, Tool } from './model.ts'
 import type { Req } from './sources.ts'
 
@@ -96,6 +96,6 @@ export function paneGetReq(pane: PaneId): Req {
 }
 
 /** `f`: jump to a pane, same as clicking it in the sidebar. */
-export function focusArgv(pane: PaneId): Argv {
-  return herdr.agentFocus(pane)
+export function focusReq(pane: PaneId): Req {
+  return { k: 'proc', argv: herdr.agentFocus(pane), timeoutMs: TIMEOUT_MS }
 }
