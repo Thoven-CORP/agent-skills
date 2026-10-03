@@ -227,9 +227,7 @@ function tieOf(facts: BoardFacts, p: Pane, labels: PaneLabels['byPane'] | undefi
 }
 
 const otherItem = (tie: Tie | undefined, p: Pane): OtherItem =>
-  tie
-    ? { label: tie.title, kind: tie.kind, ticket: tie.tickets[0], pane: cell(p), note: undefined }
-    : { label: `tab "${p.tabLabel ?? p.tab}"`, kind: undefined, ticket: undefined, pane: cell(p), note: 'unlabelled' }
+  tie ? { k: 'labelled', title: tie.title, kind: tie.kind, ticket: tie.tickets[0], pane: cell(p) } : { k: 'unlabelled', tab: p.tabLabel ?? p.tab, pane: cell(p) }
 
 /**
  * What a pane with no ticket in its label was sent: the briefs its current session received (a

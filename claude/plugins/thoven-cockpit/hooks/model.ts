@@ -353,14 +353,8 @@ export type Group =
   | { k: 'single'; row: Row }
   | { k: 'parent'; parent: Ticket; title: string; done: number; total: number; needsYou: number; children: Row[] }
 
-export type OtherItem = {
-  /** The label's title, or for an unlabelled pane its tab's name. */
-  label: string
-  kind: Kind | undefined
-  ticket: Ticket | undefined
-  pane: PaneCell
-  note: 'not in this space' | 'unlabelled' | undefined
-}
+/** A pane with no Build or Review row: by its label, or, with none, by its tab's name. */
+export type OtherItem = { k: 'labelled'; title: string; kind: Kind | undefined; ticket: Ticket | undefined; pane: PaneCell } | { k: 'unlabelled'; tab: string; pane: PaneCell }
 
 /** One PR in the PRs tab, with the on-screen tickets it attached to (none for a ticketless PR on a pane's branch). */
 export type PrItem = { pr: Pr; tickets: Ticket[] }
@@ -376,8 +370,8 @@ export type Board = {
   space: Space
   /** The Linear Project of this space; undefined hides the Linear column. */
   project: string | undefined
-  /** "planning (/grill-with-docs)". Undefined until main runs a skill. */
-  here: string | undefined
+  /** The skill main itself ran last. Undefined until it runs one. */
+  here: { skill: string } | undefined
   build: Group[]
   other: OtherItem[]
   /** Each PR once: attached to a row by branch or title group, or ticketless on a space folder's branch. */

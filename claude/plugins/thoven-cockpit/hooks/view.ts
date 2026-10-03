@@ -123,7 +123,7 @@ function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): 
   return Box({
     flexDirection: 'column',
     children: [
-      board.here === undefined ? null : Text({ dimColor: true, children: [`You are here: ${board.here}`] }),
+      board.here === undefined ? null : Text({ dimColor: true, children: [`You are here: /${board.here.skill}`] }),
       Text({ dimColor: true, children: ['BUILD'] }),
       rows.length === 0
         ? Text({ dimColor: true, children: ['No build work in this space.'] })
@@ -236,11 +236,11 @@ function rowsOf(g: Group): Row[] {
 function otherLine(el: El, o: OtherItem, columns: number): RenderElement {
   const { Box, Text } = el
   const status = o.pane.k === 'live' ? [o.pane.status, o.pane.tool].filter((x) => x !== undefined).join(' ') : absent(o.pane)
-  const label = o.note === undefined ? o.label : `${o.label} (${o.note})`
+  const label = o.k === 'labelled' ? o.title : `tab "${o.tab}" (unlabelled)`
   return Box({
     flexDirection: 'row',
     children: [
-      Box({ width: KIND_WIDTH, flexShrink: 0, children: [Text({ dimColor: true, children: [o.kind ?? ''] })] }),
+      Box({ width: KIND_WIDTH, flexShrink: 0, children: [Text({ dimColor: true, children: [o.k === 'labelled' ? (o.kind ?? '') : ''] })] }),
       Box({ width: Math.max(MIN_WORK, columns - KIND_WIDTH - 12), flexShrink: 0, children: [Text({ wrap: 'truncate-end', children: [label] })] }),
       Text({ dimColor: true, children: [status] }),
     ],

@@ -317,7 +317,7 @@ test('the tie: p8V, whose Mods tab has no label, is the THV-1014 Build row and l
     'dispatch',
     { k: 'live', list: [{ status: 'idle', tool: 'C', pane: 'w18:p8V' }] },
   ])
-  expect(board.other.map((o) => o.label)).toEqual(['tab "Research"'])
+  expect(board.other.map((o) => o.k === 'unlabelled' && o.tab)).toEqual(['Research'])
 })
 
 test('a verifier brief received by a pane writes a brief and no report', async ($, on) => {

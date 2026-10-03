@@ -126,8 +126,8 @@ test('an unlabelled tab goes under Other as unlabelled', async () => {
   const board = project(worldOf(mainOf('w18', 'w18:p8W'), SNAPSHOT_LIVE))
   expect(board.build).toEqual([])
   expect(board.other).toEqual([
-    { label: 'tab "Research"', kind: undefined, ticket: undefined, pane: { k: 'live', status: 'idle', tool: 'C', pane: 'w18:p8P' }, note: 'unlabelled' },
-    { label: 'tab "Mods"', kind: undefined, ticket: undefined, pane: { k: 'live', status: 'idle', tool: 'C', pane: 'w18:p8V' }, note: 'unlabelled' },
+    { k: 'unlabelled', tab: 'Research', pane: { k: 'live', status: 'idle', tool: 'C', pane: 'w18:p8P' } },
+    { k: 'unlabelled', tab: 'Mods', pane: { k: 'live', status: 'idle', tool: 'C', pane: 'w18:p8V' } },
   ])
 })
 
