@@ -335,11 +335,11 @@ test('a /cockpit re-registration that throws still leaves the claiming pane main
   expect(s.snapshots()).toBe(2)
 })
 
-test('S1 reaches no stub: no [doctor] hint, /cockpit doctor opens the cockpit, and compaction logs nothing', async ($, on) => {
+test('S1 reaches no stub: no [doctor] hint, /cockpit with an argument other than doctor opens the cockpit, and compaction logs nothing', async ($, on) => {
   const s = stage(on, { pane: 'w18:p8W', snapshot: SNAPSHOT_LIVE })
   await start($)
   expect(s.registrations).toEqual([{ name: 'cockpit', description: 'Open the Thoven cockpit for this herdr space', immediate: true }])
-  expect((await cockpit($, 'doctor')).text).toBe('Cockpit is main of Research.')
+  expect((await cockpit($, 'now')).text).toBe('Cockpit is main of Research.')
   await $.classic.SessionStart({ session_id: 'sid-a', cwd: MAIN_CWD, source: 'compact', transcript_path: '' })
   await s.clock.settle()
   expect(s.logs.filter((l) => /not implemented|failed/.test(l))).toEqual([])
