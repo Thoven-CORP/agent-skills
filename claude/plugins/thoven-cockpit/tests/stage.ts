@@ -37,9 +37,6 @@ export function worldOf(me: Main, snapshot: string, o: { facts?: Fact[]; sources
     me,
     sources: { ...unpolled(), herdr: fresh(must(parseSnapshot(snapshot))), spaces: fresh(parseLiveSpaces(WORKFLOW_LIVE_SPACES)), ...o.sources },
     facts: o.facts ?? [],
-    readbacks: new Map(),
-    inFlight: new Set(),
-    mainSkill: undefined,
   }
 }
 

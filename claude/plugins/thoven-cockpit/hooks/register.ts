@@ -15,7 +15,6 @@
 // Crash safety: every hook is one line over a shape below, and no try/catch wraps `next`:
 //   observeThenPass   try { await observe() } catch (err) { debug(err) }  return next(e)
 //   passThenObserve   const r = await next(e); try { await observe(r) } catch (err) { debug(err) }  return r
-//   passThenExtend    the same, returning what `extend(r)` gave (S5)
 // Every registration also gets `.catch(passThrough)`. The heartbeat catches per source, so one
 // failing source never stops another.
 
@@ -99,17 +98,6 @@ async function passThenObserve<E, R>($: Api, where: string, e: E, next: (e: E) =
   const r = await next(e)
   try {
     await observe(r)
-  } catch (err) {
-    await debug($, where, err)
-  }
-  return r
-}
-
-/** Pass on, then add to what came back (S5's compaction checkpoint). A failing `extend` returns the result untouched. */
-async function passThenExtend<E, R>($: Api, where: string, e: E, next: (e: E) => Promise<R>, extend: (r: R) => Promise<R>): Promise<R> {
-  const r = await next(e)
-  try {
-    return await extend(r)
   } catch (err) {
     await debug($, where, err)
   }
@@ -397,13 +385,6 @@ async function act($: Api, intent: Intent): Promise<void> {
         ui = { ...ui, checks: ui.checks === intent.pr ? undefined : intent.pr }
         $.ui.invalidate('ui.render')
         return
-      case 'open-report':
-        throw new Error('not implemented (S2): open-report')
-      case 'open-url':
-      case 'fill':
-        throw new Error(`not implemented (S4): ${intent.k}`)
-      case 'update':
-        throw new Error('not implemented (S4): update')
       default:
         return intent satisfies never
     }
@@ -421,7 +402,7 @@ async function focusPane($: Api, req: Req): Promise<void> {
 }
 
 function worldOf(m: MainState, now: Ms, facts: Fact[]): World {
-  return { now, me: m.who, sources: m.sources, facts, readbacks: new Map(), inFlight: new Set(), mainSkill: undefined }
+  return { now, me: m.who, sources: m.sources, facts }
 }
 
 function messageOf(err: unknown): string {

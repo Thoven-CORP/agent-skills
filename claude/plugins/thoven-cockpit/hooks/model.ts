@@ -119,18 +119,10 @@ export type Fact =
   | { kind: 'report'; ticket: Ticket; sid: SessionId; status: ReportStatus; text: string; concerns: number; at: Ms }
   /** `verdict:<ticket>:<sid>`. A session that received a verifier's reply. */
   | { kind: 'verdict'; ticket: Ticket; sid: SessionId; verdict: Verdict; text: string; at: Ms }
-  /** `sent:<ticket>:<sid>`. A briefed session's own outbound status line. */
-  | { kind: 'sent'; ticket: Ticket; sid: SessionId; word: StatusWord; at: Ms }
   /** `send:<ticket>:<pane>`. Main's own `send.sh <pane> …/THV-n[-fixN|-verify].md` call. */
   | ({ kind: 'send' } & SendCall & { at: Ms })
-  /** `ran:<sid>:<skill>`. A skill the main loop of an engaged session ran (not a subagent). */
-  | { kind: 'ran'; sid: SessionId; skill: string; isReadOnly: boolean; at: Ms }
   /** `happened:<ticket>:<event>`. Set once, the first time main sees the event, so a ↻ cannot vanish when its evidence leaves a source. */
   | { kind: 'happened'; ticket: Ticket; event: LinearEventId; at: Ms }
-  /** `ack:<ticket>:<event>`. Main saw `/workspace update` read back this event without ERROR. */
-  | { kind: 'ack'; ticket: Ticket; event: LinearEventId; state: string; at: Ms }
-  /** `checkpoint:<sid>`. Main's compaction checkpoint, handed back by SessionStart(compact). */
-  | { kind: 'checkpoint'; sid: SessionId; text: string; at: Ms }
 
 export type FactKind = Fact['kind']
 export type FactOf<K extends FactKind> = Extract<Fact, { kind: K }>
@@ -218,16 +210,6 @@ export type Checks = { total: number; done: number; failed: string[]; running: s
 
 export type GithubView = { prs: Pr[] }
 
-/** Linear, as the 5-minute read or a `/workspace update` read-back last saw one issue. */
-export type LinearIssue = {
-  ticket: Ticket
-  state: string
-  stateType: 'backlog' | 'unstarted' | 'started' | 'completed' | 'canceled'
-  parent: Ticket | undefined
-  project: string | undefined
-}
-export type LinearView = ReadonlyMap<Ticket, LinearIssue>
-
 /** A `THV-n.md` file in `$TMPDIR/dispatch/out/`, and what its first non-empty line makes it. */
 export type InboxFile = { name: string; ticket: Ticket; at: Ms } & (
   | { k: 'report'; line: StatusLine & { word: ReportStatus } } // an undelivered report
@@ -264,12 +246,6 @@ export type World = {
   me: Main
   sources: Sources
   facts: Fact[]
-  /** Read-backs newer than the last Linear read, folded over `sources.linear` by board.ts. */
-  readbacks: ReadonlyMap<Ticket, LinearIssue | { error: string }>
-  /** Update events main has handed to `$.command.run` and not yet seen read back. */
-  inFlight: ReadonlySet<string>
-  /** The skill main itself ran last, for "You are here". */
-  mainSkill: string | undefined
 }
 
 // ── Linear events (derived; only `happened` and `ack` facts are stored) ─────────────────────
@@ -279,7 +255,7 @@ export type LinearEvent =
   | { k: 'pr'; number: number }
   | { k: 'report'; status: ReportStatus }
   | { k: 'merged'; number: number }
-/** `started`, `pr-141`, `report-DONE`, `merged-138`. The last segment of `happened:` and `ack:` keys. */
+/** `started`, `pr-141`, `report-DONE`, `merged-138`. The last segment of a `happened:` key. */
 export type LinearEventId = Brand<string, 'LinearEventId'>
 export type Pending = { ticket: Ticket; event: LinearEvent; id: LinearEventId }
 
@@ -390,10 +366,6 @@ export type Board = {
 export type Intent =
   | { k: 'tab'; tab: 'work' | 'prs' }
   | { k: 'focus-pane'; pane: PaneId }
-  | { k: 'open-report'; ticket: Ticket }
-  | { k: 'update'; pending: Pending[] } // ↻ or `u`: one /workspace update call
-  | { k: 'fill'; text: string } // `c` /code-review, `m` "merge it #N": Andres presses Enter
-  | { k: 'open-url'; url: string }
   | { k: 'checks'; pr: string } // `c`, or a PR row pressed: show or hide that PR's unfinished and failed checks
 
 /**

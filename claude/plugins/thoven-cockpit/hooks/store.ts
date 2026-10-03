@@ -20,17 +20,11 @@ export function keyOf(fact: Fact): string {
     case 'brief':
     case 'report':
     case 'verdict':
-    case 'sent':
       return `${PREFIX}${fact.kind}:${fact.ticket}:${fact.sid}`
     case 'send':
       return `${PREFIX}send:${fact.ticket}:${fact.pane}`
-    case 'ran':
-      return `${PREFIX}ran:${fact.sid}:${fact.skill}`
     case 'happened':
-    case 'ack':
-      return `${PREFIX}${fact.kind}:${fact.ticket}:${fact.event}`
-    case 'checkpoint':
-      return `${PREFIX}checkpoint:${fact.sid}`
+      return `${PREFIX}happened:${fact.ticket}:${fact.event}`
     default:
       return fact satisfies never
   }
@@ -48,12 +42,8 @@ const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFin
 const isTicket = (v: unknown): v is Ticket => typeof v === 'string' && ticket(v) === v
 // The store hands back what a session wrote, so an id is a non-empty string; its key proves the rest.
 const isEvent = (v: unknown): v is LinearEventId => isStr(v)
-const never = (): undefined => undefined
 
-/**
- * One shape check per kind: a new Fact kind without one fails to compile. Kinds a later slice
- * reads are `never` until that slice adds their check.
- */
+/** One shape check per kind: a new Fact kind without one fails to compile. */
 const SHAPES: { [K in FactKind]: (v: Raw) => FactOf<K> | undefined } = {
   main: (v) => (isSpaceId(v.space) && isSessionId(v.sid) && isPaneId(v.pane) && isNum(v.at) ? { kind: 'main', space: v.space, sid: v.sid, pane: v.pane, at: v.at } : undefined),
   brief: (v) => {
@@ -77,10 +67,6 @@ const SHAPES: { [K in FactKind]: (v: Raw) => FactOf<K> | undefined } = {
       ? { kind: 'send', ticket: v.ticket, pane: v.pane, role: v.role, round: v.round, file: v.file, at: v.at }
       : undefined,
   happened: (v) => (isTicket(v.ticket) && isEvent(v.event) && isNum(v.at) ? { kind: 'happened', ticket: v.ticket, event: v.event, at: v.at } : undefined),
-  sent: never,
-  ran: never,
-  ack: never,
-  checkpoint: never,
 }
 
 const isRaw = (v: unknown): v is Raw => typeof v === 'object' && v !== null
