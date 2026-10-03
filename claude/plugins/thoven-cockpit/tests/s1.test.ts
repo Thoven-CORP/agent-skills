@@ -293,6 +293,23 @@ test('only the session that ran /cockpit starts polling', async ($, on) => {
   expect(s.snapshots()).toBe(4)
 })
 
+test('/cockpit answers once its one snapshot does, before the first tick has run', async ($, on) => {
+  const s = stage(on, { pane: 'w18:p8W', sid: 'sid-a', snapshot: SNAPSHOT_LIVE })
+  s.herdr.mode = 'slow'
+  s.gh.mode = 'hang'
+  await start($)
+  let answer: string | undefined
+  void cockpit($).then((r) => {
+    answer = r.text
+  })
+  await s.clock.advance(2_000)
+  expect(answer).toBe('Cockpit is main of Research.')
+  expect(s.opened).toEqual([{ id: 'cockpit', title: 'Cockpit', focus: true }])
+  expect([s.snapshots(), s.timeoutsMs[0]]).toEqual([1, 3_000])
+  // The first tick is under way, asleep on gh, and the answer did not wait for it.
+  expect(s.argvs.filter((a) => a[0] === 'gh')).toHaveLength(2)
+})
+
 test('a session whose claim was taken by another session stops polling and closes its pane', async ($, on) => {
   const s = stage(on, { pane: 'w18:p8W', sid: 'sid-a', snapshot: SNAPSHOT_LIVE })
   await start($)
@@ -342,7 +359,7 @@ test('a /cockpit re-registration that throws still leaves the claiming pane main
   s.register.deny = 'command.register: cockpit is already registered'
   await start($)
   expect(s.registered).toEqual([])
-  expect(s.timers).toEqual([['every', 5_000], ['after', 0]])
+  expect(s.timers).toEqual([['every', 5_000]])
   await s.clock.advance(5_000)
   expect(s.snapshots()).toBe(2)
 })
@@ -364,6 +381,7 @@ test("a label read with herdr pane get wins over the tab's label", async ($, on)
   const s = stage(on, { pane: 'w18:p8P', snapshot: relabelPane(SNAPSHOT_W18_BUILD, 'w18:p8W', undefined) })
   await start($)
   await cockpit($)
+  await s.clock.settle()
   expect(s.paneGets().sort()).toEqual(['w18:p8V', 'w18:p8W'])
   const ui = await $.ui.mount(PANE)
   expect((await ui.find({ key: 'row-THV-1045' }))?.props.label).toBe('Consent evidence hardening')
@@ -377,6 +395,7 @@ test('pane labels are cached per pane: an unchanged pane is never re-read, a new
   const s = stage(on, { pane: 'w18:p8W', snapshot: dropPane(SNAPSHOT_LIVE, 'w18:p8P') })
   await start($)
   await cockpit($)
+  await s.clock.settle()
   expect(s.paneGets()).toEqual(['w18:p8V'])
 
   await s.clock.advance(5_000)

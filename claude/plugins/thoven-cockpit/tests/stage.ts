@@ -77,6 +77,8 @@ const out = (stdout: string, exitCode = 0, stderr = '') => ({ value: { exitCode,
 export type Stage = {
   clock: ReturnType<typeof mock.clock>
   argvs: string[][]
+  /** Each process's timeout, in the order of `argvs`. */
+  timeoutsMs: Array<number | undefined>
   saved: Map<string, unknown>
   opened: Array<Record<string, unknown>>
   closed: string[]
@@ -92,10 +94,10 @@ export type Stage = {
   storeCalls: { n: number }
   /** `$TMPDIR/dispatch/out/`: file name → text and mtime. Empty means the folder does not exist. */
   inbox: Map<string, { text: string; mtimeMs: number }>
-  /** What `herdr api snapshot` does now; a test changes `snapshot` to move the space on. */
-  herdr: { mode: 'ok' | 'fail' | 'hang'; snapshot: string }
+  /** What `herdr api snapshot` does now (`slow` answers after 2 s); a test changes `snapshot` to move the space on. */
+  herdr: { mode: 'ok' | 'fail' | 'hang' | 'slow'; snapshot: string }
   /** What `gh pr list --repo <repo>` answers, by repo. A repo with no entry lists `[]`. */
-  gh: { mode: 'ok' | 'fail'; byRepo: Record<string, string> }
+  gh: { mode: 'ok' | 'fail' | 'hang'; byRepo: Record<string, string> }
   /** Any other file `$.fs.read` can see, by absolute path: `.git` files, HEADs, `.git/config`. */
   files: Map<string, string>
   /** Every key `$.store.set` wrote, in order, repeats included. */
@@ -120,6 +122,7 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
   const s: Stage = {
     clock,
     argvs: [],
+    timeoutsMs: [],
     saved: new Map(Object.entries(o.store ?? {})),
     opened: [],
     closed: [],
@@ -139,20 +142,26 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
     paneGets: () => s.argvs.filter((a) => a[1] === 'pane' && a[2] === 'get').map((a) => a[3] ?? ''),
   }
 
-  on('process.run', async (_$: unknown, e: { argv: readonly string[] }) => {
+  on('process.run', async (_$: unknown, e: { argv: readonly string[]; init?: { timeoutMs?: number } }) => {
     const argv = [...e.argv]
     s.argvs.push(argv)
+    s.timeoutsMs.push(e.init?.timeoutMs)
     if (argv.join(' ') === 'herdr api snapshot') {
       if (s.herdr.mode === 'fail') return out('', 1, 'herdr: server not running')
       if (s.herdr.mode === 'hang') {
         await clock.sleep(40_000)
         return { deny: 'process.run: timed out after 10000 ms' }
       }
+      if (s.herdr.mode === 'slow') await clock.sleep(2_000)
       return out(s.herdr.snapshot)
     }
     if (argv[1] === 'pane' && argv[2] === 'get' && argv[3]) return out(paneGetFrom(s.herdr.snapshot, argv[3]))
     if (argv[0] === 'gh' && argv[1] === 'pr' && argv[2] === 'list') {
       if (s.gh.mode === 'fail') return out('', 1, 'HTTP 502: Server Error (https://api.github.com/graphql)')
+      if (s.gh.mode === 'hang') {
+        await clock.sleep(40_000)
+        return { deny: 'process.run: timed out after 30000 ms' }
+      }
       return out(s.gh.byRepo[argv[argv.indexOf('--repo') + 1] ?? ''] ?? '[]')
     }
     return out('')

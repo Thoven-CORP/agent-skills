@@ -28,8 +28,8 @@ const PR_FIELDS = 'number,title,headRefName,state,statusCheckRollup,mergedAt,url
 const REPO = /^[A-Za-z0-9][\w.-]*\/[\w.-]+$/
 
 export const COMMANDS = {
-  /** ADR4: the whole session layout, every 5 s. */
-  'herdr api snapshot': (): Req => mint(HERDR_MS, 'herdr', 'api', 'snapshot'),
+  /** ADR4: the whole session layout, every 5 s. `/cockpit` waits on it with a shorter timeout. */
+  'herdr api snapshot': (timeoutMs: number = HERDR_MS): Req => mint(timeoutMs, 'herdr', 'api', 'snapshot'),
   /** One pane's label, when the snapshot gave none. */
   'herdr pane get': (pane: PaneId): Req => mint(HERDR_MS, 'herdr', 'pane', 'get', pane),
   /** `f`: jump to a pane, the same as clicking it in the sidebar. */

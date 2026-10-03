@@ -32,6 +32,8 @@ import { drawCockpit } from './view.ts'
 type Api = EngineInterface
 
 const PANE_ID = 'cockpit'
+/** `/cockpit` answers within about this long, herdr up, down or hung. */
+const CLAIM_SNAPSHOT_MS = 3_000
 /** Synthesis A2: above this, facts move to per-session logs. Logged so the debug log shows it. */
 const STORE_SLOW_MS = 50
 
@@ -180,30 +182,32 @@ async function resolveMe($: Api, sid: SessionId): Promise<void> {
   me = pane ? { k: 'pane', pane, sid, engagements: me.k === 'pane' ? me.engagements : [] } : { k: 'inert' }
 }
 
-/** The one way into main: fresh state, a heartbeat, and the first tick scheduled at once. */
-async function becomeMain($: Api, claim: FactOf<'main'>, cwd: string): Promise<MainState> {
+/**
+ * The one way into main: fresh state, a heartbeat, and the first tick started, never awaited.
+ * `herdr` is a snapshot the caller already read at `claim.at`, so that tick does not read it again.
+ */
+async function becomeMain($: Api, claim: FactOf<'main'>, cwd: string, herdr?: Sources['herdr']): Promise<void> {
   main?.heartbeat.cancel()
   const who: Main = { k: 'main', pane: claim.pane, sid: claim.sid, space: claim.space, cwd, home: (await $.env.get('HOME')) ?? '', tmp: (await $.env.get('TMPDIR')) ?? '' }
   const heartbeat = $.clock.every(HEARTBEAT_MS, () => {
     void tick($)
   })
   me = who
-  main = { who, sources: unpolled(), lastRun: {}, board: undefined, heartbeat, isTicking: false, isStoreTimed: false }
-  $.clock.after(0, () => {
-    void tick($)
-  })
-  return main
+  const sources = herdr ? { ...unpolled(), herdr } : unpolled()
+  main = { who, sources, lastRun: herdr ? { herdr: claim.at } : {}, board: undefined, heartbeat, isTicking: false, isStoreTimed: false }
+  void tick($)
 }
 
 /**
- * `/cockpit`: claim this session's space (last claim wins, ADR3) and open the pane. The claim's
- * snapshot doubles as the first herdr poll, so the first tick does not read herdr again. With
- * herdr down, the space comes from HERDR_PANE_ID and the pane opens saying "herdr unavailable".
+ * `/cockpit`: claim this session's space (last claim wins, ADR3) and open the pane. One snapshot,
+ * bounded by CLAIM_SNAPSHOT_MS, is all it waits for: it doubles as the first herdr poll, and the
+ * first tick runs after the answer. With herdr down, the space comes from HERDR_PANE_ID and the
+ * pane opens saying "herdr unavailable".
  */
 async function claimAndOpen($: Api): Promise<string> {
   const envPane = await $.env.get('HERDR_PANE_ID')
   const sid = (await $.session.id()) as SessionId
-  const resp = await runProc($, COMMANDS['herdr api snapshot']())
+  const resp = await runProc($, COMMANDS['herdr api snapshot'](CLAIM_SNAPSHOT_MS))
   const snap = resp.k === 'ok' ? parseSnapshot(resp.value) : undefined
   const mine = snap ? findMe(snap, envPane, sid) : undefined
   const pane = mine?.pane ?? (snap ? undefined : (envPane as PaneId | undefined))
@@ -213,11 +217,8 @@ async function claimAndOpen($: Api): Promise<string> {
   const now = await $.clock.now()
   const claim: FactOf<'main'> = { kind: 'main', space, sid, pane, at: now }
   await writeFact($, claim)
-  const m = await becomeMain($, claim, await $.session.cwd())
   const error = resp.k === 'fail' ? resp.error : 'the snapshot has a shape this cockpit does not know'
-  m.sources.herdr = settle(m.sources.herdr, snap, now, error)
-  m.lastRun.herdr = now
-  await tick($)
+  await becomeMain($, claim, await $.session.cwd(), settle({ k: 'never' }, snap, now, error))
   await $.ui.open({ id: PANE_ID, title: 'Cockpit', focus: true })
   if (!snap) return `Cockpit is main of ${space}, but herdr is unavailable.`
   return `Cockpit is main of ${snap.spaces.find((s) => s.space === space)?.label ?? space}.`
