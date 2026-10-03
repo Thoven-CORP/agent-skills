@@ -29,10 +29,9 @@
 //      `happened` fact yet, is a new event for main to record once (synthesis A1), so S4's ↻
 //      survives a later report replacing it or the PR falling out of gh's last 50.
 
-import { branchTicket, labelOfBranch, pickLabel } from './dispatch.ts'
+import { branchTicket, kindOf, labelOfBranch, pickLabel } from './dispatch.ts'
 import { configPathOf } from './github.ts'
 import {
-  KINDS,
   VERDICTS,
   isOneOf,
   type Board,
@@ -229,7 +228,7 @@ function tiedLabel(facts: readonly Fact[], p: Pane): Label | undefined {
   if (latest) {
     const titled = newest(briefs.filter((b) => b.title !== undefined))
     return {
-      kind: latest.role === 'verifier' ? 'Review' : isOneOf(KINDS)(latest.playbook) ? latest.playbook : undefined,
+      kind: latest.role === 'verifier' ? 'Review' : kindOf(latest.playbook),
       title: titled?.title ?? p.terminalTitle ?? latest.ticket,
       tickets: [...new Set(briefs.map((b) => b.ticket))],
     }

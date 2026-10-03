@@ -27,15 +27,9 @@ const LEADING_TICKET = /^(THV-\d+)[\s:–-]+(\S.*)$/i
  */
 export function parseLabel(text: string): Label | undefined {
   let rest = text.trim()
-  let kind: Kind | undefined
   const sep = rest.indexOf(' · ')
-  if (sep > 0) {
-    const word = rest.slice(0, sep)
-    if (isOneOf(KINDS)(word)) {
-      kind = word
-      rest = rest.slice(sep + 3).trim()
-    }
-  }
+  const kind = sep > 0 ? kindOf(rest.slice(0, sep)) : undefined
+  if (kind) rest = rest.slice(sep + 3).trim()
 
   let tickets: Ticket[] = []
   const trailing = TRAILING_TICKETS.exec(rest)
@@ -53,6 +47,11 @@ export function parseLabel(text: string): Label | undefined {
 
   if (!kind && tickets.length === 0) return undefined
   return { kind, title: rest, tickets }
+}
+
+/** A label.sh Kind (`Build`), or undefined for any other word (`main`, `Feature`, `Verify`). */
+export function kindOf(word: string | undefined): Kind | undefined {
+  return isOneOf(KINDS)(word) ? word : undefined
 }
 
 /**
