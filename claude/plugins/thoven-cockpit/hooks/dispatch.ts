@@ -107,18 +107,23 @@ export function unwrapPasted(text: string): string {
 const STATUS_LINE = new RegExp(String.raw`^[ \t]*(${STATUS_WORDS.join('|')})[ \t]+(THV-\d+)\b[^\n]*`, 'gm')
 const LINE_MAX = 200
 
-/** Every status line in the text, the first per ticket, pastes unwrapped. */
-export function statusLines(text: string): StatusLine[] {
+/** Every status line in the unwrapped text, the first per ticket, with where its section ends: the next status line. */
+function statusSections(plain: string): Array<{ line: StatusLine; section: string }> {
+  const all = [...plain.matchAll(STATUS_LINE)]
   const seen = new Set<Ticket>()
-  const lines: StatusLine[] = []
-  for (const m of unwrapPasted(text).matchAll(STATUS_LINE)) {
+  return all.flatMap((m, i) => {
     const t = m[2] ? ticket(m[2]) : undefined
     const word = m[1]
-    if (!t || !isOneOf(STATUS_WORDS)(word) || seen.has(t)) continue
+    if (!t || !isOneOf(STATUS_WORDS)(word) || seen.has(t)) return []
     seen.add(t)
-    lines.push({ ticket: t, word, line: m[0].replace(/\s+$/, '').slice(0, LINE_MAX) })
-  }
-  return lines
+    const line = { ticket: t, word, line: m[0].replace(/\s+$/, '').slice(0, LINE_MAX) }
+    return [{ line, section: plain.slice(m.index, all[i + 1]?.index ?? plain.length) }]
+  })
+}
+
+/** Every status line in the text, the first per ticket, pastes unwrapped. */
+export function statusLines(text: string): StatusLine[] {
+  return statusSections(unwrapPasted(text)).map((s) => s.line)
 }
 
 type Groups = Partial<Record<string, string>>
@@ -159,16 +164,22 @@ export function briefOf(text: string): Brief | undefined {
 /** An Acceptance row the report marks unmet: `[~]`, `[ ]`, `[!]`, `✗` or `~`. */
 const UNMET_ROW = /^[ \t]*(?:\[[ ~!-]\]|✗|~)[ \t]/gm
 
+/** A status line a prompt carried, and the unmet Acceptance rows under it when it is DONE_WITH_CONCERNS. */
+export type ReportLine = StatusLine & { concerns: number }
+
 /**
- * What one prompt says. A brief is never also a report: the status lines it quotes (a verifier
- * brief pastes the builder's `DONE THV-n`) are its content, not a hand-back.
+ * What one prompt says, or undefined for a prompt that is neither. A brief is never also a report:
+ * the status lines it quotes (a verifier brief pastes the builder's `DONE THV-n`) are its content.
  */
-export function readPrompt(text: string): { briefs: Brief[]; lines: StatusLine[]; concerns: number } {
-  if (!WORTH_READING.test(text)) return { briefs: [], lines: [], concerns: 0 }
+export function readPrompt(text: string): undefined | { k: 'brief'; brief: Brief } | { k: 'report'; lines: ReportLine[] } {
+  if (!WORTH_READING.test(text)) return undefined
   const brief = briefOf(text)
-  if (brief) return { briefs: [brief], lines: [], concerns: 0 }
-  const lines = statusLines(text)
-  return { briefs: [], lines, concerns: lines.some((l) => l.word === 'DONE_WITH_CONCERNS') ? [...unwrapPasted(text).matchAll(UNMET_ROW)].length : 0 }
+  if (brief) return { k: 'brief', brief }
+  const lines = statusSections(unwrapPasted(text)).map(({ line, section }) => ({
+    ...line,
+    concerns: line.word === 'DONE_WITH_CONCERNS' ? [...section.matchAll(UNMET_ROW)].length : 0,
+  }))
+  return lines.length > 0 ? { k: 'report', lines } : undefined
 }
 
 /** `send.sh <pane-or-agent> <brief-file>`, operands optionally quoted. */

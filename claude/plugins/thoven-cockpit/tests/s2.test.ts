@@ -96,10 +96,21 @@ const W18_MAIN = mainOf('w18', 'w18:p8W')
 test('a pasted report reads DONE_WITH_CONCERNS with its one unmet Acceptance row', async () => {
   expect(statusLines(PASTED_CONCERNS_THV_1041)).toEqual([{ ticket: 'THV-1041', word: 'DONE_WITH_CONCERNS', line: 'DONE_WITH_CONCERNS THV-1041' }])
   expect(readPrompt(PASTED_CONCERNS_THV_1041)).toEqual({
-    briefs: [],
-    lines: [{ ticket: 'THV-1041', word: 'DONE_WITH_CONCERNS', line: 'DONE_WITH_CONCERNS THV-1041' }],
-    concerns: 1,
+    k: 'report',
+    lines: [{ ticket: 'THV-1041', word: 'DONE_WITH_CONCERNS', line: 'DONE_WITH_CONCERNS THV-1041', concerns: 1 }],
   })
+})
+
+test('concerns are counted per DONE_WITH_CONCERNS line, from its own section only', async () => {
+  const two = 'DONE THV-1\n[x] shipped\n\nDONE_WITH_CONCERNS THV-2\n[~] row a\n[ ] row b\n'
+  expect(readPrompt(two)).toEqual({
+    k: 'report',
+    lines: [
+      { ticket: 'THV-1', word: 'DONE', line: 'DONE THV-1', concerns: 0 },
+      { ticket: 'THV-2', word: 'DONE_WITH_CONCERNS', line: 'DONE_WITH_CONCERNS THV-2', concerns: 2 },
+    ],
+  })
+  expect(readPrompt('just a question about the build')).toBeUndefined()
 })
 
 test('an indented verdict in a subagent hand-back reads VERIFIED', async () => {
@@ -127,27 +138,24 @@ test('a verifier brief quoting the builder DONE line is a brief, not a report', 
   // The quoted line is there, line-anchored, so only the brief rule keeps it out.
   expect(unwrapPasted(VERIFY_BRIEF_THV_1016).split('\n')).toContain('DONE THV-1016')
   expect(readPrompt(VERIFY_BRIEF_THV_1016)).toEqual({
-    briefs: [{ k: 'first', ticket: 'THV-1016', role: 'verifier', title: 'Marketplace search tracking: report age, genre and subject filters' }],
-    lines: [],
-    concerns: 0,
+    k: 'brief',
+    brief: { k: 'first', ticket: 'THV-1016', role: 'verifier', title: 'Marketplace search tracking: report age, genre and subject filters' },
   })
 })
 
 test('a builder brief gives its ticket, kind and title, and no status line', async () => {
   expect(readPrompt(BUILD_BRIEF_THV_1014)).toEqual({
-    briefs: [{ k: 'first', ticket: 'THV-1014', role: 'builder', labelKind: 'Build', title: "Compiled-CSS tests can't fail: Tailwind builds the sheet from the tests' own class strings" }],
-    lines: [],
-    concerns: 0,
+    k: 'brief',
+    brief: { k: 'first', ticket: 'THV-1014', role: 'builder', labelKind: 'Build', title: "Compiled-CSS tests can't fail: Tailwind builds the sheet from the tests' own class strings" },
   })
 })
 
 test('a FIX ROUND prompt is a builder brief for that round, pasted or typed', async () => {
-  expect(readPrompt(FIX_ROUND_3_THV_1015).briefs).toEqual([{ k: 'fix', ticket: 'THV-1015', round: 3, of: 5 }])
-  expect(readPrompt(FIX_ROUND_2_THV_711).briefs).toEqual([{ k: 'fix', ticket: 'THV-711', round: 2, of: 5 }])
-  expect(readPrompt(FIX_ROUND_3_THV_1015).lines).toEqual([])
+  expect(readPrompt(FIX_ROUND_3_THV_1015)).toEqual({ k: 'brief', brief: { k: 'fix', ticket: 'THV-1015', round: 3, of: 5 } })
+  expect(readPrompt(FIX_ROUND_2_THV_711)).toEqual({ k: 'brief', brief: { k: 'fix', ticket: 'THV-711', round: 2, of: 5 } })
   // The denominator is read, not assumed: a 2/3 brief draws 2/3.
   const brief: Fact = { kind: 'brief', k: 'fix', ticket: 'THV-1041' as never, round: 2, of: 3, sid: P8V_SID as SessionId, pane: 'w18:p8V' as PaneId, at: 1 }
-  expect(readPrompt(FIX_ROUND_2_THV_711.replace('2/5', '2/3')).briefs).toEqual([{ k: 'fix', ticket: 'THV-711', round: 2, of: 3 }])
+  expect(readPrompt(FIX_ROUND_2_THV_711.replace('2/5', '2/3'))).toEqual({ k: 'brief', brief: { k: 'fix', ticket: 'THV-711', round: 2, of: 3 } })
   expect(cellText(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [brief]), 'THV-1041')).fix).toBe('2/3')
 })
 

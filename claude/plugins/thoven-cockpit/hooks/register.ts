@@ -332,25 +332,27 @@ async function loadFacts($: Api, only?: FactKind): Promise<{ facts: Fact[]; read
  */
 async function observePrompt($: Api, text: unknown): Promise<void> {
   if (typeof text !== 'string') return
-  const { briefs, lines, concerns } = readPrompt(text)
-  if (briefs.length === 0 && lines.length === 0) return
+  const read = readPrompt(text)
+  if (read === undefined || (read.k === 'brief' && me.k === 'inert')) return
   const sid = me.k === 'inert' ? ((await $.session.id()) as SessionId) : me.sid
   const at = await $.clock.now()
-  for (const b of briefs) {
-    if (me.k === 'inert') continue
+  if (read.k === 'brief') {
+    if (me.k === 'inert') return
+    const b = read.brief
     const before = me.k === 'pane' ? me.engagements.find((x) => x.ticket === b.ticket) : undefined
     const labelKind = b.k === 'first' ? b.labelKind : before?.labelKind
     const title = (b.k === 'first' ? b.title : undefined) ?? before?.title
     const held: Engagement = { ...b, ...(labelKind === undefined ? {} : { labelKind }), ...(title === undefined ? {} : { title }) }
     await writeFact($, { kind: 'brief', ...held, sid, pane: me.pane, at })
     if (me.k === 'pane') me = { ...me, engagements: [...me.engagements.filter((x) => x.ticket !== b.ticket), held] }
+    return
   }
-  for (const l of lines) {
+  for (const l of read.lines) {
     await writeFact(
       $,
       isOneOf(VERDICTS)(l.word)
         ? { kind: 'verdict', ticket: l.ticket, sid, verdict: l.word, text: l.line, at }
-        : { kind: 'report', ticket: l.ticket, sid, status: l.word, text: l.line, concerns, at },
+        : { kind: 'report', ticket: l.ticket, sid, status: l.word, text: l.line, concerns: l.concerns, at },
     )
   }
 }
