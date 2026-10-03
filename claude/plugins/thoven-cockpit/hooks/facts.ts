@@ -33,6 +33,9 @@ export function indexFacts(facts: readonly Fact[]): FactIndex {
   return { all, about: (t) => byTicket.get(t) ?? NONE }
 }
 
+/** The fact with the latest `at`. */
+export const newest = <F extends { at: number }>(fs: readonly F[]): F | undefined => fs.reduce<F | undefined>((a, f) => (a === undefined || f.at > a.at ? f : a), undefined)
+
 type Claim = FactOf<'main'>
 
 /** The claim on a space, which says who its main is. */

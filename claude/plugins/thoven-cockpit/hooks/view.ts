@@ -6,7 +6,7 @@
 // Intent does. Every glyph the cockpit shows is in this file.
 
 import type { Elements, RenderElement } from 'claude-code'
-import { ciCell } from './board.ts'
+import { ciCell } from './cells.ts'
 import { AGENT_SKILLS, BACKEND, FRONTEND } from './github.ts'
 import { LETTERS } from './model.ts'
 import type { Board, Cells, CiCell, Group, Health, Intent, Letter, Light, Ms, LivePane, OtherItem, PaneStatus, PaneUi, Pr, PrCell, PrItem, ReportStatus, Row } from './model.ts'
