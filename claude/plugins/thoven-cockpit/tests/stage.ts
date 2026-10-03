@@ -7,6 +7,9 @@ import { WORKFLOW_LIVE_SPACES } from './fixtures/workflow.ts'
 
 export const HOME = '/Users/andresmartinez'
 export const MAIN_CWD = '/Users/andresmartinez/thoven/frontend'
+/** macOS gives TMPDIR a trailing slash; the inbox path must not double it. */
+export const TMPDIR = '/var/folders/15/408cjyln12l18dh26xh1gksh0000gn/T/'
+export const INBOX_DIR = `${TMPDIR}dispatch/out`
 
 export const PANE = {
   plugin: 'thoven-cockpit',
@@ -65,6 +68,8 @@ export type Stage = {
   /** Every `$.clock.every` and `$.clock.after` wait, with its period. The kit raises an `every` again each period. */
   timers: Array<['every' | 'after', number]>
   storeCalls: { n: number }
+  /** `$TMPDIR/dispatch/out/`: file name → text and mtime. Empty means the folder does not exist. */
+  inbox: Map<string, { text: string; mtimeMs: number }>
   /** What `herdr api snapshot` does now; a test changes `snapshot` to move the space on. */
   herdr: { mode: 'ok' | 'fail' | 'hang'; snapshot: string }
   snapshots(): number
@@ -81,7 +86,7 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
     return on(pattern, ...rest, wrapped)
   }
   const clock = mock.clock(recording as typeof on)
-  mock.env(on, o.pane ? { HERDR_PANE_ID: o.pane, HOME } : { HOME })
+  mock.env(on, o.pane ? { HERDR_PANE_ID: o.pane, HOME, TMPDIR } : { HOME, TMPDIR })
   const s: Stage = {
     clock,
     argvs: [],
@@ -94,6 +99,7 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
     logs: [],
     timers,
     storeCalls: { n: 0 },
+    inbox: new Map(),
     herdr: { mode: 'ok', snapshot: o.snapshot },
     snapshots: () => s.argvs.filter((a) => a.join(' ') === 'herdr api snapshot').length,
     paneGets: () => s.argvs.filter((a) => a[1] === 'pane' && a[2] === 'get').map((a) => a[3] ?? ''),
@@ -127,7 +133,20 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
   on('ui.open', (_$: unknown, e: Record<string, unknown>) => (s.opened.push(e), { value: { isPlaced: true } }))
   on('ui.close', (_$: unknown, e: { id: string }) => (s.closed.push(e.id), { value: undefined }))
   on('ui.log', (_$: unknown, e: { text: string }) => (s.logs.push(e.text), { value: undefined }))
-  on('fs.read', (_$: unknown, e: { path: string }) => (e.path.endsWith('WORKFLOW.md') ? { value: WORKFLOW_LIVE_SPACES } : { deny: `ENOENT: ${e.path}` }))
+  on('fs.read', (_$: unknown, e: { path: string }) => {
+    if (e.path.endsWith('WORKFLOW.md')) return { value: WORKFLOW_LIVE_SPACES }
+    const file = e.path.startsWith(`${INBOX_DIR}/`) ? s.inbox.get(e.path.slice(INBOX_DIR.length + 1)) : undefined
+    return file ? { value: file.text } : { deny: `ENOENT: ${e.path}` }
+  })
+  on('fs.exists', (_$: unknown, e: { path: string }) => ({ value: e.path === INBOX_DIR && s.inbox.size > 0 }))
+  on('fs.list', (_$: unknown, e: { path: string }) =>
+    e.path === INBOX_DIR
+      ? { value: [...s.inbox].map(([name, f]) => ({ name, kind: 'file', size: f.text.length, mtimeMs: f.mtimeMs, isLink: false })) }
+      : { deny: `ENOENT: ${e.path}` },
+  )
+  on('prompt.submit', (_$: unknown, e: { text: string }) => ({ text: e.text }))
+  on('session.receive', (_$: unknown, e: { text: string }) => ({ text: e.text }))
+  on('tool.call', () => ({ result: { stdout: '', stderr: '', interrupted: false } }))
   on('session.start', () => ({ cwd: MAIN_CWD }))
   on('classic.SessionStart', () => ({}))
   on('ui.render', () => ({ type: 'Text', props: {}, children: ['drawn by Claude Code'] }))
@@ -137,3 +156,10 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
 export const start = ($: any) => $.session.start({ surface: 'terminal', isInteractive: true, cwd: MAIN_CWD })
 /** `/cockpit`, typed at the prompt. */
 export const cockpit = ($: any, args = ''): Promise<{ text?: string }> => $.command.run({ command: 'cockpit', args })
+
+/** A prompt as herdr's `agent prompt` delivers it: typed origin, pastes expanded. */
+export const submit = ($: any, text: string) => $.prompt.submit({ text, origin: { kind: 'composer' }, wait: false })
+/** A subagent or peer hand-back. */
+export const receive = ($: any, text: string) => $.session.receive({ origin: { kind: 'peer' }, text })
+/** Claude running one Bash command. */
+export const bash = ($: any, command: string) => $.tool.call({ tool: 'Bash', command, description: 'send', tool_use_id: 'toolu_s2' })

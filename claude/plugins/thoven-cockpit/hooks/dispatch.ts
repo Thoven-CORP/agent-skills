@@ -3,7 +3,7 @@
 // Owns ticket ids, label.sh labels and branch names. If dispatch-work changes a format, this is
 // the only file that changes. Every function is pure and is tested on real text.
 
-import type { Kind, Label, Ticket } from './model.ts'
+import type { Brief, InboxFile, Kind, Label, PaneId, Role, StatusLine, Ticket } from './model.ts'
 
 const KINDS: readonly Kind[] = ['Meta', 'Plan', 'Design', 'Build', 'Review', 'Research', 'Audit', 'Fix']
 
@@ -70,4 +70,21 @@ export function pickLabel(candidates: ReadonlyArray<string | undefined>, branch:
 export function branchTicket(branch: string): Ticket | undefined {
   const m = /thv-(\d+)/i.exec(branch)
   return m?.[1] ? ticket(m[1]) : undefined
+}
+
+// S2a surface, filled in by the next commit. Each returns "nothing found" until then.
+export function unwrapPasted(text: string): string {
+  return text
+}
+export function statusLines(_text: string): StatusLine[] {
+  return []
+}
+export function readPrompt(_text: string): { briefs: Brief[]; lines: StatusLine[]; concerns: number } {
+  return { briefs: [], lines: [], concerns: 0 }
+}
+export function sendCalls(_command: string): Array<{ pane: PaneId; ticket: Ticket; role: Role; round: number; file: string }> {
+  return []
+}
+export function inboxFile(_name: string, _text: string, _at: number): InboxFile | undefined {
+  return undefined
 }
