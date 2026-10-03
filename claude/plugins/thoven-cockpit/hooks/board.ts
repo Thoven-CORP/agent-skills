@@ -1,7 +1,7 @@
 // board.ts: World → Board. The one place tickets are joined.
 //
 // Pure and total: every World, however stale or half-empty, gives a Board. A failed source
-// makes its own cells stale and leaves the others drawing.
+// keeps its last answer, which view.ts dims in the columns naming it, and leaves the others drawing.
 //
 // The join, as far as S1 reaches:
 //   1. Space panes: snapshot panes with `space === me.space`, minus main's own pane.

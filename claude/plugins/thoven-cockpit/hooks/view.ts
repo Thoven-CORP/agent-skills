@@ -302,8 +302,6 @@ function linearText(l: Cells['linear']): string {
       return ''
     case 'none':
       return DASH
-    case 'stale':
-      return 'stale'
     case 'ok':
       return '✓'
     case 'pending':

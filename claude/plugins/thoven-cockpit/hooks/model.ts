@@ -328,7 +328,6 @@ export type CiCell = { k: 'none' } | { k: 'pass' } | { k: 'fail'; failed: number
 export type LinearCell =
   | { k: 'hidden' } // the space has no Project, so the column is not drawn
   | { k: 'none' } // not read yet
-  | { k: 'stale'; since: Ms }
   | { k: 'ok' }
   | { k: 'pending'; pending: Pending[]; isInFlight: boolean }
   | { k: 'error'; message: string; pending: Pending[] }
@@ -349,7 +348,6 @@ export type Cells = {
   report: ReportCell
   fix: FixCell
   review: ReviewCell
-  /** A stale gh source keeps its last answer, so these keep drawing; the health line says since when. */
   pr: PrCell
   ci: CiCell
   linear: LinearCell
