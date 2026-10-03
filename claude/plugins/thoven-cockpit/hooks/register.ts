@@ -27,7 +27,7 @@ import { claimHeldBy, claimOf } from './facts.ts'
 import { COMMANDS, type Req } from './commands.ts'
 import { findMe, parseSnapshot, spaceOfPane } from './herdr.ts'
 import { type Board, type Fact, type FactKind, type FactOf, type Intent, type Main, type Me, type Ms, type PaneId, type PaneUi, type Polled, type SessionId, type SourceId, type Sources, type SourceValues, type World } from './model.ts'
-import { HEARTBEAT_MS, SOURCES, due, settle, unpolled, type Answer, type Ask, type Listing, type Source } from './sources.ts'
+import { HEARTBEAT_MS, SOURCES, STAGES, due, settle, unpolled, type Answer, type Ask, type Listing, type Source } from './sources.ts'
 import { isFactKey, keyOf, parseFact } from './store.ts'
 import { drawCockpit } from './view.ts'
 
@@ -42,9 +42,11 @@ type MainState = {
   who: Main
   sources: Sources
   lastRun: Partial<Record<SourceId, Ms>>
+  /** Sources whose poll has not settled. A source never overlaps itself, and a hung one holds up no other. */
+  polling: Set<SourceId>
   board: Board | undefined
   heartbeat: { cancel(): void }
-  isTicking: boolean
+  isDrawing: boolean
 }
 
 // ── Module state: caches only. Everything here can be lost on reload and rebuilt in one tick. ──
@@ -196,7 +198,7 @@ async function becomeMain($: Api, claim: FactOf<'main'>, cwd: string, herdr?: So
   })
   me = who
   const sources = herdr ? { ...unpolled(), herdr } : unpolled()
-  main = { who, sources, lastRun: herdr ? { herdr: claim.at } : {}, board: undefined, heartbeat, isTicking: false }
+  main = { who, sources, lastRun: herdr ? { herdr: claim.at } : {}, polling: new Set(), board: undefined, heartbeat, isDrawing: false }
   void tick($)
 }
 
@@ -227,31 +229,46 @@ async function claimAndOpen($: Api): Promise<string> {
 }
 
 /**
- * The heartbeat body. Skips while the previous tick still runs, so a hung source never stacks
- * ticks. Still main? → poll each due source → project → redraw.
+ * The heartbeat body. Still main? → poll the due sources stage by stage → draw. Ticks may
+ * overlap: a source still polling from an earlier tick is skipped, so a hung `gh` holds up only
+ * the tick that started it, and the next tick polls and draws everything else.
  */
 async function tick($: Api): Promise<void> {
   const m = main
-  if (!m || m.isTicking) return
-  m.isTicking = true
+  if (!m) return
   try {
-    const facts = await loadFacts($)
-
-    if (claimOf(facts, m.who.space)?.pane !== m.who.pane) {
+    if (claimOf(await loadFacts($, 'main'), m.who.space)?.pane !== m.who.pane) {
       if (main === m) await loseClaim($)
       return
     }
     const now = await $.clock.now()
-    for (const id of due(m.lastRun, now)) await poll($, m, id, worldOf(m, now, facts))
-    const board = project(worldOf(m, now, facts))
-    m.board = board
-    // Set once: the board lists only events with no `happened` fact in what this tick loaded.
-    for (const e of board.newEvents) await writeFact($, { kind: 'happened', ticket: e.ticket, event: e.id, at: now })
-    $.ui.invalidate('ui.render')
+    for (const stage of STAGES) {
+      const ids = due(m.lastRun, now).filter((id) => stage.includes(id) && !m.polling.has(id))
+      await Promise.all(ids.map((id) => poll($, m, id, now)))
+    }
+    await draw($, m)
   } catch (err) {
     await debug($, 'tick', err)
+  }
+}
+
+/**
+ * Project and redraw. One draw at a time, from facts loaded now: two overlapping ticks never
+ * write one `happened` twice, and a tick that waited on a hung source draws no stale facts.
+ */
+async function draw($: Api, m: MainState): Promise<void> {
+  if (m.isDrawing || main !== m) return
+  m.isDrawing = true
+  try {
+    const facts = await loadFacts($)
+    const now = await $.clock.now()
+    const board = project(worldOf(m, now, facts))
+    m.board = board
+    // Set once: the board lists only events with no `happened` fact in what this draw loaded.
+    for (const e of board.newEvents) await writeFact($, { kind: 'happened', ticket: e.ticket, event: e.id, at: now })
+    $.ui.invalidate('ui.render')
   } finally {
-    m.isTicking = false
+    m.isDrawing = false
   }
 }
 
@@ -265,20 +282,22 @@ async function loseClaim($: Api): Promise<void> {
 }
 
 /** One source, one poll. A throw or an unusable answer marks this source stale and no other. */
-async function poll<K extends SourceId>($: Api, m: MainState, id: K, world: World): Promise<void> {
+async function poll<K extends SourceId>($: Api, m: MainState, id: K, now: Ms): Promise<void> {
   const source = SOURCES[id] as Source<SourceValues[K]>
+  m.polling.add(id)
   const answers: Array<Promise<Answer<unknown>>> = []
   let value: SourceValues[K] | undefined
   let error = 'unreadable answer'
   try {
-    value = await source.run(world, askOf($, answers))
+    value = await source.run({ me: m.who, sources: m.sources }, askOf($, answers))
     const failed = (await Promise.all(answers)).find((a) => a.k === 'fail')
     if (failed?.k === 'fail') error = failed.error
   } catch (err) {
     error = messageOf(err)
   }
-  m.sources = { ...m.sources, [id]: settle(m.sources[id] as Polled<SourceValues[K]>, value, world.now, error) }
-  m.lastRun[id] = world.now
+  m.sources = { ...m.sources, [id]: settle(m.sources[id] as Polled<SourceValues[K]>, value, now, error) }
+  m.lastRun[id] = now
+  m.polling.delete(id)
 }
 
 /** The reads one poll may make, over `$`. Each answer is kept in `answers`, in the order asked, so the poll can name the first failure. */

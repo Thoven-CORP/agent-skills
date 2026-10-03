@@ -25,13 +25,18 @@ export type Ask = {
   list(path: string): Promise<Answer<Listing>>
 }
 
+/** What a source may read: who main is, and what each source last gave. */
+export type Seen = Pick<World, 'me' | 'sources'>
+
 /**
- * One polled source. `run` may read sources polled before it in this tick, and returns undefined
- * to mean "unusable", which marks the source stale (or down, if it never answered).
+ * One polled source. `run` reads its own last value and the sources named in `needs`, which a
+ * tick polls in an earlier stage. It returns undefined to mean "unusable", which marks the source
+ * stale (or down, if it never answered).
  */
 export type Source<T> = {
   everyMs: Ms
-  run(world: World, ask: Ask): Promise<T | undefined>
+  needs: readonly SourceId[]
+  run(world: Seen, ask: Ask): Promise<T | undefined>
 }
 
 /** The heartbeat period: the shortest `everyMs`. One timer drives every source. */
@@ -64,7 +69,7 @@ const ok = <T>(a: Answer<T>): T | undefined => (a.k === 'ok' ? a.value : undefin
 // ── herdr ──────────────────────────────────────────────────────────────────────────────────
 
 /** Panes of main's space, other than main's own, whose snapshot entry has no label. */
-function unlabelled(world: World): Pane[] {
+function unlabelled(world: Seen): Pane[] {
   const snap = valueOf(world.sources.herdr)
   if (!snap) return []
   return snap.panes.filter((p) => p.space === world.me.space && p.pane !== world.me.pane && p.paneLabel === undefined)
@@ -74,7 +79,7 @@ function unlabelled(world: World): Pane[] {
 const seenOf = (p: Pane): string => `${p.tabLabel ?? ''}\n${p.terminalTitle ?? ''}`
 
 /** Unlabelled panes with no cached label, or one read when their tab label or title differed. */
-function toRead(world: World): Pane[] {
+function toRead(world: Seen): Pane[] {
   const cache = valueOf(world.sources.labels)?.byPane
   return unlabelled(world).filter((p) => cache?.get(p.pane)?.seen !== seenOf(p))
 }
@@ -107,7 +112,7 @@ export function parseLiveSpaces(markdown: string): SpaceMap {
 // ── git HEAD files (synthesis graft 4: read the file, never run git) ─────────────────────────
 
 /** The folders whose branch main needs: its own, and every pane's in its space, as a pane's last label fallback. */
-function trackedCwds(world: World): string[] {
+function trackedCwds(world: Seen): string[] {
   const panes = (valueOf(world.sources.herdr)?.panes ?? []).filter((p) => p.space === world.me.space && p.pane !== world.me.pane)
   return [...new Set([world.me.cwd, ...panes.map((p) => p.cwd)])].filter((cwd) => cwd !== '')
 }
@@ -142,7 +147,7 @@ export function parseHead(text: string): string | undefined {
 // ── Repos: each tracked folder's origin, plus frontend and backend (synthesis A4) ────────────
 
 /** The `.git/config` of each tracked folder whose HEAD path is known, one entry per repo. */
-function configPaths(world: World): string[] {
+function configPaths(world: Seen): string[] {
   const heads = valueOf(world.sources.heads)
   return [...new Set(trackedCwds(world).flatMap((cwd) => {
     const head = heads?.get(cwd)
@@ -151,13 +156,13 @@ function configPaths(world: World): string[] {
 }
 
 /** Configs not read yet. A config is read once: an unreadable one stays cached as no repo. */
-function unreadConfigs(world: World): string[] {
+function unreadConfigs(world: Seen): string[] {
   const known = valueOf(world.sources.origins)
   return configPaths(world).filter((path) => !known?.has(path))
 }
 
 /** The repos main asks gh about, frontend and backend first. */
-function reposOf(world: World): string[] {
+function reposOf(world: Seen): string[] {
   const origins = valueOf(world.sources.origins)
   return [...new Set([...FIXED_REPOS, ...configPaths(world).flatMap((path) => origins?.get(path) ?? [])])]
 }
@@ -172,10 +177,11 @@ const ticketFiles = (listing: Listing): Listing => listing.filter((e) => e.kind 
 
 // ── The registry ─────────────────────────────────────────────────────────────────────────────
 
-/** Poll order is this object's key order. A source's `run` reads only sources above it. */
+/** A source's `needs` are listed above it, so STAGES can be read off in one pass. */
 export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
   herdr: {
     everyMs: HEARTBEAT_MS,
+    needs: [],
     run: async (_world, ask) => {
       const text = ok(await ask.proc(COMMANDS['herdr api snapshot']()))
       return text === undefined ? undefined : parseSnapshot(text)
@@ -186,6 +192,7 @@ export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
   // A failed read keeps the old entry, so the pane is tried again next tick.
   labels: {
     everyMs: HEARTBEAT_MS,
+    needs: ['herdr'],
     run: async (world, ask): Promise<PaneLabels> => {
       const read = await Promise.all(toRead(world).map(async (p) => [p, ok(await ask.proc(COMMANDS['herdr pane get'](p.pane)))] as const))
       const cache = valueOf(world.sources.labels)?.byPane
@@ -200,6 +207,7 @@ export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
 
   spaces: {
     everyMs: 5 * 60_000,
+    needs: [],
     run: async (world, ask) => {
       const text = ok(await ask.read(workflowPath(world.me.home)))
       return text === undefined ? undefined : parseLiveSpaces(text)
@@ -210,6 +218,7 @@ export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
   // asked again next poll rather than cached as a checkout.
   heads: {
     everyMs: HEARTBEAT_MS,
+    needs: ['herdr'],
     run: async (world, ask): Promise<HeadPaths> => {
       const known = valueOf(world.sources.heads)
       const found = await Promise.all(trackedCwds(world).map(async (cwd) => [cwd, known?.get(cwd) ?? (await headOf(cwd, ask))] as const))
@@ -219,6 +228,7 @@ export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
 
   branches: {
     everyMs: HEARTBEAT_MS,
+    needs: ['heads'],
     run: async (world, ask): Promise<Branches> => {
       const heads = [...(valueOf(world.sources.heads) ?? [])]
       const read = await Promise.all(heads.map(async ([cwd, path]) => [cwd, ok(await ask.read(path))] as const))
@@ -233,6 +243,7 @@ export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
 
   origins: {
     everyMs: HEARTBEAT_MS,
+    needs: ['herdr', 'heads'],
     run: async (world, ask): Promise<Origins> => {
       const read = await Promise.all(unreadConfigs(world).map(async (path) => [path, ok(await ask.read(path))] as const))
       const origins = new Map(valueOf(world.sources.origins))
@@ -245,6 +256,7 @@ export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
   // cells keep the last full answer rather than mixing two polls.
   github: {
     everyMs: 60_000,
+    needs: ['herdr', 'heads', 'origins'],
     run: async (world, ask): Promise<GithubView | undefined> => {
       const lists = await Promise.all(reposOf(world).map(async (repo) => {
         const text = ok(await ask.proc(COMMANDS['gh pr list'](repo)))
@@ -262,6 +274,7 @@ export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
   // An unchanged file keeps its last read, so a 46 KB deliverable is read once.
   inbox: {
     everyMs: 10_000,
+    needs: [],
     run: async (world, ask): Promise<InboxFile[] | undefined> => {
       const dir = inboxDir(world.me.tmp)
       if (dir === undefined) return []
@@ -282,7 +295,29 @@ export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
 
 const SOURCE_IDS = Object.keys(SOURCES).filter((k): k is SourceId => Object.hasOwn(SOURCES, k))
 
-/** One value per source, in poll order. */
+/**
+ * The sources in stages: a stage runs once every earlier one settled, and each source sits one
+ * stage after the deepest source it needs. Sources in one stage never wait on each other.
+ */
+export const STAGES: ReadonlyArray<readonly SourceId[]> = stagesOf()
+
+function stagesOf(): SourceId[][] {
+  const depth = new Map<SourceId, number>()
+  const stages: SourceId[][] = []
+  for (const id of SOURCE_IDS) {
+    let d = 0
+    for (const need of SOURCES[id].needs) {
+      const at = depth.get(need)
+      if (at === undefined) throw new Error(`source ${id} needs ${need}, which is not above it in SOURCES`)
+      d = Math.max(d, at + 1)
+    }
+    depth.set(id, d)
+    ;(stages[d] ??= []).push(id)
+  }
+  return stages
+}
+
+/** One value per source, in SOURCES order. */
 export function bySource<V>(of: (id: SourceId) => V): { [K in SourceId]: V } {
   return Object.fromEntries(SOURCE_IDS.map((id) => [id, of(id)])) as { [K in SourceId]: V }
 }

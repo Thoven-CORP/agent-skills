@@ -297,6 +297,18 @@ test('a failed gh poll keeps the last PRs, says gh stale since hh:mm, and the Pa
   expect(await ui.find({ type: 'Button', key: `pr-${FRONTEND}#136` })).toBeDefined()
 })
 
+test('a hanging gh holds up no other source: the next tick draws the Pane column herdr just gave', async ($, on) => {
+  const s = stage(on, { pane: 'w18:p8W', snapshot: SNAPSHOT_W18_481 })
+  s.gh.mode = 'hang'
+  await start($)
+  await cockpit($)
+  s.herdr.snapshot = withStatus(SNAPSHOT_W18_481, 'w18:p8V', 'working')
+  await s.clock.advance(5_000)
+  const ui = await $.ui.mount(PANE)
+  expect(await ui.find({ type: 'Text', text: '◐ C' })).toBeDefined()
+  expect([FRONTEND, BACKEND].map((repo) => ranTimes(s, COMMANDS['gh pr list'](repo)))).toEqual([1, 1])
+})
+
 test('a merged PR writes happened merged-<n> once, however many gh polls see it', async ($, on) => {
   const s = stage(on, { pane: 'w18:p8W', snapshot: relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Design system and specs move out of thoven2.0 (THV-1038)') })
   s.gh.byRepo = { [FRONTEND]: GH_FRONTEND, [BACKEND]: GH_BACKEND }

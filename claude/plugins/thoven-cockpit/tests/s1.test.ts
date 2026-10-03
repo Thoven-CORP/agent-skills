@@ -422,7 +422,7 @@ test('herdr down since a reload: the pane says herdr unavailable', async ($, on)
   expect(await ui.find({ type: 'Text', text: 'herdr unavailable' })).toBeDefined()
 })
 
-test('herdr hangs: ticks never overlap, and the pane says herdr unavailable once it times out', async ($, on) => {
+test('herdr hangs: its poll never overlaps itself, and the pane says herdr unavailable once it times out', async ($, on) => {
   const s = stage(on, { pane: 'w18:p8W', snapshot: SNAPSHOT_W18_BUILD })
   await start($)
   await cockpit($)
