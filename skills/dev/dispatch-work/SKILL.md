@@ -29,10 +29,10 @@ edits the pane's code. Fixes go back to a pane.
 
 ## Layout
 
-- **Space** is the Linear Project. **Tab** is one issue: `<Kind> · <issue title> (THV-x)`. Kind is
-  the ticket's work: `Build` for a build, `Research`, `Audit`, `Plan` and so on otherwise. Main's own
-  tab is `Meta · <Project>`. `scripts/label.sh` writes every label and refuses a kind outside its
-  list (`label.sh --kinds`), because the cockpit mod and the herdr sidebar sort work by that word.
+- **Space** is the Linear Project. **Tab** is one issue: `<Kind> · <issue title> (THV-x)`. Kind names
+  the ticket's work. Pick it by the rule in WORKFLOW.md §8. Main's own tab is `Meta · <Project>`.
+  `scripts/label.sh` writes every label and accepts only the kinds `label.sh --kinds` prints. The
+  cockpit mod and the herdr sidebar sort work by that word.
 - **Panes** in that tab are the sub-tickets of that issue. Run them in parallel only when their
   `Paths` share no file. Otherwise run them one after another in the same tab.
 - The **verifier** gets its own pane in the same tab at step 5 and closes after it reports.

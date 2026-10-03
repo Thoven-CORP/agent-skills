@@ -530,7 +530,7 @@ truth; herdr makes parallelism visible.*
 |---|---|---|
 | Feature / Linear **Project** | **Space** (see Live spaces below) | One Project and one ledger. Meta is optional. An audience is several spaces, not one. |
 | (none required) | **Work tab** | A prose unit Meta or Andres named (`notifications`, `upcoming`, `payments`). Independent items get their own tab. A checkbox on the fat card does not. |
-| Issue, when one exists | **Pane**. Label = `<Kind> · <job> (THV-x)` | `Design · Messages panel (THV-149)`. Kind is a milestone word (`Plan` for PRD + Architecture, `Design`, `Build`, `Review`), `Research`, `Audit` or `Fix` for work outside a milestone, or `Meta` for main. `dispatch-work/scripts/label.sh` writes labels and refuses any other word. A pane can exist before a THV- does. Status words stay on Meta, not the pane name. |
+| Issue, when one exists | **Pane**. Label = `<Kind> · <job> (THV-x)` | `Design · Messages panel (THV-149)`. Kind is the milestone word for milestone work (`Plan` covers PRD and Architecture), `Research`, `Audit` or `Fix` for work outside a milestone, and `Meta` for main. `dispatch-work/scripts/label.sh --kinds` prints the full list, and `label.sh` refuses any other word. A pane can exist before a THV- does. Status words stay on Meta, not the pane name. |
 | Dispatched issue (`dispatch-work`) | **Tab** = the issue, **panes** = its sub-issues | Main creates them when it dispatches. Sub-issue panes run in parallel only when their Paths share no file. Andres ruling 2026-09-27. |
 | | Optional **Meta** tab in that space | An organizer for **this** Project when orchestration needs one. |
 

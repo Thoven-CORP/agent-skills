@@ -8,7 +8,8 @@ description: >-
 
 # Workspace
 
-`$workspace` is a pure reader until the user approves a disclosed write set. It owns Project
+`$workspace` is a pure reader until the user approves a disclosed write set. A cockpit press is that
+approval for one fixed write (see Update from the cockpit). It owns Project
 orientation, Linear lifecycle, capture, close, the derived Map, and the Project log. It does not
 perform semantic feature reconciliation.
 
@@ -130,7 +131,7 @@ the approval step. Anything the table does not name goes through the Recipe.
 |---|---|
 | `started` | `node tools/set-status.js "In Progress" THV-n` |
 | `pr <number>` | `set-status.js "Ready" THV-n`, then one comment: `PR #<number> opened` |
-| `report <STATUS>` | One comment: the report's status line and its Acceptance rows, nothing else |
+| `report <STATUS>` | One comment: the report's status line and its Acceptance rows, nothing else. Take them from the report as this session received it, or from `$TMPDIR/dispatch/out/THV-n.md` when it is still there |
 | `merged <number>` | `set-status.js "Done" THV-n`, then one comment: `Merged #<number>`. List the open tickets the merge may close; moving them needs the Recipe |
 
 Each write is idempotent: when the issue already sits at or past the target state, skip the move and
