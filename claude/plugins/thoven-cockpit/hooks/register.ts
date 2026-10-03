@@ -135,7 +135,6 @@ async function passThenObserve<E, R>($: Api, where: string, e: E, next: (e: E) =
 
 // ── Top-level effects. Each takes `$` and is the only code that performs its kind of effect. ──
 
-/** The `.catch` for every registration. `next` is replay-safe here, so a hook that already called it is not run twice. */
 /**
  * Pass on, then add one line under the answer when this turn needs it. A line other than the
  * answer is what Claude Code shows beneath it, so a hook beneath that already added one keeps it.
@@ -174,6 +173,7 @@ async function sessionStarted<E extends { session_id: string; source: string }, 
   return back === undefined ? r : { ...r, additionalContext: [...(r.additionalContext ?? []), back] }
 }
 
+/** The `.catch` for every registration. `next` is replay-safe here, so a hook that already called it is not run twice. */
 async function passThrough<E, R>(_$: Api, e: E, next: (e: E) => Promise<R>): Promise<R> {
   return next(e)
 }
@@ -382,7 +382,6 @@ async function turnWarning($: Api, answer: string, stop: { watching: boolean } |
 async function expire($: Api, m: MainState, now: Ms): Promise<void> {
   const board = m.board
   if (!board) return
-  // The Linear state read (S4) is not wired yet, so merged-done deletion waits for it.
   const gone = expired(await loadStored($), { now, prs: valueOf(m.sources.github)?.prs, linear: new Map([...linearEntries(m.sources)].map(([t, e]) => [t, e.state.name])), onBoard: ticketsOn(board) })
   for (const { key } of gone) await $.store.delete(key)
 }
