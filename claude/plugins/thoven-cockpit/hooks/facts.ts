@@ -1,20 +1,36 @@
 // facts.ts: the queries over loaded facts. store.ts owns how a fact is stored; this file owns
 // how the rest of the cockpit asks which facts say what.
 
-import type { Fact, FactOf, PaneId, SpaceId, Ticket } from './model.ts'
+import type { Fact, FactKind, FactOf, PaneId, SpaceId, Ticket } from './model.ts'
 
-/** The fact kinds the board reads, each split out of the loaded facts once per tick. */
-export type BoardFacts = { report: Array<FactOf<'report'>>; send: Array<FactOf<'send'>>; brief: Array<FactOf<'brief'>>; happened: Array<FactOf<'happened'>> }
+/** The fact kinds that name a ticket: every kind but `main`. */
+type TicketKind = { [K in FactKind]: FactOf<K> extends { ticket: Ticket } ? K : never }[FactKind]
 
-export function boardFacts(facts: readonly Fact[]): BoardFacts {
-  const of = <K extends Fact['kind']>(kind: K): Array<FactOf<K>> => facts.filter((f): f is FactOf<K> => f.kind === kind)
-  return { report: of('report'), send: of('send'), brief: of('brief'), happened: of('happened') }
+/** The facts that name a ticket, one list per kind. */
+export type BoardFacts = { readonly [K in TicketKind]: ReadonlyArray<FactOf<K>> }
+type Lists = { [K in TicketKind]: Array<FactOf<K>> }
+
+/** Every fact that names a ticket, and the same facts per ticket. Built once per tick. */
+export type FactIndex = { all: BoardFacts; about(t: Ticket): BoardFacts }
+
+const lists = (): Lists => ({ brief: [], report: [], verdict: [], send: [], happened: [] })
+const NONE: BoardFacts = lists()
+
+const put = <K extends TicketKind>(into: Lists, kind: K, f: FactOf<K>): void => {
+  into[kind].push(f)
 }
 
-/** The same facts, only those about one ticket. */
-export function aboutTicket(facts: BoardFacts, t: Ticket): BoardFacts {
-  const about = <F extends { ticket: Ticket }>(fs: readonly F[]): F[] => fs.filter((f) => f.ticket === t)
-  return { report: about(facts.report), send: about(facts.send), brief: about(facts.brief), happened: about(facts.happened) }
+export function indexFacts(facts: readonly Fact[]): FactIndex {
+  const all = lists()
+  const byTicket = new Map<Ticket, Lists>()
+  for (const f of facts) {
+    if (!('ticket' in f)) continue
+    let mine = byTicket.get(f.ticket)
+    if (mine === undefined) byTicket.set(f.ticket, (mine = lists()))
+    put(all, f.kind, f)
+    put(mine, f.kind, f)
+  }
+  return { all, about: (t) => byTicket.get(t) ?? NONE }
 }
 
 type Claim = FactOf<'main'>

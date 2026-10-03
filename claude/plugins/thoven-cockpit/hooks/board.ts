@@ -30,7 +30,7 @@
 //      survives a later report replacing it or the PR falling out of gh's last 50.
 
 import { branchTicket, pickLabel } from './dispatch.ts'
-import { aboutTicket, boardFacts, type BoardFacts } from './facts.ts'
+import { indexFacts, type BoardFacts } from './facts.ts'
 import { configPathOf } from './github.ts'
 import type { Board, Branches, Cells, CiCell, FixCell, Health, InboxFile, Kind, LinearEventId, LivePane, NonEmpty, OtherItem, Pane, PaneCell, PaneId, PaneLabels, Panes, Pending, Polled, Pr, PrCell, PrGroup, ReportCell, RowIdentity, SourceHealth, SourceId, Sources, SpaceMap, Ticket, World } from './model.ts'
 import { valueOf } from './sources.ts'
@@ -59,13 +59,13 @@ export function project(world: World): Board {
 
   const panes = (snap?.panes ?? []).filter((p) => p.space === me.space && p.pane !== me.pane)
   const branches = valueOf(world.sources.branches)
-  const facts = boardFacts(world.facts)
+  const facts = indexFacts(world.facts)
 
   // A Build row is ordered by its first Build pane, a Review-only row after them all by its first Review pane.
   const builds = new Map<Ticket, { tie: Tie; panes: NonEmpty<LivePane> }>()
   const reviews = new Map<Ticket, { tie: Tie; pane: Pane; verifier: Pane }>()
   const other: OtherItem[] = []
-  for (const s of panes.map((p) => slotOf(tieOf(facts, p, labels, branches), p))) {
+  for (const s of panes.map((p) => slotOf(tieOf(facts.all, p, labels, branches), p))) {
     if (s.k === 'build')
       for (const t of s.tie.tickets) {
         const b = builds.get(t)
@@ -98,14 +98,14 @@ export function project(world: World): Board {
     space,
     project: projectName,
     here: undefined,
-    build: ids.map((id) => ({ k: 'single', row: { ...id, cells: cellsOf(id.ticket, aboutTicket(facts, id.ticket), context) } })),
+    build: ids.map((id) => ({ k: 'single', row: { ...id, cells: cellsOf(id.ticket, facts.about(id.ticket), context) } })),
     other,
     prs: join.groups(),
     pending: [],
     health: health(world.sources),
     working: panes.filter((p) => p.status === 'working').map((p) => p.pane),
     newEvents: ids.flatMap(({ ticket: t }) => {
-      const about = aboutTicket(facts, t)
+      const about = facts.about(t)
       return [...newReportEvents(t, about), ...newMergedEvents(t, join.attached(t), about)]
     }),
   }
