@@ -10,7 +10,7 @@ import { COMMANDS, type Req } from './commands.ts'
 import { FIXED_REPOS, configPathOf, parseOrigin, parsePrList } from './github.ts'
 import { parsePaneLabel, parseSnapshot } from './herdr.ts'
 import { inboxFile, inboxTicket } from './dispatch.ts'
-import type { Branches, GithubView, HeadPaths, InboxFile, Ms, Origins, Pane, PaneLabels, Polled, Pr, Snapshot, SourceId, Sources, SpaceMap, World } from './model.ts'
+import type { Branches, GithubView, HeadPaths, InboxFile, Ms, Origins, Pane, PaneId, PaneLabels, Polled, Pr, Snapshot, SourceId, SourceValues, Sources, SpaceMap, World } from './model.ts'
 
 /** One directory entry, as register.ts reduces `$.fs.list`. A folder that does not exist lists `[]`. */
 export type Listing = ReadonlyArray<{ name: string; kind: string; mtimeMs: number }>
@@ -196,11 +196,11 @@ export const SOURCES = {
     everyMs: HEARTBEAT_MS,
     needs: ['herdr'],
     run: async (world, ask): Promise<PaneLabels> => {
-      const read = await Promise.all(toRead(world).map(async (p) => [p, await tolerate(ask.proc(COMMANDS['herdr pane get'](p.pane)))] as const))
+      const read = await Promise.all(toRead(world).map(async (p): Promise<[Pane, string | undefined]> => [p, await tolerate(ask.proc(COMMANDS['herdr pane get'](p.pane)))]))
       const cache = valueOf(world.sources.labels)?.byPane
-      const byPane = new Map(unlabelled(world).flatMap((p) => {
+      const byPane = new Map(unlabelled(world).flatMap((p): Array<[PaneId, { seen: string; label: string | undefined }]> => {
         const kept = cache?.get(p.pane)
-        return kept ? [[p.pane, kept] as const] : []
+        return kept ? [[p.pane, kept]] : []
       }))
       for (const [p, text] of read) if (text !== undefined) byPane.set(p.pane, { seen: seenOf(p), label: parsePaneLabel(text) })
       return { byPane }
@@ -220,8 +220,8 @@ export const SOURCES = {
     needs: ['herdr'],
     run: async (world, ask): Promise<HeadPaths> => {
       const known = valueOf(world.sources.heads)
-      const found = await Promise.all(trackedCwds(world).map(async (cwd) => [cwd, known?.get(cwd) ?? (await tolerate(headOf(cwd, ask)))] as const))
-      return new Map(found.flatMap(([cwd, head]) => (head === undefined ? [] : [[cwd, head] as const])))
+      const found = await Promise.all(trackedCwds(world).map(async (cwd): Promise<[string, string | undefined]> => [cwd, known?.get(cwd) ?? (await tolerate(headOf(cwd, ask)))]))
+      return new Map(found.flatMap(([cwd, head]): Array<[string, string]> => (head === undefined ? [] : [[cwd, head]])))
     },
   }),
 
@@ -230,7 +230,7 @@ export const SOURCES = {
     needs: ['heads'],
     run: async (world, ask): Promise<Branches> => {
       const heads = [...(valueOf(world.sources.heads) ?? [])]
-      const read = await Promise.all(heads.map(async ([cwd, path]) => [cwd, await tolerate(ask.read(path))] as const))
+      const read = await Promise.all(heads.map(async ([cwd, path]): Promise<[string, string | undefined]> => [cwd, await tolerate(ask.read(path))]))
       const branches = new Map<string, string>()
       for (const [cwd, text] of read) {
         const branch = text === undefined ? undefined : parseHead(text)
@@ -244,7 +244,7 @@ export const SOURCES = {
     everyMs: HEARTBEAT_MS,
     needs: ['herdr', 'heads'],
     run: async (world, ask): Promise<Origins> => {
-      const read = await Promise.all(unreadConfigs(world).map(async (path) => [path, await tolerate(ask.read(path))] as const))
+      const read = await Promise.all(unreadConfigs(world).map(async (path): Promise<[string, string | undefined]> => [path, await tolerate(ask.read(path))]))
       const origins = new Map(valueOf(world.sources.origins))
       for (const [path, text] of read) origins.set(path, text === undefined ? undefined : parseOrigin(text))
       return origins
@@ -314,10 +314,15 @@ function stagesOf(): SourceId[][] {
   return stages
 }
 
-/** One value per source, in SOURCES order. */
-export function bySource<V>(of: (id: SourceId) => V): { [K in SourceId]: V } {
-  return Object.fromEntries(SOURCE_IDS.map((id) => [id, of(id)])) as { [K in SourceId]: V }
-}
+/** SOURCES seen through SourceValues, so a poll of `id` is typed by `id`. */
+export const BY_ID: { [K in SourceId]: Source<SourceValues[K]> } = SOURCES
+
+type Unpolled = { [K in SourceId]: { k: 'never' } }
+const isUnpolled = (o: Readonly<Record<string, { k: 'never' }>>): o is Unpolled => SOURCE_IDS.every((id) => Object.hasOwn(o, id))
 
 /** Every source before its first poll. */
-export const unpolled = (): Sources => bySource((): Polled<never> => ({ k: 'never' }))
+export function unpolled(): Sources {
+  const all = Object.fromEntries(SOURCE_IDS.map((id): [SourceId, { k: 'never' }] => [id, { k: 'never' }]))
+  if (!isUnpolled(all)) throw new Error('unreachable: SOURCE_IDS lists every source')
+  return all
+}

@@ -2,21 +2,19 @@
 //
 // The spec's static gate forbids any process argv that merges. Rather than list what is banned,
 // this module lists what is allowed: each entry below is one read-only subcommand, keyed by its
-// own words, its flags are literals, and only its operands come from data. `mint` is not
-// exported, so no other file can make an `Argv`, and register.ts runs nothing else.
+// own words, its flags are literals, and only its operands come from data. `mint` and its symbol
+// are not exported, so no other file can make a `Req`, and register.ts runs nothing else.
 // tests/gate.test.ts builds every entry and replays a session against this list.
 
 import type { PaneId } from './model.ts'
 
-declare const argvBrand: unique symbol
-/** An argument list one of the entries below made. */
-export type Argv = readonly string[] & { readonly [argvBrand]: true }
+const minted: unique symbol = Symbol('minted')
 
-/** One process to run, and how long it may take. */
-export type Req = { argv: Argv; timeoutMs: number }
+/** One process to run, and how long it may take, as one of the entries below made it. */
+export type Req = { readonly argv: readonly string[]; readonly timeoutMs: number; readonly [minted]: true }
 
 function mint(timeoutMs: number, ...argv: string[]): Req {
-  return { argv: argv as readonly string[] as Argv, timeoutMs }
+  return { argv, timeoutMs, [minted]: true }
 }
 
 const HERDR_MS = 10_000
@@ -42,6 +40,6 @@ export const COMMANDS = {
     if (!REPO.test(repo)) throw new Error(`not a GitHub repo: ${repo}`)
     return mint(GH_MS, 'gh', 'pr', 'list', '--repo', repo, '--state', 'all', '--json', PR_FIELDS, '--limit', '50')
   },
-} as const
+}
 
 export type CommandName = keyof typeof COMMANDS

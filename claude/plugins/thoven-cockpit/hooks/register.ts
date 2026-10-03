@@ -26,8 +26,8 @@ import { bashSeen, promptSeen, type Observer } from './observe.ts'
 import { claimHeldBy, claimOf } from './facts.ts'
 import { COMMANDS, type Req } from './commands.ts'
 import { findMe, parseSnapshot, spaceOfPane } from './herdr.ts'
-import { type Board, type Fact, type FactKind, type FactOf, type Intent, type Main, type Me, type Ms, type PaneId, type PaneUi, type Polled, type SessionId, type SourceId, type Snapshot, type Sources, type SourceValues, type World } from './model.ts'
-import { HEARTBEAT_MS, SOURCES, STAGES, due, settle, unpolled, type Ask, type Listing, type Source } from './sources.ts'
+import { isPaneId, isSessionId, type Board, type Fact, type FactKind, type FactOf, type Intent, type Main, type Me, type Ms, type PaneId, type PaneUi, type SessionId, type SourceId, type Snapshot, type Sources, type SourceValues, type World } from './model.ts'
+import { BY_ID, HEARTBEAT_MS, STAGES, due, settle, unpolled, type Ask, type Listing } from './sources.ts'
 import { isFactKey, keyOf, parseFact } from './store.ts'
 import { drawCockpit } from './view.ts'
 
@@ -59,7 +59,7 @@ export const register: Register = (on) => {
 
   // Fires before session.start at startup (measured), and after /clear, /resume, /branch, compact.
   // The compaction checkpoint arrives in S5.
-  on('classic.SessionStart', ($, e, next) => passThenObserve($, 'classic.SessionStart', e, next, () => resolveMe($, e.session_id as SessionId))).catch(passThrough)
+  on('classic.SessionStart', ($, e, next) => passThenObserve($, 'classic.SessionStart', e, next, async () => resolveMe($, await sessionId($)))).catch(passThrough)
 
   // A report, verdict or brief can reach any session: herdr's `agent prompt` arrives here (origin
   // composer, pastes expanded), and so does a typed paste.
@@ -71,7 +71,7 @@ export const register: Register = (on) => {
 
   // send.sh is how a brief or fix round reaches a pane. Observed after it ran: a refused or failed
   // call sent nothing.
-  on('tool.call', { tool: 'Bash' }, ($, e, next) => passThenObserve($, 'tool.call', e, next, (r) => noteBash($, r, (e as { command?: unknown }).command))).catch(passThrough)
+  on('tool.call', { tool: 'Bash' }, ($, e, next) => passThenObserve($, 'tool.call', e, next, (r) => noteBash($, r, e.command))).catch(passThrough)
 
   // `/cockpit doctor` arrives in S6; until then every argument is ignored.
   on('command.run', { command: 'cockpit' }, ($) => runCockpit($)).catch(passThrough)
@@ -119,7 +119,7 @@ async function passThenExtend<E, R>($: Api, where: string, e: E, next: (e: E) =>
 // ── Top-level effects. Each takes `$` and is the only code that performs its kind of effect. ──
 
 /** The `.catch` for every registration. `next` is replay-safe here, so a hook that already called it is not run twice. */
-async function passThrough(_$: Api, e: any, next: any): Promise<any> {
+async function passThrough<E, R>(_$: Api, e: E, next: (e: E) => Promise<R>): Promise<R> {
   return next(e)
 }
 
@@ -287,7 +287,7 @@ async function loseClaim($: Api): Promise<void> {
 
 /** One source, one poll. A throw or an unusable answer marks this source stale and no other. */
 async function poll<K extends SourceId>($: Api, m: MainState, id: K, now: Ms): Promise<void> {
-  const source = SOURCES[id] as Source<SourceValues[K]>
+  const source = BY_ID[id]
   m.polling.add(id)
   let value: SourceValues[K] | undefined
   let error = 'unreadable answer'
@@ -296,7 +296,7 @@ async function poll<K extends SourceId>($: Api, m: MainState, id: K, now: Ms): P
   } catch (err) {
     error = messageOf(err)
   }
-  m.sources = { ...m.sources, [id]: settle(m.sources[id] as Polled<SourceValues[K]>, value, now, error) }
+  m.sources = { ...m.sources, [id]: settle(m.sources[id], value, now, error) }
   m.lastRun[id] = now
   m.polling.delete(id)
 }
@@ -332,12 +332,15 @@ async function listDir($: Api, path: string): Promise<Listing> {
 
 /** The herdr pane this session runs in, branded once here. */
 async function envPane($: Api): Promise<PaneId | undefined> {
-  return (await $.env.get('HERDR_PANE_ID')) as PaneId | undefined
+  const pane = await $.env.get('HERDR_PANE_ID')
+  return isPaneId(pane) ? pane : undefined
 }
 
 /** This session's id, branded once here. `/clear` changes it, so read it fresh each time. */
 async function sessionId($: Api): Promise<SessionId> {
-  return (await $.session.id()) as SessionId
+  const sid = await $.session.id()
+  if (!isSessionId(sid)) throw new Error('this session has no id')
+  return sid
 }
 
 /** Every `cockpit:` fact, or only one kind's. Values that do not validate are skipped, never thrown on. */

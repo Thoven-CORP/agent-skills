@@ -7,7 +7,7 @@
 // No other module builds or parses a key string. If reading ~50 keys per tick proves too slow
 // (synthesis A2), this file is the only one that changes.
 
-import { KINDS, REPORT_STATUSES, ROLES, VERDICTS, isOneOf, type Fact, type FactKind, type FactOf, type LinearEventId, type PaneId, type SessionId, type SpaceId, type Ticket } from './model.ts'
+import { KINDS, REPORT_STATUSES, ROLES, VERDICTS, isOneOf, isPaneId, isSessionId, isSpaceId, type Fact, type FactKind, type FactOf, type LinearEventId, type Ticket } from './model.ts'
 import { ticket } from './dispatch.ts'
 
 const PREFIX = 'cockpit:'
@@ -47,9 +47,6 @@ const isStr = (v: unknown): v is string => typeof v === 'string' && v !== ''
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
 const isTicket = (v: unknown): v is Ticket => typeof v === 'string' && ticket(v) === v
 // The store hands back what a session wrote, so an id is a non-empty string; its key proves the rest.
-const isPane = (v: unknown): v is PaneId => isStr(v)
-const isSession = (v: unknown): v is SessionId => isStr(v)
-const isSpace = (v: unknown): v is SpaceId => isStr(v)
 const isEvent = (v: unknown): v is LinearEventId => isStr(v)
 const never = (): undefined => undefined
 
@@ -58,9 +55,9 @@ const never = (): undefined => undefined
  * reads are `never` until that slice adds their check.
  */
 const SHAPES: { [K in FactKind]: (v: Raw) => FactOf<K> | undefined } = {
-  main: (v) => (isSpace(v.space) && isSession(v.sid) && isPane(v.pane) && isNum(v.at) ? { kind: 'main', space: v.space, sid: v.sid, pane: v.pane, at: v.at } : undefined),
+  main: (v) => (isSpaceId(v.space) && isSessionId(v.sid) && isPaneId(v.pane) && isNum(v.at) ? { kind: 'main', space: v.space, sid: v.sid, pane: v.pane, at: v.at } : undefined),
   brief: (v) => {
-    if (!isTicket(v.ticket) || !isSession(v.sid) || !isPane(v.pane) || !isNum(v.at)) return undefined
+    if (!isTicket(v.ticket) || !isSessionId(v.sid) || !isPaneId(v.pane) || !isNum(v.at)) return undefined
     const held = { ...(isOneOf(KINDS)(v.labelKind) ? { labelKind: v.labelKind } : {}), ...(isStr(v.title) ? { title: v.title } : {}) }
     const writer = { sid: v.sid, pane: v.pane, at: v.at }
     if (v.k === 'first' && isOneOf(ROLES)(v.role)) return { kind: 'brief', k: 'first', ticket: v.ticket, role: v.role, ...held, ...writer }
@@ -68,15 +65,15 @@ const SHAPES: { [K in FactKind]: (v: Raw) => FactOf<K> | undefined } = {
     return undefined
   },
   report: (v) =>
-    isTicket(v.ticket) && isSession(v.sid) && isOneOf(REPORT_STATUSES)(v.status) && typeof v.text === 'string' && isNum(v.concerns) && isNum(v.at)
+    isTicket(v.ticket) && isSessionId(v.sid) && isOneOf(REPORT_STATUSES)(v.status) && typeof v.text === 'string' && isNum(v.concerns) && isNum(v.at)
       ? { kind: 'report', ticket: v.ticket, sid: v.sid, status: v.status, text: v.text, concerns: v.concerns, at: v.at }
       : undefined,
   verdict: (v) =>
-    isTicket(v.ticket) && isSession(v.sid) && isOneOf(VERDICTS)(v.verdict) && typeof v.text === 'string' && isNum(v.at)
+    isTicket(v.ticket) && isSessionId(v.sid) && isOneOf(VERDICTS)(v.verdict) && typeof v.text === 'string' && isNum(v.at)
       ? { kind: 'verdict', ticket: v.ticket, sid: v.sid, verdict: v.verdict, text: v.text, at: v.at }
       : undefined,
   send: (v) =>
-    isTicket(v.ticket) && isPane(v.pane) && isOneOf(ROLES)(v.role) && isNum(v.round) && isStr(v.file) && isNum(v.at)
+    isTicket(v.ticket) && isPaneId(v.pane) && isOneOf(ROLES)(v.role) && isNum(v.round) && isStr(v.file) && isNum(v.at)
       ? { kind: 'send', ticket: v.ticket, pane: v.pane, role: v.role, round: v.round, file: v.file, at: v.at }
       : undefined,
   happened: (v) => (isTicket(v.ticket) && isEvent(v.event) && isNum(v.at) ? { kind: 'happened', ticket: v.ticket, event: v.event, at: v.at } : undefined),

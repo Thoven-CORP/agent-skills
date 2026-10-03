@@ -65,6 +65,13 @@ export function isOneOf<L extends readonly string[]>(list: L): (v: unknown) => v
   return (v): v is L[number] => list.some((word) => word === v)
 }
 
+/** The one way outside text becomes an id: herdr, Claude Code and the store hand out non-empty strings. */
+const isId = (v: unknown): v is string => typeof v === 'string' && v !== ''
+export const isPaneId = (v: unknown): v is PaneId => isId(v)
+export const isTabId = (v: unknown): v is TabId => isId(v)
+export const isSpaceId = (v: unknown): v is SpaceId => isId(v)
+export const isSessionId = (v: unknown): v is SessionId => isId(v)
+
 /** One line-anchored status line. */
 export type StatusLine = { ticket: Ticket; word: StatusWord; line: string }
 
