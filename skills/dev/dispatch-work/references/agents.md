@@ -9,8 +9,9 @@ Skills route by tier number. What each tier runs today (CLI, model, effort) live
 | -- | -- |
 | 1 | Hard or extremely complex: cross-cutting design, concurrency, a large unit, a fix loop that failed three rounds |
 | 2 | Build, design, orchestration, verification |
-| 3 | Easy mechanical bulk writes, quick work |
-| 4 | Quick writes, exploration, comments, Linear updates, monitoring |
+| 3 | Well-specified multi-file builds where the spec is decided |
+| 4 | Easy mechanical bulk writes: transcription plus a test |
+| 5 | Quick writes, exploration, comments, Linear updates, monitoring |
 
 `python3 <this skill>/scripts/agents.py tiers` prints what each tier resolves to. A ticket that
 needs something outside the tiers gets an explicit CLI, model and effort: `agents.py models <cli>`
@@ -20,12 +21,13 @@ lists: set a tier, wire a new CLI, or check the config. It merges the change and
 
 ## Complexity signals
 
-- One or two files and a complete spec: tier 3.
+- One or two files and a complete spec: tier 4.
+- Several files and a decided spec, with no design call left: tier 3.
 - Several files with integration between them, or a UI surface: tier 2.
 - Design judgment, broad codebase understanding, or a problem two tier-2 attempts could not close:
   tier 1.
 - Fewer turns beats a cheaper token. A cheap model that takes three times the turns costs more.
-  Tier 3 is for work that is transcription plus a test.
+  Tier 4 is for work that is transcription plus a test.
 
 ## Verifier and fix rounds
 
