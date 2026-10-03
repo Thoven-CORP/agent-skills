@@ -11,6 +11,18 @@ export HOME="$TMP"
 WT="$TMP/thoven/frontend-thv-1"
 mkdir -p "$WT"
 unset DEVIN_PROJECT_DIR
+# A stub gh on PATH, so the merged-PR check never reaches GitHub (THV-1067). It logs its args to
+# $HOME/gh-args, exits with $HOME/gh-rc when that exists, else prints $HOME/gh-out (no file: no PR).
+mkdir -p "$TMP/bin"
+cat >"$TMP/bin/gh" <<'STUB'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$HOME/gh-args"
+[ -f "$HOME/gh-rc" ] && exit "$(cat "$HOME/gh-rc")"
+cat "$HOME/gh-out" 2>/dev/null
+exit 0
+STUB
+chmod +x "$TMP/bin/gh"
+export PATH="$TMP/bin:$PATH"
 
 ok() { printf 'ok %s\n' "$1"; }
 fail() { printf 'FAIL %s: got %s\n' "$1" "$2"; failed=1; }
@@ -54,6 +66,10 @@ g -C "$REPO" worktree add -q "$TMP/thoven/wt-ahead" -b ahead main
 g -C "$TMP/thoven/wt-ahead" commit -q --allow-empty -m "not pushed"
 echo scratch >"$TMP/thoven/wt-dirty/notes.md"
 g -C "$REPO" branch unpushed-commit ahead
+# A squash merge leaves the branch's commits off origin: squash-merged is the tip that merged,
+# squash-plus carries one more local commit on top of it.
+g -C "$REPO" branch squash-merged ahead
+g -C "$REPO" branch squash-plus "$(g -C "$REPO" commit-tree "ahead^{tree}" -p ahead -m "after the merge")"
 decision() {
   local out
   out=$(run "$1" "$(claude_payload "$2" "${3:-$REPO}")" | sed 's/^rc=0 //')
@@ -108,6 +124,19 @@ ESC="thv984-escape-$$"
 esc_payload=$(jq -nc --arg c "git stash" --arg d "$WT" --arg s "../../../tmp/$ESC" '{session_id:$s,cwd:$d,tool_input:{command:$c}}')
 expect "a session id with ../ is still guarded" "$(run claude "$esc_payload" | sed 's/^rc=0 //' | jq -r .hookSpecificOutput.permissionDecision)" "deny"
 if [ -e "/tmp/$ESC" ]; then fail "a session id with ../ writes nothing outside /tmp/claude-thoven" "/tmp/$ESC exists"; else ok "a session id with ../ writes nothing outside /tmp/claude-thoven"; fi
+
+# branch -D after a squash merge (THV-1067)
+reason() { run claude "$(claude_payload "$1" "$REPO")" | sed 's/^rc=0 //' | jq -r '.hookSpecificOutput.permissionDecisionReason // empty'; }
+g -C "$REPO" rev-parse ahead >"$HOME/gh-out"
+expect "branch -D allows a branch whose merged PR head is its tip" "$(decision claude "git branch -D squash-merged")" "allow"
+expect "the merged check asks gh for that branch's merged PRs" "$(grep -c -- '--head squash-merged --state merged' "$HOME/gh-args")" "1"
+expect "branch -D refuses a merged branch with a commit added after the merge" "$(decision claude "git branch -D squash-plus")" "deny"
+rm -f "$HOME/gh-out"
+expect "branch -D refuses when gh finds no merged PR" "$(decision claude "git branch -D squash-merged")" "deny"
+case "$(reason "git branch -D squash-merged")" in *"merged PR"*) ok "the refusal names the merged-PR check" ;; *) fail "the refusal names the merged-PR check" "$(reason "git branch -D squash-merged")" ;; esac
+g -C "$REPO" rev-parse ahead >"$HOME/gh-out"; echo 1 >"$HOME/gh-rc"
+expect "branch -D refuses when gh fails" "$(decision claude "git branch -D squash-merged")" "deny"
+rm -f "$HOME/gh-out" "$HOME/gh-rc"
 
 expect "a for loop's do does not hide branch -D" "$(decision claude "for b in x; do git branch -D unpushed-commit; done")" "deny"
 expect "branch -D of a variable the guard cannot resolve is refused" "$(decision claude 'for b in x y; do git branch -D $b; done')" "deny"
