@@ -126,14 +126,18 @@ type Groups = Partial<Record<string, string>>
 /** A brief's first line, in the order they are tried, and the Brief each is. Every head names its `ticket`. */
 const HEADS: ReadonlyArray<{ head: RegExp; brief(t: Ticket, g: Groups): Brief }> = [
   // brief.md's fix-round brief: `FIX ROUND 3/5 THV-1015. Base for this round: …`.
-  { head: /^FIX ROUND[ \t]+(?<round>\d+)\/5[ \t]+(?<ticket>THV-\d+)\b/, brief: (t, g) => ({ ticket: t, role: 'builder', round: Number(g.round) }) },
+  { head: /^FIX ROUND[ \t]+(?<round>\d+)\/(?<of>\d+)[ \t]+(?<ticket>THV-\d+)\b/, brief: (t, g) => ({ k: 'fix', ticket: t, round: Number(g.round), of: Number(g.of) }) },
   // `/poteto-mode Build THV-1014 "title"` (or `$poteto-mode` for Codex).
   {
     head: /^[/$]poteto-mode[ \t]+(?<playbook>\S+)[ \t]+(?<ticket>THV-\d+)\b(?:[ \t]+"(?<title>[^"\n]*)")?/,
-    brief: (t, g) => ({ ticket: t, role: /^verify$/i.test(g.playbook ?? '') ? 'verifier' : 'builder', round: 0, playbook: g.playbook, ...(g.title ? { title: g.title } : {}) }),
+    brief: (t, g) => {
+      const labelKind = kindOf(g.playbook)
+      const role = /^verify$/i.test(g.playbook ?? '') ? 'verifier' : 'builder'
+      return { k: 'first', ticket: t, role, ...(labelKind ? { labelKind } : {}), ...(g.title ? { title: g.title } : {}) }
+    },
   },
   // The spec's other verifier opening: a brief that starts `Verify THV-n`.
-  { head: /^Verify[ \t]+(?<ticket>THV-\d+)\b/, brief: (t) => ({ ticket: t, role: 'verifier', round: 0 }) },
+  { head: /^Verify[ \t]+(?<ticket>THV-\d+)\b/, brief: (t) => ({ k: 'first', ticket: t, role: 'verifier' }) },
 ]
 
 function ticketAt(m: RegExpExecArray | null): Ticket | undefined {

@@ -7,7 +7,7 @@
 // No other module builds or parses a key string. If reading ~50 keys per tick proves too slow
 // (synthesis A2), this file is the only one that changes.
 
-import { REPORT_STATUSES, ROLES, VERDICTS, isOneOf, type Fact, type FactKind, type LinearEventId, type PaneId, type SessionId, type SpaceId, type Ticket } from './model.ts'
+import { KINDS, REPORT_STATUSES, ROLES, VERDICTS, isOneOf, type Fact, type FactKind, type LinearEventId, type PaneId, type SessionId, type SpaceId, type Ticket } from './model.ts'
 import { ticket } from './dispatch.ts'
 
 export const PREFIX = 'cockpit:'
@@ -99,20 +99,14 @@ export function parseFact(info: KeyInfo, value: unknown): Fact | undefined {
       return v.kind === 'main' && v.space === info.space && isStr(v.sid) && isStr(v.pane) && typeof v.at === 'number'
         ? { kind: 'main', space: info.space, sid: v.sid as SessionId, pane: v.pane as PaneId, at: v.at }
         : undefined
-    case 'brief':
-      return v.kind === 'brief' && v.ticket === info.ticket && v.sid === info.sid && isStr(v.pane) && isOneOf(ROLES)(v.role) && isNum(v.round) && isNum(v.at)
-        ? {
-            kind: 'brief',
-            ticket: info.ticket,
-            sid: info.sid,
-            pane: v.pane as PaneId,
-            role: v.role,
-            round: v.round,
-            ...(isStr(v.playbook) ? { playbook: v.playbook } : {}),
-            ...(isStr(v.title) ? { title: v.title } : {}),
-            at: v.at,
-          }
-        : undefined
+    case 'brief': {
+      if (v.kind !== 'brief' || v.ticket !== info.ticket || v.sid !== info.sid || !isStr(v.pane) || !isNum(v.at)) return undefined
+      const held = { ...(isOneOf(KINDS)(v.labelKind) ? { labelKind: v.labelKind } : {}), ...(isStr(v.title) ? { title: v.title } : {}) }
+      const at = { sid: info.sid, pane: v.pane as PaneId, at: v.at }
+      if (v.k === 'first' && isOneOf(ROLES)(v.role)) return { kind: 'brief', k: 'first', ticket: info.ticket, role: v.role, ...held, ...at }
+      if (v.k === 'fix' && isNum(v.round) && isNum(v.of)) return { kind: 'brief', k: 'fix', ticket: info.ticket, round: v.round, of: v.of, ...held, ...at }
+      return undefined
+    }
     case 'report':
       return v.kind === 'report' && v.ticket === info.ticket && v.sid === info.sid && isOneOf(REPORT_STATUSES)(v.status) && typeof v.text === 'string' && isNum(v.concerns) && isNum(v.at)
         ? { kind: 'report', ticket: info.ticket, sid: info.sid, status: v.status, text: v.text, concerns: v.concerns, at: v.at }

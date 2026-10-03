@@ -69,17 +69,26 @@ export type StatusLine = { ticket: Ticket; word: StatusWord; line: string }
 /**
  * What a prompt told a pane to do. A prompt that is a brief is never also a report: status lines
  * quoted inside it (the verifier brief pastes the builder's `DONE THV-n`) are its content.
+ *   first  `/poteto-mode <playbook> THV-n "title"`, or `Verify THV-n`
+ *   fix    `FIX ROUND <round>/<of> THV-n`, which goes to the builder
  */
-export type Brief = {
-  ticket: Ticket
-  role: Role
-  /** 0 for a first brief; n for `FIX ROUND n/5`. */
-  round: number
-  /** The `/poteto-mode <playbook>` word, raw (`Build`, `Verify`, `Feature`). Absent on a fix round. */
-  playbook?: string
-  /** The quoted ticket title on the brief's first line, when it has one. */
-  title?: string
-}
+export type Brief =
+  | {
+      k: 'first'
+      ticket: Ticket
+      role: Role
+      /** The `/poteto-mode <playbook>` word as a label Kind (`Build`); absent when it is none (`Verify`, `Feature`). */
+      labelKind?: Kind
+      /** The quoted ticket title on the brief's first line, when it has one. */
+      title?: string
+    }
+  | { k: 'fix'; ticket: Ticket; round: number; of: number }
+
+/**
+ * A session's brief for one ticket as it holds it. A fix round is written to the key of the brief
+ * before it, so it keeps that brief's kind, and any brief without a title keeps the title before it.
+ */
+export type Engagement = Brief & { labelKind?: Kind; title?: string }
 
 /** One `send.sh <pane> …/<THV-n>[-fixN|-verify[N]].md` in a Bash command. */
 export type SendCall = { pane: PaneId; ticket: Ticket; role: Role; round: number; file: string }
@@ -95,8 +104,8 @@ export type Label = { kind: Kind | undefined; title: string; tickets: Ticket[] }
 export type Fact =
   /** `main:<space>`. Contested by design: the newest claim is the main. Matched on `pane`, because `/clear` changes `sid`. */
   | { kind: 'main'; space: SpaceId; sid: SessionId; pane: PaneId; at: Ms }
-  /** `brief:<ticket>:<sid>`. The session that received the brief. */
-  | { kind: 'brief'; ticket: Ticket; sid: SessionId; pane: PaneId; role: Role; round: number; playbook?: string; title?: string; at: Ms }
+  /** `brief:<ticket>:<sid>`. The session that received the brief, and the brief as it holds it. */
+  | ({ kind: 'brief' } & Engagement & { sid: SessionId; pane: PaneId; at: Ms })
   /** `report:<ticket>:<sid>`. A session that received a builder's status line. */
   | { kind: 'report'; ticket: Ticket; sid: SessionId; status: ReportStatus; text: string; concerns: number; at: Ms }
   /** `verdict:<ticket>:<sid>`. A session that received a verifier's reply. */
@@ -242,7 +251,7 @@ export type Sources = { [K in SourceId]: Polled<SourceValues[K]> }
 /** Who this session is. Decided in session.start, refreshed by classic.SessionStart. */
 export type Me =
   | { k: 'inert' } // no HERDR_PANE_ID: every hook passes through untouched
-  | { k: 'pane'; pane: PaneId; sid: SessionId; engagements: Brief[] }
+  | { k: 'pane'; pane: PaneId; sid: SessionId; engagements: Engagement[] }
   | { k: 'main'; pane: PaneId; sid: SessionId; space: SpaceId; cwd: string; home: string; tmp: string }
 
 export type Main = Extract<Me, { k: 'main' }>
@@ -286,7 +295,7 @@ export type ReportCell =
   | { k: 'undelivered'; status: ReportStatus | undefined; file: string; selfChecked: boolean }
   | { k: 'escalation'; head: string } // a non-report note herdr's tw_tell_main left in the inbox
 
-export type FixCell = { k: 'none' } | { k: 'round'; round: number; of: 5 }
+export type FixCell = { k: 'none' } | { k: 'round'; round: number; of: number }
 
 /** One Review letter. `amber` exists only for T: thermo was due and did not run. */
 export type Light = 'lit' | 'dim' | 'off' | 'amber' | 'na'

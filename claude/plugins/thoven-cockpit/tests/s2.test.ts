@@ -127,7 +127,7 @@ test('a verifier brief quoting the builder DONE line is a brief, not a report', 
   // The quoted line is there, line-anchored, so only the brief rule keeps it out.
   expect(unwrapPasted(VERIFY_BRIEF_THV_1016).split('\n')).toContain('DONE THV-1016')
   expect(readPrompt(VERIFY_BRIEF_THV_1016)).toEqual({
-    briefs: [{ ticket: 'THV-1016', role: 'verifier', round: 0, playbook: 'Verify', title: 'Marketplace search tracking: report age, genre and subject filters' }],
+    briefs: [{ k: 'first', ticket: 'THV-1016', role: 'verifier', title: 'Marketplace search tracking: report age, genre and subject filters' }],
     lines: [],
     concerns: 0,
   })
@@ -135,16 +135,20 @@ test('a verifier brief quoting the builder DONE line is a brief, not a report', 
 
 test('a builder brief gives its ticket, kind and title, and no status line', async () => {
   expect(readPrompt(BUILD_BRIEF_THV_1014)).toEqual({
-    briefs: [{ ticket: 'THV-1014', role: 'builder', round: 0, playbook: 'Build', title: "Compiled-CSS tests can't fail: Tailwind builds the sheet from the tests' own class strings" }],
+    briefs: [{ k: 'first', ticket: 'THV-1014', role: 'builder', labelKind: 'Build', title: "Compiled-CSS tests can't fail: Tailwind builds the sheet from the tests' own class strings" }],
     lines: [],
     concerns: 0,
   })
 })
 
 test('a FIX ROUND prompt is a builder brief for that round, pasted or typed', async () => {
-  expect(readPrompt(FIX_ROUND_3_THV_1015).briefs).toEqual([{ ticket: 'THV-1015', role: 'builder', round: 3 }])
-  expect(readPrompt(FIX_ROUND_2_THV_711).briefs).toEqual([{ ticket: 'THV-711', role: 'builder', round: 2 }])
+  expect(readPrompt(FIX_ROUND_3_THV_1015).briefs).toEqual([{ k: 'fix', ticket: 'THV-1015', round: 3, of: 5 }])
+  expect(readPrompt(FIX_ROUND_2_THV_711).briefs).toEqual([{ k: 'fix', ticket: 'THV-711', round: 2, of: 5 }])
   expect(readPrompt(FIX_ROUND_3_THV_1015).lines).toEqual([])
+  // The denominator is read, not assumed: a 2/3 brief draws 2/3.
+  const brief: Fact = { kind: 'brief', k: 'fix', ticket: 'THV-1041' as never, round: 2, of: 3, sid: P8V_SID as SessionId, pane: 'w18:p8V' as PaneId, at: 1 }
+  expect(readPrompt(FIX_ROUND_2_THV_711.replace('2/5', '2/3')).briefs).toEqual([{ k: 'fix', ticket: 'THV-711', round: 2, of: 3 }])
+  expect(cellText(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [brief]), 'THV-1041')).fix).toBe('2/3')
 })
 
 // ── unit: main's send.sh calls ─────────────────────────────────────────────────────────────
@@ -218,7 +222,7 @@ test('an inbox file newer than any delivered report shows unsent; an older one d
 
 test('Fix cell: main send.sh round wins; without one, the pane FIX ROUND brief gives it', async () => {
   const send: Fact = { kind: 'send', ticket: 'THV-1041' as never, pane: 'w40:pC' as PaneId, role: 'builder', round: 2, file: 'THV-1041-fix2.md', at: 1 }
-  const brief: Fact = { kind: 'brief', ticket: 'THV-1041' as never, sid: P8V_SID as SessionId, pane: 'w18:p8V' as PaneId, role: 'builder', round: 3, at: 2 }
+  const brief: Fact = { kind: 'brief', k: 'fix', ticket: 'THV-1041' as never, round: 3, of: 5, sid: P8V_SID as SessionId, pane: 'w18:p8V' as PaneId, at: 2 }
   expect(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [send, brief]), 'THV-1041').fix).toEqual({ k: 'round', round: 2, of: 5 })
   expect(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [brief]), 'THV-1041').fix).toEqual({ k: 'round', round: 3, of: 5 })
   expect(cellText(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [brief]), 'THV-1041')).fix).toBe('3/5')
@@ -291,7 +295,7 @@ test('FIX ROUND 3/5 received by a pane with no send.sh gives Fix round 3', async
   const s = stage(on, { pane: 'w18:p8V', sid: P8V_SID, snapshot: SNAPSHOT_LIVE })
   await start($)
   await submit($, FIX_ROUND_3_THV_1015)
-  expect(s.saved.get(`cockpit:brief:THV-1015:${P8V_SID}`)).toEqual({ kind: 'brief', ticket: 'THV-1015', sid: P8V_SID, pane: 'w18:p8V', role: 'builder', round: 3, at: 0 })
+  expect(s.saved.get(`cockpit:brief:THV-1015:${P8V_SID}`)).toEqual({ kind: 'brief', k: 'fix', ticket: 'THV-1015', round: 3, of: 5, sid: P8V_SID, pane: 'w18:p8V', at: 0 })
   expect(rowOf(worldOf(W18_MAIN, SNAPSHOT_LIVE, factsIn(s.saved)), 'THV-1015').fix).toEqual({ k: 'round', round: 3, of: 5 })
 })
 
@@ -301,12 +305,12 @@ test('a brief received by an unlabelled pane ties that pane to its ticket', asyn
   await submit($, BUILD_BRIEF_THV_1014)
   expect(s.saved.get(`cockpit:brief:THV-1014:${P8V_SID}`)).toEqual({
     kind: 'brief',
+    k: 'first',
     ticket: 'THV-1014',
     sid: P8V_SID,
     pane: 'w18:p8V',
     role: 'builder',
-    round: 0,
-    playbook: 'Build',
+    labelKind: 'Build',
     title: "Compiled-CSS tests can't fail: Tailwind builds the sheet from the tests' own class strings",
     at: 0,
   })
@@ -315,12 +319,12 @@ test('a brief received by an unlabelled pane ties that pane to its ticket', asyn
 test('the tie: p8V, whose Mods tab has no label, is the THV-1014 Build row and leaves Other', async () => {
   const brief: Fact = {
     kind: 'brief',
+    k: 'first',
     ticket: 'THV-1014' as never,
     sid: P8V_SID as SessionId,
     pane: 'w18:p8V' as PaneId,
     role: 'builder',
-    round: 0,
-    playbook: 'Build',
+    labelKind: 'Build',
     title: "Compiled-CSS tests can't fail: Tailwind builds the sheet from the tests' own class strings",
     at: 1,
   }

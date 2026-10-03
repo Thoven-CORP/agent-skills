@@ -22,7 +22,7 @@ import type { EngineInterface, Register } from 'claude-code'
 import { project } from './board.ts'
 import { readPrompt, sendCalls } from './dispatch.ts'
 import { findMe, focusReq, parseSnapshot, snapshotReq, spaceOfPane } from './herdr.ts'
-import { VERDICTS, isOneOf, type Board, type Fact, type FactKind, type Intent, type Main, type Me, type Ms, type PaneId, type PaneUi, type Polled, type SessionId, type SourceId, type Sources, type SourceValues, type World } from './model.ts'
+import { VERDICTS, isOneOf, type Board, type Engagement, type Fact, type FactKind, type Intent, type Main, type Me, type Ms, type PaneId, type PaneUi, type Polled, type SessionId, type SourceId, type Sources, type SourceValues, type World } from './model.ts'
 import { HEARTBEAT_MS, SOURCES, due, settle, type Listing, type PolledId, type Req, type Resp, type Source } from './sources.ts'
 import { claimHeldBy, claimOf, keyOf, parseFact, parseKey } from './store.ts'
 import { drawCockpit } from './view.ts'
@@ -338,22 +338,12 @@ async function observePrompt($: Api, text: unknown): Promise<void> {
   const at = await $.clock.now()
   for (const b of briefs) {
     if (me.k === 'inert') continue
-    // A fix round lands on the same key as the first brief, so it carries that brief's playbook and title.
-    const first = me.k === 'pane' ? me.engagements.find((x) => x.ticket === b.ticket) : undefined
-    const playbook = b.playbook ?? first?.playbook
-    const title = b.title ?? first?.title
-    await writeFact($, {
-      kind: 'brief',
-      ticket: b.ticket,
-      sid,
-      pane: me.pane,
-      role: b.role,
-      round: b.round,
-      ...(playbook === undefined ? {} : { playbook }),
-      ...(title === undefined ? {} : { title }),
-      at,
-    })
-    if (me.k === 'pane') me = { ...me, engagements: [...me.engagements.filter((x) => x.ticket !== b.ticket), { ...b, playbook, title }] }
+    const before = me.k === 'pane' ? me.engagements.find((x) => x.ticket === b.ticket) : undefined
+    const labelKind = b.k === 'first' ? b.labelKind : before?.labelKind
+    const title = (b.k === 'first' ? b.title : undefined) ?? before?.title
+    const held: Engagement = { ...b, ...(labelKind === undefined ? {} : { labelKind }), ...(title === undefined ? {} : { title }) }
+    await writeFact($, { kind: 'brief', ...held, sid, pane: me.pane, at })
+    if (me.k === 'pane') me = { ...me, engagements: [...me.engagements.filter((x) => x.ticket !== b.ticket), held] }
   }
   for (const l of lines) {
     await writeFact(

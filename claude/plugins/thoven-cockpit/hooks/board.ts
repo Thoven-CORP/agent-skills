@@ -29,7 +29,7 @@
 //      `happened` fact yet, is a new event for main to record once (synthesis A1), so S4's ↻
 //      survives a later report replacing it or the PR falling out of gh's last 50.
 
-import { branchTicket, kindOf, labelOfBranch, pickLabel } from './dispatch.ts'
+import { branchTicket, labelOfBranch, pickLabel } from './dispatch.ts'
 import { configPathOf } from './github.ts'
 import {
   VERDICTS,
@@ -228,7 +228,7 @@ function tiedLabel(facts: readonly Fact[], p: Pane): Label | undefined {
   if (latest) {
     const titled = newest(briefs.filter((b) => b.title !== undefined))
     return {
-      kind: latest.role === 'verifier' ? 'Review' : kindOf(latest.playbook),
+      kind: latest.k === 'first' && latest.role === 'verifier' ? 'Review' : latest.labelKind,
       title: titled?.title ?? p.terminalTitle ?? latest.ticket,
       tickets: [...new Set(briefs.map((b) => b.ticket))],
     }
@@ -251,8 +251,10 @@ function reportCell(t: Ticket, facts: readonly Fact[], inbox: readonly InboxFile
 function fixCell(t: Ticket, facts: readonly Fact[]): FixCell {
   const top = (rounds: number[]) => rounds.reduce((a, b) => Math.max(a, b), 0)
   const sent = top(factsOf(facts, 'send', t).filter((f) => f.role === 'builder').map((f) => f.round))
-  const round = sent > 0 ? sent : top(factsOf(facts, 'brief', t).filter((f) => f.role === 'builder').map((f) => f.round))
-  return round > 0 ? { k: 'round', round, of: 5 } : { k: 'none' }
+  if (sent > 0) return { k: 'round', round: sent, of: 5 }
+  const fixes = factsOf(facts, 'brief', t).flatMap((f) => (f.k === 'fix' && f.round > 0 ? [f] : []))
+  const fix = fixes.reduce<(typeof fixes)[number] | undefined>((a, f) => (a === undefined || f.round > a.round ? f : a), undefined)
+  return fix ? { k: 'round', round: fix.round, of: fix.of } : { k: 'none' }
 }
 
 /** `report <STATUS>` for each status the ticket was reported in, in the order they arrived, not yet recorded. */
