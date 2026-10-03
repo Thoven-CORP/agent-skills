@@ -20,7 +20,7 @@ fi
 pause() { printf '\n  Press any key to close.'; read -r -n 1 -s _ </dev/tty || true; }
 
 items="$(mktemp)"
-printf 'tier\tSet a tier     change what tier 1-4 runs\n' >"$items"
+printf 'tier\tSet a tier     change what a tier runs\n' >"$items"
 printf 'cli\tAdd a CLI      wire one herdr has installed but agents.toml lacks\n' >>"$items"
 printf 'check\tCheck          the tiers against what the CLIs offer today\n' >>"$items"
 pick "Agents" "$items"

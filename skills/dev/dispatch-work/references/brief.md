@@ -18,7 +18,7 @@ KNOWN      <interfaces, rulings and commits from earlier tickets this one builds
 RULINGS    <main's resolution of anything ambiguous in the ticket. "none" if none.>
 ACCESS     <the skill lines from skills.md this ticket reaches, each with its moment>
            Tools: graphify for callers and impact, Linear (read), Context7 for vendor docs,
-           control-cli and control-ui for a running app, tier-4 subagents for wide reads.
+           control-cli and control-ui for a running app, tier-5 subagents for wide reads.
 DONE WHEN  <the ticket's Done when, verbatim or by pointer>
            Seams: <where the tests sit>. Proof goes red before your change and green after it.
            Type-check and the touched test files as you go. No full suite, no full lint.
