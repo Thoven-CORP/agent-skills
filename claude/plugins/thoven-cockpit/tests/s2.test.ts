@@ -174,19 +174,32 @@ test('send.sh calls give the pane, ticket, role and round from the brief file na
 
 // ── unit: the inbox ────────────────────────────────────────────────────────────────────────
 
-test('an inbox file is an unsent report only when it starts with its own status line', async () => {
+test('an inbox file is a report or verdict only when it starts with its own status line', async () => {
   expect(inboxFile('THV-1041.md', OUT_THV_1041, 7000)).toEqual({
     name: 'THV-1041.md',
     ticket: 'THV-1041',
-    line: { ticket: 'THV-1041', word: 'DONE_WITH_CONCERNS', line: 'DONE_WITH_CONCERNS THV-1041' },
-    head: 'DONE_WITH_CONCERNS THV-1041',
     at: 7000,
+    k: 'report',
+    line: { ticket: 'THV-1041', word: 'DONE_WITH_CONCERNS', line: 'DONE_WITH_CONCERNS THV-1041' },
   })
-  expect(inboxFile('THV-1004.md', OUT_ESCALATION_THV_1004, 1)?.line).toBeUndefined()
-  expect(inboxFile('THV-1004.md', OUT_ESCALATION_THV_1004, 1)?.head).toBe(
-    '[thoven verify] THV-1004 pane w56:p1 reported done 3 times and still: 1 live process: sleep 30 (pid 71389). Nudged 2x; needs you.',
-  )
-  expect(inboxFile('THV-1038.md', OUT_RESEARCH_THV_1038_HEAD, 1)?.line).toBeUndefined()
+  expect(inboxFile('THV-1003.md', 'VERIFIED THV-1003\n', 1)).toEqual({
+    name: 'THV-1003.md',
+    ticket: 'THV-1003',
+    at: 1,
+    k: 'verdict',
+    line: { ticket: 'THV-1003', word: 'VERIFIED', line: 'VERIFIED THV-1003' },
+  })
+  expect(inboxFile('THV-1004.md', OUT_ESCALATION_THV_1004, 1)).toEqual({
+    name: 'THV-1004.md',
+    ticket: 'THV-1004',
+    at: 1,
+    k: 'escalation',
+    head: '[thoven verify] THV-1004 pane w56:p1 reported done 3 times and still: 1 live process: sleep 30 (pid 71389). Nudged 2x; needs you.',
+  })
+  expect(inboxFile('THV-1038.md', OUT_RESEARCH_THV_1038_HEAD, 1)).toEqual({ name: 'THV-1038.md', ticket: 'THV-1038', at: 1, k: 'note' })
+  // Another ticket's status line is a note, and a name with no ticket is no inbox file.
+  expect(inboxFile('THV-1041.md', 'DONE THV-1003\n', 1)?.k).toBe('note')
+  expect(inboxFile('w40-p1.md', OUT_THV_1041, 1)).toBeUndefined()
 })
 
 // ── unit: the board cells ───────────────────────────────────────────────────────────────────
@@ -219,13 +232,17 @@ test('the newest report by at wins, whichever session received it', async () => 
 })
 
 test('an inbox file newer than any delivered report shows unsent; an older one does not', async () => {
-  const file = inboxFile('THV-1041.md', OUT_THV_1041, 7000) as InboxFile
-  const inbox = { inbox: fresh([file]) }
+  const file = inboxFile('THV-1041.md', OUT_THV_1041, 7000)
+  const inbox = { inbox: fresh(file ? [file] : []) }
   const unsent = rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [report('THV-1041', 'sid-b', 'DONE', 5000)], inbox), 'THV-1041')
   expect(unsent.report).toEqual({ k: 'undelivered', status: 'DONE_WITH_CONCERNS', file: 'THV-1041.md', selfChecked: false })
   expect(cellText(unsent).report).toBe('unsent')
   const delivered = rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [report('THV-1041', 'sid-b', 'DONE', 9000)], inbox), 'THV-1041')
   expect(delivered.report.k).toBe('in')
+  // Of two files for one ticket, the newer one is the cell, whichever the listing gives first.
+  const escalation = inboxFile('thv-1041.md', OUT_ESCALATION_THV_1004.replaceAll('THV-1004', 'THV-1041'), 8000)
+  const both = (files: InboxFile[]) => rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, [], { inbox: fresh(files) }), 'THV-1041').report.k
+  expect(file && escalation ? [both([file, escalation]), both([escalation, file])] : []).toEqual(['escalation', 'escalation'])
 })
 
 test('Fix cell: main send.sh round wins; without one, the pane FIX ROUND brief gives it', async () => {

@@ -4,7 +4,7 @@
 // inbox file grammar. If dispatch-work changes a format, this is
 // the only file that changes. Every function is pure and is tested on real text.
 
-import { KINDS, STATUS_WORDS, isOneOf, type Brief, type InboxFile, type Kind, type Label, type PaneId, type Role, type SendCall, type StatusLine, type Ticket } from './model.ts'
+import { KINDS, STATUS_WORDS, VERDICTS, isOneOf, type Brief, type InboxFile, type Kind, type Label, type PaneId, type Role, type SendCall, type StatusLine, type Ticket } from './model.ts'
 
 /** `THV-1045`, `thv-1045`, `1045` → Ticket. Undefined for anything else. */
 export function ticket(raw: string): Ticket | undefined {
@@ -205,16 +205,28 @@ export function sendCalls(command: string): SendCall[] {
 }
 
 const HEAD_MAX = 300
+/** A note herdr's verify plugin leaves in the inbox when a pane keeps reporting done with live processes. */
+const ESCALATION = /^\[thoven verify\]/
+
+/** The ticket an inbox file name gives: `THV-1041.md` → THV-1041, `w40-p1.md` → undefined. */
+export function inboxTicket(name: string): Ticket | undefined {
+  const m = /^(THV-\d+)\.md$/i.exec(name)
+  return m?.[1] ? ticket(m[1]) : undefined
+}
 
 /**
- * One file in `$TMPDIR/dispatch/out/`. It is an unsent report only when its first line is its
- * own ticket's status line: the folder also holds research deliverables (`# THV-1038 step 1`)
- * and herdr's `[thoven verify]` escalation notes.
+ * One file in `$TMPDIR/dispatch/out/`, or undefined when its name names no ticket. It is an
+ * undelivered report or verdict only when its first line is its own ticket's status line: the
+ * folder also holds research deliverables (`# THV-1038 step 1`) and herdr's escalation notes.
  */
-export function inboxFile(name: string, text: string, at: number): InboxFile {
-  const m = /^(THV-\d+)\.md$/i.exec(name)
-  const t = m?.[1] ? ticket(m[1]) : undefined
+export function inboxFile(name: string, text: string, at: number): InboxFile | undefined {
+  const t = inboxTicket(name)
+  if (!t) return undefined
   const head = (text.split('\n').find((l) => l.trim() !== '') ?? '').trim().slice(0, HEAD_MAX)
   const first = statusLines(head)[0]
-  return { name, ticket: t, line: first && first.ticket === t ? first : undefined, head, at }
+  const word = first?.word
+  if (first && first.ticket === t && word !== undefined) {
+    return isOneOf(VERDICTS)(word) ? { name, ticket: t, at, k: 'verdict', line: { ...first, word } } : { name, ticket: t, at, k: 'report', line: { ...first, word } }
+  }
+  return ESCALATION.test(head) ? { name, ticket: t, at, k: 'escalation', head } : { name, ticket: t, at, k: 'note' }
 }

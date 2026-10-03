@@ -219,8 +219,13 @@ export type LinearIssue = {
 }
 export type LinearView = ReadonlyMap<Ticket, LinearIssue>
 
-/** A file in `$TMPDIR/dispatch/out/`. A status line inside means an undelivered report. */
-export type InboxFile = { name: string; ticket: Ticket | undefined; line: StatusLine | undefined; head: string; at: Ms }
+/** A `THV-n.md` file in `$TMPDIR/dispatch/out/`, and what its first non-empty line makes it. */
+export type InboxFile = { name: string; ticket: Ticket; at: Ms } & (
+  | { k: 'report'; line: StatusLine & { word: ReportStatus } } // an undelivered report
+  | { k: 'verdict'; line: StatusLine & { word: Verdict } } // an undelivered verdict
+  | { k: 'escalation'; head: string } // herdr's verify plugin: a pane keeps reporting done with live processes
+  | { k: 'note' } // anything else, such as a research deliverable
+)
 
 /** Best-effort read of one Codex verifier rollout. */
 export type CodexReview = {

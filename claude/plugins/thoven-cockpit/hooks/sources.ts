@@ -9,7 +9,7 @@
 import type { Argv } from './commands.ts'
 import { FIXED_REPOS, configPathOf, parseOrigin, parsePrList, prListReq } from './github.ts'
 import { paneGetReq, parsePaneLabel, parseSnapshot, snapshotReq } from './herdr.ts'
-import { inboxFile } from './dispatch.ts'
+import { inboxFile, inboxTicket } from './dispatch.ts'
 import type { Branches, GithubView, HeadPaths, InboxFile, Ms, Origins, Pane, PaneId, PaneLabels, Polled, Pr, SourceId, SourceValues, SpaceMap, World } from './model.ts'
 
 /** One outside read. `perform($, req)` in register.ts is the only code that turns these into `$` calls. */
@@ -170,8 +170,8 @@ function listingOf(r: Resp | undefined): Listing | undefined {
   }
 }
 
-/** `THV-n.md` files only: other names (`w40-p1.md`) name no ticket, so no row can show them. */
-const ticketFiles = (listing: Listing): Listing => listing.filter((e) => e.kind === 'file' && /^THV-\d+\.md$/i.test(e.name))
+/** Files whose name names a ticket: no row can show another (`w40-p1.md`), so it is never read. */
+const ticketFiles = (listing: Listing): Listing => listing.filter((e) => e.kind === 'file' && inboxTicket(e.name) !== undefined)
 
 /** Files not yet read at this mtime. An unchanged file keeps its last read, so a 46 KB deliverable is read once. */
 function unread(world: World, listing: Listing): Listing {
@@ -303,7 +303,8 @@ export const SOURCES: { [K in PolledId]: Source<SourceValues[K]> } = {
         const i = fresh.findIndex((f) => f.name === e.name)
         if (i < 0) return known.filter((f) => f.name === e.name && f.at === e.mtimeMs)
         const text = ok(reads[i])
-        return text === undefined ? [] : [inboxFile(e.name, text, e.mtimeMs)]
+        const file = text === undefined ? undefined : inboxFile(e.name, text, e.mtimeMs)
+        return file ? [file] : []
       })
     },
   },
