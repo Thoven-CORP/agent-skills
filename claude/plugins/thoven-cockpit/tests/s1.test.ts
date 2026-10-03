@@ -5,7 +5,7 @@ import { expect, test } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { branchTicket, parseLabel, pickLabel } from '../hooks/dispatch.ts'
 import { parseSnapshot } from '../hooks/herdr.ts'
-import type { PaneId } from '../hooks/model.ts'
+import type { Board, PaneId, Row } from '../hooks/model.ts'
 import { SOURCES, headPathOf, parseHead } from '../hooks/sources.ts'
 import { cellText, columnsFor } from '../hooks/view.ts'
 import { DOT_GIT_THV_481, DOT_GIT_WORKTREE, HEAD_COCKPIT, HEAD_THV_481 } from './fixtures/git.ts'
@@ -157,7 +157,7 @@ test('two Build panes on one ticket give one row whose Pane cell lists both', as
   expect(rowsOf(board).map((r) => [r.ticket, r.panes])).toEqual([
     ['THV-1045', { k: 'live', list: [{ status: 'idle', tool: 'C', pane: 'w18:p8V' }, { status: 'working', tool: 'C', pane: 'w18:p8W' }] }],
   ])
-  expect(cellText(must(rowsOf(board)[0])).pane).toBe('○ C ◐ C')
+  expect(cellText(must(rowsOf(board)[0]), 'pane')).toBe('○ C ◐ C')
 })
 
 test('a Review pane naming two tickets verifies the one with a Build row and gives the other its own row', async () => {
@@ -216,15 +216,21 @@ test('the heads cache keeps only answers that succeeded, and only for folders st
 
 test('cellText: an S1 row shows its Pane glyph and tool tag, and a dash in every later column', async () => {
   const row = rowOf(worldOf(mainOf('w18', 'w18:p8W'), SNAPSHOT_W18_BUILD), 'THV-1045')
-  expect(cellText(row)).toEqual({ pane: '○ C', report: '–', fix: '–', review: '– – – –', pr: '–', ci: '–', linear: '' })
-  expect(cellText({ ...row, panes: { k: 'live', list: [{ status: 'working', tool: 'X', pane: 'w18:p8V' as PaneId }] }, cells: { ...row.cells, linear: { k: 'none' } } })).toMatchObject({ pane: '◐ X', linear: '–' })
-  expect(cellText({ ...row, panes: { k: 'gone' } }).pane).toBe('gone')
+  expect((['pane', 'report', 'fix', 'review', 'pr', 'ci', 'linear'] as const).map((id) => cellText(row, id))).toEqual(['○ C', '–', '–', '– – – –', '–', '–', ''])
+  const working: Row = { ...row, panes: { k: 'live', list: [{ status: 'working', tool: 'X', pane: 'w18:p8V' as PaneId }] }, cells: { ...row.cells, linear: { k: 'none' } } }
+  expect([cellText(working, 'pane'), cellText(working, 'linear')]).toEqual(['◐ X', '–'])
+  expect(cellText({ ...row, panes: { k: 'gone' } }, 'pane')).toBe('gone')
 })
 
 test('columnsFor: fixed cells, the Work column takes what is left, never under 10', async () => {
-  expect(columnsFor(80, true)).toEqual([31, 5, 8, 5, 9, 9, 6, 7])
-  expect(columnsFor(80, false)).toEqual([38, 5, 8, 5, 9, 9, 6])
-  expect(columnsFor(30, true)).toEqual([10, 5, 8, 5, 9, 9, 6, 7])
+  const linear = project(worldOf(mainOf('w4D', 'w18:p8W'), SNAPSHOT_LIVE))
+  const widths = (width: number, board: Board) => {
+    const { work, shown } = columnsFor(width, board)
+    return [work, ...shown.map((c) => c.width)]
+  }
+  expect(widths(80, linear)).toEqual([31, 5, 8, 5, 9, 9, 6, 7])
+  expect(widths(80, project(worldOf(mainOf('w18', 'w18:p8W'), SNAPSHOT_LIVE)))).toEqual([38, 5, 8, 5, 9, 9, 6])
+  expect(widths(30, linear)).toEqual([10, 5, 8, 5, 9, 9, 6, 7])
 })
 
 // ── kit: roles, claim and timers ─────────────────────────────────────────────────────────────

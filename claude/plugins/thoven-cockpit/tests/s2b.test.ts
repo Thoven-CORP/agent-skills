@@ -160,7 +160,7 @@ test('the pane on ui/thv-481 gives PR #136 and CI ✓ from its statusCheckRollup
   const row = rowOf(world, 'THV-481')
   expect(row.cells.pr).toEqual({ k: 'own', pr: prOf(FRONTEND, GH_FRONTEND, 136) })
   expect(row.cells.ci).toEqual({ k: 'pass' })
-  expect([cellText(row).pr, cellText(row).ci]).toEqual(['#136', '✓'])
+  expect([cellText(row, 'pr'), cellText(row, 'ci')]).toEqual(['#136', '✓'])
 })
 
 test('a THV-1045 Build tab with no branch read takes its open PR #141 by ticket, and CI shows its 4 failures', async () => {
@@ -172,7 +172,7 @@ test('a THV-1045 Build tab with no branch read takes its open PR #141 by ticket,
   const row = rowOf(world, 'THV-1045')
   expect(row.cells.pr).toEqual({ k: 'own', pr: prOf(FRONTEND, GH_FRONTEND, 141) })
   expect(row.cells.ci).toEqual({ k: 'fail', failed: 4 })
-  expect([cellText(row).pr, cellText(row).ci]).toEqual(['#141', '✗ 4'])
+  expect([cellText(row, 'pr'), cellText(row, 'ci')]).toEqual(['#141', '✗ 4'])
 })
 
 test('two tickets whose panes share ui/thv-481 both show in #136, and #136 is listed once with both', async () => {
@@ -188,7 +188,7 @@ test('two tickets whose panes share ui/thv-481 both show in #136, and #136 is li
   for (const t of ['THV-481', 'THV-1069']) {
     const row = rowOf(world, t)
     expect(row.cells.pr).toEqual({ k: 'shared', pr: pr136 })
-    expect(cellText(row).pr).toBe('in #136')
+    expect(cellText(row, 'pr')).toBe('in #136')
   }
   expect(project(world).prs).toEqual([{ repo: FRONTEND, items: [{ pr: pr136, tickets: ['THV-481', 'THV-1069'] }] }])
 })
@@ -207,7 +207,7 @@ test('a PR whose title group lists three tickets attaches to each row and is lis
   for (const t of ['THV-843', 'THV-847', 'THV-851']) {
     const row = rowOf(world, t)
     expect(row.cells.pr).toEqual({ k: 'own', pr: attached })
-    expect(cellText(row).pr).toBe('#145')
+    expect(cellText(row, 'pr')).toBe('#145')
   }
   expect(project(world).prs).toEqual([{ repo: BACKEND, items: [{ pr: attached, tickets: ['THV-843', 'THV-847', 'THV-851'] }] }])
 })
@@ -241,7 +241,7 @@ test('the this-session row on ui/thv-481 shows PR #136 and CI ✓, and no Linear
   })
   const row = rowOf(world, 'THV-481')
   expect([row.origin, row.cells.pr, row.cells.ci, row.cells.linear]).toEqual(['this-session', { k: 'own', pr: prOf(FRONTEND, GH_FRONTEND, 136) }, { k: 'pass' }, { k: 'hidden' }])
-  expect([cellText(row).pr, cellText(row).ci, cellText(row).linear]).toEqual(['#136', '✓', ''])
+  expect([cellText(row, 'pr'), cellText(row, 'ci'), cellText(row, 'linear')]).toEqual(['#136', '✓', ''])
 })
 
 test('a PR with no ticket is listed only while a space pane has its branch checked out', async () => {
@@ -284,14 +284,14 @@ test('a failed gh poll keeps the last PRs, says gh stale since hh:mm, and the Pa
   await start($)
   await cockpit($)
   const ui = await $.ui.mount(PANE)
-  expect(await ui.find({ type: 'Text', text: '#136' })).toBeDefined()
+  expect((await ui.find({ type: 'Text', text: '#136' }))?.props.dimColor).toBe(false)
   expect(await ui.find({ type: 'Text', text: '○ C' })).toBeDefined()
 
   s.gh.mode = 'fail'
   s.herdr.snapshot = withStatus(SNAPSHOT_W18_481, 'w18:p8V', 'working')
   await s.clock.advance(60_000)
   expect(await ui.find({ type: 'Text', text: `gh stale since ${hhmm(60_000)}` })).toBeDefined()
-  expect(await ui.find({ type: 'Text', text: '#136' })).toBeDefined()
+  expect((await ui.find({ type: 'Text', text: '#136' }))?.props.dimColor).toBe(true)
   expect(await ui.find({ type: 'Text', text: '◐ C' })).toBeDefined()
   await ui.press({ key: 'tab-prs' })
   expect(await ui.find({ type: 'Button', key: `pr-${FRONTEND}#136` })).toBeDefined()

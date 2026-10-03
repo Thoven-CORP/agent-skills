@@ -104,7 +104,7 @@ test('the status lines of the remaining reports, the first per ticket', async ()
 
 test('a fix round brief draws its own denominator', async () => {
   const brief = storedFact(`cockpit:brief:THV-1041:${P8V_SID}`, { kind: 'brief', k: 'fix', ticket: 'THV-1041', round: 2, of: 3, sid: P8V_SID, pane: 'w18:p8V', at: 1 })
-  expect(cellText(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: [brief] }), 'THV-1041')).fix).toBe('2/3')
+  expect(cellText(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: [brief] }), 'THV-1041'), 'fix')).toBe('2/3')
 })
 
 // ── unit: main's send.sh calls ─────────────────────────────────────────────────────────────
@@ -164,7 +164,7 @@ const report = (ticket: string, sid: string, status: 'DONE' | 'DONE_WITH_CONCERN
 
 test('Report cell glyphs: done, concerns with their count, ask, blocked', async () => {
   const cell = (status: 'DONE' | 'DONE_WITH_CONCERNS' | 'NEEDS_CONTEXT' | 'BLOCKED', concerns = 0) =>
-    cellText(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: [report('THV-1041', 'sid-b', status, 1000, concerns)] }), 'THV-1041')).report
+    cellText(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: [report('THV-1041', 'sid-b', status, 1000, concerns)] }), 'THV-1041'), 'report')
   expect(cell('DONE')).toBe('✓')
   expect(cell('DONE_WITH_CONCERNS', 1)).toBe('1 !')
   expect(cell('DONE_WITH_CONCERNS', 0)).toBe('!')
@@ -184,7 +184,7 @@ test('an inbox file newer than any delivered report shows unsent; an older one d
   const inbox = { inbox: fresh(file ? [file] : []) }
   const unsent = rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: [report('THV-1041', 'sid-b', 'DONE', 5000)], sources: inbox }), 'THV-1041')
   expect(unsent.cells.report).toEqual({ k: 'undelivered', status: 'DONE_WITH_CONCERNS', file: 'THV-1041.md', selfChecked: false })
-  expect(cellText(unsent).report).toBe('unsent')
+  expect(cellText(unsent, 'report')).toBe('unsent')
   const delivered = rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: [report('THV-1041', 'sid-b', 'DONE', 9000)], sources: inbox }), 'THV-1041')
   expect(delivered.cells.report.k).toBe('in')
   // Of two files for one ticket, the newer one is the cell, whichever the listing gives first.
@@ -202,7 +202,7 @@ test('Fix cell: main send.sh round wins; without one, the pane FIX ROUND brief g
   const brief = storedFact(`cockpit:brief:THV-1041:${P8V_SID}`, { kind: 'brief', k: 'fix', ticket: 'THV-1041', round: 3, of: 5, sid: P8V_SID, pane: 'w18:p8V', at: 2 })
   expect(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: [send, brief] }), 'THV-1041').cells.fix).toEqual({ k: 'round', round: 2, of: 5 })
   expect(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: [brief] }), 'THV-1041').cells.fix).toEqual({ k: 'round', round: 3, of: 5 })
-  expect(cellText(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: [brief] }), 'THV-1041')).fix).toBe('3/5')
+  expect(cellText(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: [brief] }), 'THV-1041'), 'fix')).toBe('3/5')
   expect(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041), 'THV-1041').cells.fix).toEqual({ k: 'none' })
 })
 
@@ -229,7 +229,7 @@ test('a pasted report reaching a pane session writes its report fact', async ($,
     concerns: 1,
     at: 3000,
   })
-  expect(cellText(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: factsIn(s.saved) }), 'THV-1041')).report).toBe('1 !')
+  expect(cellText(rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: factsIn(s.saved) }), 'THV-1041'), 'report')).toBe('1 !')
 })
 
 test('an indented verdict in a peer hand-back writes a verdict fact', async ($, on) => {
@@ -254,7 +254,7 @@ test('a report reaching a non-main session lands as a fact main reads, newest by
   await submit($, PASTED_DONE_FIX_ROUND_THV_1041)
   const row = rowOf(worldOf(W18_MAIN, SNAPSHOT_W18_1041, { facts: factsIn(s.saved) }), 'THV-1041')
   expect(row.cells.report).toEqual({ k: 'in', status: 'DONE', at: 5000, concerns: 0, selfChecked: false })
-  expect(cellText(row).report).toBe('✓')
+  expect(cellText(row, 'report')).toBe('✓')
 })
 
 test('Bash send.sh of THV-1004-fix2.md writes the send fact, and the Fix cell reads 2/5', async ($, on) => {
@@ -265,7 +265,7 @@ test('Bash send.sh of THV-1004-fix2.md writes the send fact, and the Fix cell re
   // w56:p1's terminal title names THV-1004.
   const row = rowOf(worldOf(mainOf('w56', 'w56:p2'), SNAPSHOT_LIVE, { facts: factsIn(s.saved) }), 'THV-1004')
   expect(row.cells.fix).toEqual({ k: 'round', round: 2, of: 5 })
-  expect(cellText(row).fix).toBe('2/5')
+  expect(cellText(row, 'fix')).toBe('2/5')
 })
 
 test('a Bash tool that throws beneath the cockpit still fails through it, and the cockpit neither logs nor records it', async ($, on) => {
