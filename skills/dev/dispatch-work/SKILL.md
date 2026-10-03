@@ -51,8 +51,8 @@ pane already holds it. Check both: the blockers in Linear and `git log origin/ma
 Andres with the blocker named. A ticket already in a pane gets a handover or a watcher, never a
 second pane on the same tree.
 
-Then read [references/agents.md](references/agents.md). The harness main runs in picks the model
-family. The ticket's complexity picks the tier. Several small same-shape tickets go to one pane as
+Then read [references/agents.md](references/agents.md). The ticket's complexity picks the tier,
+and `scripts/agents.py` says what that tier runs today. Several small same-shape tickets go to one pane as
 one dispatch.
 
 **Done when:** the blockers are merged and no pane holds the ticket, and you can state the CLI, the

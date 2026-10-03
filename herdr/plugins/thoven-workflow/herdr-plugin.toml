@@ -50,8 +50,8 @@ command = ["bash", "dispatch/link-click.sh"]
 id = "dispatch-picker"
 title = "Dispatch THV ticket"
 placement = "popup"
-width = 64
-height = 18
+width = 76
+height = 26
 command = ["bash", "dispatch/picker.sh"]
 
 [[link_handlers]]

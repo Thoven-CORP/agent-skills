@@ -5,7 +5,7 @@
       "id": 1,
       "name": "dispatch-fe-be-ticket-claude-main",
       "prompt": "ok dispatch THV-862 into a pane, its the copy a catalog piece to a student slice for materials v3. you're main in claude code, I'm in herdr pane w18:p59. go",
-      "expected_output": "Tier 2 Opus 5.5 high on claude, bypass flag, a filled brief pointing at the ticket with Thoven moment skills, tab named for the issue, send.sh from a file, Linear to In Progress, watcher armed.",
+      "expected_output": "Tier 2, launched from agents.py launch-line 2 (CLI, model, effort and bypass flag from agents.toml, none hand-typed), a filled brief pointing at the ticket with Thoven moment skills, tab named for the issue, send.sh from a file, Linear to In Progress, watcher armed.",
       "files": []
     },
     {
@@ -19,14 +19,14 @@
       "id": 3,
       "name": "dispatch-hard-backend-codex-main",
       "prompt": "you're running as main in codex cli this time. THV-859 needs to go out, catalog schema + mutopia import, it's gnarly. set it up",
-      "expected_output": "Tier 1 Asta high on codex (harness picks family), codex bypass flag, $poteto-mode prefix, Rails and migration skills at their moments, brief filled from the ticket.",
+      "expected_output": "Tier 1 from agents.py launch-line 1 whatever CLI main runs in, that CLI's skill prefix in the brief, Rails and migration skills at their moments, brief filled from the ticket.",
       "files": []
     },
     {
       "id": 4,
       "name": "done-report-verify-and-close",
       "prompt": "THV-862 pane just reported back, see fixtures/done-report.txt. take it from here",
-      "expected_output": "Moves ticket to Ready (not Done), runs working-if checks, opens a fresh Opus 5.5 verifier pane (not the builder pane) with the verifier brief, flags the inferred acceptance line 3 for real evidence, waits for Andres before Done, files the StudentSelect empty state as a follow-up at close.",
+      "expected_output": "Moves ticket to Ready (not Done), runs working-if checks, opens a fresh tier-2 verifier pane (not the builder pane) with the verifier brief, flags the inferred acceptance line 3 for real evidence, waits for Andres before Done, files the StudentSelect empty state as a follow-up at close.",
       "files": ["fixtures/done-report.txt"]
     },
     {

@@ -3,8 +3,8 @@
 # repo, CLI and branch area, confirms, then starts run.sh detached and exits so the popup closes.
 # Esc, q or Ctrl+C at any prompt cancels.
 #
-# Non-interactive (tests, dry runs): set all of TW_DISPATCH_REPO, TW_DISPATCH_CLI,
-# TW_DISPATCH_AREA, and TW_DISPATCH_TICKET (digits) when no pending file exists.
+# Non-interactive (tests, dry runs): set TW_DISPATCH_REPO, TW_DISPATCH_AREA, and either
+# TW_DISPATCH_TIER or TW_DISPATCH_CLI + TW_DISPATCH_MODEL (+ TW_DISPATCH_EFFORT), and TW_DISPATCH_TICKET (digits) when no pending file exists.
 # TW_DISPATCH_DRYRUN=1 runs run.sh in the foreground printing commands instead of running them.
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -58,14 +58,46 @@ while [ -z "$repo" ]; do
   case "$REPLY_VAL" in 1 | fe) repo=fe ;; 2 | be) repo=be ;; 3 | both) repo=both ;; *) [ -z "${TW_DISPATCH_REPO:-}" ] || exit 2 ;; esac
 done
 
-echo "  CLI    1) Claude Opus 5.5 high"
-echo "         2) Codex gpt-6-sol high"
-echo "         3) Devin swe-2-high"
-cli=""
-while [ -z "$cli" ]; do
-  ask "                                          [1]: " 1 "${TW_DISPATCH_CLI:-}"
-  case "$REPLY_VAL" in 1 | claude) cli=claude ;; 2 | codex) cli=codex ;; 3 | devin) cli=devin ;; *) [ -z "${TW_DISPATCH_CLI:-}" ] || exit 2 ;; esac
-done
+# Who runs it: a tier from agents.toml, or Custom (CLI, then model, then effort). Nothing here
+# names a model; agents.py reads the config (THV-1077).
+AGENTS="$HERE/../../../../skills/dev/dispatch-work/scripts/agents.py"
+[ -f "$AGENTS" ] || AGENTS="$HOME/.agents/skills/dispatch-work/scripts/agents.py"
+ag() { python3 "$AGENTS" "$@"; }
+# pick <title> <items-file>: the arrow-key menu; the value lands in PICK, and Esc cancels.
+pick() {
+  local out; out="$(mktemp)"
+  python3 "$HERE/choose.py" "$1" "$2" "$out" </dev/tty >/dev/tty || { rm -f "$2" "$out"; cancel; }
+  PICK="$(cat "$out")"; rm -f "$2" "$out"
+}
+
+cli="" model="" effort=""
+if [ -n "${TW_DISPATCH_TIER:-}" ]; then
+  IFS=$'\t' read -r cli model effort < <(ag resolve "$TW_DISPATCH_TIER") || exit 2
+elif [ -n "${TW_DISPATCH_CLI:-}" ]; then
+  cli="$TW_DISPATCH_CLI" model="${TW_DISPATCH_MODEL:?set TW_DISPATCH_MODEL with TW_DISPATCH_CLI}" effort="${TW_DISPATCH_EFFORT:-}"
+else
+  items="$(mktemp)"
+  ag tiers | awk -F'\t' '{printf "tier:%s\tTier %s   %s\n", $1, $1, $5}' >"$items"
+  printf 'custom\tCustom   pick CLI, then model, then effort\n' >>"$items"
+  pick "Who runs THV-$n?" "$items"
+  if [ "$PICK" = custom ]; then
+    items="$(mktemp)"
+    ag clis | awk -F'\t' '{
+      if ($2 == "ready") printf "%s\t%s\n", $1, $3
+      else if ($2 == "unwired") printf "%s\t%s   installed in herdr; add [cli.%s] to agents.toml\t0\n", $1, $1, $1
+      else printf "%s\t%s   not on PATH\t0\n", $1, $3 }' >"$items"
+    pick "CLI" "$items"; cli="$PICK"
+    echo "  loading $cli models..."
+    items="$(mktemp)"
+    ag models "$cli" | awk -F'\t' '{ print $1 "\t" $1 ($2 == $1 ? "" : "   " $2) }' >"$items"
+    pick "$cli model" "$items"; model="$PICK"
+    items="$(mktemp)"
+    ag efforts "$cli" "$model" | awk -F'\t' '{ print $1 "\t" $1 "  " $2 }' >"$items"
+    if [ -s "$items" ]; then pick "$model effort (1 is the lowest)" "$items"; effort="$PICK"; else rm -f "$items"; fi
+  else
+    IFS=$'\t' read -r cli model effort < <(ag resolve "${PICK#tier:}")
+  fi
+fi
 
 area=""
 while [ -z "$area" ]; do
@@ -78,17 +110,17 @@ while [ -z "$area" ]; do
   fi
 done
 
-label="$(python3 "$HERE/compose.py" meta "$cli" | cut -f2)"
+label="$(python3 "$HERE/compose.py" meta "$cli" "$model" "$effort" | cut -f2)" || exit 2
 echo
 printf '  %s on %s, branch %s/thv-%s\n' "$label" "$( [ "$repo" = both ] && echo 'fe and be' || echo "$repo")" "$area" "$n"
 
 if [ "${TW_DISPATCH_DRYRUN:-0}" = 1 ]; then
   echo "  DRY RUN: printing the commands it would run"
   echo
-  exec bash "$HERE/run.sh" "$n" "$repo" "$cli" "$area" "$url"
+  exec bash "$HERE/run.sh" "$n" "$repo" "$cli" "$model" "${effort:--}" "$area" "$url"
 fi
 
-if [ -z "${TW_DISPATCH_REPO:-}${TW_DISPATCH_CLI:-}${TW_DISPATCH_AREA:-}" ]; then
+if [ -z "${TW_DISPATCH_REPO:-}${TW_DISPATCH_TIER:-}${TW_DISPATCH_CLI:-}${TW_DISPATCH_AREA:-}" ]; then
   ask "  Dispatch? [Y/n] " y ""
   case "$REPLY_VAL" in y | Y | yes) ;; *) cancel ;; esac
 fi
@@ -96,7 +128,7 @@ fi
 # Detached in its own session, so closing the popup cannot take the dispatch down with it.
 mkdir -p "$TW_STATE/dispatch"
 log="$TW_STATE/dispatch/THV-$n-$(date +%Y%m%d-%H%M%S).log"
-python3 - "$log" bash "$HERE/run.sh" "$n" "$repo" "$cli" "$area" "$url" <<'PY'
+python3 - "$log" bash "$HERE/run.sh" "$n" "$repo" "$cli" "$model" "${effort:--}" "$area" "$url" <<'PY'
 import subprocess, sys
 log = open(sys.argv[1], "ab")
 subprocess.Popen(sys.argv[2:], stdin=subprocess.DEVNULL, stdout=log, stderr=log, start_new_session=True)
