@@ -9,7 +9,7 @@ import type { Elements, RenderElement } from 'claude-code'
 import { ciCell } from './board.ts'
 import { AGENT_SKILLS, BACKEND, FRONTEND } from './github.ts'
 import { LETTERS } from './model.ts'
-import type { Board, Cells, CiCell, Group, Health, Intent, Letter, Light, Ms, LivePane, OtherItem, PaneStatus, PaneUi, Pr, PrCell, PrItem, ReportStatus, Row, SourceId } from './model.ts'
+import type { Board, Cells, CiCell, Group, Health, Intent, Letter, Light, Ms, LivePane, OtherItem, PaneStatus, PaneUi, Pr, PrCell, PrItem, ReportStatus, Row } from './model.ts'
 
 /** The three elements the cockpit draws with, on whichever surface resolved them. */
 type El = Pick<Elements[keyof Elements], 'Box' | 'Text' | 'Button'>
@@ -23,7 +23,7 @@ const KIND_WIDTH = 9
 type Drawn = { text: string; color?: string | undefined }
 
 /** One Work-tab column after Work. While its `source` is stale the column keeps its last answer, dimmed and uncoloured. */
-type Column = { heading: string; width: number; draw(row: Row): Drawn; shownIf?: (board: Board) => boolean; source?: SourceId; wrap?: 'wrap' }
+type Column = { heading: string; width: number; draw(row: Row): Drawn; shownIf?: (board: Board) => boolean; source?: keyof Health; wrap?: 'wrap' }
 
 /** The Work tab's columns after Work, in order. Report fits `blocked` and a space before Fix. */
 const COLUMNS = {
@@ -51,15 +51,14 @@ const PR_STATE: Record<Pr['state'], Drawn> = {
 const PANE_GLYPH: Record<PaneStatus, string> = { working: '◐', done: '✓', idle: '○', blocked: '!', unknown: '?' }
 const PANE_COLOR: Partial<Record<PaneStatus, string>> = { working: 'blue', done: 'green', blocked: 'red' }
 
-const SOURCE_NAME: Record<SourceId, string> = {
-  herdr: 'herdr',
-  labels: 'pane labels',
-  spaces: 'Live spaces',
-  heads: 'git',
-  branches: 'git',
-  origins: 'git',
-  github: 'gh',
-  inbox: 'dispatch inbox',
+/** Each health entry's name, and the word for it once a source that answered has failed. herdr is only ever unavailable. */
+const HEALTH_WORDS: Record<keyof Health, { name: string; down: string }> = {
+  herdr: { name: 'herdr', down: 'unavailable' },
+  labels: { name: 'pane labels', down: 'stale' },
+  spaces: { name: 'Live spaces', down: 'stale' },
+  git: { name: 'git', down: 'stale' },
+  github: { name: 'gh', down: 'stale' },
+  inbox: { name: 'dispatch inbox', down: 'stale' },
 }
 
 export function drawCockpit(el: El, board: Board | undefined, ui: PaneUi, columns: number, act: Act): RenderElement {
@@ -309,14 +308,11 @@ function linearText(l: Cells['linear']): string {
 }
 
 function healthLines(health: Health): string[] {
-  const seen = new Set<string>()
-  return (Object.keys(health) as SourceId[]).flatMap((id) => {
+  return (Object.keys(health) as Array<keyof Health>).flatMap((id) => {
     const h = health[id]
-    const name = SOURCE_NAME[id]
-    if (h.k === 'ok' || seen.has(name)) return []
-    seen.add(name)
-    if (id === 'herdr') return [h.k === 'stale' ? `herdr unavailable since ${hhmm(h.since)}` : 'herdr unavailable']
-    return [h.k === 'stale' ? `${name} stale since ${hhmm(h.since)}` : `${name} unavailable`]
+    const { name, down } = HEALTH_WORDS[id]
+    if (h.k === 'ok') return []
+    return [h.k === 'stale' ? `${name} ${down} since ${hhmm(h.since)}` : `${name} unavailable`]
   })
 }
 

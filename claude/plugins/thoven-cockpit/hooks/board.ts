@@ -32,8 +32,8 @@
 import { branchTicket, pickLabel } from './dispatch.ts'
 import { aboutTicket, boardFacts, type BoardFacts } from './facts.ts'
 import { configPathOf } from './github.ts'
-import type { Board, Branches, Cells, CiCell, FixCell, Health, InboxFile, Kind, LinearEventId, LivePane, NonEmpty, OtherItem, Pane, PaneCell, PaneId, PaneLabels, Panes, Pending, Polled, Pr, PrCell, PrGroup, ReportCell, RowIdentity, Sources, SpaceMap, Ticket, World } from './model.ts'
-import { bySource, valueOf } from './sources.ts'
+import type { Board, Branches, Cells, CiCell, FixCell, Health, InboxFile, Kind, LinearEventId, LivePane, NonEmpty, OtherItem, Pane, PaneCell, PaneId, PaneLabels, Panes, Pending, Polled, Pr, PrCell, PrGroup, ReportCell, RowIdentity, SourceHealth, SourceId, Sources, SpaceMap, Ticket, World } from './model.ts'
+import { valueOf } from './sources.ts'
 
 /** What ties a pane to its work: its label, else its folder's branch, else what main sent it. */
 type Tie = { kind: Kind | undefined; title: string; tickets: Ticket[]; origin: 'label' | 'branch' | 'dispatch' }
@@ -302,9 +302,11 @@ function projectOf(spaces: SpaceMap | undefined, label: string): string | undefi
 const live = (p: Pane): LivePane => ({ status: p.status, tool: p.tool, pane: p.pane })
 const cell = (p: Pane): PaneCell => ({ k: 'live', ...live(p) })
 
+/** Each entry is the first of its sources, in poll order, that is not ok. */
 function health(sources: Sources): Health {
-  return bySource((id) => {
-    const p: Polled<unknown> = sources[id]
-    return p.k === 'stale' ? { k: 'stale', since: p.since } : p.k === 'down' ? { k: 'unavailable' } : { k: 'ok' }
-  })
+  const of = (...ids: SourceId[]): SourceHealth => {
+    const p = ids.map((id): Polled<unknown> => sources[id]).find((s) => s.k === 'stale' || s.k === 'down')
+    return p?.k === 'stale' ? { k: 'stale', since: p.since } : p?.k === 'down' ? { k: 'unavailable' } : { k: 'ok' }
+  }
+  return { herdr: of('herdr'), labels: of('labels'), spaces: of('spaces'), git: of('heads', 'branches', 'origins'), github: of('github'), inbox: of('inbox') }
 }
