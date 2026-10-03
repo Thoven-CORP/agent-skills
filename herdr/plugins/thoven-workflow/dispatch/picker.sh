@@ -60,15 +60,7 @@ done
 
 # Who runs it: a tier from agents.toml, or Custom (CLI, then model, then effort). Nothing here
 # names a model; agents.py reads the config (THV-1077).
-AGENTS="$HERE/../../../../skills/dev/dispatch-work/scripts/agents.py"
-[ -f "$AGENTS" ] || AGENTS="$HOME/.agents/skills/dispatch-work/scripts/agents.py"
-ag() { python3 "$AGENTS" "$@"; }
-# pick <title> <items-file>: the arrow-key menu; the value lands in PICK, and Esc cancels.
-pick() {
-  local out; out="$(mktemp)"
-  python3 "$HERE/choose.py" "$1" "$2" "$out" </dev/tty >/dev/tty || { rm -f "$2" "$out"; cancel; }
-  PICK="$(cat "$out")"; rm -f "$2" "$out"
-}
+. "$HERE/../lib/agent-pick.sh"
 
 cli="" model="" effort=""
 if [ -n "${TW_DISPATCH_TIER:-}" ]; then
@@ -81,19 +73,7 @@ else
   printf 'custom\tCustom   pick CLI, then model, then effort\n' >>"$items"
   pick "Who runs THV-$n?" "$items"
   if [ "$PICK" = custom ]; then
-    items="$(mktemp)"
-    ag clis | awk -F'\t' '{
-      if ($2 == "ready") printf "%s\t%s\n", $1, $3
-      else if ($2 == "unwired") printf "%s\t%s   installed in herdr; add [cli.%s] to agents.toml\t0\n", $1, $1, $1
-      else printf "%s\t%s   not on PATH\t0\n", $1, $3 }' >"$items"
-    pick "CLI" "$items"; cli="$PICK"
-    echo "  loading $cli models..."
-    items="$(mktemp)"
-    ag models "$cli" | awk -F'\t' '{ print $1 "\t" $1 ($2 == $1 ? "" : "   " $2) }' >"$items"
-    pick "$cli model" "$items"; model="$PICK"
-    items="$(mktemp)"
-    ag efforts "$cli" "$model" | awk -F'\t' '{ print $1 "\t" $1 "  " $2 }' >"$items"
-    if [ -s "$items" ]; then pick "$model effort (1 is the lowest)" "$items"; effort="$PICK"; else rm -f "$items"; fi
+    pick_custom
   else
     IFS=$'\t' read -r cli model effort < <(ag resolve "${PICK#tier:}")
   fi

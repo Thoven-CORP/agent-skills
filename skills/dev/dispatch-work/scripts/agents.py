@@ -10,6 +10,8 @@
   agents.py models <cli>                  model id and label per line (TSV), config first, then live
   agents.py efforts <cli> <model>         effort number and word per line (TSV)
   agents.py check                         exit 1 when a tier names a model or effort its CLI lacks
+  agents.py set-tier <n> <cli> <model> [effort]   rewrite tier n in agents.toml (checked first)
+  agents.py add-cli <name> <block.toml>           append a checked [cli.<name>] block
 
 effort is a number from 1, the lowest level in the model's list. The config is found at
 $THOVEN_AGENTS_CONFIG, else ~/thoven/agent-skills/config/agents.toml, else the checkout this
@@ -69,8 +71,21 @@ def live_models(spec):
             out = subprocess.run(shlex.split(source["cmd"]), capture_output=True, text=True, timeout=20).stdout
         except (OSError, subprocess.SubprocessError):
             return []
+        lines = out.splitlines()
+        rows_from = lines
+        if source.get("after"):
+            # Only the block under a heading: help text has other indented lines the pattern would catch.
+            start = next((i + 1 for i, line in enumerate(lines) if line.strip() == source["after"]), len(lines))
+            end = next((i for i in range(start, len(lines)) if not lines[i].strip()), len(lines))
+            rows_from = lines[start:end]
+        levels = {}
+        if source.get("efforts_pattern"):
+            ep = re.compile(source["efforts_pattern"])
+            for m in filter(None, map(ep.match, lines)):
+                levels[m.group(1).strip()] = [w.strip() for w in m.group(2).split(",") if w.strip()] or None
         pattern = re.compile(source["pattern"])
-        return [(m.group(1), m.group(2).strip(), None) for m in map(pattern.match, out.splitlines()) if m]
+        return [(m.group(1), m.group(2).strip(), levels.get(m.group(2).strip()))
+                for m in map(pattern.match, rows_from) if m]
     return []
 
 
@@ -106,8 +121,59 @@ def label(cfg, cli, model, effort):
 
 
 def launch(cfg, cli, model, effort):
+    spec = cli_spec(cfg, cli)
     word = effort_word(cfg, cli, model, effort)
-    return shlex.split(cli_spec(cfg, cli)["launch"].replace("{model}", model).replace("{effort}", word))
+    line = spec["launch"].replace("{model}", model).replace("{effort}", word)
+    if "{settings_file}" in line:
+        # A CLI that takes its model only from a settings file (Droid): write one per pick.
+        body = spec["settings"].replace("{model}", model).replace("{effort}", word)
+        folder = os.path.expanduser("~/.cache/thoven/agents")
+        os.makedirs(folder, exist_ok=True)
+        path = os.path.join(folder, f"{cli}.{model}.{word or 'default'}.json")
+        with open(path, "w") as f:
+            f.write(body + "\n")
+        line = line.replace("{settings_file}", path)
+    return shlex.split(line)
+
+
+def add_cli(cfg, name, block_path):
+    """Append a [cli.<name>] block from a file, after checking it parses and has the required keys."""
+    block = open(block_path, encoding="utf-8").read().strip()
+    try:
+        spec = tomllib.loads(block).get("cli", {}).get(name)
+    except tomllib.TOMLDecodeError as e:
+        sys.exit(f"agents.py: the block is not valid TOML: {e}")
+    if not spec:
+        sys.exit(f"agents.py: the block has no [cli.{name}] table")
+    missing = [k for k in ("kind", "label", "skill_prefix", "launch") if k not in spec]
+    if missing:
+        sys.exit(f"agents.py: [cli.{name}] lacks {', '.join(missing)}")
+    if name in cfg.get("cli", {}):
+        sys.exit(f"agents.py: [cli.{name}] is already in agents.toml")
+    path = config_path()
+    text = open(path, encoding="utf-8").read().rstrip("\n")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(text + "\n\n" + block + "\n")
+    return name
+
+
+def set_tier(cfg, n, cli, model, effort):
+    """Rewrite tier n's line in agents.toml in place, keeping every other line and comment."""
+    t = {"cli": cli, "model": model, **({"effort": int(effort)} if effort else {})}
+    problem = tier_problem(cfg, t)
+    if problem:
+        sys.exit(f"agents.py: tier {n}: {problem}")
+    path = config_path()
+    text = open(path, encoding="utf-8").read()
+    value = f'{n} = {{ cli = "{cli}", model = "{model}"' + (f", effort = {int(effort)}" if effort else "") + " }"
+    line = re.compile(rf"^{re.escape(str(n))} = \{{.*\}}[ \t]*$", re.M)
+    if line.search(text):
+        text = line.sub(value, text, count=1)
+    else:
+        text = text.replace("[tiers]\n", f"[tiers]\n{value}\n", 1)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(text)
+    return label(cfg, cli, model, effort)
 
 
 def tier(cfg, n):
@@ -201,6 +267,10 @@ def main(argv):
     elif cmd == "efforts" and len(args) == 2:
         for i, word in enumerate(efforts(cfg, args[0], args[1]), 1):
             print(f"{i}\t{word}")
+    elif cmd == "set-tier" and len(args) in (3, 4):
+        print(f"tier {args[0]}  {set_tier(cfg, args[0], args[1], args[2], args[3] if len(args) == 4 else '')}")
+    elif cmd == "add-cli" and len(args) == 2:
+        print(f"added [cli.{add_cli(cfg, args[0], args[1])}]")
     elif cmd == "check":
         return check(cfg)
     else:
