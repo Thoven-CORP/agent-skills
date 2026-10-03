@@ -48,9 +48,9 @@ and decide from those tables.
 | `icons` | `lib/icon-tokens.ts` |
 | `motion` | `lib/motion-config.ts` |
 | `layout` | `docs/design/layout.md` |
-| `lexicon` | `design-system/lexicon/LEXICON.md` in `thoven2.0` |
+| `lexicon` | frontend `design/lexicon/LEXICON.md` |
 | `components_ui` | `components/ui/` then [Does it already exist](references/sources.md#does-it-already-exist) |
-| `stack_md` | `design-system/STACK.md` rule 7 |
+| `stack_md` | frontend `design/STACK.md` rule 7 |
 | `design_md` | `DESIGN.md` |
 
 **A ruling made this session is not in a file yet.** Check what this session already ruled

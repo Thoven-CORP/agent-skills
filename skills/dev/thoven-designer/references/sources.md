@@ -31,7 +31,7 @@ reference only for intent and rationale.
 | Motion, springs, reduced motion | `lib/motion-config.ts` | `docs/design/motion.md` |
 | Async loading, unavailable, degraded, action, field-error, and empty states | `lib/loading-tokens.ts`; `components/ui/shimmer-text.tsx`; `components/shared/RowSkeleton.tsx`; `components/ui/thoven-button.tsx`; the owning feature component listed below | `docs/design/async-states.md` |
 | Layout, viewport, spacing | *(no token module)* | `docs/design/layout.md` |
-| What a thing is **called** | *(no token module)* | `design-system/lexicon/LEXICON.md` in `thoven2.0` - LIVING, not frozen |
+| What a thing is **called** | *(no token module)* | frontend `design/lexicon/LEXICON.md` - LIVING, not frozen |
 | Does a component exist? | `components/ui/` (primitives only) | [Does it already exist](#does-it-already-exist) |
 
 **Anything not in this table:** find its binding layer before answering.
@@ -116,7 +116,7 @@ In order, and stop at the first hit:
    `motion` we already run) gives you a headless `useX()` hook that touches no class names - reach
    for it when what is missing is the interaction's *state machine* (abandonment paths, reserved
    space for async states, keyboard, reduced-motion) rather than its appearance. Fenced by
-   `design-system/STACK.md` **rule 7** - gap-filler only; wherever base-ui has the primitive,
+   frontend `design/STACK.md` **rule 7** - gap-filler only; wherever base-ui has the primitive,
    base-ui wins and Interior is read for technique, never copied in.
 
 **Before any of the four, ask `STACK.md`'s question: could a user name it?** Point-and-name it -

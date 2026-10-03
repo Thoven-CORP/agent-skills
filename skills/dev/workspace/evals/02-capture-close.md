@@ -4,10 +4,10 @@
 
 > We finished THV-900 in Linear Project `Teacher: Settings`. The current snapshot is `snap-before`
 > at commit `abc123`, working-tree fingerprint `tree-clean`, and a matching QA receipt proves its Done
-> when. Project state is `thoven2.0/teacher-2.0/projects/settings/STATE.md`. Log: "THV-900 verified;
+> when. Project state is frontend `docs/Teacher_Settings/STATE.md`. Log: "THV-900 verified;
 > next is keyboard QA." Follow-up: "Keyboard QA for settings", Done when "all settings controls are
 > reachable and operable by keyboard", Writes to
-> `thoven2.0/teacher-2.0/projects/settings/STATE.md`. Close the issue, log where we stopped, and
+> frontend `docs/Teacher_Settings/STATE.md`. Close the issue, log where we stopped, and
 > capture the follow-up. Do not apply anything yet.
 
 ## MUST

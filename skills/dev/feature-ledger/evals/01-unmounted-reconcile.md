@@ -3,7 +3,7 @@
 ## Prompt
 
 > $feature-ledger reconcile Linear Project `Teacher: Settings`, folder
-> `thoven2.0/teacher-2.0/projects/settings`, snapshot `snap-settings`. Its PRD, design, architecture,
+> frontend `docs/Teacher_Settings`, snapshot `snap-settings`. Its PRD, design, architecture,
 > API/database decisions, and related-session receipts contain no contradiction. `STATE.md` Coverage
 > claims the Integrations surface is built and points at
 > `frontend/components/teacher/settings/IntegrationsTab.tsx`; the component exists and its tests
