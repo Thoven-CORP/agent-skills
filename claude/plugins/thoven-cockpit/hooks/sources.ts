@@ -10,7 +10,7 @@ import { COMMANDS, type Req } from './commands.ts'
 import { FIXED_REPOS, configPathOf, parseOrigin, parsePrList } from './github.ts'
 import { parsePaneLabel, parseSnapshot } from './herdr.ts'
 import { inboxFile, inboxTicket } from './dispatch.ts'
-import type { Branches, GithubView, HeadPaths, InboxFile, Ms, Origins, Pane, PaneLabels, Polled, Pr, SourceId, SourceValues, SpaceMap, World } from './model.ts'
+import type { Branches, GithubView, HeadPaths, InboxFile, Ms, Origins, Pane, PaneLabels, Polled, Pr, SourceId, SourceValues, Sources, SpaceMap, World } from './model.ts'
 
 /** What one outside read gave: its value, or why there is none. */
 export type Answer<T> = { k: 'ok'; value: T } | { k: 'fail'; error: string }
@@ -37,10 +37,6 @@ export type Source<T> = {
 /** The heartbeat period: the shortest `everyMs`. One timer drives every source. */
 export const HEARTBEAT_MS = 5000
 
-/** Poll order. A source's `run` reads only sources earlier in this list. */
-const SOURCE_ORDER = ['herdr', 'labels', 'spaces', 'heads', 'branches', 'origins', 'github', 'inbox'] as const
-export type PolledId = (typeof SOURCE_ORDER)[number]
-
 export function valueOf<T>(p: Polled<T>): T | undefined {
   return p.k === 'fresh' || p.k === 'stale' ? p.value : undefined
 }
@@ -54,10 +50,10 @@ export function settle<T>(prev: Polled<T>, value: T | undefined, now: Ms, error:
 }
 
 /** Which sources are due. A source never run is due now, so a reload or a new claim fills every column at once. */
-export function due(lastRun: Partial<Record<SourceId, Ms>>, now: Ms): PolledId[] {
+export function due(lastRun: Partial<Record<SourceId, Ms>>, now: Ms): SourceId[] {
   // Timer callbacks drift a few ms either way; without the slack a 5 s source would skip alternate beats.
   const slack = HEARTBEAT_MS / 2
-  return SOURCE_ORDER.filter((id) => {
+  return SOURCE_IDS.filter((id) => {
     const last = lastRun[id]
     return last === undefined || now - last >= SOURCES[id].everyMs - slack
   })
@@ -176,7 +172,8 @@ const ticketFiles = (listing: Listing): Listing => listing.filter((e) => e.kind 
 
 // ── The registry ─────────────────────────────────────────────────────────────────────────────
 
-export const SOURCES: { [K in PolledId]: Source<SourceValues[K]> } = {
+/** Poll order is this object's key order. A source's `run` reads only sources above it. */
+export const SOURCES: { [K in SourceId]: Source<SourceValues[K]> } = {
   herdr: {
     everyMs: HEARTBEAT_MS,
     run: async (_world, ask) => {
@@ -282,3 +279,13 @@ export const SOURCES: { [K in PolledId]: Source<SourceValues[K]> } = {
     },
   },
 }
+
+const SOURCE_IDS = Object.keys(SOURCES).filter((k): k is SourceId => Object.hasOwn(SOURCES, k))
+
+/** One value per source, in poll order. */
+export function bySource<V>(of: (id: SourceId) => V): { [K in SourceId]: V } {
+  return Object.fromEntries(SOURCE_IDS.map((id) => [id, of(id)])) as { [K in SourceId]: V }
+}
+
+/** Every source before its first poll. */
+export const unpolled = (): Sources => bySource((): Polled<never> => ({ k: 'never' }))

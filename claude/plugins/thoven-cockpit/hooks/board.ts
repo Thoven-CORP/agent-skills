@@ -55,13 +55,12 @@ import {
   type PrGroup,
   type ReportCell,
   type Row,
-  type SourceId,
   type Sources,
   type SpaceMap,
   type Ticket,
   type World,
 } from './model.ts'
-import { valueOf } from './sources.ts'
+import { bySource, valueOf } from './sources.ts'
 
 const BUILD_KINDS: ReadonlyArray<Kind | undefined> = ['Build', 'Fix', undefined]
 
@@ -300,18 +299,8 @@ function projectOf(spaces: SpaceMap | undefined, label: string): string | undefi
 const live = (p: Pane): Extract<PaneCell, { k: 'live' }> => ({ k: 'live', status: p.status, tool: p.tool, pane: p.pane })
 
 function health(sources: Sources): Health {
-  const of = (p: Polled<unknown>): Health[SourceId] =>
-    p.k === 'stale' ? { k: 'stale', since: p.since } : p.k === 'down' ? { k: 'unavailable' } : { k: 'ok' }
-  return {
-    herdr: of(sources.herdr),
-    labels: of(sources.labels),
-    spaces: of(sources.spaces),
-    heads: of(sources.heads),
-    branches: of(sources.branches),
-    origins: of(sources.origins),
-    github: of(sources.github),
-    linear: of(sources.linear),
-    inbox: of(sources.inbox),
-    codex: of(sources.codex),
-  }
+  return bySource((id) => {
+    const p: Polled<unknown> = sources[id]
+    return p.k === 'stale' ? { k: 'stale', since: p.since } : p.k === 'down' ? { k: 'unavailable' } : { k: 'ok' }
+  })
 }

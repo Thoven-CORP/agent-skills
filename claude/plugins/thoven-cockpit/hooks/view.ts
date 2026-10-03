@@ -42,9 +42,7 @@ const SOURCE_NAME: Record<SourceId, string> = {
   branches: 'git',
   origins: 'git',
   github: 'gh',
-  linear: 'Linear',
   inbox: 'dispatch inbox',
-  codex: 'Codex',
 }
 
 export function drawCockpit(el: El, board: Board | undefined, ui: PaneUi, columns: number, act: Act): RenderElement {

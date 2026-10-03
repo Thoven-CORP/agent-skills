@@ -237,7 +237,7 @@ export type CodexReview = {
   selected: string[]
 }
 
-/** What each source yields when it answers. The order of `SOURCES` in sources.ts is the poll order. */
+/** What each source yields when it answers. `SOURCES` in sources.ts implements each, in poll order; a source with no code yet has no entry. */
 export type SourceValues = {
   herdr: Snapshot
   labels: PaneLabels
@@ -246,9 +246,7 @@ export type SourceValues = {
   branches: Branches
   origins: Origins
   github: GithubView
-  linear: LinearView
   inbox: InboxFile[]
-  codex: CodexReview[]
 }
 export type SourceId = keyof SourceValues
 export type Sources = { [K in SourceId]: Polled<SourceValues[K]> }

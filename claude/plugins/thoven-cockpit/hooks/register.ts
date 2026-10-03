@@ -25,7 +25,7 @@ import { claimHeldBy, claimOf } from './facts.ts'
 import { COMMANDS, type Req } from './commands.ts'
 import { findMe, parseSnapshot, spaceOfPane } from './herdr.ts'
 import { VERDICTS, isOneOf, type Board, type Engagement, type Fact, type FactKind, type Intent, type Main, type Me, type Ms, type PaneId, type PaneUi, type Polled, type SessionId, type SourceId, type Sources, type SourceValues, type World } from './model.ts'
-import { HEARTBEAT_MS, SOURCES, due, settle, type Answer, type Ask, type Listing, type PolledId, type Source } from './sources.ts'
+import { HEARTBEAT_MS, SOURCES, due, settle, unpolled, type Answer, type Ask, type Listing, type Source } from './sources.ts'
 import { isFactKey, keyOf, parseFact } from './store.ts'
 import { drawCockpit } from './view.ts'
 
@@ -37,18 +37,7 @@ const STORE_SLOW_MS = 50
 
 // ── Module state: caches only. Everything here can be lost on reload and rebuilt in one tick. ──
 let me: Me = { k: 'inert' }
-let sources: Sources = {
-  herdr: { k: 'never' },
-  labels: { k: 'never' },
-  spaces: { k: 'never' },
-  heads: { k: 'never' },
-  branches: { k: 'never' },
-  origins: { k: 'never' },
-  github: { k: 'never' },
-  linear: { k: 'never' },
-  inbox: { k: 'never' },
-  codex: { k: 'never' },
-}
+let sources: Sources = unpolled()
 let lastRun: Partial<Record<SourceId, Ms>> = {}
 let board: Board | undefined
 let heartbeat: { cancel(): void } | undefined
@@ -279,7 +268,7 @@ async function loseClaim($: Api, main: Main): Promise<void> {
 }
 
 /** One source, one poll. A throw or an unusable answer marks this source stale and no other. */
-async function poll<K extends PolledId>($: Api, id: K, world: World): Promise<void> {
+async function poll<K extends SourceId>($: Api, id: K, world: World): Promise<void> {
   const source = SOURCES[id] as Source<SourceValues[K]>
   const answers: Array<Promise<Answer<unknown>>> = []
   let value: SourceValues[K] | undefined
