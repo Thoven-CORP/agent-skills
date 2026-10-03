@@ -9,7 +9,7 @@
 //   inert  (no HERDR_PANE_ID)  every hook returns next(e) after one comparison
 //   inert, pane (not engaged)  one regex per prompt, one substring test per Bash command; a store
 //                              write only on a match. No timers, no processes
-//   pane (engaged)             the same today; S3 and S5 add their observers here
+//   pane (engaged)             the same today; S3 and S5 add their observers to observe.ts
 //   main   (claimed a space)   one 5 s heartbeat timer; all polling, projection, drawing
 //
 // Crash safety: every hook is one line over a shape below, and no try/catch wraps `next`:
@@ -22,10 +22,11 @@
 import type { EngineInterface, Register, RenderElement } from 'claude-code'
 import { project } from './board.ts'
 import { readPrompt, sendCalls } from './dispatch.ts'
+import { bashSeen, promptSeen, type Observer } from './observe.ts'
 import { claimHeldBy, claimOf } from './facts.ts'
 import { COMMANDS, type Req } from './commands.ts'
 import { findMe, parseSnapshot, spaceOfPane } from './herdr.ts'
-import { VERDICTS, isOneOf, type Board, type Engagement, type Fact, type FactKind, type FactOf, type Intent, type Main, type Me, type Ms, type PaneId, type PaneUi, type Polled, type SessionId, type SourceId, type Sources, type SourceValues, type World } from './model.ts'
+import { type Board, type Fact, type FactKind, type FactOf, type Intent, type Main, type Me, type Ms, type PaneId, type PaneUi, type Polled, type SessionId, type SourceId, type Sources, type SourceValues, type World } from './model.ts'
 import { HEARTBEAT_MS, SOURCES, due, settle, unpolled, type Answer, type Ask, type Listing, type Source } from './sources.ts'
 import { isFactKey, keyOf, parseFact } from './store.ts'
 import { drawCockpit } from './view.ts'
@@ -63,15 +64,15 @@ export const register: Register = (on) => {
 
   // A report, verdict or brief can reach any session: herdr's `agent prompt` arrives here (origin
   // composer, pastes expanded), and so does a typed paste.
-  on('prompt.submit', ($, e, next) => observeThenPass($, 'prompt.submit', e, next, () => observePrompt($, e.text))).catch(passThrough)
+  on('prompt.submit', ($, e, next) => observeThenPass($, 'prompt.submit', e, next, () => notePrompt($, e.text))).catch(passThrough)
 
   // A peer's or subagent's hand-back (synthesis A6). Writes are idempotent, so arriving here and in
   // prompt.submit as well costs one more set of the same key.
-  on('session.receive', ($, e, next) => observeThenPass($, 'session.receive', e, next, () => observePrompt($, e.text))).catch(passThrough)
+  on('session.receive', ($, e, next) => observeThenPass($, 'session.receive', e, next, () => notePrompt($, e.text))).catch(passThrough)
 
   // send.sh is how a brief or fix round reaches a pane. Observed after it ran: a refused or failed
   // call sent nothing.
-  on('tool.call', { tool: 'Bash' }, ($, e, next) => passThenObserve($, 'tool.call', e, next, (r) => observeBash($, r, (e as { command?: unknown }).command))).catch(passThrough)
+  on('tool.call', { tool: 'Bash' }, ($, e, next) => passThenObserve($, 'tool.call', e, next, (r) => noteBash($, r, (e as { command?: unknown }).command))).catch(passThrough)
 
   // `/cockpit doctor` arrives in S6; until then every argument is ignored.
   on('command.run', { command: 'cockpit' }, ($) => runCockpit($)).catch(passThrough)
@@ -341,46 +342,27 @@ async function loadFacts($: Api, only?: FactKind): Promise<{ facts: Fact[]; read
   return { facts: keys.flatMap((key, i) => parseFact(key, values[i]) ?? []), reads: keys.length }
 }
 
-/**
- * A prompt or hand-back any session received. The regex is all a session pays for a prompt that
- * holds no status line and no brief. A brief ties this pane to its ticket and engages it; an inert
- * session (outside herdr) has no pane to tie, so it records only reports and verdicts (synthesis B2).
- */
-async function observePrompt($: Api, text: unknown): Promise<void> {
-  if (typeof text !== 'string') return
-  const read = readPrompt(text)
-  if (read === undefined || (read.k === 'brief' && me.k === 'inert')) return
-  const sid = me.k === 'inert' ? ((await $.session.id()) as SessionId) : me.sid
-  const at = await $.clock.now()
-  if (read.k === 'brief') {
-    if (me.k === 'inert') return
-    const b = read.brief
-    const before = me.k === 'pane' ? me.engagements.find((x) => x.ticket === b.ticket) : undefined
-    const labelKind = b.k === 'first' ? b.labelKind : before?.labelKind
-    const title = (b.k === 'first' ? b.title : undefined) ?? before?.title
-    const held: Engagement = { ...b, ...(labelKind === undefined ? {} : { labelKind }), ...(title === undefined ? {} : { title }) }
-    await writeFact($, { kind: 'brief', ...held, sid, pane: me.pane, at })
-    if (me.k === 'pane') me = { ...me, engagements: [...me.engagements.filter((x) => x.ticket !== b.ticket), held] }
-    return
-  }
-  for (const l of read.lines) {
-    await writeFact(
-      $,
-      isOneOf(VERDICTS)(l.word)
-        ? { kind: 'verdict', ticket: l.ticket, sid, verdict: l.word, text: l.line, at }
-        : { kind: 'report', ticket: l.ticket, sid, status: l.word, text: l.line, concerns: l.concerns, at },
-    )
-  }
+/** A prompt or hand-back any session received. The regex is all a session pays for a prompt that holds no status line and no brief. */
+async function notePrompt($: Api, text: unknown): Promise<void> {
+  const read = typeof text === 'string' ? readPrompt(text) : undefined
+  if (read) await record($, promptSeen, read)
 }
 
-/** A Bash command this session ran, with its result. Only a send.sh call that ran matters; send.sh itself needs HERDR_PANE_ID. */
-async function observeBash($: Api, r: object, command: unknown): Promise<void> {
-  if (('deny' in r && r.deny !== undefined) || ('isError' in r && r.isError === true)) return
-  if (me.k === 'inert' || typeof command !== 'string' || !command.includes('send.sh')) return
+/** A Bash command this session ran. A refused or failed call sent nothing. */
+async function noteBash($: Api, r: object, command: unknown): Promise<void> {
+  if (('deny' in r && r.deny !== undefined) || ('isError' in r && r.isError === true) || typeof command !== 'string') return
   const calls = sendCalls(command)
-  if (calls.length === 0) return
+  if (calls.length > 0) await record($, bashSeen, calls)
+}
+
+/** Run a pure observer on what a hook saw, keep its `me`, and write its facts. */
+async function record<I>($: Api, observer: Observer<I>, input: I): Promise<void> {
+  const sid = me.k === 'inert' ? ((await $.session.id()) as SessionId) : me.sid
   const at = await $.clock.now()
-  for (const c of calls) await writeFact($, { kind: 'send', ...c, at })
+  // Read and replace `me` in one synchronous step, so a resolveMe between the awaits is not undone.
+  const seen = observer(me, input, sid, at)
+  me = seen.me
+  for (const fact of seen.facts) await writeFact($, fact)
 }
 
 /** Whole value, writer-owned key: never get-then-set. */
