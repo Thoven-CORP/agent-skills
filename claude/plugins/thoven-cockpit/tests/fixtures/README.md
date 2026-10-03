@@ -8,7 +8,8 @@ Nothing here is hand-made; a case that needs a shape no log holds is an open gap
 |---|---|---|
 | `herdr.ts` | `SNAPSHOT_LIVE`, `PANE_GET_P8W`, `TAB_GET_T45` | `/tmp/cockpit-fixtures/herdr/{snapshot-live,pane-get-sample,tab-get-sample}.json` |
 | `workflow.ts` | `WORKFLOW_LIVE_SPACES` | `~/.agents/skills/workspace/references/WORKFLOW.md`, `### Live spaces` section |
-| `git.ts` | `DOT_GIT_WORKTREE`, `HEAD_COCKPIT`, `DOT_GIT_THV_481`, `HEAD_THV_481` | the `.git` file and HEAD of the `agent-skills-thv-1058` and `frontend-thv-481` worktrees |
+| `git.ts` | `DOT_GIT_WORKTREE`, `HEAD_COCKPIT`, `DOT_GIT_THV_481`, `HEAD_THV_481`, `CONFIG_FRONTEND`, `CONFIG_BACKEND`, `CONFIG_AGENT_SKILLS` | the `.git` file and HEAD of the `agent-skills-thv-1058` and `frontend-thv-481` worktrees; the `.git/config` of `~/thoven/{frontend,backend,agent-skills}` |
+| `github.ts` | `GH_FRONTEND`, `GH_BACKEND`, `GH_AGENT_SKILLS` | `/tmp/cockpit-fixtures/gh/{frontend-remote,backend-remote,agent-skills}.json` (`gh pr list --json`, 10 PRs each) |
 | `reports.ts` | `PASTED_CONCERNS_THV_1041`, `PASTED_DONE_FIX_ROUND_THV_1041`, `BUILD_BRIEF_THV_1014`, `FIX_ROUND_3_THV_1015`, and six from `status-lines/` | transcript lines named above each constant, and `/tmp/cockpit-fixtures/status-lines/*.txt` |
 | `send.ts` | `SEND_FIX2_THV_1004`, `SEND_1` to `SEND_6` | a main session's Bash `tool_use` (line named in the file), and `/tmp/cockpit-fixtures/send/*.txt` |
 | `inbox.ts` | `INBOX_NAMES`, `OUT_ESCALATION_THV_1004`, `OUT_RESEARCH_THV_1038_HEAD` | `/tmp/cockpit-fixtures/dispatch-out/`, and the head of `$TMPDIR/dispatch/out/THV-1038.md` |
@@ -23,6 +24,11 @@ S2 derives two inputs and says so where it builds them (`tests/s2.test.ts`): the
 sends `"$(cat $TMPDIR/dispatch/out/THV-<id>.md)"`; and one tab is relabelled with `relabelTab`.
 No log holds the spec's `DONE_WITH_CONCERNS THV-1045` paste or `FIX ROUND 3/5 THV-978`, so the
 tests use the real `THV-1041` and `THV-1015` prompts in their place.
+
+S2b derives its inputs where `tests/s2b.test.ts` builds them: relabelled tabs and pane labels, a
+checkout's branch set to `ui/thv-481` or `sentry-error`, a pane moved into the backend checkout, and
+BE #145 retitled with the spec's `(THV-851, THV-847, THV-843)`, since no PR on file has a
+multi-ticket title group.
 
 Later slices add their sources here as they land: Skill events and the Codex rollout (S3), the Linear answer (S4), and the measured event payloads
 (S5). Each is in `/tmp/cockpit-fixtures/` or `/tmp/cockpit-spike/log/events.jsonl` today.

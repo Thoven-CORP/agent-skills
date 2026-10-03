@@ -72,6 +72,12 @@ export type Stage = {
   inbox: Map<string, { text: string; mtimeMs: number }>
   /** What `herdr api snapshot` does now; a test changes `snapshot` to move the space on. */
   herdr: { mode: 'ok' | 'fail' | 'hang'; snapshot: string }
+  /** What `gh pr list --repo <repo>` answers, by repo. A repo with no entry lists `[]`. */
+  gh: { mode: 'ok' | 'fail'; byRepo: Record<string, string> }
+  /** Any other file `$.fs.read` can see, by absolute path: `.git` files, HEADs, `.git/config`. */
+  files: Map<string, string>
+  /** Every key `$.store.set` wrote, in order, repeats included. */
+  setKeys: string[]
   snapshots(): number
   paneGets(): string[]
 }
@@ -101,6 +107,9 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
     storeCalls: { n: 0 },
     inbox: new Map(),
     herdr: { mode: 'ok', snapshot: o.snapshot },
+    gh: { mode: 'ok', byRepo: {} },
+    files: new Map(),
+    setKeys: [],
     snapshots: () => s.argvs.filter((a) => a.join(' ') === 'herdr api snapshot').length,
     paneGets: () => s.argvs.filter((a) => a[1] === 'pane' && a[2] === 'get').map((a) => a[3] ?? ''),
   }
@@ -117,10 +126,14 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
       return out(s.herdr.snapshot)
     }
     if (argv[1] === 'pane' && argv[2] === 'get' && argv[3]) return out(paneGetFrom(s.herdr.snapshot, argv[3]))
+    if (argv[0] === 'gh' && argv[1] === 'pr' && argv[2] === 'list') {
+      if (s.gh.mode === 'fail') return out('', 1, 'HTTP 502: Server Error (https://api.github.com/graphql)')
+      return out(s.gh.byRepo[argv[argv.indexOf('--repo') + 1] ?? ''] ?? '[]')
+    }
     return out('')
   })
   on('store.get', (_$: unknown, e: { key: string }) => (s.storeCalls.n++, { value: s.saved.get(e.key) }))
-  on('store.set', (_$: unknown, e: { key: string; value: unknown }) => (s.storeCalls.n++, s.saved.set(e.key, e.value), { value: undefined }))
+  on('store.set', (_$: unknown, e: { key: string; value: unknown }) => (s.storeCalls.n++, s.setKeys.push(e.key), s.saved.set(e.key, e.value), { value: undefined }))
   on('store.delete', (_$: unknown, e: { key: string }) => (s.storeCalls.n++, s.saved.delete(e.key), { value: undefined }))
   on('store.keys', () => (s.storeCalls.n++, { value: [...s.saved.keys()] }))
   on('session.id', () => ({ value: o.sid ?? 'sid-a' }))
@@ -135,6 +148,8 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
   on('ui.log', (_$: unknown, e: { text: string }) => (s.logs.push(e.text), { value: undefined }))
   on('fs.read', (_$: unknown, e: { path: string }) => {
     if (e.path.endsWith('WORKFLOW.md')) return { value: WORKFLOW_LIVE_SPACES }
+    const known = s.files.get(e.path)
+    if (known !== undefined) return { value: known }
     const file = e.path.startsWith(`${INBOX_DIR}/`) ? s.inbox.get(e.path.slice(INBOX_DIR.length + 1)) : undefined
     return file ? { value: file.text } : { deny: `ENOENT: ${e.path}` }
   })
