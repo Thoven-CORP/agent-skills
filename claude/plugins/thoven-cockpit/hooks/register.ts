@@ -255,6 +255,8 @@ async function tick($: Api): Promise<void> {
     const now = await $.clock.now()
     for (const id of due(lastRun, now)) await poll($, id, worldOf(main, now, facts))
     board = project(worldOf(main, now, facts))
+    // Set once: the board lists only events with no `happened` fact in what this tick loaded.
+    for (const e of board.newEvents) await writeFact($, { kind: 'happened', ticket: e.ticket, event: e.id, at: now })
     $.ui.invalidate('ui.render')
   } catch (err) {
     await debug($, 'tick', err)
@@ -332,7 +334,10 @@ async function observePrompt($: Api, text: unknown): Promise<void> {
   const at = await $.clock.now()
   for (const b of briefs) {
     if (me.k === 'inert') continue
-    const { playbook, title } = b
+    // A fix round lands on the same key as the first brief, so it carries that brief's playbook and title.
+    const first = me.k === 'pane' ? me.engagements.find((x) => x.ticket === b.ticket) : undefined
+    const playbook = b.playbook ?? first?.playbook
+    const title = b.title ?? first?.title
     await writeFact($, {
       kind: 'brief',
       ticket: b.ticket,
@@ -344,7 +349,7 @@ async function observePrompt($: Api, text: unknown): Promise<void> {
       ...(title === undefined ? {} : { title }),
       at,
     })
-    if (me.k === 'pane') me = { ...me, engagements: [...me.engagements.filter((x) => x.ticket !== b.ticket), b] }
+    if (me.k === 'pane') me = { ...me, engagements: [...me.engagements.filter((x) => x.ticket !== b.ticket), { ...b, playbook, title }] }
   }
   for (const l of lines) {
     await writeFact(

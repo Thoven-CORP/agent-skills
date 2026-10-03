@@ -13,8 +13,8 @@ type El = Pick<Elements[keyof Elements], 'Box' | 'Text' | 'Button'>
 type Act = (i: Intent) => void | Promise<void>
 
 const DASH = '–'
-/** Pane, Report, Fix, Review, PR, CI. */
-const FIXED = [5, 7, 5, 9, 9, 6]
+/** Pane, Report, Fix, Review, PR, CI. Report fits `blocked` and a space before Fix. */
+const FIXED = [5, 8, 5, 9, 9, 6]
 const LINEAR_WIDTH = 7
 const MIN_WORK = 10
 const KIND_WIDTH = 9
@@ -64,8 +64,8 @@ export function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act:
   const selected = rows.find((r) => r.ticket === ui.selected) ?? rows[0]
   const focusTarget = selected?.pane.k === 'live' ? selected.pane.pane : undefined
 
-  const cells = (texts: string[], from: number, dim: boolean) =>
-    texts.map((t, i) => Box({ width: widths[from + i] ?? 0, flexShrink: 0, children: [Text({ dimColor: dim, wrap: 'truncate-end', children: [t] })] }))
+  const cells = (texts: string[], from: number, dim: boolean, colors: ReadonlyArray<string | undefined> = []) =>
+    texts.map((t, i) => Box({ width: widths[from + i] ?? 0, flexShrink: 0, children: [Text({ dimColor: dim, color: colors[i], wrap: 'truncate-end', children: [t] })] }))
 
   const headingRow = Box({
     flexDirection: 'row',
@@ -97,7 +97,7 @@ export function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act:
           ],
         }),
         Box({ width: widths[1] ?? 0, flexShrink: 0, children: [Text({ color: pane.k === 'live' ? PANE_COLOR[pane.status] : undefined, children: [t.pane] })] }),
-        ...cells([t.report, t.fix, t.review, t.pr, t.ci, ...(hasLinear ? [t.linear] : [])], 2, false),
+        ...cells([t.report, t.fix, t.review, t.pr, t.ci, ...(hasLinear ? [t.linear] : [])], 2, false, [reportColor(row.report)]),
       ],
     })
   }
@@ -172,6 +172,7 @@ function paneText(p: PaneCell): string {
   return p.k === 'gone' ? 'gone' : DASH
 }
 
+/** The mock's Report copy: ✓ clean, `2 !` concerns, `ask` needs you. A report still in the inbox is `unsent`. */
 function reportText(r: Row['report']): string {
   switch (r.k) {
     case 'none':
@@ -179,12 +180,29 @@ function reportText(r: Row['report']): string {
     case 'na':
       return 'n/a'
     case 'in':
+      switch (r.status) {
+        case 'DONE':
+          return '✓'
+        case 'DONE_WITH_CONCERNS':
+          return r.concerns > 0 ? `${r.concerns} !` : '!'
+        case 'NEEDS_CONTEXT':
+          return 'ask'
+        case 'BLOCKED':
+          return 'blocked'
+      }
+      return DASH
     case 'undelivered':
-      if (r.status === undefined) return 'unsent'
-      return r.status === 'DONE' ? '✓' : r.status === 'DONE_WITH_CONCERNS' ? '!' : 'ask'
+      return 'unsent'
     case 'escalation':
       return 'note'
   }
+}
+
+/** The mock's classes: `g` green for ✓, `a` amber for concerns, `r` red for what needs Andres. */
+function reportColor(r: Row['report']): string | undefined {
+  if (r.k === 'undelivered' || r.k === 'escalation') return 'yellow'
+  if (r.k !== 'in') return undefined
+  return r.status === 'DONE' ? 'green' : r.status === 'DONE_WITH_CONCERNS' ? 'yellow' : 'red'
 }
 
 function reviewText(r: Row['review']): string {

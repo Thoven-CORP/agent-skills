@@ -245,9 +245,9 @@ test('cellText: an S1 row shows its Pane glyph and tool tag, and a dash in every
 })
 
 test('columnsFor: fixed cells, the Work column takes what is left, never under 10', async () => {
-  expect(columnsFor(80, true)).toEqual([32, 5, 7, 5, 9, 9, 6, 7])
-  expect(columnsFor(80, false)).toEqual([39, 5, 7, 5, 9, 9, 6])
-  expect(columnsFor(30, true)).toEqual([10, 5, 7, 5, 9, 9, 6, 7])
+  expect(columnsFor(80, true)).toEqual([31, 5, 8, 5, 9, 9, 6, 7])
+  expect(columnsFor(80, false)).toEqual([38, 5, 8, 5, 9, 9, 6])
+  expect(columnsFor(30, true)).toEqual([10, 5, 8, 5, 9, 9, 6, 7])
 })
 
 // ── kit: roles, claim and timers ─────────────────────────────────────────────────────────────
@@ -459,8 +459,8 @@ test('a drawn Build row and the heading row share the column widths for the pane
   const holds = (pred: (n: Node) => boolean) => (n: Node) => n.type === 'Box' && n.props.flexDirection === 'row' && kids(n).some((c) => findNode(c, pred) !== undefined)
   const row = findNode(root, holds((n) => n.props.key === 'row-THV-1045'))
   const heading = findNode(root, holds((n) => n.type === 'Text' && n.children?.[0] === 'Review'))
-  expect(row && kids(row).map((c) => c.props.width)).toEqual([39, 5, 7, 5, 9, 9, 6])
-  expect(heading && kids(heading).map((c) => c.props.width)).toEqual([39, 5, 7, 5, 9, 9, 6])
+  expect(row && kids(row).map((c) => c.props.width)).toEqual([38, 5, 8, 5, 9, 9, 6])
+  expect(heading && kids(heading).map((c) => c.props.width)).toEqual([38, 5, 8, 5, 9, 9, 6])
 })
 
 test('two sessions in one space: the pane that did not run /cockpit stays a pane and starts no timers', async ($, on) => {

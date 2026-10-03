@@ -13,13 +13,44 @@
 //      of each of its tickets' Build rows; a ticket it names with no Build row gets a Review row
 //      on that pane. Everything else is an Other item; a pane with neither a label nor an agent
 //      (a plain shell) is not shown.
+//      A pane whose label names no ticket takes its tickets from the briefs its current session
+//      received, else from the newest send.sh call main made to it: a hand-typed or self-brief
+//      ties a pane as surely as a label (spec "Failure handling").
 //   4. Main's own branch ticket, when no row has it yet, is the "this session" row.
+//   5. Per row: Report is the newest report fact by `at`, from whichever session received it,
+//      unless the inbox still holds a newer file for the ticket (unsent, or herdr's escalation
+//      note). Fix is main's highest send.sh fix round, else the pane's highest FIX ROUND brief.
+//   6. Every report status a row's ticket has had, with no `happened` fact yet, is a new event
+//      for main to record once (synthesis A1), so S4's ↻ survives a later report replacing it.
 
 import { branchTicket, pickLabel } from './dispatch.ts'
-import type { Board, Health, Kind, Label, OtherItem, Pane, PaneCell, Polled, Row, SourceId, Sources, SpaceMap, Ticket, World } from './model.ts'
+import type {
+  Board,
+  Fact,
+  FactOf,
+  FixCell,
+  Health,
+  InboxFile,
+  Kind,
+  Label,
+  LinearEventId,
+  OtherItem,
+  Pane,
+  PaneCell,
+  Pending,
+  Polled,
+  ReportCell,
+  Row,
+  SourceId,
+  Sources,
+  SpaceMap,
+  Ticket,
+  World,
+} from './model.ts'
 import { valueOf } from './sources.ts'
 
 const BUILD_KINDS: ReadonlyArray<Kind | undefined> = ['Build', 'Fix', undefined]
+const KINDS: readonly string[] = ['Meta', 'Plan', 'Design', 'Build', 'Review', 'Research', 'Audit', 'Fix']
 
 export function project(world: World): Board {
   const { me } = world
@@ -30,20 +61,25 @@ export function project(world: World): Board {
 
   const panes = (snap?.panes ?? []).filter((p) => p.space === me.space && p.pane !== me.pane)
   const branches = valueOf(world.sources.branches)
-  const labelled = panes.map((p) => ({ p, label: pickLabel([p.paneLabel ?? labels?.get(p.pane)?.label, p.tabLabel, p.terminalTitle], branches?.get(p.cwd)) }))
+  const labelled = panes.map((p) => {
+    const label = pickLabel([p.paneLabel ?? labels?.get(p.pane)?.label, p.tabLabel, p.terminalTitle], branches?.get(p.cwd))
+    if (label && label.tickets.length > 0) return { p, label, origin: 'label' as const }
+    const tied = tiedLabel(world.facts, p)
+    return tied ? { p, label: tied, origin: 'dispatch' as const } : { p, label, origin: 'label' as const }
+  })
 
   const rows = new Map<Ticket, Row>()
-  for (const { p, label } of labelled) {
+  for (const { p, label, origin } of labelled) {
     if (!label || !BUILD_KINDS.includes(label.kind)) continue
     for (const t of label.tickets) {
       const r = rows.get(t)
-      rows.set(t, r ? { ...r, extraPanes: [...r.extraPanes, live(p)] } : row(t, label, 'label', live(p), projectName))
+      rows.set(t, r ? { ...r, extraPanes: [...r.extraPanes, live(p)] } : row(t, label, origin, live(p), projectName))
     }
   }
 
-  for (const { p, label } of labelled) {
+  for (const { p, label, origin } of labelled) {
     if (label?.kind !== 'Review') continue
-    for (const t of label.tickets) rows.set(t, { ...(rows.get(t) ?? row(t, label, 'label', live(p), projectName)), verifierPane: live(p) })
+    for (const t of label.tickets) rows.set(t, { ...(rows.get(t) ?? row(t, label, origin, live(p), projectName)), verifierPane: live(p) })
   }
 
   const other: OtherItem[] = []
@@ -56,6 +92,9 @@ export function project(world: World): Board {
   const mine = thisSession(world, snap?.panes.find((p) => p.pane === me.pane), projectName)
   if (mine && !rows.has(mine.ticket)) rows.set(mine.ticket, mine)
 
+  const inbox = valueOf(world.sources.inbox) ?? []
+  for (const [t, r] of rows) rows.set(t, { ...r, report: reportCell(t, world.facts, inbox), fix: fixCell(t, world.facts) })
+
   return {
     space,
     project: projectName,
@@ -66,7 +105,60 @@ export function project(world: World): Board {
     pending: [],
     health: health(world.sources),
     working: panes.filter((p) => p.status === 'working').map((p) => p.pane),
+    newEvents: [...rows.keys()].flatMap((t) => newReportEvents(t, world.facts)),
   }
+}
+
+const factsOf = <K extends Fact['kind']>(facts: readonly Fact[], kind: K, ticket: Ticket): Array<FactOf<K>> =>
+  facts.filter((f): f is FactOf<K> => f.kind === kind && 'ticket' in f && f.ticket === ticket)
+
+const newest = <F extends { at: number }>(fs: readonly F[]): F | undefined => fs.reduce<F | undefined>((a, f) => (a === undefined || f.at > a.at ? f : a), undefined)
+
+/**
+ * The label a pane with no ticket in its label gets from what it was sent: the briefs its current
+ * session received (a /clear starts over), else the newest send.sh call main made to it.
+ */
+function tiedLabel(facts: readonly Fact[], p: Pane): Label | undefined {
+  const briefs = facts.filter((f): f is FactOf<'brief'> => f.kind === 'brief' && f.pane === p.pane && f.sid === p.sid)
+  const latest = newest(briefs)
+  if (latest) {
+    const titled = newest(briefs.filter((b) => b.title !== undefined))
+    return {
+      kind: latest.role === 'verifier' ? 'Review' : KINDS.includes(latest.playbook ?? '') ? (latest.playbook as Kind) : undefined,
+      title: titled?.title ?? p.terminalTitle ?? latest.ticket,
+      tickets: [...new Set(briefs.map((b) => b.ticket))],
+    }
+  }
+  const sent = newest(facts.filter((f): f is FactOf<'send'> => f.kind === 'send' && f.pane === p.pane))
+  return sent ? { kind: sent.role === 'verifier' ? 'Review' : undefined, title: p.terminalTitle ?? sent.ticket, tickets: [sent.ticket] } : undefined
+}
+
+/** A note herdr's verify plugin leaves in the inbox when a pane keeps reporting done with live processes. */
+const ESCALATION = /^\[thoven verify\]/
+
+function reportCell(t: Ticket, facts: readonly Fact[], inbox: readonly InboxFile[]): ReportCell {
+  const report = newest(factsOf(facts, 'report', t))
+  const file = inbox.find((f) => f.ticket === t && (report === undefined || f.at > report.at))
+  if (file?.line) return { k: 'undelivered', status: file.line.word === 'VERIFIED' || file.line.word === 'FINDINGS' ? undefined : file.line.word, file: file.name, selfChecked: false }
+  if (file && ESCALATION.test(file.head)) return { k: 'escalation', head: file.head }
+  return report ? { k: 'in', status: report.status, at: report.at, concerns: report.concerns, selfChecked: false } : { k: 'none' }
+}
+
+function fixCell(t: Ticket, facts: readonly Fact[]): FixCell {
+  const top = (rounds: number[]) => rounds.reduce((a, b) => Math.max(a, b), 0)
+  const sent = top(factsOf(facts, 'send', t).filter((f) => f.role === 'builder').map((f) => f.round))
+  const round = sent > 0 ? sent : top(factsOf(facts, 'brief', t).filter((f) => f.role === 'builder').map((f) => f.round))
+  return round > 0 ? { k: 'round', round, of: 5 } : { k: 'none' }
+}
+
+/** `report <STATUS>` for each status the ticket was reported in, in the order they arrived, not yet recorded. */
+function newReportEvents(t: Ticket, facts: readonly Fact[]): Pending[] {
+  const recorded = new Set(factsOf(facts, 'happened', t).map((f) => f.event))
+  const statuses = [...new Set(factsOf(facts, 'report', t).sort((a, b) => a.at - b.at).map((f) => f.status))]
+  return statuses.flatMap((status) => {
+    const id = `report-${status}` as LinearEventId
+    return recorded.has(id) ? [] : [{ ticket: t, event: { k: 'report', status }, id }]
+  })
 }
 
 /** The row for work main does itself: its branch names a ticket no pane holds. */
