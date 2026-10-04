@@ -8,10 +8,9 @@ The design lives in the spec on [THV-1053](https://linear.app/thoven/issue/THV-1
 
 Run `/cockpit` in a session to make it the space's main and open the pane.
 
-- **Work tab.** One row per ticket, with the columns Pane, Report, Fix, Review, PR, CI and Linear. Work that is not a build goes in the Other list. `f` (or pressing a title) jumps into the highlighted ticket's agent pane. When that row's PR is open, `m`, `r` and `t` draft a prompt for it, as on the PRs tab. `u` sends every pending ↻.
-- **PRs tab.** The space's PRs in each repo, with state and CI. Press `c` to list the checks that failed or are still running.
-  For an open PR, `m` puts `merge it owner/name#n` in the prompt box, `r` puts a request to start the verifier for that ticket (dispatch-work step 5) and `t` the same plus `/thermo-nuclear-code-quality-review`. The ticket and PR they act on are named just before the keys. They only fill main's box; you send it, and main starts the verifier pane, whose run lights the Review cell.
-- **HELP.** Every tab ends with a dim HELP block naming that tab's keys.
+- **Work tab.** One row per ticket, with the columns Pane, Report, Fix, Review, PR, CI and Linear. A `▸` marks the highlighted row. Under the table, a strip headed with that ticket says in sentences what its pane, report, PR and review are, and ends with `Next:`. Below it are the keys, all acting on that row: `f` goes to its agent pane, and `m`, `r` and `t` (for an open PR) draft a merge, a verifier request, or a verifier request with thermo. `u` sends every pending ↻. A key that cannot act says why on the same line. Work that is not a build goes in the Other list.
+- **PRs tab.** The space's PRs in each repo, with state and CI. Press `c` to list the checks that failed or are still running. The ticket and PR the keys act on are named just before them. For an open PR, `m` puts `merge it owner/name#n` in the prompt box, `r` puts a request to start the verifier for that ticket (dispatch-work step 5) and `t` the same plus `/thermo-nuclear-code-quality-review`. They only fill main's box; you send it, and main starts the verifier pane, whose run lights the Review cell.
+- **Footer.** Every tab ends with what the last press did (`Went to pane …`, `Drafted in the prompt box …`), one line saying nothing is sent until you press enter, and `h` to show or hide what the columns and keys mean.
 - **All tab.** Every herdr space and its agent panes, this space first. Press a pane to focus it.
 - **Health lines.** A source that fails shows as "stale since hh:mm", or "herdr unavailable". The other columns keep updating.
 

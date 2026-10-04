@@ -19,8 +19,9 @@
 // board whose focused PR is open with `| [merge it] | [review]`. Board pins leave `spaces` out; the
 // All tab's own tests hold it.
 //
-// The Work tab's `f` label became `open pane`, `m` `r` and `t` joined it, and every tab gained a HELP block, so
-// every work.* and prs.* text and the kit.* tab texts were re-printed; no board.* or facts literal moved.
+// The Work tab gained a `▸` column, a detail strip, `go to pane` and `m r t`, `not run` for an empty Review cell, and
+// a footer on every tab, so every work.* and prs.* text and the kit.* tab texts were re-printed; no board.* or facts
+// literal moved.
 //
 // THV-1102 re-printed prs.s2b.prose-139: agent-skills #10's CI reads – where it read ✓, because its
 // only checks are Cursor's two NEUTRAL bot checks and no CI ran (THV-1101 item 5).
