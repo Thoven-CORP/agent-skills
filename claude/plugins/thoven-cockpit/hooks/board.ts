@@ -18,13 +18,16 @@
 //      received, else from the newest send.sh call main made to it: a hand-typed or self-brief
 //      ties a pane as surely as a label (spec "Failure handling").
 //   4. Main's own branch ticket, when no row has it yet, is the "this session" row.
+//   5. A ticket this space dispatched whose panes have all closed keeps a "pane gone" row, until
+//      Linear shows every event on it (spec "Failure handling"). The space is the one its panes
+//      were in: a `send:` to one, or a brief one received. A `happened:` key names no space.
 
 import { branchTicket, pickLabel } from './dispatch.ts'
 import { indexFacts, newest, type BoardFacts } from './facts.ts'
 import { rowOf } from './cells.ts'
 import { groupRows, linearOf, pendingOf } from './linear.ts'
 import { prJoin } from './prs.ts'
-import type { Board, Branches, CodexRollout, Health, Ms, Kind, LivePane, NonEmpty, OtherItem, Pane, PaneCell, PaneLabels, Panes, Polled, RowIdentity, SourceHealth, SourceId, Sources, SpaceMap, Ticket, World } from './model.ts'
+import type { Board, Branches, CodexRollout, Health, Main, Ms, Kind, LivePane, NonEmpty, OtherItem, Pane, PaneCell, PaneId, PaneLabels, Panes, Polled, RowIdentity, SourceHealth, SourceId, Sources, SpaceMap, Ticket, World } from './model.ts'
 import { sharing, valueOf } from './sources.ts'
 
 /** What ties a pane to its work: its label, else its folder's branch, else what main sent it. */
@@ -82,15 +85,19 @@ export function project(world: World): Board {
   ]
   const mine = thisSession(world, snap?.panes.find((p) => p.pane === me.pane))
   if (mine && !ids.some((id) => id.ticket === mine.ticket)) ids.push(mine)
+  // No Project, no Linear column (spec "Spaces"), so no state read, no ↻, no parent groups, and no Linear state for a closed row to wait on.
+  const view = projectName === undefined ? undefined : valueOf(world.sources.linear)
+  const held = new Set([...ids.map((id) => id.ticket), ...other.flatMap((o) => (o.k === 'labelled' && o.ticket ? [o.ticket] : []))])
+  if (projectName !== undefined) ids.push(...closedRows(facts.all, me, held))
 
   const join = prJoin(world, panes, ids)
   const inbox = valueOf(world.sources.inbox) ?? []
   const codex = codexOf(valueOf(world.sources.codex), panes, world.now)
-  const rows = ids.map((id) => rowOf(id, { facts: facts.about(id.ticket), inbox, join, codex }))
-  // No Project, no Linear column (spec "Spaces"), so no state read, no ↻ and no parent groups.
-  const view = projectName === undefined ? undefined : valueOf(world.sources.linear)
-  const linear = rows.map(({ row, events }) => ({ ...row, cells: { ...row.cells, linear: linearOf(row.ticket, facts.about(row.ticket), events, view) } }))
-  const build = groupRows(linear, view)
+  const rows = ids
+    .map((id) => rowOf(id, { facts: facts.about(id.ticket), inbox, join, codex }))
+    .map(({ row, events }) => ({ row: { ...row, cells: { ...row.cells, linear: linearOf(row.ticket, facts.about(row.ticket), events, view) } }, events }))
+    .filter(({ row }) => row.panes.k !== 'gone' || row.cells.linear.k !== 'ok')
+  const build = groupRows(rows.map(({ row }) => row), view)
 
   return {
     space,
@@ -150,6 +157,21 @@ function thisSession(world: World, mainPane: Pane | undefined): RowIdentity | un
   const named = label?.tickets.includes(t) ? label : undefined
   const panes: Panes = mainPane ? { k: 'live', list: [live(mainPane)] } : { k: 'none' }
   return holding(t, { kind: named?.kind, title: named?.title ?? mainPane?.terminalTitle ?? branch, origin: 'this-session' }, panes, { k: 'none' })
+}
+
+/**
+ * A `pane gone` row for each ticket a pane of this space was sent or briefed for that no pane holds
+ * now, in the order they were dispatched. Main's own pane is left out: its work is the this-session row.
+ */
+function closedRows(facts: BoardFacts, me: Main, held: ReadonlySet<Ticket>): RowIdentity[] {
+  const isMine = (p: PaneId) => p !== me.pane && p.startsWith(`${me.space}:`)
+  const sent = [...facts.send.filter((f) => isMine(f.pane)), ...facts.brief.filter((f) => isMine(f.pane))].sort((a, b) => a.at - b.at)
+  const tickets = [...new Set(sent.map((f) => f.ticket))].filter((t) => !held.has(t))
+  return tickets.map((t) => {
+    const briefs = facts.brief.filter((b) => b.ticket === t)
+    const kind = newest(briefs.filter((b) => b.labelKind !== undefined))?.labelKind
+    return holding(t, { kind, title: newest(briefs.filter((b) => b.title !== undefined))?.title ?? t, origin: 'dispatch' }, { k: 'gone' }, { k: 'none' })
+  })
 }
 
 const holding = (ticket: Ticket, by: Pick<RowIdentity, 'kind' | 'title' | 'origin'>, panes: Panes, verifierPane: PaneCell): RowIdentity => ({ ticket, title: by.title, kind: by.kind, origin: by.origin, panes, verifierPane })
