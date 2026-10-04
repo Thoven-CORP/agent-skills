@@ -99,7 +99,7 @@ const SHAPES: { [K in FactKind]: (v: Raw) => FactOf<K> | undefined } = {
     isTicket(v.ticket) && isSessionId(v.sid) && typeof v.isError === 'boolean' && isStr(v.text) && isNum(v.at)
       ? { kind: 'readback', ticket: v.ticket, sid: v.sid, isError: v.isError, text: v.text, at: v.at }
       : undefined,
-  ran: (v) => (isSessionId(v.sid) && isOneOf(REVIEW_SKILLS)(v.skill) && isNum(v.at) ? { kind: 'ran', sid: v.sid, skill: v.skill, at: v.at } : undefined),
+  ran: (v) => (isSessionId(v.sid) && isOneOf(REVIEW_SKILLS)(v.skill) && isNum(v.at) ? { kind: 'ran', sid: v.sid, skill: v.skill, at: v.at, ...(v.claimed === true ? { claimed: true } : {}) } : undefined),
 }
 
 function skillRun(v: Raw): SkillRun | undefined {

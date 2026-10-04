@@ -135,8 +135,8 @@ export type Fact =
   | ({ kind: 'review' } & SkillRun)
   /** `self:<ticket>:<sid>:<skill>`. The same, under any other brief: the builder's own check (ADR12). */
   | ({ kind: 'self' } & SkillRun)
-  /** `ran:<sid>:<skill>`. A Review skill a pane ran holding no brief. A verdict reply names its ticket and makes it `review`. */
-  | { kind: 'ran'; sid: SessionId; skill: ReviewSkill; at: Ms }
+  /** `ran:<sid>:<skill>`. A Review skill a pane ran holding no brief. A verdict reply names its ticket, makes it `review` and marks it claimed. */
+  | { kind: 'ran'; sid: SessionId; skill: ReviewSkill; at: Ms; claimed?: true }
   /** `update:<ticket>:<event>`. Main handed the event to `/workspace update` at `at`; a second press replaces it. */
   | { kind: 'update'; ticket: Ticket; event: LinearEventId; at: Ms }
   /** `readback:<ticket>:<sid>`. The newest `THV-n <State>` or `THV-n ERROR <reason>` line main saw. */
