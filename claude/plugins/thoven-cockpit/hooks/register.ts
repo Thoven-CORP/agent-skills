@@ -11,7 +11,8 @@
 // Cost by role (the plugin loads in every session):
 //   inert  (no HERDR_PANE_ID)  one regex per prompt and one substring test per Bash command; a
 //                              store write only for a report or verdict. No timers, no processes
-//   pane   (not main)          the same, and a brief or send.sh call is written too
+//   pane   (not main)          the same, and a brief, a send.sh call, a Review skill run (a `ran`
+//                              while it holds no brief) and a verdict its own answer gave are written too
 //   main   (claimed a space)   one 5 s heartbeat timer; all polling, projection, drawing
 //
 // Crash safety: every hook is one line over a shape below, and no try/catch wraps `next`:

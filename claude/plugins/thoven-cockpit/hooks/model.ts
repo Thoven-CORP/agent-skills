@@ -131,7 +131,7 @@ export type Fact =
   | { kind: 'status'; ticket: Ticket; sid: SessionId; status: ReportStatus; text: string; at: Ms }
   /** `checkpoint:<sid>`. Main's state when it last compacted, handed back after the compaction (S5). */
   | ({ kind: 'checkpoint'; sid: SessionId; at: Ms } & Checkpoint)
-  /** `review:<ticket>:<sid>:<skill>`. A Review skill a session ran itself while it held a verifier brief for the ticket. */
+  /** `review:<ticket>:<sid>:<skill>`. A Review skill a session ran itself while it held a verifier brief for the ticket, or a `ran` its verdict reply claimed. */
   | ({ kind: 'review' } & SkillRun)
   /** `self:<ticket>:<sid>:<skill>`. The same, under any other brief: the builder's own check (ADR12). */
   | ({ kind: 'self' } & SkillRun)
@@ -154,7 +154,7 @@ export type Checkpoint = {
   next: string[]
 }
 
-/** One Review skill run. `round` is the `at` of the brief the session held when it ran: a new brief starts a new round. */
+/** One Review skill run. `round` is the `at` of the brief the session held when it ran, or, for a `ran` a verdict reply claimed, of the brief that reply wrote: a new brief starts a new round. */
 export type SkillRun = { ticket: Ticket; sid: SessionId; skill: ReviewSkill; round: Ms; at: Ms }
 
 export type FactKind = Fact['kind']
