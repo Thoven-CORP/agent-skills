@@ -9,6 +9,7 @@ import { expect, test } from 'claude-code/testing'
 import { doctor, mainCheckoutDir } from '../hooks/doctor.ts'
 import { EXPIRY_MS, ageOf, expired, isMergedAndDone, type LinearStates, type Stored } from '../hooks/expiry.ts'
 import { FRONTEND, parsePrList } from '../hooks/github.ts'
+import type { LinearEntry, LinearState } from '../hooks/linear.ts'
 import { isLinearEventId, isPaneId, isSessionId, isSpaceId, type Fact, type Health, type Pr } from '../hooks/model.ts'
 import { keyOf } from '../hooks/store.ts'
 import { doctorText } from '../hooks/view.ts'
@@ -50,7 +51,9 @@ const UNDATED: [string, unknown] = ['cockpit:note', 'free text']
 const FOREIGN: [string, unknown] = ['spike:ping', { at: 0 }]
 
 const prs = (): Pr[] => must(parsePrList(FRONTEND, GH_FRONTEND))
-const DONE: LinearStates = new Map([[tk('THV-1038'), 'Done']])
+/** What a Linear read said of a ticket: a state of this name and type. */
+const read = (name: string, type: LinearState['type']): LinearEntry => ({ state: { name, type, position: 0 }, parent: undefined, at: 0 })
+const DONE: LinearStates = new Map([[tk('THV-1038'), read('Done', 'completed')]])
 
 // ── unit: the expiry rules ───────────────────────────────────────────────────────────────────
 
@@ -81,9 +84,22 @@ test('FE #138 merged and THV-1038 reads Done: every fresh THV-1038 key goes once
   ])
   // Still on screen, not Done yet, no Linear read, or no merged PR: nothing goes.
   expect(expired(keys, { now: NOW, prs: prs(), linear: DONE, onBoard: new Set([tk('THV-1038')]) })).toEqual([])
-  expect(expired(keys, { now: NOW, prs: prs(), linear: new Map([[tk('THV-1038'), 'In Review']]), onBoard: new Set() })).toEqual([])
+  expect(expired(keys, { now: NOW, prs: prs(), linear: new Map([[tk('THV-1038'), read('In Review', 'started')]]), onBoard: new Set() })).toEqual([])
   expect(expired(keys, { now: NOW, prs: prs(), linear: undefined, onBoard: new Set() })).toEqual([])
   expect(expired(keys, { now: NOW, prs: prs().filter((p) => p.number !== 138), linear: DONE, onBoard: new Set() })).toEqual([])
+})
+
+test('Done is a completed state, whatever its name: THV-1038 in Shipped loses its keys, one in a started state named Done keeps them', async () => {
+  const fresh = NOW - 60_000
+  const keys = storedOf([entry(report('THV-1038', 'sid-b', fresh)), entry({ kind: 'happened', ticket: tk('THV-1038'), event: idOf(isLinearEventId, 'merged-138'), at: fresh })])
+  const shipped: LinearStates = new Map([[tk('THV-1038'), read('Shipped', 'completed')]])
+  expect(isMergedAndDone(tk('THV-1038'), prs(), shipped)).toBe(true)
+  expect(expired(keys, { now: NOW, prs: prs(), linear: shipped, onBoard: new Set() })).toEqual([
+    { key: 'cockpit:report:THV-1038:sid-b', why: 'merged-done' },
+    { key: 'cockpit:happened:THV-1038:merged-138', why: 'merged-done' },
+  ])
+  const startedDone: LinearStates = new Map([[tk('THV-1038'), read('Done', 'started')]])
+  expect(expired(keys, { now: NOW, prs: prs(), linear: startedDone, onBoard: new Set() })).toEqual([])
 })
 
 // ── unit: the doctor report ──────────────────────────────────────────────────────────────────
