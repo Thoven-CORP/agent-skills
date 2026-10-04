@@ -68,6 +68,11 @@ export function isOneOf<L extends readonly string[]>(list: L): (v: unknown) => v
   return (v): v is L[number] => list.some((word) => word === v)
 }
 
+/** A thrown value as one line of text. */
+export function messageOf(err: unknown): string {
+  return err instanceof Error ? err.message : String(err)
+}
+
 /** The one way outside text becomes an id: herdr, Claude Code and the store hand out non-empty strings. */
 const isId = (v: unknown): v is string => typeof v === 'string' && v !== ''
 /** A pane id is herdr's `w…:p…` shape, so a send.sh operand the shell never expanded (`$P`) is not one. */

@@ -31,8 +31,8 @@ import { LINEAR_URL, readbacks, type StateQuery } from './linear.ts'
 import { claimHeldBy } from './facts.ts'
 import { COMMANDS, type Req } from './commands.ts'
 import { findMe, parseSnapshot, spaceOfPane } from './herdr.ts'
-import { act, becomeMain, held, loseClaim, messageOf, noteFocus, type Shell } from './main.ts'
-import { isPaneId, isSessionId, type Fact, type FactKind, type FactOf, type Main, type PaneId, type SessionId, type Snapshot } from './model.ts'
+import { act, becomeMain, becomeOther, held, noteFocus, type Shell } from './main.ts'
+import { isPaneId, isSessionId, messageOf, type Fact, type FactKind, type FactOf, type Main, type PaneId, type SessionId, type Snapshot } from './model.ts'
 import { settle, type Ask, type Listing } from './sources.ts'
 import { isCockpitKey, isFactKey, keyOf, parseFact } from './store.ts'
 import { doctorText, drawCockpit } from './view.ts'
@@ -220,8 +220,7 @@ async function resolveMe($: Api, sid: SessionId): Promise<void> {
     becomeMain(shellOf($), { ...claim, sid }, await placeOf($))
     return
   }
-  await loseClaim(shellOf($))
-  held.me = pane ? { k: 'pane', pane, sid, engagements: held.me.k === 'pane' ? held.me.engagements : [] } : { k: 'inert' }
+  await becomeOther(shellOf($), pane ? { k: 'pane', pane, sid, engagements: held.me.k === 'pane' ? held.me.engagements : [] } : { k: 'inert' })
 }
 
 /**
@@ -329,6 +328,7 @@ function askOf($: Api): Ask {
 function shellOf($: Api): Shell {
   return {
     ask: askOf($),
+    proc: (req) => runProc($, req),
     now: () => $.clock.now(),
     loadFacts: (only) => loadFacts($, only),
     loadStored: () => loadStored($),
