@@ -339,6 +339,9 @@ function shellOf($: Api): Shell {
     workspace: async (args) => {
       await $.command.run({ command: 'workspace', args })
     },
+    fill: async (text) => {
+      await $.prompt.fill({ text })
+    },
     debug: (where, err) => debug($, where, err),
   }
 }

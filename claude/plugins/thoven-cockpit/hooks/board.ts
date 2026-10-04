@@ -27,7 +27,7 @@ import { byKind, newest, type BoardFacts } from './facts.ts'
 import { rowOf } from './cells.ts'
 import { groupRows, linearOf, pendingOf } from './linear.ts'
 import { prJoin } from './prs.ts'
-import type { Board, Branches, CodexRollout, Health, Main, Ms, Kind, LivePane, NonEmpty, OtherItem, Pane, PaneCell, PaneId, PaneLabels, Panes, Polled, RowIdentity, SourceHealth, SourceId, Sources, SpaceMap, Ticket, World } from './model.ts'
+import type { Board, Snapshot, SpaceGroup, Branches, CodexRollout, Health, Main, Ms, Kind, LivePane, NonEmpty, OtherItem, Pane, PaneCell, PaneId, PaneLabels, Panes, Polled, RowIdentity, SourceHealth, SourceId, Sources, SpaceMap, Ticket, World } from './model.ts'
 import { spaceOfPane } from './herdr.ts'
 import { sharing, valueOf } from './sources.ts'
 
@@ -117,6 +117,7 @@ export function project(world: World): Board {
     health: health(world.sources),
     working: panes.filter((p) => p.status === 'working').map((p) => p.pane),
     newEvents: rows.flatMap(({ events }) => events),
+    spaces: spacesOf(snap, labels, me),
   }
 }
 
@@ -208,4 +209,20 @@ function health(sources: Sources): Health {
     return p?.k === 'stale' ? { k: 'stale', since: p.since } : p?.k === 'down' ? { k: 'unavailable' } : { k: 'ok' }
   }
   return { herdr: of('herdr'), labels: of('labels'), spaces: of('spaces'), git: of(...sharing('git')), github: of('github'), inbox: of('inbox'), codex: of('codex'), linear: of('linear') }
+}
+
+/** The All tab: each space's agent panes, this space first and main's own pane left out. A shell pane is not shown. */
+function spacesOf(snap: Snapshot | undefined, labels: PaneLabels['byPane'] | undefined, me: Main): SpaceGroup[] {
+  if (!snap) return []
+  const groups = snap.spaces.map((space) => ({
+    space,
+    isThis: space.space === me.space,
+    panes: snap.panes
+      .filter((p) => p.space === space.space && p.pane !== me.pane && p.agent !== undefined)
+      .map((p) => {
+        const label = pickLabel([p.paneLabel ?? labels?.get(p.pane)?.label, p.tabLabel, p.terminalTitle])
+        return { title: label?.title || p.tabLabel || p.terminalTitle || p.pane, pane: live(p) }
+      }),
+  }))
+  return [...groups.filter((g) => g.isThis), ...groups.filter((g) => !g.isThis)]
 }

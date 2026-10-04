@@ -33,6 +33,8 @@ export type Shell = {
   closePane(): Promise<void>
   /** Hand these arguments to `/workspace update`. */
   workspace(args: string): Promise<void>
+  /** Put a draft in the prompt box. Nothing is sent. */
+  fill(text: string): Promise<void>
   debug(where: string, err: unknown): Promise<void>
 }
 
@@ -233,6 +235,13 @@ export async function act(sh: Shell, intent: Intent): Promise<void> {
         })
         return
       }
+      case 'fill': {
+        const { text } = intent
+        sh.after(0, () => {
+          void fillPrompt(sh, text)
+        })
+        return
+      }
       default:
         return intent satisfies never
     }
@@ -250,6 +259,14 @@ async function sendUpdate(sh: Shell, args: string, pending: readonly Pending[]):
     await draw(sh)
   } catch (err) {
     await sh.debug('update', err)
+  }
+}
+
+async function fillPrompt(sh: Shell, text: string): Promise<void> {
+  try {
+    await sh.fill(text)
+  } catch (err) {
+    await sh.debug('fill', err)
   }
 }
 
