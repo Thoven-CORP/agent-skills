@@ -27,11 +27,10 @@ owns its half, and the brief tells the pane which half is main's.
 The pane never writes to Linear, never pushes, and never decides a product question. Main never
 edits the pane's code. Fixes go back to a pane.
 
-**Linear moves while the cockpit is open.** The cockpit opens in main's pane at main's first
-`send.sh`, and it offers each move as a ↻ on the ticket's row. Every status move is one of those
-events: Andres presses ↻ or `u`, or main runs `/workspace update THV-x <event>` with the event the ↻
-names (`started`, `pr <n>`, `report <STATUS>`, `merged <n>`), which makes exactly the write the ↻
-stands for. `set-status.js` is for a space with no cockpit.
+**Linear and the cockpit.** Main moves status with `set-status.js`, cockpit open or not. The
+cockpit's ↻ for `started`, `pr` and `merged` clears on its next Linear read, within 5 minutes. A
+`report` ↻ and a pane-gone row wait for Andres: his ↻ or `u` is his approval to post the report
+comment, and it clears the row. Main leaves both to him and does not run `/workspace update`.
 
 ## Layout
 
@@ -97,9 +96,9 @@ you cannot fill means the ticket is not ready. Fix the ticket in Linear, then co
    file, so backticks and `$(...)` in the brief reach the pane as text. It refuses a pane that is
    not `idle` or `done` and prints its screen, so an update prompt or trust dialog never swallows
    the brief. Clear the dialog, then send again.
-5. Move the ticket to **In Progress**: `/workspace update THV-x started` while the cockpit is open,
-   else `node ~/.agents/skills/workspace/tools/set-status.js "In Progress" THV-x`. Either prints the
-   state it read back in one line. A status-only `save_issue` through the Linear MCP echoes the whole issue.
+5. Move the ticket to **In Progress** with
+   `node ~/.agents/skills/workspace/tools/set-status.js "In Progress" THV-x`. It prints the state it
+   read back in one line. A status-only `save_issue` through the Linear MCP echoes the whole issue.
 
 **Done when:** `herdr agent get <pane>` shows `working` and the ticket reads In Progress.
 
