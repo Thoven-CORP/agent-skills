@@ -367,13 +367,13 @@ test('m and r put a draft in the prompt box for the focused PR and send nothing'
   await s.clock.advance(0)
   await ui.press({ key: 'fill-review' })
   await s.clock.advance(0)
-  expect(fills).toEqual([`merge it ${FRONTEND}#141`, '/mattpocock-skills:code-review origin/main PR https://github.com/Thoven-CORP/frontend-remote/pull/141 (branch legal/thv-1045, base origin/main). HEAD here is not that branch: read it with gh pr diff 141 --repo Thoven-CORP/frontend-remote.'])
+  expect(fills).toEqual([`merge it ${FRONTEND}#141`, 'Start the verifier for THV-1045 (Thoven-CORP/frontend-remote#141, base origin/main) as dispatch-work step 5 says.'])
   expect(s.logs.filter((l) => /not implemented|failed/.test(l))).toEqual([])
   expect(s.argvs.flat().some((a) => /^merge$/i.test(a))).toBe(false)
 
 })
 
-test('the Work tab drafts merge, review and thermo for the highlighted row\'s open PR, and its HELP names those keys', async ($, on) => {
+test('the Work tab drafts merge, a verifier request and thermo for the highlighted row\'s open PR, naming its ticket, and its HELP names those keys', async ($, on) => {
   const s = stage(on, { pane: 'w18:p8W', snapshot: relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Consent evidence hardening (THV-1045)') })
   s.gh.byRepo = { [FRONTEND]: GH_FRONTEND, [BACKEND]: GH_BACKEND }
   const fills: string[] = []
@@ -386,8 +386,9 @@ test('the Work tab drafts merge, review and thermo for the highlighted row\'s op
     await ui.press({ key })
     await s.clock.advance(0)
   }
-  expect(fills.map((f) => f.split(' ')[0])).toEqual(['merge', '/mattpocock-skills:code-review', '/thermo-nuclear-code-quality-review'])
-  expect(fills.every((f, i) => i === 0 || f.includes(`gh pr diff 141 --repo ${FRONTEND}`))).toBe(true)
+  const verify = `Start the verifier for THV-1045 (${FRONTEND}#141, base origin/main) as dispatch-work step 5 says.`
+  expect(fills).toEqual([`merge it ${FRONTEND}#141`, verify, `${verify} Run /thermo-nuclear-code-quality-review whatever the diff size.`])
+  expect(await ui.find({ type: 'Text', text: 'THV-1045 #141:' })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: 'HELP' })).toBeDefined()
   await ui.press({ key: 'tab-prs' })
   expect(await ui.find({ type: 'Text', text: 'HELP' })).toBeDefined()

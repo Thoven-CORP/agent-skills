@@ -24,7 +24,7 @@ Start the verifier as in step 3 and send:
 Read Linear THV-<id> in full. The builder's report is below. Treat every line of it as a claim.
 Repo <path>, branch <branch>, diff <base>..<head>. Read and run only; leave the code as it is.
 1. /verify-this over every Acceptance line and every claim in the report.
-2. /code-review against <base>.
+2. /mattpocock-skills:code-review against <base>.
 3. /thermo-nuclear-code-quality-review when the diff crosses a module or passes ~300 lines.
 4. /deslop findings only.
 Reply to main with herdr agent prompt {{MAIN_PANE}} "VERIFIED THV-<id>" or "FINDINGS THV-<id>",

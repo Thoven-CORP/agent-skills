@@ -103,17 +103,21 @@ export function drawCockpit(raw: El, board: Board | undefined, ui: PaneUi, colum
   })
 }
 
-/** The PR's diff as a draft names it: main's own checkout is not the PR's branch, so a review reads `gh pr diff`. */
-const diffOf = (pr: Pr): string => `PR ${pr.url} (branch ${pr.branch}, base origin/${pr.base}). HEAD here is not that branch: read it with gh pr diff ${pr.number} --repo ${pr.repo}.`
-
-/** `m`, `r` and `t` for one open PR. Each only drafts a prompt; Andres sends it. `r` is the verifier's own code-review skill, `t` the structure pass. */
-function draftButtons({ Button }: El, pr: Pr | undefined, act: Act): RenderElement[] {
+/**
+ * `m`, `r` and `t` for one open PR, led by the ticket and PR they act on. Each only drafts a prompt in
+ * main's box; Andres sends it. `r` and `t` ask main to start the verifier pane (dispatch-work step 5), so the
+ * Review cell lights from that pane's own run. `t` adds thermo whatever the diff size.
+ */
+function draftButtons({ Text, Button }: El, pr: Pr | undefined, tickets: readonly string[], act: Act): RenderElement[] {
   if (pr?.state !== 'OPEN') return []
+  const target = tickets.length > 0 ? tickets.join(' ') : pr.branch
+  const verify = `Start the verifier for ${target} (${prKey(pr)}, base origin/${pr.base}) as dispatch-work step 5 says.`
   const draft = (key: string, label: string, hotkey: string, text: string) => Button({ key, label, hotkey, plain: true, onPress: () => act({ k: 'fill', text }) })
   return [
+    Text({ dimColor: true, children: [`${target} #${pr.number}:`] }),
     draft('fill-merge', 'merge it', 'm', `merge it ${prKey(pr)}`),
-    draft('fill-review', 'review', 'r', `/mattpocock-skills:code-review origin/${pr.base} ${diffOf(pr)}`),
-    draft('fill-thermo', 'thermo', 't', `/thermo-nuclear-code-quality-review ${diffOf(pr)}`),
+    draft('fill-review', 'review', 'r', verify),
+    draft('fill-thermo', 'thermo', 't', `${verify} Run /thermo-nuclear-code-quality-review whatever the diff size.`),
   ]
 }
 
@@ -121,12 +125,12 @@ function draftButtons({ Button }: El, pr: Pr | undefined, act: Act): RenderEleme
 const HELP: Record<PaneUi['tab'], string[]> = {
   work: [
     'f, or pressing a title, jumps into the highlighted ticket\'s agent pane',
-    'm merge it · r review (standards and spec) · t thermo (structure): each drafts a prompt for the highlighted row\'s open PR; you press send',
+    'm merge it · r review · t review plus thermo: each drafts a request in this session for the ticket named before the keys; you press send, and r and t start a verifier pane',
     '1 2 3 switch tab',
   ],
   prs: [
     'c, or pressing a PR, lists its failed or running checks',
-    'm merge it · r review (standards and spec) · t thermo (structure): each drafts a prompt for the highlighted PR; you press send',
+    'm merge it · r review · t review plus thermo: each drafts a request in this session for the PR named before the keys; you press send, and r and t start a verifier pane',
     '1 2 3 switch tab',
   ],
   all: ['Press a pane to jump into it · 1 2 3 switch tab'],
@@ -199,7 +203,7 @@ function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): 
             plain: true,
             onPress: () => (focusTarget === undefined ? undefined : act({ k: 'focus-pane', pane: focusTarget })),
           }),
-          ...draftButtons(el, selected?.cells.pr.k === 'none' ? undefined : selected?.cells.pr.pr, act),
+          ...draftButtons(el, selected?.cells.pr.k === 'none' ? undefined : selected?.cells.pr.pr, selected === undefined ? [] : [selected.ticket], act),
           // `u` sends every pending event in one `/workspace update` (ADR5); with none it is not offered.
           board.pending.length === 0 ? null : Button({ key: 'update-all', label: 'update all ↻', hotkey: 'u', plain: true, onPress: () => act({ k: 'update', pending: board.pending }) }),
         ],
@@ -297,7 +301,7 @@ function drawPrs(el: El, board: Board, ui: PaneUi, columns: number, act: Act): R
         columnGap: 3,
         children: [
           Button({ key: 'checks', label: 'checks', hotkey: 'c', plain: true, onPress: () => (focused === undefined ? undefined : act({ k: 'checks', pr: prKey(focused.pr) })) }),
-          ...draftButtons(el, focused?.pr, act),
+          ...draftButtons(el, focused?.pr, focused?.tickets ?? [], act),
         ],
       }),
     ],
