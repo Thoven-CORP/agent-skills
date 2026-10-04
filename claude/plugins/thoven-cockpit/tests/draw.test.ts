@@ -37,6 +37,7 @@ function shellOf(claim: () => FactOf<'main'>) {
     },
     closePane: async () => undefined,
     workspace: async () => undefined,
+    fill: async () => undefined,
     debug: async () => undefined,
   }
   return { sh, loads, beats, redraws: () => redraws }

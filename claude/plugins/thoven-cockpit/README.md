@@ -10,6 +10,8 @@ Run `/cockpit` in a session to make it the space's main and open the pane.
 
 - **Work tab.** One row per ticket, with the columns Pane, Report, Fix, Review, PR, CI and Linear. Work that is not a build goes in the Other list.
 - **PRs tab.** The space's PRs in each repo, with state and CI. Press `c` to list the checks that failed or are still running.
+  For an open PR, `m` puts `merge it owner/name#n` in the prompt box and `r` puts `/code-review <url>`. Both only fill the box; you send it.
+- **All tab.** Every herdr space and its agent panes, this space first. Press a pane to focus it.
 - **Health lines.** A source that fails shows as "stale since hh:mm", or "herdr unavailable". The other columns keep updating.
 
 Run `/cockpit doctor` in any session to see:

@@ -404,18 +404,26 @@ export type Board = {
   working: PaneId[]
   /** Events on screen with no `happened` fact yet. Main writes each once (synthesis A1). */
   newEvents: Pending[]
+  /** The All tab: every herdr space, this one first, each with its agent panes. */
+  spaces: SpaceGroup[]
 }
+
+/** One space on the All tab. A pane's title is its label, else its tab's name. */
+export type SpaceGroup = { space: Space; isThis: boolean; panes: Array<{ title: string; pane: LivePane }> }
 
 // ── Intents: what a press asks for, as data (view.ts emits, main.ts performs) ──────────
 
+export type TabName = 'work' | 'prs' | 'all'
+
 export type Intent =
-  | { k: 'tab'; tab: 'work' | 'prs' }
+  | { k: 'tab'; tab: TabName }
   | { k: 'focus-pane'; pane: PaneId }
   | { k: 'checks'; pr: string } // `c`, or a PR row pressed: show or hide that PR's unfinished and failed checks
   | { k: 'update'; pending: Pending[] } // ↻ on a row, or `u` for every row: hand the events to `/workspace update`
+  | { k: 'fill'; text: string } // `m` or `r` on the PRs tab: a draft in the prompt box, which Andres sends or not
 
 /**
  * `selected` is the ticket of the Work row whose button holds the focus ring, `selectedPr` the
  * same for a PR row (`owner/name#n`). `checks` is the PR whose checks are listed.
  */
-export type PaneUi = { tab: 'work' | 'prs'; selected: string | undefined; selectedPr: string | undefined; checks: string | undefined }
+export type PaneUi = { tab: TabName; selected: string | undefined; selectedPr: string | undefined; checks: string | undefined }

@@ -11,7 +11,7 @@ import { expect } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { COMMANDS } from '../hooks/commands.ts'
 import { BACKEND, FRONTEND, configPathOf, parseOrigin, parsePrList } from '../hooks/github.ts'
-import { isLinearEventId, type Board, type Fact, type Pr, type Sources } from '../hooks/model.ts'
+import { isLinearEventId, isPaneId, type Board, type Fact, type Pr, type Sources } from '../hooks/model.ts'
 import { SOURCES, headPathOf, parseHead, STAGES } from '../hooks/sources.ts'
 import { cellText } from '../hooks/view.ts'
 import { CONFIG_AGENT_SKILLS, CONFIG_BACKEND, CONFIG_FRONTEND, DOT_GIT_THV_481, DOT_GIT_WORKTREE, HEAD_THV_481 } from './fixtures/git.ts'
@@ -329,7 +329,7 @@ test('a merged PR writes happened merged-<repo>-<n> once, however many gh polls 
   expect(s.setKeys.filter((k) => k.startsWith('cockpit:happened:THV-1038:merged-'))).toEqual([`cockpit:happened:THV-1038:merged-${FRONTEND}-138`, `cockpit:happened:THV-1038:merged-${BACKEND}-144`])
 })
 
-test('the PRs tab groups by repo with state and CI, hints no key it cannot act on; c lists the failing checks; no gh argv merges', async ($, on) => {
+test('the PRs tab groups by repo with state and CI, offers m and r only for an open PR; c lists the failing checks; no gh argv merges', async ($, on) => {
   const s = stage(on, { pane: 'w18:p8W', snapshot: relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Consent evidence hardening (THV-1045)') })
   s.gh.byRepo = { [FRONTEND]: GH_FRONTEND, [BACKEND]: GH_BACKEND }
   await start($)
@@ -337,8 +337,8 @@ test('the PRs tab groups by repo with state and CI, hints no key it cannot act o
   const ui = await $.ui.mount(PANE)
   await ui.press({ key: 'tab-prs' })
   for (const text of ['FE', 'BE', 'held', 'merged', '✗ 4', '✓']) expect(await ui.find({ type: 'Text', text })).toBeDefined()
-  for (const text of ['o open', 'm merge it', 'm merge it #141']) expect(await ui.find({ type: 'Text', text })).toBeUndefined()
-  expect((await ui.findAll({ type: 'Button' })).map((b) => b.key)).toEqual(['tab-work', `pr-${FRONTEND}#141`, `pr-${BACKEND}#148`, 'checks'])
+  expect(await ui.find({ type: 'Text', text: 'o open' })).toBeUndefined()
+  expect((await ui.findAll({ type: 'Button' })).map((b) => b.key)).toEqual(['tab-work', 'tab-all', `pr-${FRONTEND}#141`, `pr-${BACKEND}#148`, 'checks', 'fill-merge', 'fill-review'])
   expect(await ui.find({ type: 'Text', text: 'vitest shard 1/4' })).toBeUndefined()
   await ui.press({ key: 'checks' })
   for (const text of ['vitest shard 1/4', 'vitest shard 2/4', 'vitest shard 3/4', 'CI']) expect(await ui.find({ type: 'Text', text })).toBeDefined()
@@ -350,4 +350,39 @@ test('the PRs tab groups by repo with state and CI, hints no key it cannot act o
   expect(gh.length).toBe(ranTimes(s, COMMANDS['gh pr list'](FRONTEND)) + ranTimes(s, COMMANDS['gh pr list'](BACKEND)))
   expect(gh.flat().some((a) => /^merge$/i.test(a) || /^--?(merge|squash|rebase|auto|admin)$/i.test(a))).toBe(false)
   expect(s.logs.filter((l) => /not implemented|failed/.test(l))).toEqual([])
+})
+
+test('m and r put a draft in the prompt box for the focused PR and send nothing', async ($, on) => {
+  const s = stage(on, { pane: 'w18:p8W', snapshot: relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Consent evidence hardening (THV-1045)') })
+  s.gh.byRepo = { [FRONTEND]: GH_FRONTEND, [BACKEND]: GH_BACKEND }
+  const fills: string[] = []
+  on('prompt.fill', (_$: unknown, e: { text: string }) => (fills.push(e.text), { isFilled: true }))
+  await start($)
+  await cockpit($)
+  const ui = await $.ui.mount(PANE)
+  await ui.press({ key: 'tab-prs' })
+  await ui.press({ key: 'fill-merge' })
+  expect(fills).toEqual([])
+  await s.clock.advance(0)
+  await ui.press({ key: 'fill-review' })
+  await s.clock.advance(0)
+  expect(fills).toEqual([`merge it ${FRONTEND}#141`, '/code-review https://github.com/Thoven-CORP/frontend-remote/pull/141'])
+  expect(s.logs.filter((l) => /not implemented|failed/.test(l))).toEqual([])
+  expect(s.argvs.flat().some((a) => /^merge$/i.test(a))).toBe(false)
+
+})
+
+test('the All tab lists every space with its agent panes, this space first, and pressing one focuses it', async ($, on) => {
+  const s = stage(on, { pane: 'w18:p8W', snapshot: relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Consent evidence hardening (THV-1045)') })
+  await start($)
+  await cockpit($)
+  const ui = await $.ui.mount(PANE)
+  await ui.press({ key: 'tab-all' })
+  for (const text of ['Research (this space)', 'UI Polishes', 'Coppa', 'thoven']) expect(await ui.find({ type: 'Text', text })).toBeDefined()
+  expect((await ui.findAll({ type: 'Button' })).map((b) => b.key)).toEqual(['tab-work', 'tab-prs', 'all-w18:p8P', 'all-w18:p8V', 'all-w4D:pH', 'all-w54:p1', 'all-w56:p1', 'all-w57:p1'])
+  expect((await ui.find({ type: 'Button', key: 'all-w56:p1' }))?.props.label).toBe("children's media URL expiry")
+  expect(await ui.find({ type: 'Button', key: 'all-w18:p8W' })).toBeUndefined()
+  await ui.press({ key: 'all-w56:p1' })
+  await s.clock.advance(0)
+  expect(s.argvs).toContainEqual([...COMMANDS['herdr agent focus'](idOf(isPaneId, 'w56:p1')).argv])
 })

@@ -94,10 +94,10 @@ export function drawCockpit(raw: El, board: Board | undefined, ui: PaneUi, colum
         columnGap: 2,
         children: [Text({ bold: true, children: [board.space.label] }), Text({ dimColor: true, children: [board.project ?? 'no project'] })],
       }),
-      Box({ flexDirection: 'row', columnGap: 3, children: [tab('work', 'Work', '1'), tab('prs', 'PRs', '2')] }),
+      Box({ flexDirection: 'row', columnGap: 3, children: [tab('work', 'Work', '1'), tab('prs', 'PRs', '2'), tab('all', 'All', '3')] }),
       ...healthLines(board.health).map((line) => Text({ color: 'yellow', children: [line] })),
       Text({ children: [' '] }),
-      ui.tab === 'work' ? drawWork(el, board, ui, columns, act) : drawPrs(el, board, ui, columns, act),
+      DRAW_TAB[ui.tab](el, board, ui, columns, act),
     ],
   })
 }
@@ -171,12 +171,47 @@ function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): 
   })
 }
 
+/** What each tab draws below the header. */
+const DRAW_TAB: Record<PaneUi['tab'], (el: El, board: Board, ui: PaneUi, columns: number, act: Act) => RenderElement> = {
+  work: (...a) => drawWork(...a),
+  prs: (...a) => drawPrs(...a),
+  all: (el, board, _ui, columns, act) => drawAll(el, board, columns, act),
+}
+
+/** The All tab: every space's agent panes, grouped by space. Pressing a pane focuses it. */
+function drawAll(el: El, board: Board, columns: number, act: Act): RenderElement {
+  const { Box, Text, Button } = el
+  const width = Math.max(MIN_WORK, columns - 12)
+  return Box({
+    flexDirection: 'column',
+    children: [
+      Text({ dimColor: true, children: ['ALL SPACES'] }),
+      board.spaces.length === 0 ? Text({ dimColor: true, children: ['herdr has not answered yet.'] }) : null,
+      ...board.spaces.flatMap((g) => [
+        Text({ bold: true, children: [g.isThis ? `${g.space.label} (this space)` : g.space.label] }),
+        g.panes.length === 0
+          ? Text({ dimColor: true, children: ['  no agent panes'] })
+          : g.panes.map(({ title, pane }) =>
+              Box({
+                flexDirection: 'row',
+                paddingLeft: 2,
+                children: [
+                  Box({ width, flexShrink: 0, children: [Button({ key: `all-${pane.pane}`, label: clip(title, width - 1), plain: true, onPress: () => act({ k: 'focus-pane', pane: pane.pane }) })] }),
+                  Text({ color: PANE_COLOR[pane.status], children: [liveText(pane)] }),
+                ],
+              }),
+            ),
+      ]),
+    ],
+  })
+}
+
 /** `owner/name#n`: a PR's key in PaneUi and in its Button's key. */
 const prKey = (pr: Pr): string => `${pr.repo}#${pr.number}`
 
 /**
  * The PRs tab: one block per repo, each PR's state and CI. `c` (or pressing a PR) lists the
- * checks still red or running.
+ * checks still red or running. `m` and `r` only draft a prompt for the focused PR; Andres sends it.
  */
 function drawPrs(el: El, board: Board, ui: PaneUi, columns: number, act: Act): RenderElement {
   const { Box, Text, Button } = el
@@ -225,6 +260,8 @@ function drawPrs(el: El, board: Board, ui: PaneUi, columns: number, act: Act): R
         columnGap: 3,
         children: [
           Button({ key: 'checks', label: 'checks', hotkey: 'c', plain: true, onPress: () => (focused === undefined ? undefined : act({ k: 'checks', pr: prKey(focused.pr) })) }),
+          focused?.pr.state !== 'OPEN' ? null : Button({ key: 'fill-merge', label: 'merge it', hotkey: 'm', plain: true, onPress: () => act({ k: 'fill', text: `merge it ${prKey(focused.pr)}` }) }),
+          focused?.pr.state !== 'OPEN' ? null : Button({ key: 'fill-review', label: 'review', hotkey: 'r', plain: true, onPress: () => act({ k: 'fill', text: `/code-review ${focused.pr.url}` }) }),
         ],
       }),
     ],
