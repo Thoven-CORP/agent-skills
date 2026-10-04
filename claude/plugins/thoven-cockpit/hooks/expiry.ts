@@ -7,7 +7,9 @@
 //                whole value with a fresh `at`, so `at` is when the key was last touched
 //
 // A `main:` claim never expires by age: its `at` is the claim time, and a main does not rewrite its
-// claim, because that would be a read-then-write against a newer claim (ADR3).
+// claim, because that would be a read-then-write against a newer claim (ADR3). Nor does a `happened:`
+// key whose ticket is on the board: deleting it makes the next draw record the event again, and its
+// ↻ comes back.
 
 import { isDone, type LinearEntry } from './linear.ts'
 import { isCockpitKey, isFactKey, parseFact } from './store.ts'
@@ -55,7 +57,7 @@ export function expired(stored: readonly Stored[], c: ExpiryContext): Expiry[] {
     if (!isCockpitKey(key)) return []
     const fact = parseFact(key, value)
     if (fact && 'ticket' in fact && c.prs && c.linear && !c.onBoard.has(fact.ticket) && isMergedAndDone(fact.ticket, c.prs, c.linear)) return [{ key, why: 'merged-done' }]
-    if (expiresByAge(key, value, c.now)) return [{ key, why: 'untouched' }]
+    if (expiresByAge(key, value, c.now) && !(fact?.kind === 'happened' && c.onBoard.has(fact.ticket))) return [{ key, why: 'untouched' }]
     return []
   })
 }
