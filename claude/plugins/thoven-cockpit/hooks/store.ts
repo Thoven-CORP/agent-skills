@@ -7,7 +7,7 @@
 // No other module builds or parses a key string. If reading ~50 keys per tick proves too slow
 // (synthesis A2), this file is the only one that changes.
 
-import { KINDS, REPORT_STATUSES, REVIEW_SKILLS, ROLES, VERDICTS, isOneOf, isPaneId, isSessionId, isSpaceId, type Fact, type FactKind, type FactOf, type LinearEventId, type SkillRun, type Ticket } from './model.ts'
+import { KINDS, REPORT_STATUSES, REVIEW_SKILLS, ROLES, VERDICTS, isLinearEventId, isOneOf, isPaneId, isSessionId, isSpaceId, type Fact, type FactKind, type FactOf, type SkillRun, type Ticket } from './model.ts'
 import { ticket } from './dispatch.ts'
 import { checkpointShape } from './background.ts'
 
@@ -55,9 +55,6 @@ type Raw = Readonly<Record<string, unknown>>
 const isStr = (v: unknown): v is string => typeof v === 'string' && v !== ''
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
 const isTicket = (v: unknown): v is Ticket => typeof v === 'string' && ticket(v) === v
-// The store hands back what a session wrote, so an id is a non-empty string; its key proves the rest.
-const isEvent = (v: unknown): v is LinearEventId => isStr(v)
-
 /** One shape check per kind: a new Fact kind without one fails to compile. */
 const SHAPES: { [K in FactKind]: (v: Raw) => FactOf<K> | undefined } = {
   main: (v) => (isSpaceId(v.space) && isSessionId(v.sid) && isPaneId(v.pane) && isNum(v.at) ? { kind: 'main', space: v.space, sid: v.sid, pane: v.pane, at: v.at } : undefined),
@@ -81,7 +78,7 @@ const SHAPES: { [K in FactKind]: (v: Raw) => FactOf<K> | undefined } = {
     isTicket(v.ticket) && isPaneId(v.pane) && isOneOf(ROLES)(v.role) && isNum(v.round) && isStr(v.file) && isNum(v.at)
       ? { kind: 'send', ticket: v.ticket, pane: v.pane, role: v.role, round: v.round, file: v.file, at: v.at }
       : undefined,
-  happened: (v) => (isTicket(v.ticket) && isEvent(v.event) && isNum(v.at) ? { kind: 'happened', ticket: v.ticket, event: v.event, at: v.at } : undefined),
+  happened: (v) => (isTicket(v.ticket) && isLinearEventId(v.event) && isNum(v.at) ? { kind: 'happened', ticket: v.ticket, event: v.event, at: v.at } : undefined),
   status: (v) =>
     isTicket(v.ticket) && isSessionId(v.sid) && isOneOf(REPORT_STATUSES)(v.status) && typeof v.text === 'string' && isNum(v.at)
       ? { kind: 'status', ticket: v.ticket, sid: v.sid, status: v.status, text: v.text, at: v.at }
@@ -95,7 +92,7 @@ const SHAPES: { [K in FactKind]: (v: Raw) => FactOf<K> | undefined } = {
     const run = skillRun(v)
     return run && { kind: 'self', ...run }
   },
-  update: (v) => (isTicket(v.ticket) && isEvent(v.event) && isNum(v.at) ? { kind: 'update', ticket: v.ticket, event: v.event, at: v.at } : undefined),
+  update: (v) => (isTicket(v.ticket) && isLinearEventId(v.event) && isNum(v.at) ? { kind: 'update', ticket: v.ticket, event: v.event, at: v.at } : undefined),
   readback: (v) =>
     isTicket(v.ticket) && isSessionId(v.sid) && typeof v.isError === 'boolean' && isStr(v.text) && isNum(v.at)
       ? { kind: 'readback', ticket: v.ticket, sid: v.sid, isError: v.isError, text: v.text, at: v.at }

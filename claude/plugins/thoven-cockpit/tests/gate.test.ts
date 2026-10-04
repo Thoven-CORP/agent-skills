@@ -13,7 +13,7 @@ import { HOME, PANE, cockpit, idOf, relabelTab, stage, start, tk } from './stage
 
 const SNAPSHOT = relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Consent evidence hardening (THV-1045)')
 
-/** A merge verb, or a flag that merges or forces. `mergedAt` inside `--json` is neither. */
+/** A merge verb, or a flag that merges or forces. */
 const isMerging = (a: string): boolean => /^merge$/i.test(a) || /^--?(merge|squash|rebase|auto|admin)$/i.test(a)
 
 /** Each command built once with a real operand. The mapped type makes a new command name a compile error here. */
@@ -44,8 +44,6 @@ test('no process argv carries merge, and the cockpit runs only the three herdr r
   // ADR9: the cockpit reports under its own source and never sets the verifier's badge.
   expect(s.argvs.flat().filter((a) => a.includes('display-agent'))).toEqual([])
   expect(s.argvs.filter((a) => a[2] === 'report-metadata').every((a) => a[4] === '--source' && a[5] === 'cockpit')).toBe(true)
-  // `mergedAt` is a field inside `--json`; no element is a merge verb or flag.
-  expect(s.argvs.filter((a) => a[0] === 'gh').every((a) => a.includes('--json') && a.some((x) => x.includes('mergedAt')))).toBe(true)
   expect(bodies).toEqual([])
 })
 
@@ -60,7 +58,7 @@ test('every command in commands.ts starts with its own name and holds no merge v
 test('commands.ts builds only read-only herdr and gh argvs, and the one herdr label push', async () => {
   expect([...BUILT['gh pr list']().argv]).toEqual([
     'gh', 'pr', 'list', '--repo', 'Thoven-CORP/frontend-remote', '--state', 'all',
-    '--json', 'number,title,headRefName,state,statusCheckRollup,mergedAt,url,additions,deletions,files', '--limit', '50',
+    '--json', 'number,title,headRefName,state,statusCheckRollup,url,additions,deletions,files', '--limit', '50',
   ])
   expect(() => COMMANDS['gh pr list']('--admin/x')).toThrow()
   expect([...BUILT['herdr api snapshot']().argv]).toEqual(['herdr', 'api', 'snapshot'])

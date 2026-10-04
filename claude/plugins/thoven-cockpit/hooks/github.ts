@@ -49,11 +49,6 @@ const isPrState = isOneOf(PR_STATES)
 /** CheckRun conclusions and StatusContext states that mean the check failed. */
 const FAILED = new Set(['FAILURE', 'TIMED_OUT', 'CANCELLED', 'ACTION_REQUIRED', 'STARTUP_FAILURE', 'ERROR'])
 
-/** A PR title's tickets: its trailing group only. */
-export function titleTickets(title: string): Ticket[] {
-  return trailingTickets(title)?.tickets ?? []
-}
-
 /** Undefined when the text is not a PR list (an error body, a shape change), which marks gh stale. */
 export function parsePrList(repo: string, json: string): Pr[] | undefined {
   let root: unknown

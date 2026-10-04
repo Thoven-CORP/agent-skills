@@ -67,7 +67,6 @@ function newPrEvents(t: Ticket, prs: readonly Pr[], about: BoardFacts): Pending[
   return [...out.values()]
 }
 
-
 function reportCell(t: Ticket, about: BoardFacts, inbox: readonly InboxFile[]): ReportCell {
   const report = newest(about.report)
   // An undelivered verdict is the verifier's, so it waits for the Review cell (S3), never this one.

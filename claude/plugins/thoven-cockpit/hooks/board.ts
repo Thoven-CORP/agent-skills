@@ -95,7 +95,6 @@ export function project(world: World): Board {
   return {
     space,
     project: projectName,
-    here: undefined,
     build,
     other,
     prs: join.groups(),
@@ -141,7 +140,6 @@ function dispatchTie(facts: BoardFacts, p: Pane): Tie | undefined {
   const sent = newest(facts.send.filter((f) => f.pane === p.pane))
   return sent ? { kind: sent.role === 'verifier' ? 'Review' : undefined, title: p.terminalTitle ?? sent.ticket, tickets: [sent.ticket], origin: 'dispatch' } : undefined
 }
-
 
 /** The row for work main does itself: its branch names a ticket no pane holds. */
 function thisSession(world: World, mainPane: Pane | undefined): RowIdentity | undefined {
