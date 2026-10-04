@@ -169,7 +169,7 @@ test('doctor lists keys older than 14 days first, oldest first, then the rest, u
     stored: storedOf([entry(RECENT_VERDICT), UNDATED, entry(OLD_REPORT), OLD_UNREADABLE, FOREIGN, entry(claim('w18', 'w18:p8W', NOW - DAY))]),
     space: idOf(isSpaceId, 'w18'),
     pane: idOf(isPaneId, 'w18:p8W'),
-    board: { health: HEALTH, project: 'Thoven cockpit' },
+    board: { health: HEALTH, project: 'Thoven cockpit', build: [] },
     plugin: { root: mainCheckoutDir(HOME), env: mainCheckoutDir(HOME), home: HOME },
   })
   expect(r.keys.map((k) => [k.key, k.isExpired, k.isReadable])).toEqual([
@@ -220,7 +220,7 @@ test('doctor names a worktree load, another session\'s claim, and a session outs
 })
 
 test('doctor in a space with no Project says Linear is not read here, not ok', async () => {
-  const at = (project: string | undefined) => doctorText(doctor({ now: NOW, stored: [], space: idOf(isSpaceId, 'w18'), pane: idOf(isPaneId, 'w18:p8W'), board: { health: HEALTH, project }, plugin: { root: mainCheckoutDir(HOME), env: undefined, home: HOME } })).split('\n')
+  const at = (project: string | undefined) => doctorText(doctor({ now: NOW, stored: [], space: idOf(isSpaceId, 'w18'), pane: idOf(isPaneId, 'w18:p8W'), board: { health: HEALTH, project, build: [] }, plugin: { root: mainCheckoutDir(HOME), env: undefined, home: HOME } })).split('\n')
   expect(at(undefined)).toContain('  Linear: not read here, this space has no Project')
   expect(at(undefined)).not.toContain('  Linear: ok')
   expect(at('Thoven cockpit')).toContain('  Linear: ok')

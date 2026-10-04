@@ -3,10 +3,12 @@
 // It reads and never writes: the store's cockpit keys with their ages, the claim on this
 // session's space, each source's health when this session is main, and where the plugin loaded.
 // A space with no Project has no Linear read (spec "Spaces"), so its Linear health says nothing.
+// Which keys main deletes is expiry.ts's own rule over main's board. A session that is not main has
+// no board, so every key past 14 days shows as deleted, a Linear key of a ticket on screen included.
 
 import { claimOf } from './facts.ts'
-import { ageOf, expiresByAge, type Stored } from './expiry.ts'
-import type { Board, Health, Ms, PaneId, SessionId, SpaceId } from './model.ts'
+import { ageOf, expiresByAge, ticketsOn, type Stored } from './expiry.ts'
+import type { Board, Health, Ms, PaneId, SessionId, SpaceId, Ticket } from './model.ts'
 import { isCockpitKey, parseFact } from './store.ts'
 
 /** ADR2: the one folder `CLAUDE_CODE_PLUGIN_DIRS` should name, in the main checkout. */
@@ -19,7 +21,7 @@ export type DoctorInput = {
   space: SpaceId | undefined
   pane: PaneId | undefined
   /** Main's last board; undefined in any session that is not main, because only main polls. */
-  board: Pick<Board, 'health' | 'project'> | undefined
+  board: Pick<Board, 'health' | 'project' | 'build'> | undefined
   plugin: { root: string; env: string | undefined; home: string }
 }
 
@@ -41,7 +43,8 @@ export type DoctorReport = {
 
 export function doctor(i: DoctorInput): DoctorReport {
   const cockpit = i.stored.filter((s) => isCockpitKey(s.key))
-  const keys = cockpit.map(({ key, value }): DoctorKey => ({ key, ageMs: ageOf(value, i.now), isExpired: expiresByAge(key, value, i.now), isReadable: parseFact(key, value) !== undefined }))
+  const onBoard = i.board ? ticketsOn(i.board) : new Set<Ticket>()
+  const keys = cockpit.map((s): DoctorKey => ({ key: s.key, ageMs: ageOf(s.value, i.now), isExpired: expiresByAge(s, i.now, onBoard), isReadable: parseFact(s.key, s.value) !== undefined }))
   keys.sort((a, b) => Number(b.isExpired) - Number(a.isExpired) || (b.ageMs ?? -Infinity) - (a.ageMs ?? -Infinity) || a.key.localeCompare(b.key))
   const facts = cockpit.flatMap(({ key, value }) => parseFact(key, value) ?? [])
   const expected = mainCheckoutDir(i.plugin.home)
