@@ -355,11 +355,12 @@ export function doctorText(r: DoctorReport): string {
     c.k === 'no-space' ? 'Main: this session is not in a herdr pane, so it has no space.'
     : c.k === 'unclaimed' ? `Main of ${c.space}: none. Run /cockpit to claim it.`
     : `Main of ${c.space}: ${c.isMine ? 'this session' : `pane ${c.pane}, session ${c.sid}`}, claimed ${ago(c.ageMs)} ago.`
-  const health = r.health
-  const sources = health === undefined
+  const s = r.sources
+  const sources = s === undefined
     ? ['Sources: polled only by main, and this session is not main.']
-    : ['Sources:', ...Object.keys(health).filter(isHealthId).map((id) => {
-        const h = health[id]
+    : ['Sources:', ...Object.keys(s.health).filter(isHealthId).map((id) => {
+        const h = s.health[id]
+        if (id === 'linear' && !s.isLinearRead) return `  ${HEALTH_WORDS[id].name}: not read here, this space has no Project`
         return `  ${HEALTH_WORDS[id].name}: ${h.k === 'ok' ? 'ok' : h.k === 'stale' ? `${HEALTH_WORDS[id].down} since ${hhmm(h.since)}` : 'unavailable'}`
       })]
   const where = r.plugin.isMainCheckout ? 'the main checkout' : `not the main checkout (${r.plugin.expected})`

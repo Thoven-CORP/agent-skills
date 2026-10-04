@@ -301,7 +301,7 @@ async function doctorAnswer($: Api): Promise<string> {
     stored: await loadStored($),
     space: held.main?.who.space ?? spaceOfPane(pane),
     pane: held.main?.who.pane ?? pane,
-    health: held.main?.board?.health,
+    board: held.main?.board,
     plugin: { root: $.plugin.root, env: await $.env.get('CLAUDE_CODE_PLUGIN_DIRS'), home: (await $.env.get('HOME')) ?? '' },
   })
   return doctorText(report)

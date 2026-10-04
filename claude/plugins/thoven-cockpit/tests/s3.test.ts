@@ -142,7 +142,7 @@ test('merged-done expiry does not let a later verdict reclaim another ticket\'s 
   const removed = expired([...s.saved].map(([key, value]) => ({ key, value })), {
     now: 3000,
     prs: [{ ...BE_142, state: 'MERGED' }],
-    linear: new Map([[tk('THV-1003'), 'Done']]),
+    linear: new Map([[tk('THV-1003'), { state: { name: 'Done', type: 'completed', position: 0 }, parent: undefined, at: 0 }]]),
     onBoard: new Set(),
   })
   expect(removed.map(({ key }) => key).sort()).toEqual([
