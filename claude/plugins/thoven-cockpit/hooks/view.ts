@@ -65,11 +65,27 @@ const HEALTH_WORDS: Record<keyof Health, { name: string; down: string }> = {
   linear: { name: 'Linear', down: 'stale' },
 }
 
-export function drawCockpit(el: El, board: Board | undefined, ui: PaneUi, columns: number, act: Act): RenderElement {
+/**
+ * Text drawn in the theme's own colours. Claude Code fills a pane with the theme's background, but an
+ * uncoloured Text keeps the terminal's foreground, so a light theme in a dark terminal hides it.
+ */
+const THEMED: Record<string, string> = { green: 'success', red: 'error', yellow: 'warning', blue: 'suggestion' }
+function themed(el: El): El {
+  type TextArgs = Parameters<El['Text']>[0]
+  const Text = (p: TextArgs) =>
+    el.Text({ ...p, color: p.color !== undefined ? (THEMED[p.color] ?? p.color) : p.dimColor === true ? 'inactive' : 'text' })
+  return { ...el, Text }
+}
+
+export function drawCockpit(raw: El, board: Board | undefined, ui: PaneUi, columns: number, act: Act): RenderElement {
+  const el = themed(raw)
   const { Box, Text, Button } = el
   if (!board) return Text({ dimColor: true, children: ['This session is not main of a space. Run /cockpit to claim it.'] })
+  // The open tab is Text, so it takes the theme's colour; a Button's label has no colour of its own.
   const tab = (id: PaneUi['tab'], label: string, hotkey: string) =>
-    Button({ key: `tab-${id}`, label, hotkey, plain: true, dimColor: ui.tab !== id, onPress: () => act({ k: 'tab', tab: id }) })
+    ui.tab === id
+      ? Text({ bold: true, children: [`${hotkey}: ${label}`] })
+      : Button({ key: `tab-${id}`, label, hotkey, plain: true, dimColor: true, onPress: () => act({ k: 'tab', tab: id }) })
   return Box({
     flexDirection: 'column',
     children: [
