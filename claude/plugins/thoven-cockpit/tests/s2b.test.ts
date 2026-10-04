@@ -85,6 +85,7 @@ test('frontend #136 parses to its branch, THV-481, and 13 of 13 checks done with
     checks: { total: 13, done: 13, failed: [], running: [] },
     changedLines: 43,
     topDirs: 2,
+    base: 'main',
     url: 'https://github.com/Thoven-CORP/frontend-remote/pull/136',
   })
   // Vercel's StatusContext entries count with the CheckRuns; #141's four red runs are its failures.
@@ -338,7 +339,7 @@ test('the PRs tab groups by repo with state and CI, offers m and r only for an o
   await ui.press({ key: 'tab-prs' })
   for (const text of ['FE', 'BE', 'held', 'merged', '✗ 4', '✓']) expect(await ui.find({ type: 'Text', text })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: 'o open' })).toBeUndefined()
-  expect((await ui.findAll({ type: 'Button' })).map((b) => b.key)).toEqual(['tab-work', 'tab-all', `pr-${FRONTEND}#141`, `pr-${BACKEND}#148`, 'checks', 'fill-merge', 'fill-review'])
+  expect((await ui.findAll({ type: 'Button' })).map((b) => b.key)).toEqual(['tab-work', 'tab-all', `pr-${FRONTEND}#141`, `pr-${BACKEND}#148`, 'checks', 'fill-merge', 'fill-review', 'fill-thermo'])
   expect(await ui.find({ type: 'Text', text: 'vitest shard 1/4' })).toBeUndefined()
   await ui.press({ key: 'checks' })
   for (const text of ['vitest shard 1/4', 'vitest shard 2/4', 'vitest shard 3/4', 'CI']) expect(await ui.find({ type: 'Text', text })).toBeDefined()
@@ -366,10 +367,30 @@ test('m and r put a draft in the prompt box for the focused PR and send nothing'
   await s.clock.advance(0)
   await ui.press({ key: 'fill-review' })
   await s.clock.advance(0)
-  expect(fills).toEqual([`merge it ${FRONTEND}#141`, '/code-review https://github.com/Thoven-CORP/frontend-remote/pull/141'])
+  expect(fills).toEqual([`merge it ${FRONTEND}#141`, '/mattpocock-skills:code-review origin/main PR https://github.com/Thoven-CORP/frontend-remote/pull/141 (branch legal/thv-1045, base origin/main). HEAD here is not that branch: read it with gh pr diff 141 --repo Thoven-CORP/frontend-remote.'])
   expect(s.logs.filter((l) => /not implemented|failed/.test(l))).toEqual([])
   expect(s.argvs.flat().some((a) => /^merge$/i.test(a))).toBe(false)
 
+})
+
+test('the Work tab drafts merge, review and thermo for the highlighted row\'s open PR, and its HELP names those keys', async ($, on) => {
+  const s = stage(on, { pane: 'w18:p8W', snapshot: relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Consent evidence hardening (THV-1045)') })
+  s.gh.byRepo = { [FRONTEND]: GH_FRONTEND, [BACKEND]: GH_BACKEND }
+  const fills: string[] = []
+  on('prompt.fill', (_$: unknown, e: { text: string }) => (fills.push(e.text), { isFilled: true }))
+  await start($)
+  await cockpit($)
+  const ui = await $.ui.mount(PANE)
+  expect((await ui.findAll({ type: 'Button' })).map((b) => b.key)).toContain('fill-thermo')
+  for (const key of ['fill-merge', 'fill-review', 'fill-thermo']) {
+    await ui.press({ key })
+    await s.clock.advance(0)
+  }
+  expect(fills.map((f) => f.split(' ')[0])).toEqual(['merge', '/mattpocock-skills:code-review', '/thermo-nuclear-code-quality-review'])
+  expect(fills.every((f, i) => i === 0 || f.includes(`gh pr diff 141 --repo ${FRONTEND}`))).toBe(true)
+  expect(await ui.find({ type: 'Text', text: 'HELP' })).toBeDefined()
+  await ui.press({ key: 'tab-prs' })
+  expect(await ui.find({ type: 'Text', text: 'HELP' })).toBeDefined()
 })
 
 test('the All tab lists every space with its agent panes, this space first, and pressing one focuses it', async ($, on) => {

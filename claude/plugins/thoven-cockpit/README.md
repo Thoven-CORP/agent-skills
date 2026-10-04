@@ -8,9 +8,10 @@ The design lives in the spec on [THV-1053](https://linear.app/thoven/issue/THV-1
 
 Run `/cockpit` in a session to make it the space's main and open the pane.
 
-- **Work tab.** One row per ticket, with the columns Pane, Report, Fix, Review, PR, CI and Linear. Work that is not a build goes in the Other list.
+- **Work tab.** One row per ticket, with the columns Pane, Report, Fix, Review, PR, CI and Linear. Work that is not a build goes in the Other list. `f` (or pressing a title) jumps into the highlighted ticket's agent pane. When that row's PR is open, `m`, `r` and `t` draft a prompt for it, as on the PRs tab. `u` sends every pending ↻.
 - **PRs tab.** The space's PRs in each repo, with state and CI. Press `c` to list the checks that failed or are still running.
-  For an open PR, `m` puts `merge it owner/name#n` in the prompt box and `r` puts `/code-review <url>`. Both only fill the box; you send it.
+  For an open PR, `m` puts `merge it owner/name#n` in the prompt box, `r` puts `/mattpocock-skills:code-review origin/<base>` (standards and spec) and `t` puts `/thermo-nuclear-code-quality-review` (structure). Each names the PR and its `gh pr diff` command, because main's checkout is not the PR's branch. They only fill the box; you send it.
+- **HELP.** Every tab ends with a dim HELP block naming that tab's keys.
 - **All tab.** Every herdr space and its agent panes, this space first. Press a pane to focus it.
 - **Health lines.** A source that fails shows as "stale since hh:mm", or "herdr unavailable". The other columns keep updating.
 

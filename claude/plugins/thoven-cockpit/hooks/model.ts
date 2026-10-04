@@ -238,6 +238,8 @@ export type Pr = {
   /** The title without its trailing `(THV-n …)` group, which is in `tickets`. */
   title: string
   branch: string
+  /** The branch the PR merges into, which a review diffs against. */
+  base: string
   state: PrState
   /** Tickets named by the branch `thv-(\d+)`, then every ticket in the title's trailing `(…)`. Prose mentions are not tickets. */
   tickets: Ticket[]

@@ -98,8 +98,44 @@ export function drawCockpit(raw: El, board: Board | undefined, ui: PaneUi, colum
       ...healthLines(board.health).map((line) => Text({ color: 'yellow', children: [line] })),
       Text({ children: [' '] }),
       DRAW_TAB[ui.tab](el, board, ui, columns, act),
+      helpBlock(el, board, ui.tab),
     ],
   })
+}
+
+/** The PR's diff as a draft names it: main's own checkout is not the PR's branch, so a review reads `gh pr diff`. */
+const diffOf = (pr: Pr): string => `PR ${pr.url} (branch ${pr.branch}, base origin/${pr.base}). HEAD here is not that branch: read it with gh pr diff ${pr.number} --repo ${pr.repo}.`
+
+/** `m`, `r` and `t` for one open PR. Each only drafts a prompt; Andres sends it. `r` is the verifier's own code-review skill, `t` the structure pass. */
+function draftButtons({ Button }: El, pr: Pr | undefined, act: Act): RenderElement[] {
+  if (pr?.state !== 'OPEN') return []
+  const draft = (key: string, label: string, hotkey: string, text: string) => Button({ key, label, hotkey, plain: true, onPress: () => act({ k: 'fill', text }) })
+  return [
+    draft('fill-merge', 'merge it', 'm', `merge it ${prKey(pr)}`),
+    draft('fill-review', 'review', 'r', `/mattpocock-skills:code-review origin/${pr.base} ${diffOf(pr)}`),
+    draft('fill-thermo', 'thermo', 't', `/thermo-nuclear-code-quality-review ${diffOf(pr)}`),
+  ]
+}
+
+/** What each screen's keys do, drawn dim at the bottom so a lost reader can find them. */
+const HELP: Record<PaneUi['tab'], string[]> = {
+  work: [
+    'f, or pressing a title, jumps into the highlighted ticket\'s agent pane',
+    'm merge it · r review (standards and spec) · t thermo (structure): each drafts a prompt for the highlighted row\'s open PR; you press send',
+    '1 2 3 switch tab',
+  ],
+  prs: [
+    'c, or pressing a PR, lists its failed or running checks',
+    'm merge it · r review (standards and spec) · t thermo (structure): each drafts a prompt for the highlighted PR; you press send',
+    '1 2 3 switch tab',
+  ],
+  all: ['Press a pane to jump into it · 1 2 3 switch tab'],
+}
+/** `u` is mentioned only while it is offered. */
+const UPDATE_HELP = 'u sends every pending ↻ Linear update to /workspace update'
+const helpBlock = ({ Box, Text }: El, board: Board, tab: PaneUi['tab']): RenderElement => {
+  const lines = tab === 'work' && board.pending.length > 0 ? [...HELP.work.slice(0, -1), UPDATE_HELP, ...HELP.work.slice(-1)] : HELP[tab]
+  return Box({ flexDirection: 'column', children: [Text({ children: [' '] }), Text({ dimColor: true, children: ['HELP'] }), ...lines.map((line) => Text({ dimColor: true, children: [line] }))] })
 }
 
 function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): RenderElement {
@@ -158,11 +194,12 @@ function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): 
         children: [
           Button({
             key: 'focus-row',
-            label: 'focus row',
+            label: 'open pane',
             hotkey: 'f',
             plain: true,
             onPress: () => (focusTarget === undefined ? undefined : act({ k: 'focus-pane', pane: focusTarget })),
           }),
+          ...draftButtons(el, selected?.cells.pr.k === 'none' ? undefined : selected?.cells.pr.pr, act),
           // `u` sends every pending event in one `/workspace update` (ADR5); with none it is not offered.
           board.pending.length === 0 ? null : Button({ key: 'update-all', label: 'update all ↻', hotkey: 'u', plain: true, onPress: () => act({ k: 'update', pending: board.pending }) }),
         ],
@@ -211,7 +248,7 @@ const prKey = (pr: Pr): string => `${pr.repo}#${pr.number}`
 
 /**
  * The PRs tab: one block per repo, each PR's state and CI. `c` (or pressing a PR) lists the
- * checks still red or running. `m` and `r` only draft a prompt for the focused PR; Andres sends it.
+ * checks still red or running. `m`, `r` and `t` only draft a prompt for the focused PR; Andres sends it.
  */
 function drawPrs(el: El, board: Board, ui: PaneUi, columns: number, act: Act): RenderElement {
   const { Box, Text, Button } = el
@@ -260,8 +297,7 @@ function drawPrs(el: El, board: Board, ui: PaneUi, columns: number, act: Act): R
         columnGap: 3,
         children: [
           Button({ key: 'checks', label: 'checks', hotkey: 'c', plain: true, onPress: () => (focused === undefined ? undefined : act({ k: 'checks', pr: prKey(focused.pr) })) }),
-          focused?.pr.state !== 'OPEN' ? null : Button({ key: 'fill-merge', label: 'merge it', hotkey: 'm', plain: true, onPress: () => act({ k: 'fill', text: `merge it ${prKey(focused.pr)}` }) }),
-          focused?.pr.state !== 'OPEN' ? null : Button({ key: 'fill-review', label: 'review', hotkey: 'r', plain: true, onPress: () => act({ k: 'fill', text: `/code-review ${focused.pr.url}` }) }),
+          ...draftButtons(el, focused?.pr, act),
         ],
       }),
     ],
