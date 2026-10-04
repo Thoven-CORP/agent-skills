@@ -73,15 +73,17 @@ export const skillSeen: Observer<{ skill: ReviewSkill; briefs: ReadonlyArray<Fac
 /**
  * The verdicts a pane's own answer gave. Replying `VERIFIED THV-n` or `FINDINGS THV-n` makes it
  * THV-n's verifier (spec, Review row): it writes the verifier brief a `Verify THV-n` would have, so
- * the Review skills it runs next write `review`. A pane already holding a verifier brief for the
- * ticket keeps it, and with it the round its skills ran in. Main relays verdicts, so only a pane.
+ * the Review skills it runs next write `review`. A pane holding a builder or fix-round brief is a
+ * builder, whatever it replies: its role, self-check and pane kind stay (ADR12). A pane keeps any
+ * brief it already holds for the ticket, and with it the round its skills ran in. Main relays
+ * verdicts, so only a pane.
  */
 export const verdictSeen: Observer<{ lines: readonly StatusLine[]; briefs: ReadonlyArray<FactOf<'brief'>> }> = (me, { lines, briefs }, sid, at) => {
-  if (me.k !== 'pane') return { me, facts: [] }
+  const held = briefs.filter((b) => b.sid === sid)
+  if (me.k !== 'pane' || held.some((b) => b.k === 'fix' || b.role === 'builder')) return { me, facts: [] }
   return lines.reduce<Observed>(
     (seen, l) => {
-      const isVerifier = briefs.some((b) => b.sid === sid && b.ticket === l.ticket && b.k === 'first' && b.role === 'verifier')
-      if (!isOneOf(VERDICTS)(l.word) || isVerifier) return seen
+      if (!isOneOf(VERDICTS)(l.word) || held.some((b) => b.ticket === l.ticket)) return seen
       const next = promptSeen(seen.me, { k: 'brief', brief: { k: 'first', ticket: l.ticket, role: 'verifier' } }, sid, at)
       return { me: next.me, facts: [...seen.facts, ...next.facts] }
     },
