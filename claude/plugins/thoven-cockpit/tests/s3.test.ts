@@ -10,6 +10,7 @@
 import { expect, test } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { parseRollout } from '../hooks/codex.ts'
+import { expired } from '../hooks/expiry.ts'
 import { BACKEND, FRONTEND, parsePrList } from '../hooks/github.ts'
 import { labelRecords } from '../hooks/background.ts'
 import { isPaneId, isSessionId, type Fact, type Pr, type World } from '../hooks/model.ts'
@@ -130,6 +131,32 @@ test('a run counts for the first verdict that claims it: VERIFIED THV-1004 a min
   await skillPrompt($, 'deslop')
   expect(reviewKeys(s)).toContain(`cockpit:review:THV-1004:${P8V_SID}:deslop`)
   expect(reviewKeys(s).filter((k) => k.includes('THV-1004'))).toEqual([`cockpit:review:THV-1004:${P8V_SID}:deslop`])
+})
+
+test('merged-done expiry does not let a later verdict reclaim another ticket\'s runs', async ($, on) => {
+  const s = await paneRan($, on, 'Look over the THV-1003 purge diff for me.', ['verify-this', 'code-review'])
+  await s.clock.advance(1000)
+  await turnEnd($, 'FINDINGS THV-1003')
+  expect(reviewKeys(s)).toEqual([`cockpit:review:THV-1003:${P8V_SID}:code-review`, `cockpit:review:THV-1003:${P8V_SID}:verify-this`])
+
+  const removed = expired([...s.saved].map(([key, value]) => ({ key, value })), {
+    now: 3000,
+    prs: [{ ...BE_142, state: 'MERGED' }],
+    linear: new Map([[tk('THV-1003'), 'Done']]),
+    onBoard: new Set(),
+  })
+  expect(removed.map(({ key }) => key).sort()).toEqual([
+    `cockpit:brief:THV-1003:${P8V_SID}`,
+    `cockpit:review:THV-1003:${P8V_SID}:code-review`,
+    `cockpit:review:THV-1003:${P8V_SID}:verify-this`,
+  ])
+  for (const { key } of removed) s.saved.delete(key)
+  expect(factsOf(s).filter((f) => f.kind === 'ran').map((f) => f.skill).sort()).toEqual(['code-review', 'verify-this'])
+
+  await s.clock.advance(60_000)
+  await turnEnd($, 'VERIFIED THV-1010')
+  expect(briefKeys(s)).toEqual([`cockpit:brief:THV-1010:${P8V_SID}`])
+  expect(reviewKeys(s)).toEqual([])
 })
 
 test('one answer naming two tickets makes the pane both tickets\' verifier, and credits its runs to the first it names', async ($, on) => {
