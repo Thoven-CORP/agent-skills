@@ -7,13 +7,14 @@
 //                whole value with a fresh `at`, so `at` is when the key was last touched
 //
 // A `main:` claim never expires by age: its `at` is the claim time, and a main does not rewrite its
-// claim, because that would be a read-then-write against a newer claim (ADR3). Nor does a `happened:`
-// key whose ticket is on the board: deleting it makes the next draw record the event again, and its
-// ↻ comes back.
+// claim, because that would be a read-then-write against a newer claim (ADR3). Nor does a key the
+// Linear cell reads while its ticket is on the board: without its `happened:` the next draw records
+// the event again, and without its `update:` and newer `readback:` a report event, which no Linear
+// state ever shows, is pending again. Either way its ↻ comes back.
 
 import { isDone, type LinearEntry } from './linear.ts'
 import { isCockpitKey, isFactKey, parseFact } from './store.ts'
-import type { Board, Ms, Pr, Ticket } from './model.ts'
+import type { Board, FactKind, Ms, Pr, Ticket } from './model.ts'
 
 export const EXPIRY_MS = 14 * 24 * 60 * 60_000
 
@@ -43,8 +44,15 @@ export function ageOf(value: unknown, now: Ms): Ms | undefined {
 
 const isPastExpiry = (age: Ms | undefined): boolean => age !== undefined && age > EXPIRY_MS
 
-/** Whether a stored key is past the 14-day line. A `main:` claim never is. */
-export const expiresByAge = (key: string, value: unknown, now: Ms): boolean => !isFactKey(key, 'main') && isPastExpiry(ageOf(value, now))
+/** The kinds linear.ts linearOf reads from the store. */
+const CELL_KINDS: ReadonlySet<FactKind> = new Set(['happened', 'update', 'readback'])
+
+/** Whether main deletes a stored key for its age: past the 14-day line, not a `main:` claim, and not read by the Linear cell of a ticket on the board. */
+export function expiresByAge({ key, value }: Stored, now: Ms, onBoard: ReadonlySet<Ticket>): boolean {
+  if (isFactKey(key, 'main') || !isPastExpiry(ageOf(value, now))) return false
+  const fact = parseFact(key, value)
+  return !(fact && 'ticket' in fact && CELL_KINDS.has(fact.kind) && onBoard.has(fact.ticket))
+}
 
 /** A ticket whose PR merged and whose Linear state is completed, whatever the team named it. */
 export function isMergedAndDone(t: Ticket, prs: readonly Pr[], linear: LinearStates): boolean {
@@ -53,17 +61,17 @@ export function isMergedAndDone(t: Ticket, prs: readonly Pr[], linear: LinearSta
 }
 
 export function expired(stored: readonly Stored[], c: ExpiryContext): Expiry[] {
-  return stored.flatMap(({ key, value }): Expiry[] => {
-    if (!isCockpitKey(key)) return []
-    const fact = parseFact(key, value)
-    if (fact && 'ticket' in fact && c.prs && c.linear && !c.onBoard.has(fact.ticket) && isMergedAndDone(fact.ticket, c.prs, c.linear)) return [{ key, why: 'merged-done' }]
-    if (expiresByAge(key, value, c.now) && !(fact?.kind === 'happened' && c.onBoard.has(fact.ticket))) return [{ key, why: 'untouched' }]
+  return stored.flatMap((s): Expiry[] => {
+    if (!isCockpitKey(s.key)) return []
+    const fact = parseFact(s.key, s.value)
+    if (fact && 'ticket' in fact && c.prs && c.linear && !c.onBoard.has(fact.ticket) && isMergedAndDone(fact.ticket, c.prs, c.linear)) return [{ key: s.key, why: 'merged-done' }]
+    if (expiresByAge(s, c.now, c.onBoard)) return [{ key: s.key, why: 'untouched' }]
     return []
   })
 }
 
 /** Every ticket with a row on a board, parents included. */
-export function ticketsOn(board: Board): Set<Ticket> {
+export function ticketsOn(board: Pick<Board, 'build'>): Set<Ticket> {
   return new Set(board.build.flatMap((g) => (g.k === 'single' ? [g.row.ticket] : [g.parent, ...g.children.map((r) => r.ticket)])))
 }
 
