@@ -122,7 +122,7 @@ test('doctor lists keys older than 14 days first, oldest first, then the rest, u
     stored: storedOf([entry(RECENT_VERDICT), UNDATED, entry(OLD_REPORT), OLD_UNREADABLE, FOREIGN, entry(claim('w18', 'w18:p8W', NOW - DAY))]),
     space: idOf(isSpaceId, 'w18'),
     pane: idOf(isPaneId, 'w18:p8W'),
-    health: HEALTH,
+    board: { health: HEALTH, project: 'Thoven cockpit' },
     plugin: { root: mainCheckoutDir(HOME), env: mainCheckoutDir(HOME), home: HOME },
   })
   expect(r.keys.map((k) => [k.key, k.isExpired, k.isReadable])).toEqual([
@@ -160,7 +160,7 @@ test('doctor lists keys older than 14 days first, oldest first, then the rest, u
 })
 
 test('doctor names a worktree load, another session\'s claim, and a session outside herdr', async () => {
-  const base = { now: NOW, health: undefined, stored: storedOf([entry(claim('w18', 'w18:p7W', NOW - 3 * 3_600_000))]) }
+  const base = { now: NOW, board: undefined, stored: storedOf([entry(claim('w18', 'w18:p7W', NOW - 3 * 3_600_000))]) }
   const worktree = `${HOME}/thoven/agent-skills-thv-1063/claude/plugins/thoven-cockpit`
   const other = doctor({ ...base, space: idOf(isSpaceId, 'w18'), pane: idOf(isPaneId, 'w18:p8W'), plugin: { root: worktree, env: undefined, home: HOME } })
   expect(other.plugin.isMainCheckout).toBe(false)
@@ -170,6 +170,13 @@ test('doctor names a worktree load, another session\'s claim, and a session outs
   expect(lines[3]).toBe('Sources: polled only by main, and this session is not main.')
   const outside = doctor({ ...base, space: undefined, pane: undefined, plugin: { root: worktree, env: undefined, home: HOME } })
   expect(doctorText(outside).split('\n')[2]).toBe('Main: this session is not in a herdr pane, so it has no space.')
+})
+
+test('doctor in a space with no Project says Linear is not read here, not ok', async () => {
+  const at = (project: string | undefined) => doctorText(doctor({ now: NOW, stored: [], space: idOf(isSpaceId, 'w18'), pane: idOf(isPaneId, 'w18:p8W'), board: { health: HEALTH, project }, plugin: { root: mainCheckoutDir(HOME), env: undefined, home: HOME } })).split('\n')
+  expect(at(undefined)).toContain('  Linear: not read here, this space has no Project')
+  expect(at(undefined)).not.toContain('  Linear: ok')
+  expect(at('Thoven cockpit')).toContain('  Linear: ok')
 })
 
 // ── kit: the Expiry case ─────────────────────────────────────────────────────────────────────
@@ -205,6 +212,8 @@ test('Expiry: doctor lists the 15-day-old key first, then main deletes it and wr
   expect(after[2]).toBe('Main of w18: this session, claimed 0 s ago.')
   expect(after.slice(3, 10)).toEqual(['Sources:', '  herdr: ok', '  pane labels: ok', '  Live spaces: ok', '  git: ok', '  gh: ok', '  dispatch inbox: ok'])
   expect(after.some((l) => l.includes('older than 14 days'))).toBe(false)
+  // w18 is Research, which has no row in Live spaces: main never reads Linear there.
+  expect(after.filter((l) => l.startsWith('  Linear:'))).toEqual(['  Linear: not read here, this space has no Project'])
 })
 
 test('main keeps a 15-day-old happened key for the ticket on screen, so its event is not recorded again', async ($, on) => {
