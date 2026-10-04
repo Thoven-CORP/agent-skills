@@ -5,11 +5,12 @@
 // the time, then writes the facts and keeps the `me` that come back. Every rule about what a brief,
 // report, verdict or send.sh call means for the store lives here, not in the shell.
 
+import { builderTickets, sentLines } from './background.ts'
 import type { ReportLine, readPrompt } from './dispatch.ts'
 import { claimOf } from './facts.ts'
 import { spaceOfPane } from './herdr.ts'
 import type { Readback } from './linear.ts'
-import { VERDICTS, isOneOf, type Engagement, type Fact, type FactOf, type Me, type Ms, type ReportStatus, type ReviewSkill, type SendCall, type SessionId, type StatusLine } from './model.ts'
+import { VERDICTS, isOneOf, type Engagement, type Fact, type FactOf, type Me, type Ms, type ReviewSkill, type SendCall, type SessionId, type StatusLine } from './model.ts'
 
 export type Observed = { facts: Fact[]; me: Me }
 export type Observer<I> = (me: Me, input: I, sid: SessionId, at: Ms) => Observed
@@ -29,10 +30,10 @@ export const promptSeen: Observer<Prompt> = (me, read, sid, at) => {
   const before = me.k === 'pane' ? me.engagements.find((x) => x.ticket === b.ticket) : undefined
   const labelKind = b.k === 'first' ? b.labelKind : before?.labelKind
   const title = (b.k === 'first' ? b.title : undefined) ?? before?.title
-  const held: Engagement = { ...b, ...(labelKind === undefined ? {} : { labelKind }), ...(title === undefined ? {} : { title }) }
-  const facts: Fact[] = [{ kind: 'brief', ...held, sid, pane: me.pane, at }]
+  const engagement: Engagement = { ...b, ...(labelKind === undefined ? {} : { labelKind }), ...(title === undefined ? {} : { title }) }
+  const facts: Fact[] = [{ kind: 'brief', ...engagement, sid, pane: me.pane, at }]
   if (me.k !== 'pane') return { me, facts }
-  return { me: { ...me, engagements: [...me.engagements.filter((x) => x.ticket !== b.ticket), held] }, facts }
+  return { me: { ...me, engagements: [...me.engagements.filter((x) => x.ticket !== b.ticket), engagement] }, facts }
 }
 
 function lineFact(l: ReportLine, sid: SessionId, at: Ms): Fact {
@@ -65,56 +66,65 @@ export function sendClaim(me: Me, claims: readonly Fact[], at: Ms): FactOf<'main
   return { kind: 'main', space, sid: me.sid, pane: me.pane, at }
 }
 
-/** The status lines a builder pane's own answer ended its turn with: what it last sent main. Only a pane holds a brief. */
-export const answerSeen: Observer<ReadonlyArray<StatusLine & { word: ReportStatus }>> = (me, lines, sid, at) => ({
-  me,
-  facts: me.k === 'pane' ? lines.map((l) => ({ kind: 'status', ticket: l.ticket, sid, status: l.word, text: l.line, at })) : [],
-})
-
 /**
  * A Review skill this session ran itself, with the brief facts it wrote (ADR12): one fact per ticket
  * it holds a brief for, `review` under a verifier brief and `self` under any other, in the round of
- * that brief. A pane with no brief records a `ran`, for a verdict reply to name (verdictSeen). Main
+ * that brief. A pane with no brief records a `ran`, for a verdict reply to name (verdictsSeen). Main
  * and a session outside herdr record nothing.
  */
 export const skillSeen: Observer<{ skill: ReviewSkill; briefs: ReadonlyArray<FactOf<'brief'>> }> = (me, { skill, briefs }, sid, at) => {
-  const held = briefs.filter((b) => b.sid === sid)
-  if (held.length === 0) return { me, facts: me.k === 'pane' ? [{ kind: 'ran', sid, skill, at }] : [] }
+  const mine = briefs.filter((b) => b.sid === sid)
+  const ran: Fact[] = me.k === 'pane' ? [{ kind: 'ran', sid, skill, at }] : []
+  if (mine.length === 0) return { me, facts: ran }
   return {
     me,
-    facts: held.map((b): Fact => {
+    facts: mine.map((b): Fact => {
       const run = { ticket: b.ticket, sid, skill, round: b.at, at }
       return b.k === 'first' && b.role === 'verifier' ? { kind: 'review', ...run } : { kind: 'self', ...run }
     }),
   }
 }
 
+/** What a pane's own answer ended its turn with, and the briefs and skill runs its session holds. */
+export type Answer = { lines: readonly StatusLine[]; briefs: ReadonlyArray<FactOf<'brief'>>; ran: ReadonlyArray<FactOf<'ran'>> }
+
 /**
- * The verdicts a pane's own answer gave. Replying `VERIFIED THV-n` or `FINDINGS THV-n` makes it
- * THV-n's verifier (spec, Review row, and Andres's ruling on THV-1095): it writes the verifier brief
- * a `Verify THV-n` would have, so the Review skills it runs next write `review`, and each skill it
- * already ran with no brief (`ran`) becomes `review` in that round too. A run counts once, for the
- * first verdict that claims it: only an unclaimed run newer than every brief the pane holds counts, and
- * one answer naming two tickets credits its runs to the first it names. A pane holding a builder or
- * fix-round brief is a builder, whatever it replies: its role, self-check and pane kind stay
- * (ADR12). A pane keeps any brief it already holds for the ticket, and with it the round its skills
- * ran in. Main relays verdicts, so only a pane.
+ * The status lines a pane's own answer gave. A pane holding a builder or fix-round brief is a
+ * builder, whatever it replies: its report lines for the tickets it holds are what it last sent
+ * main, and its role, self-check and pane kind stay (ADR12). Any other pane's verdict lines make
+ * it a verifier (verdictsSeen). Main relays verdicts, so only a pane.
  */
-export const verdictSeen: Observer<{ lines: readonly StatusLine[]; briefs: ReadonlyArray<FactOf<'brief'>>; ran: ReadonlyArray<FactOf<'ran'>> }> = (me, { lines, briefs, ran }, sid, at) => {
-  const held = briefs.filter((b) => b.sid === sid)
-  if (me.k !== 'pane' || held.some((b) => b.k === 'fix' || b.role === 'builder')) return { me, facts: [] }
-  // Persist claims on the runs because they can outlive the brief that first claimed them.
-  const claimedUntil = Math.max(-Infinity, ...held.map((b) => b.at))
+export const answerSeen: Observer<Answer> = (me, answer, sid, at) => {
+  if (me.k !== 'pane') return { me, facts: [] }
+  const tickets = builderTickets(answer.briefs, sid)
+  if (tickets.length === 0) return verdictsSeen(me, answer, sid, at)
+  return { me, facts: sentLines(tickets, answer.lines).map((l) => ({ kind: 'status', ticket: l.ticket, sid, status: l.word, text: l.line, at })) }
+}
+
+/**
+ * Replying `VERIFIED THV-n` or `FINDINGS THV-n` makes a pane THV-n's verifier (spec, Review row, and
+ * Andres's ruling on THV-1095): it writes the verifier brief a `Verify THV-n` would have, so the
+ * Review skills it runs next write `review`, and each skill it already ran with no brief (`ran`)
+ * becomes `review` in that round too. A run counts once, for the first verdict that claims it: only
+ * an unclaimed run newer than every brief the pane holds counts, and one answer naming two tickets
+ * credits its runs to the first it names. A pane keeps any brief it already holds for the ticket,
+ * and with it the round its skills ran in.
+ */
+function verdictsSeen(me: Me, { lines, briefs, ran }: Answer, sid: SessionId, at: Ms): Observed {
+  const mine = briefs.filter((b) => b.sid === sid)
+  const verdicts = lines.filter((l) => isOneOf(VERDICTS)(l.word) && !mine.some((b) => b.ticket === l.ticket))
+  // A claim is kept on the run, because a run can outlive the brief that claimed it. The brief
+  // watermark is still needed: a run made before a brief this pane holds was never claimed (THV-1100).
+  const claimedUntil = Math.max(...mine.map((b) => b.at))
   const unclaimed = ran.filter((r) => r.sid === sid && !r.claimed && r.at > claimedUntil)
-  const out = lines.reduce<Observed & { runs: ReadonlyArray<FactOf<'ran'>> }>(
-    (seen, l) => {
-      if (!isOneOf(VERDICTS)(l.word) || held.some((b) => b.ticket === l.ticket)) return seen
+  return verdicts.reduce<Observed>(
+    (seen, l, i) => {
       const next = promptSeen(seen.me, { k: 'brief', brief: { k: 'first', ticket: l.ticket, role: 'verifier' } }, sid, at)
-      const reviews = seen.runs.map((r): Fact => ({ kind: 'review', ticket: l.ticket, sid, skill: r.skill, round: at, at: r.at }))
-      const claims = seen.runs.map((r): Fact => ({ ...r, claimed: true }))
-      return { me: next.me, facts: [...seen.facts, ...next.facts, ...reviews, ...claims], runs: [] }
+      const runs = i === 0 ? unclaimed : []
+      const reviews = runs.map((r): Fact => ({ kind: 'review', ticket: l.ticket, sid, skill: r.skill, round: at, at: r.at }))
+      const claims = runs.map((r): Fact => ({ ...r, claimed: true }))
+      return { me: next.me, facts: [...seen.facts, ...next.facts, ...reviews, ...claims] }
     },
-    { me, facts: [], runs: unclaimed },
+    { me, facts: [] },
   )
-  return { me: out.me, facts: out.facts }
 }

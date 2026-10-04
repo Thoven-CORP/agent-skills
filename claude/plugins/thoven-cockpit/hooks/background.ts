@@ -7,7 +7,7 @@
 //   watcher      main's turn that ends with panes working and no watch.sh gets a line under it
 //   labels       the record main pushes to herdr for each Build or Review pane (ADR9)
 
-import { rulingsOf, statusLines, ticket } from './dispatch.ts'
+import { rulingsOf, ticket } from './dispatch.ts'
 import { PANE_STATUSES, REPORT_STATUSES, isOneOf, isPaneId, isSessionId, type Board, type Checkpoint, type Fact, type FactOf, type Group, type Ms, type PaneId, type PaneStatus, type ReportStatus, type Row, type SessionId, type StatusLine, type Ticket } from './model.ts'
 
 const REPORT_WORDS = REPORT_STATUSES.join(', ')
@@ -23,9 +23,9 @@ export function builderTickets(facts: readonly Fact[], sid: SessionId): Ticket[]
   return [...new Set(held)]
 }
 
-/** The report lines a turn's answer carried for tickets the session holds. A verdict is a verifier's word, so it is not one. */
-export function sentLines(held: readonly Ticket[], answer: string): Array<StatusLine & { word: ReportStatus }> {
-  return statusLines(answer).flatMap((l) => (held.includes(l.ticket) && isOneOf(REPORT_STATUSES)(l.word) ? [{ ...l, word: l.word }] : []))
+/** The report lines of a turn's answer for tickets the session holds. A verdict is a verifier's word, so it is not one. */
+export function sentLines(held: readonly Ticket[], lines: readonly StatusLine[]): Array<StatusLine & { word: ReportStatus }> {
+  return lines.flatMap((l) => (held.includes(l.ticket) && isOneOf(REPORT_STATUSES)(l.word) ? [{ ...l, word: l.word }] : []))
 }
 
 /** The line under a builder's answer that sent main nothing to read. */

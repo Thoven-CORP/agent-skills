@@ -9,7 +9,7 @@
 import { expect, test } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { builderTickets, checkpointOf, isWatching, labelRecords, rulingsFrom, sentLines, watcherWarning } from '../hooks/background.ts'
-import { rulingsOf } from '../hooks/dispatch.ts'
+import { rulingsOf, statusLines } from '../hooks/dispatch.ts'
 import { isPaneId, isSessionId, type Fact } from '../hooks/model.ts'
 import { keyOf, parseFact } from '../hooks/store.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
@@ -78,7 +78,7 @@ test('only a builder brief or a fix round makes a session hold a ticket, and onl
   const facts = [brief('first', 'verifier', 'THV-1016'), brief('fix', 'builder', 'THV-711'), brief('first', 'builder', 'THV-978')]
   expect(builderTickets(facts, SID)).toEqual(['THV-711', 'THV-978'])
   expect(builderTickets(facts, idOf(isSessionId, 'sid-after-clear'))).toEqual([])
-  expect(sentLines([tk('THV-978')], ANSWER_DONE_THV_978).map((l) => [l.ticket, l.word])).toEqual([['THV-978', 'DONE']])
-  expect(sentLines([tk('THV-711')], ANSWER_DONE_THV_978)).toEqual([])
-  expect(sentLines([tk('THV-978')], ANSWER_NO_STATUS_THV_1082)).toEqual([])
+  expect(sentLines([tk('THV-978')], statusLines(ANSWER_DONE_THV_978)).map((l) => [l.ticket, l.word])).toEqual([['THV-978', 'DONE']])
+  expect(sentLines([tk('THV-711')], statusLines(ANSWER_DONE_THV_978))).toEqual([])
+  expect(sentLines([tk('THV-978')], statusLines(ANSWER_NO_STATUS_THV_1082))).toEqual([])
 })
