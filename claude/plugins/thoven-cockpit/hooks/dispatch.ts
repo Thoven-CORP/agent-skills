@@ -121,13 +121,28 @@ export function statusLines(text: string): StatusLine[] {
 
 type Groups = Partial<Record<string, string>>
 
+/**
+ * What a poteto-mode head may name before its ticket: the playbooks of poteto-mode's SKILL.md
+ * "## Playbooks" (2026-10-03), `Verify` (dispatch-work review.md's verifier head) and label.sh's
+ * Kinds (`/poteto-mode Build THV-n`). A head naming anything else is a question, not a brief.
+ */
+const PLAYBOOKS = [
+  'Investigation', 'Bug fix', 'Perf issue', 'Hillclimb', 'Runtime forensics', 'Trace forensics', 'Feature', 'Refactoring',
+  'Prototype', 'Visual parity', 'Authoring or modifying a skill', 'Eval', 'Babysit', 'Shipping', 'Autonomous run',
+  'Orchestrate', 'Autopilot-full', 'Autopilot-stack', 'Session pickup', 'Pause safely', 'Multi-phase or multi-PR plan',
+  'Worktree and simulator cleanup', 'Opening a PR',
+  'Verify',
+  ...KINDS,
+]
+const PLAYBOOK = PLAYBOOKS.map((name) => name.replaceAll(' ', String.raw`[ \t]+`)).join('|')
+
 /** A brief's first line, in the order they are tried, and the Brief each is. Every head names its `ticket`. */
 const HEADS: ReadonlyArray<{ head: RegExp; brief(t: Ticket, g: Groups): Brief }> = [
   // brief.md's fix-round brief: `FIX ROUND 3/5 THV-1015. Base for this round: …`.
   { head: /^FIX ROUND[ \t]+(?<round>\d+)\/(?<of>\d+)[ \t]+(?<ticket>THV-\d+)\b/, brief: (t, g) => ({ k: 'fix', ticket: t, round: Number(g.round), of: Number(g.of) }) },
-  // `/poteto-mode Build THV-1014 "title"` (or `$poteto-mode` for Codex).
+  // `/poteto-mode Build THV-1014 "title"`, `/poteto-mode Bug fix THV-1096 "title"` (or `$poteto-mode` for Codex).
   {
-    head: /^[/$]poteto-mode[ \t]+(?<playbook>\S+)[ \t]+(?<ticket>THV-\d+)\b(?:[ \t]+"(?<title>[^"\n]*)")?/,
+    head: new RegExp(String.raw`^[/$]poteto-mode[ \t]+(?<playbook>${PLAYBOOK})[ \t]+(?<ticket>THV-\d+)\b(?:[ \t]+"(?<title>[^"\n]*)")?`, 'i'),
     brief: (t, g) => {
       const labelKind = kindOf(g.playbook)
       const role = /^verify$/i.test(g.playbook ?? '') ? 'verifier' : 'builder'

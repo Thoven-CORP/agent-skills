@@ -1,5 +1,8 @@
 // S1: label grammar, the snapshot parse and the board join on real text (no kit), then the hooks
 // under kit stubs: the claim, the heartbeat on mock.clock, and the Work tab drawing.
+//
+// Derived input: the wave THV-1094 replay runs main's real pane w5E:p1 over SNAPSHOT_LIVE, which
+// predates space w5E. A send's claim reads no snapshot, so only the board it then draws is empty.
 
 import { expect, test } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
@@ -12,7 +15,8 @@ import { SOURCES } from '../hooks/sources.ts'
 import { cellText, columnsFor } from '../hooks/view.ts'
 import { DOT_GIT_THV_481, DOT_GIT_WORKTREE, HEAD_COCKPIT, HEAD_THV_481 } from './fixtures/git.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
-import { MAIN_CWD, PANE, cockpit, dropPane, fakeAsk, fresh, idOf, mainOf, must, ranTimes, relabelPane, relabelTab, rowOf, rowsOf, stage, start, worldOf } from './stage.ts'
+import { MAIN_SID_THV_1094, SEND_1947_THV_1095_1097 } from './fixtures/wave.ts'
+import { MAIN_CWD, PANE, bash, cockpit, dropPane, fakeAsk, fresh, idOf, mainOf, must, ranTimes, relabelPane, relabelTab, rowOf, rowsOf, stage, start, worldOf } from './stage.ts'
 
 const CONSENT = 'Build · Consent evidence hardening (THV-1045)'
 /** w18 with its `Mods` tab named the way label.sh names a build tab. p8V sits in it with no pane label. */
@@ -263,6 +267,42 @@ test('only the session that ran /cockpit starts polling', async ($, on) => {
 
   await s.clock.advance(15_000)
   expect(s.snapshots()).toBe(4)
+})
+
+test("wave THV-1094 replayed: main's 19:47 send.sh makes it the space's main, with no /cockpit typed", async ($, on) => {
+  const s = stage(on, { pane: 'w5E:p1', sid: MAIN_SID_THV_1094, snapshot: SNAPSHOT_LIVE })
+  await start($)
+  // Main's first prompt landed at 19:44:09 and its send at 19:47:15; /cockpit came at 19:49.
+  await s.clock.advance(186_000)
+  expect(s.snapshots()).toBe(0)
+
+  await bash($, SEND_1947_THV_1095_1097)
+  const claim = { kind: 'main', space: 'w5E', sid: MAIN_SID_THV_1094, pane: 'w5E:p1', at: 186_000 }
+  expect(s.saved.get('cockpit:main:w5E')).toEqual(claim)
+  expect([...s.saved.keys()].filter((k) => k.startsWith('cockpit:send:')).sort()).toEqual(['cockpit:send:THV-1095:w5E:p2:builder:0', 'cockpit:send:THV-1097:w5E:p3:builder:0'])
+  // Unasked, so it takes no focus from the turn that ran send.sh.
+  expect(s.opened).toEqual([{ id: 'cockpit', title: 'Cockpit' }])
+  // Its first tick runs at the claim, then the 5 s heartbeat polls herdr.
+  await s.clock.advance(15_000)
+  expect(s.snapshots()).toBe(4)
+
+  // Main's next send leaves its own claim as it is.
+  await bash($, SEND_1947_THV_1095_1097)
+  expect(s.saved.get('cockpit:main:w5E')).toEqual(claim)
+  expect(s.opened).toHaveLength(1)
+})
+
+test('a send.sh never takes main from the session that holds it (ADR3)', async ($, on) => {
+  const held = { kind: 'main', space: 'w5E', sid: 'sid-b', pane: 'w5E:p9', at: 1_000 }
+  const s = stage(on, { pane: 'w5E:p1', sid: MAIN_SID_THV_1094, snapshot: SNAPSHOT_LIVE, store: { 'cockpit:main:w5E': held } })
+  await start($)
+  await s.clock.advance(5_000)
+  await bash($, SEND_1947_THV_1095_1097)
+  expect(s.saved.get('cockpit:main:w5E')).toEqual(held)
+  expect(s.saved.has('cockpit:send:THV-1095:w5E:p2:builder:0')).toBe(true)
+  await s.clock.advance(15_000)
+  expect(s.snapshots()).toBe(0)
+  expect(s.opened).toEqual([])
 })
 
 test('/cockpit answers once its one snapshot does, before the first tick has run', async ($, on) => {

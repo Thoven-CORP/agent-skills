@@ -27,6 +27,11 @@ owns its half, and the brief tells the pane which half is main's.
 The pane never writes to Linear, never pushes, and never decides a product question. Main never
 edits the pane's code. Fixes go back to a pane.
 
+**Linear and the cockpit.** Main moves status with `set-status.js`, cockpit open or not. The
+cockpit's ↻ for `started`, `pr` and `merged` clears on its next Linear read, within 5 minutes. A
+`report` ↻ and a pane-gone row wait for Andres: his ↻ or `u` is his approval to post the report
+comment, and it clears the row. Main leaves both to him and does not run `/workspace update`.
+
 ## Layout
 
 - **Space** is the Linear Project. **Tab** is one issue: `<Kind> · <issue title> (THV-x)`. Kind names

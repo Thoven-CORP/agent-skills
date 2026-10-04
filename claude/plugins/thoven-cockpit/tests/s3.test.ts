@@ -5,11 +5,13 @@
 // to THV-1003, so it meets the real THV-1003 PRs (BE #142, 446 lines over 4 top dirs; FE #137, 280
 // lines in one); verify-this and code-review `skill.prompt` events made from the real deslop one
 // with the skill renamed (no log holds theirs); one snapshot pane turned into the Codex pane in the
-// rollout's folder, since no snapshot on file holds a Codex pane.
+// rollout's folder, since no snapshot on file holds a Codex pane. The THV-1096 brief from wave
+// THV-1094 meets a tab relabelled to its ticket, and each poteto-mode playbook name is set into its head.
 
 import { expect, test } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { parseRollout } from '../hooks/codex.ts'
+import { briefOf } from '../hooks/dispatch.ts'
 import { expired } from '../hooks/expiry.ts'
 import { BACKEND, FRONTEND, parsePrList } from '../hooks/github.ts'
 import { labelRecords } from '../hooks/background.ts'
@@ -20,6 +22,7 @@ import { cellText } from '../hooks/view.ts'
 import { GH_BACKEND, GH_FRONTEND } from './fixtures/github.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import * as REPORTS from './fixtures/reports.ts'
+import { BRIEF_BUG_FIX_THV_1096 } from './fixtures/wave.ts'
 import { ROLLOUT_VERIFY_THV_1000, ROLLOUT_VERIFY_THV_1000_PATH, SKILL_PROMPT_DESLOP, SKILL_TOOL_CALL, SKILL_TOOL_RESULT } from './fixtures/review.ts'
 import { HOME, cockpit, fakeAsk, fresh, idOf, mainOf, must, relabelTab, rowOf, rowsOf, stage, start, submit, tk, turnEnd, worldOf, type Stage } from './stage.ts'
 
@@ -92,6 +95,43 @@ test('a builder session records `self`, never `review`: V stays unlit and the se
   await s.clock.advance(5000)
   await submit($, REPORTS.FIX_ROUND_3_THV_1015.replaceAll('THV-1015', 'THV-1003'))
   expect(cellText(rowOf(world1003([...factsOf(s), report], [BE_142]), 'THV-1003'), 'report')).toBe('✓')
+})
+
+// ── A two-word playbook (THV-1103, wave F6) ──────────────────────────────────────────────────
+
+const TITLE_1096 = 'Cockpit: expiry checks for a completed state, keeps the events of tickets still on the board, and doctor says when Linear is not read'
+const W18_1096 = relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · expiry, board events and doctor\'s Linear line (THV-1096)')
+
+test('the real THV-1096 brief, `/poteto-mode Bug fix`, is a builder brief: verify-this lights ✓ᵛ, and a fix round keeps its title', async ($, on) => {
+  const s = await paneRan($, on, BRIEF_BUG_FIX_THV_1096, ['verify-this'])
+  expect(s.saved.get(`cockpit:brief:THV-1096:${P8V_SID}`)).toEqual({ kind: 'brief', k: 'first', ticket: 'THV-1096', role: 'builder', title: TITLE_1096, sid: P8V_SID, pane: 'w18:p8V', at: 1000 })
+  expect(reviewKeys(s)).toEqual([`cockpit:self:THV-1096:${P8V_SID}:verify-this`])
+  const report: Fact = { kind: 'report', ticket: tk('THV-1096'), sid: idOf(isSessionId, 'sid-main'), status: 'DONE', text: 'DONE THV-1096', concerns: 0, at: 9000 }
+  expect(cellText(rowOf(worldOf(W18, W18_1096, { facts: [...factsOf(s), report] }), 'THV-1096'), 'report')).toBe('✓ᵛ')
+
+  await s.clock.advance(5000)
+  await submit($, REPORTS.FIX_ROUND_3_THV_1015.replaceAll('THV-1015', 'THV-1096'))
+  expect(s.saved.get(`cockpit:brief:THV-1096:${P8V_SID}`)).toEqual({ kind: 'brief', k: 'fix', ticket: 'THV-1096', round: 3, of: 5, title: TITLE_1096, sid: P8V_SID, pane: 'w18:p8V', at: 7000 })
+})
+
+test('every poteto-mode playbook whose name has more than one word reads as a builder brief', async () => {
+  // The playbook names of ~/.claude/skills/poteto-mode/SKILL.md, "## Playbooks", on 2026-10-03.
+  const names = ['Bug fix', 'Perf issue', 'Visual parity', 'Runtime forensics', 'Trace forensics', 'Authoring or modifying a skill', 'Autonomous run', 'Session pickup', 'Pause safely', 'Multi-phase or multi-PR plan', 'Worktree and simulator cleanup', 'Opening a PR']
+  const read = names.map((name) => briefOf(BRIEF_BUG_FIX_THV_1096.replace('/poteto-mode Bug fix ', `/poteto-mode ${name} `)))
+  expect(read).toEqual(names.map(() => ({ k: 'first', ticket: 'THV-1096', role: 'builder', title: TITLE_1096 })))
+  expect(briefOf(BRIEF_BUG_FIX_THV_1096.replace('/poteto-mode Bug fix ', '$poteto-mode Perf issue '))).toEqual({ k: 'first', ticket: 'THV-1096', role: 'builder', title: TITLE_1096 })
+})
+
+test('a head that names no playbook is no brief: "Verification only for THV-1003", then FINDINGS, makes a verifier whose skills write `review`', async ($, on) => {
+  // The verifier's probe on fix round 1: the real verify brief with its head's playbook replaced.
+  const s = await paneRan($, on, VERIFY_THV_1003.replace('/poteto-mode Verify THV-1003', '/poteto-mode Verification only for THV-1003'), [])
+  expect(briefKeys(s)).toEqual([])
+  await turnEnd($, 'FINDINGS THV-1003\n\nThe purge skips an archived learner with a pending booking request.')
+  await s.clock.advance(1000)
+  for (const skill of ['verify-this', 'code-review']) await skillPrompt($, skill)
+  expect(reviewKeys(s)).toEqual([`cockpit:review:THV-1003:${P8V_SID}:code-review`, `cockpit:review:THV-1003:${P8V_SID}:verify-this`])
+  expect(cellText(rowOf(world1003(factsOf(s), [FE_137]), 'THV-1003'), 'review')).toBe('V C – –')
+  expect(briefOf('/poteto-mode why does the cockpit drop rows for THV-1097')).toBeUndefined()
 })
 
 // ── A verifier by its reply (THV-1095) ────────────────────────────────────────────────────────

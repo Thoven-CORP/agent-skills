@@ -6,6 +6,8 @@
 // report, verdict or send.sh call means for the store lives here, not in the shell.
 
 import type { ReportLine, readPrompt } from './dispatch.ts'
+import { claimOf } from './facts.ts'
+import { spaceOfPane } from './herdr.ts'
 import type { Readback } from './linear.ts'
 import { VERDICTS, isOneOf, type Engagement, type Fact, type FactOf, type Me, type Ms, type ReportStatus, type ReviewSkill, type SendCall, type SessionId, type StatusLine } from './model.ts'
 
@@ -50,6 +52,18 @@ export const bashSeen: Observer<readonly SendCall[]> = (me, calls, _sid, at) => 
   me,
   facts: me.k === 'inert' ? [] : calls.map((c) => ({ kind: 'send', ...c, at })),
 })
+
+/**
+ * ADR3: a space's main is claimed by `/cockpit` or by the first send.sh. The claim a pane session's
+ * send makes, when no session holds its space; a send never takes a claim. send.sh runs only under
+ * HERDR_PANE_ID, so the space is that pane id's workspace, with no snapshot to wait on.
+ */
+export function sendClaim(me: Me, claims: readonly Fact[], at: Ms): FactOf<'main'> | undefined {
+  if (me.k !== 'pane') return undefined
+  const space = spaceOfPane(me.pane)
+  if (space === undefined || claimOf(claims, space) !== undefined) return undefined
+  return { kind: 'main', space, sid: me.sid, pane: me.pane, at }
+}
 
 /** The status lines a builder pane's own answer ended its turn with: what it last sent main. Only a pane holds a brief. */
 export const answerSeen: Observer<ReadonlyArray<StatusLine & { word: ReportStatus }>> = (me, lines, sid, at) => ({

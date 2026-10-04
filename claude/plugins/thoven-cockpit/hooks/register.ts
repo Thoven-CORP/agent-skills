@@ -12,7 +12,8 @@
 //   inert  (no HERDR_PANE_ID)  one regex per prompt and one substring test per Bash command; a
 //                              store write only for a report or verdict. No timers, no processes
 //   pane   (not main)          the same, and a brief, a send.sh call, a Review skill run (a `ran`
-//                              while it holds no brief) and a verdict its own answer gave are written too
+//                              while it holds no brief) and a verdict its own answer gave are written too;
+//                              a send.sh in a space with no main makes it main (ADR3)
 //   main   (claimed a space)   one 5 s heartbeat timer; all polling, projection, drawing
 //
 // Crash safety: every hook is one line over a shape below, and no try/catch wraps `next`:
@@ -24,7 +25,7 @@
 import type { EngineInterface, Register, RenderElement } from 'claude-code'
 import { CHECKPOINT_FRESH_MS, briefPath, briefsSent, builderTickets, checkpointOf, checkpointText, isWatching, rulingsFrom, sentLines, statusWarning, watcherWarning, type BackgroundTasks } from './background.ts'
 import { readPrompt, sendCalls, statusLines } from './dispatch.ts'
-import { answerSeen, bashSeen, promptSeen, readbackSeen, skillSeen, verdictSeen, type Observer } from './observe.ts'
+import { answerSeen, bashSeen, promptSeen, readbackSeen, sendClaim, skillSeen, verdictSeen, type Observer } from './observe.ts'
 import { reviewSkill } from './review.ts'
 import { LINEAR_URL, readbacks, type StateQuery } from './linear.ts'
 import { claimHeldBy } from './facts.ts'
@@ -427,7 +428,18 @@ async function noteBash($: Api, r: object, command: unknown): Promise<void> {
   if ('result' in r && typeof r.result === 'object' && r.result !== null && 'stdout' in r.result) await noteReadbacks($, r.result.stdout)
   if (('isError' in r && r.isError === true) || typeof command !== 'string') return
   const calls = sendCalls(command)
-  if (calls.length > 0) await record($, bashSeen, calls)
+  if (calls.length === 0) return
+  await record($, bashSeen, calls)
+  if (held.me.k === 'pane') await claimBySend($)
+}
+
+/** The first send.sh in a space no session holds makes this session its main. The pane opens unfocused: the model sent, nobody pressed. */
+async function claimBySend($: Api): Promise<void> {
+  const claim = sendClaim(held.me, await loadFacts($, 'main'), await $.clock.now())
+  if (!claim) return
+  await writeFact($, claim)
+  becomeMain(shellOf($), claim, await placeOf($))
+  await $.ui.open({ id: PANE_ID, title: 'Cockpit' })
 }
 
 /** A loop's event carries `agentId` only inside a subagent or teammate: their skills are not this session's. */
