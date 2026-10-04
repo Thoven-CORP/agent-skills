@@ -125,7 +125,7 @@ function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): 
   }
 
   const parentLine = (g: Extract<Group, { k: 'parent' }>) =>
-    Text({ bold: true, children: [`${g.title} ${g.parent}: ${g.done} of ${g.total} done${g.needsYou > 0 ? `, ${g.needsYou} needs you` : ''}`] })
+    Text({ bold: true, children: [`${g.title} ${g.parent}: ${g.done} of ${g.total} done${g.counted === 'screen' ? ' on screen' : ''}${g.needsYou > 0 ? `, ${g.needsYou} needs you` : ''}`] })
 
   return Box({
     flexDirection: 'column',

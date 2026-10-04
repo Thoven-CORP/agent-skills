@@ -358,10 +358,13 @@ export type Cells = {
 
 export type Row = RowIdentity & { cells: Cells }
 
-/** A parent and its on-screen children, or one parentless row. */
+/**
+ * A parent and its on-screen children, or one parentless row. `done of total` counts the parent's
+ * sub-issues as Linear lists them (`linear`), or, while Linear is stale, the rows on screen (`screen`).
+ */
 export type Group =
   | { k: 'single'; row: Row }
-  | { k: 'parent'; parent: Ticket; title: string; done: number; total: number; needsYou: number; children: Row[] }
+  | { k: 'parent'; parent: Ticket; title: string; done: number; total: number; counted: 'linear' | 'screen'; needsYou: number; children: Row[] }
 
 /** A pane with no Build or Review row: by its label, or, with none, by its tab's name. */
 export type OtherItem = { k: 'labelled'; title: string; kind: Kind | undefined; ticket: Ticket | undefined; pane: PaneCell } | { k: 'unlabelled'; tab: string; pane: PaneCell }

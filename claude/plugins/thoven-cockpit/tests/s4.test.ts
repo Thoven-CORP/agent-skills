@@ -13,13 +13,13 @@ import { FRONTEND, BACKEND } from '../hooks/github.ts'
 import { AGENT_SKILLS, parsePrList } from '../hooks/github.ts'
 import { EXPIRY_MS, expired, ticketsOn } from '../hooks/expiry.ts'
 import { LINEAR_URL, carry, eventOf, linearEntries, parseStates, pendingOf, readbacks, stateQuery, updateArgs } from '../hooks/linear.ts'
-import { eventId, isLinearEventId, isSessionId, type Fact, type Pr } from '../hooks/model.ts'
+import { eventId, isLinearEventId, isSessionId, type Board, type Fact, type Pr } from '../hooks/model.ts'
 import { SOURCES, parseLiveSpaces, valueOf } from '../hooks/sources.ts'
 import { keyOf, parseFact } from '../hooks/store.ts'
 import { cellText, drawCockpit, type ColumnId } from '../hooks/view.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import { LINEAR_STATES_945_1038, READBACK_DONE_THV_1038, READBACK_ERROR_THV_1038 } from './fixtures/linear.ts'
-import { GH_AGENT_SKILLS_WAVE, LINEAR_WAVE, SNAPSHOT_AFTER_WAVE, STORE_WAVE, WORKFLOW_LIVE_SPACES_COCKPIT } from './fixtures/wave.ts'
+import { GH_AGENT_SKILLS_WAVE, LINEAR_WAVE, LINEAR_WAVE_CHILDREN, SNAPSHOT_AFTER_WAVE, STORE_WAVE, WORKFLOW_LIVE_SPACES_COCKPIT } from './fixtures/wave.ts'
 import { HOME, PANE, bash, cockpit, fakeAsk, fresh, idOf, mainOf, must, relabelPane, relabelTab, rowOf, rowsOf, stage, start, submit, tk, worldOf } from './stage.ts'
 
 const KEY = 'lin_api_fixture_not_a_real_key'
@@ -121,7 +121,8 @@ test('Sub-issues: THV-978, 979 and 980 sit under a THV-945 summary row, which ha
   // Derived: THV-979 moved back to In Progress, so the summary reads 2 of 3.
   const moving = project(worldOf(SUBS_MAIN, SUBS, { facts, sources: { linear: linear(inProgress('THV-979'), ['THV-978', 'THV-979', 'THV-980']) } }))
   const drawn = texts(drawCockpit(EL, moving, { tab: 'work', selected: undefined, selectedPr: undefined, checks: undefined }, 100, () => undefined))
-  expect(drawn).toContain('Daily video: webhooks, recordings and rooms THV-945: 2 of 3 done, 1 needs you')
+  // Its 2026-10-03 answer predates the children field, so the count comes from the rows on screen and says so.
+  expect(drawn).toContain('Daily video: webhooks, recordings and rooms THV-945: 2 of 3 done on screen, 1 needs you')
   // THV-979's `started` shows at In Progress; only the report on THV-980 is pending, on its own row.
   expect(moving.pending.map((p) => [p.ticket, p.id])).toEqual([['THV-980', 'report-NEEDS_CONTEXT']])
   expect(drawn.filter((t) => t.includes('↻'))).toEqual(['[↻]', '[update all ↻]'])
@@ -285,11 +286,15 @@ test('no Project: no Linear read, no key read, no Linear column and no u', async
 
 const WAVE_MAIN = mainOf('w5E', 'w5E:p1')
 const waveFacts = (until = Infinity): Fact[] => Object.entries(STORE_WAVE).flatMap(([key, value]) => parseFact(key, value) ?? []).filter((f) => f.at <= until)
-/** LINEAR_WAVE with tickets moved to a state node from the same answer, as truth.log read them. */
-function waveAt(moves: Record<string, string>): string {
-  const root = JSON.parse(LINEAR_WAVE)
-  const nodes: Array<{ name: string }> = root.data.teams.nodes[0].states.nodes
-  for (const n of root.data.issues.nodes) if (moves[n.identifier]) n.state = must(nodes.find((s) => s.name === moves[n.identifier]))
+/** A wave Linear answer with tickets moved to a state node from the same answer, as truth.log read them, in their own node and in their parent's children. */
+function waveAt(moves: Record<string, string>, answer = LINEAR_WAVE): string {
+  const root = JSON.parse(answer)
+  const nodes: Array<{ name: string; type: string }> = root.data.teams.nodes[0].states.nodes
+  const moved = (id: string) => must(nodes.find((s) => s.name === moves[id]))
+  for (const n of root.data.issues.nodes) {
+    if (moves[n.identifier]) n.state = moved(n.identifier)
+    for (const c of n.parent?.children?.nodes ?? []) if (moves[c.identifier]) c.state = { type: moved(c.identifier).type }
+  }
   return JSON.stringify(root)
 }
 const WAVE = ['THV-1094', 'THV-1095', 'THV-1096', 'THV-1097']
@@ -356,4 +361,24 @@ test('a closed row with a pending ↻ survives a 14-day expiry pass, and its key
   const left = pass(back, LINEAR_WAVE, AFTER_WAVE + 3_600_000)
   expect(left.map((s) => s.key).filter((k) => /THV-109[5-7]:/.test(k))).toEqual(unreadable)
   expect(pass(left, LINEAR_WAVE, AFTER_WAVE + EXPIRY_MS + 3_600_000).map((s) => s.key).filter((k) => /THV-109[5-7]:/.test(k))).toEqual([])
+})
+
+const workText = (board: Board): string[] => texts(drawCockpit(EL, board, { tab: 'work', selected: undefined, selectedPr: undefined, checks: undefined }, 100, () => undefined))
+
+test("the parent summary counts its children from Linear: after ↻ hands back THV-1095 and THV-1097, THV-1094 reads 2 of 4 done", async () => {
+  // 20:41 with the ↻ pressed: THV-1096 reads Ready, and Linear lists THV-1100 (Backlog) as THV-1094's fourth child.
+  const handed = [...waveFacts(), ...['THV-1095', 'THV-1097'].flatMap(handedBack)]
+  const board = project(waveWorld(handed, waveAt({ 'THV-1096': 'Ready' }, LINEAR_WAVE_CHILDREN)))
+  const group = must(board.build.find((g) => g.k === 'parent' && g.parent === tk('THV-1094')))
+  expect(group.k === 'parent' && { done: group.done, total: group.total, counted: group.counted, children: group.children.map((r) => r.ticket) }).toEqual({ done: 2, total: 4, counted: 'linear', children: ['THV-1096'] })
+  expect(workText(board)).toContain('Cockpit: tidy-ups from the S2 re-verify THV-1094: 2 of 4 done')
+})
+
+test('a stale Linear read counts the parent from the rows on screen, and the summary says so', async () => {
+  const world = waveWorld(waveFacts(), waveAt({ 'THV-1096': 'Ready' }, LINEAR_WAVE_CHILDREN))
+  const read = must(valueOf(world.sources.linear))
+  const stale = { ...world, sources: { ...world.sources, linear: { k: 'stale' as const, value: read, at: 0, since: 0, error: 'Bad Gateway' } } }
+  const group = must(project(stale).build.find((g) => g.k === 'parent'))
+  expect(group.k === 'parent' && [group.done, group.total, group.counted]).toEqual([2, 3, 'screen'])
+  expect(workText(project(stale))).toContain('Cockpit: tidy-ups from the S2 re-verify THV-1094: 2 of 3 done on screen')
 })

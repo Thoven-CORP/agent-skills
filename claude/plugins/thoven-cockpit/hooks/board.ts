@@ -97,7 +97,7 @@ export function project(world: World): Board {
     .map((id) => rowOf(id, { facts: facts.about(id.ticket), inbox, join, codex }))
     .map(({ row, events }) => ({ row: { ...row, cells: { ...row.cells, linear: linearOf(row.ticket, facts.about(row.ticket), events, view) } }, events }))
     .filter(({ row }) => row.panes.k !== 'gone' || row.cells.linear.k !== 'ok')
-  const build = groupRows(rows.map(({ row }) => row), view)
+  const build = groupRows(rows.map(({ row }) => row), view, { isFresh: world.sources.linear.k === 'fresh' })
 
   return {
     space,
