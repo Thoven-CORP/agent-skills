@@ -2,10 +2,11 @@
 //
 // It reads and never writes: the store's cockpit keys with their ages, the claim on this
 // session's space, each source's health when this session is main, and where the plugin loaded.
+// A space with no Project has no Linear read (spec "Spaces"), so its Linear health says nothing.
 
 import { claimOf } from './facts.ts'
 import { ageOf, expiresByAge, type Stored } from './expiry.ts'
-import type { Health, Ms, PaneId, SessionId, SpaceId } from './model.ts'
+import type { Board, Health, Ms, PaneId, SessionId, SpaceId } from './model.ts'
 import { isCockpitKey, parseFact } from './store.ts'
 
 /** ADR2: the one folder `CLAUDE_CODE_PLUGIN_DIRS` should name, in the main checkout. */
@@ -17,8 +18,8 @@ export type DoctorInput = {
   /** This session's space, from main's claim or HERDR_PANE_ID. */
   space: SpaceId | undefined
   pane: PaneId | undefined
-  /** Main's health; undefined in any session that is not main, because only main polls. */
-  health: Health | undefined
+  /** Main's last board; undefined in any session that is not main, because only main polls. */
+  board: Pick<Board, 'health' | 'project'> | undefined
   plugin: { root: string; env: string | undefined; home: string }
 }
 
@@ -33,7 +34,8 @@ export type DoctorReport = {
   /** Expired keys first, each group oldest first; a key with no age comes last. */
   keys: DoctorKey[]
   claim: DoctorClaim
-  health: Health | undefined
+  /** Undefined in any session that is not main. */
+  sources: { health: Health; isLinearRead: boolean } | undefined
   plugin: { root: string; isMainCheckout: boolean; expected: string; env: string | undefined }
 }
 
@@ -46,7 +48,7 @@ export function doctor(i: DoctorInput): DoctorReport {
   return {
     keys,
     claim: claimFor(i, facts),
-    health: i.health,
+    sources: i.board && { health: i.board.health, isLinearRead: i.board.project !== undefined },
     plugin: { root: i.plugin.root, isMainCheckout: i.plugin.root.replace(/\/+$/, '') === expected, expected, env: i.plugin.env },
   }
 }
