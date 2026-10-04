@@ -60,6 +60,7 @@ From the plugin folder:
 claude plugin test .
 claude plugin validate --strict --json .
 ~/thoven/frontend/node_modules/.bin/tsc --noEmit --allowImportingTsExtensions -p .
+awk 'FNR==601{print FILENAME" is over 600 lines"; bad=1} END{exit bad}' hooks/*.ts
 ```
 
 `tests/gate.test.ts` fails the build if any process argv holds `merge`, or if any Linear request body holds `mutation`. No file in `hooks/` may pass 600 lines.
