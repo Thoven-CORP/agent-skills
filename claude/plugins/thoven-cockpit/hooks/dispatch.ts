@@ -125,9 +125,10 @@ type Groups = Partial<Record<string, string>>
 const HEADS: ReadonlyArray<{ head: RegExp; brief(t: Ticket, g: Groups): Brief }> = [
   // brief.md's fix-round brief: `FIX ROUND 3/5 THV-1015. Base for this round: …`.
   { head: /^FIX ROUND[ \t]+(?<round>\d+)\/(?<of>\d+)[ \t]+(?<ticket>THV-\d+)\b/, brief: (t, g) => ({ k: 'fix', ticket: t, round: Number(g.round), of: Number(g.of) }) },
-  // `/poteto-mode Build THV-1014 "title"` (or `$poteto-mode` for Codex).
+  // `/poteto-mode Build THV-1014 "title"` (or `$poteto-mode` for Codex). A playbook name may run to
+  // several words (`Bug fix`, `Multi-phase or multi-PR plan`), so it spans up to the first ticket.
   {
-    head: /^[/$]poteto-mode[ \t]+(?<playbook>\S+)[ \t]+(?<ticket>THV-\d+)\b(?:[ \t]+"(?<title>[^"\n]*)")?/,
+    head: /^[/$]poteto-mode[ \t]+(?<playbook>\S+(?:[ \t]+\S+)*?)[ \t]+(?<ticket>THV-\d+)\b(?:[ \t]+"(?<title>[^"\n]*)")?/,
     brief: (t, g) => {
       const labelKind = kindOf(g.playbook)
       const role = /^verify$/i.test(g.playbook ?? '') ? 'verifier' : 'builder'
