@@ -283,6 +283,18 @@ test('main relaying a VERIFIED line is not a verifier', async ($, on) => {
   expect(briefKeys(s)).toEqual([])
 })
 
+test('a verifier pane with no ticket in its label or title that replies for a second ticket gives each ticket a Review row titled by itself', async () => {
+  // Derived: p8V's terminal title dropped, so only the briefs its two verdict replies wrote tie it.
+  const root = JSON.parse(SNAPSHOT_LIVE)
+  for (const p of root.result.snapshot.panes) if (p.pane_id === 'w18:p8V') delete p.terminal_title_stripped
+  const brief = (t: string, at: number): Fact => ({ kind: 'brief', k: 'first', ticket: tk(t), role: 'verifier', sid: idOf(isSessionId, P8V_SID), pane: idOf(isPaneId, 'w18:p8V'), at })
+  const rows = rowsOf(project(worldOf(W18, JSON.stringify(root), { facts: [brief('THV-1003', 2000), brief('THV-1004', 62_000)] })))
+  expect(rows.map((r) => [r.ticket, r.kind, r.title])).toEqual([
+    ['THV-1003', 'Review', 'THV-1003'],
+    ['THV-1004', 'Review', 'THV-1004'],
+  ])
+})
+
 // ── Skill capture rules ───────────────────────────────────────────────────────────────────────
 
 test('a Skill call whose result is read-only is not counted, and the skill.prompt inside it is left to the call', async ($, on) => {

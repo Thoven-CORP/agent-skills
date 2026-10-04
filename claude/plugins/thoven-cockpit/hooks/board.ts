@@ -30,8 +30,8 @@ import { prJoin } from './prs.ts'
 import type { Board, Branches, CodexRollout, Health, Main, Ms, Kind, LivePane, NonEmpty, OtherItem, Pane, PaneCell, PaneId, PaneLabels, Panes, Polled, RowIdentity, SourceHealth, SourceId, Sources, SpaceMap, Ticket, World } from './model.ts'
 import { sharing, valueOf } from './sources.ts'
 
-/** What ties a pane to its work: its label, else its folder's branch, else what main sent it. */
-type Tie = { kind: Kind | undefined; title: string; tickets: Ticket[]; origin: 'label' | 'branch' | 'dispatch' }
+/** What ties a pane to its work: its label, else its folder's branch, else what main sent it. No `title`: each row is titled by its own ticket. */
+type Tie = { kind: Kind | undefined; title: string | undefined; tickets: Ticket[]; origin: 'label' | 'branch' | 'dispatch' }
 
 /** Where a pane goes on the board. A shell (no tie, no agent) goes nowhere. */
 type Slot = { k: 'build' | 'review'; tie: Tie; pane: Pane } | { k: 'other'; tie: Tie | undefined; pane: Pane } | { k: 'shell' }
@@ -126,7 +126,7 @@ function tieOf(facts: BoardFacts, p: Pane, labels: PaneLabels['byPane'] | undefi
 }
 
 const otherItem = (tie: Tie | undefined, p: Pane): OtherItem =>
-  tie ? { k: 'labelled', title: tie.title, kind: tie.kind, ticket: tie.tickets[0], pane: cell(p) } : { k: 'unlabelled', tab: p.tabLabel ?? p.tab, pane: cell(p) }
+  tie ? { k: 'labelled', title: tie.title ?? tie.tickets.join(' '), kind: tie.kind, ticket: tie.tickets[0], pane: cell(p) } : { k: 'unlabelled', tab: p.tabLabel ?? p.tab, pane: cell(p) }
 
 /**
  * What a pane with no ticket in its label was sent: the briefs its current session received (a
@@ -139,7 +139,7 @@ function dispatchTie(facts: BoardFacts, p: Pane): Tie | undefined {
     const titled = newest(briefs.filter((b) => b.title !== undefined))
     return {
       kind: latest.k === 'first' && latest.role === 'verifier' ? 'Review' : latest.labelKind,
-      title: titled?.title ?? p.terminalTitle ?? latest.ticket,
+      title: titled?.title ?? p.terminalTitle,
       tickets: [...new Set(briefs.map((b) => b.ticket))],
       origin: 'dispatch',
     }
@@ -174,7 +174,7 @@ function closedRows(facts: BoardFacts, me: Main, held: ReadonlySet<Ticket>): Row
   })
 }
 
-const holding = (ticket: Ticket, by: Pick<RowIdentity, 'kind' | 'title' | 'origin'>, panes: Panes, verifierPane: PaneCell): RowIdentity => ({ ticket, title: by.title, kind: by.kind, origin: by.origin, panes, verifierPane })
+const holding = (ticket: Ticket, by: Pick<RowIdentity, 'kind' | 'origin'> & { title: string | undefined }, panes: Panes, verifierPane: PaneCell): RowIdentity => ({ ticket, title: by.title ?? ticket, kind: by.kind, origin: by.origin, panes, verifierPane })
 
 /** A Codex verifier pane's rollouts: started within the last 2 days in the folder of a Codex pane in this space. */
 const CODEX_WINDOW_MS = 2 * 24 * 60 * 60_000
