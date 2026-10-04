@@ -2,16 +2,16 @@
 // kit stubs: doctor in a pane session and in main, and main deleting a 15-day-old key.
 //
 // Derived inputs: stored facts are built literals whose text is a real status line from
-// fixtures/reports.ts, and whose `at` places them in time. The Linear states are a fixture map,
-// because S4's Linear read lands in parallel.
+// fixtures/reports.ts, and whose `at` places them in time. The Linear entries are built literals
+// (stage.ts linearEntry), so each test names the one state it turns on.
 
-import { expect, test } from 'claude-code/testing'
+import { expect } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { doctor, mainCheckoutDir } from '../hooks/doctor.ts'
-import { EXPIRY_MS, ageOf, expired, isMergedAndDone, ticketsOn, type LinearStates, type Stored } from '../hooks/expiry.ts'
-import { indexFacts } from '../hooks/facts.ts'
+import { EXPIRY_MS, ageOf, expired, isMergedAndDone, keptBy, type LinearEntries, type Stored } from '../hooks/expiry.ts'
+import { byKind } from '../hooks/facts.ts'
 import { FRONTEND, parsePrList } from '../hooks/github.ts'
-import { linearOf, parseStates, readbacks, type LinearEntry, type LinearState, type LinearView } from '../hooks/linear.ts'
+import { linearOf, parseStates, readbacks, type LinearView } from '../hooks/linear.ts'
 import { isLinearEventId, isPaneId, isSessionId, isSpaceId, type Fact, type Health, type Pr, type Ticket } from '../hooks/model.ts'
 import { HEARTBEAT_MS } from '../hooks/sources.ts'
 import { keyOf, parseFact } from '../hooks/store.ts'
@@ -19,7 +19,7 @@ import { doctorText } from '../hooks/view.ts'
 import { GH_FRONTEND } from './fixtures/github.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import { LINEAR_STATES_945_1038 } from './fixtures/linear.ts'
-import { HOME, cockpit, idOf, mainOf, must, relabelTab, stage, start, tk, worldOf } from './stage.ts'
+import { HOME, cockpit, idOf, linearEntry, mainOf, must, relabelTab, stage, start, tk, worldOf, test } from './stage.ts'
 
 const DAY = 86_400_000
 /** The clock when the sessions below run: 20 days after the epoch the stored `at`s count from. */
@@ -55,14 +55,12 @@ const UNDATED: [string, unknown] = ['cockpit:note', 'free text']
 const FOREIGN: [string, unknown] = ['spike:ping', { at: 0 }]
 
 const prs = (): Pr[] => must(parsePrList(FRONTEND, GH_FRONTEND))
-/** What a Linear read said of a ticket: a state of this name and type. */
-const read = (name: string, type: LinearState['type']): LinearEntry => ({ state: { name, type, position: 0 }, parent: undefined, at: 0 })
-const DONE: LinearStates = new Map([[tk('THV-1038'), read('Done', 'completed')]])
+const DONE: LinearEntries = new Map([[tk('THV-1038'), linearEntry('Done', 'completed')]])
 
 // ── unit: the expiry rules ───────────────────────────────────────────────────────────────────
 
 test('a key last written 15 days ago expires, one written 13 days ago and a main claim do not', async () => {
-  const gone = expired(storedOf([entry(OLD_REPORT), entry(RECENT_VERDICT), entry(OLD_CLAIM), OLD_UNREADABLE, UNDATED, FOREIGN]), { now: NOW, prs: undefined, linear: undefined, onBoard: new Set() })
+  const gone = expired(storedOf([entry(OLD_REPORT), entry(RECENT_VERDICT), entry(OLD_CLAIM), OLD_UNREADABLE, UNDATED, FOREIGN]), { now: NOW, prs: undefined, linear: undefined, onBoard: new Set(), closed: new Set() })
   expect(gone).toEqual([
     { key: 'cockpit:report:THV-1041:sid-b', why: 'untouched' },
     { key: 'cockpit:report:THV-9:sid-gone', why: 'untouched' },
@@ -73,7 +71,7 @@ test('a key last written 15 days ago expires, one written 13 days ago and a main
 
 test('the 14-day line: exactly 14 days stays, a millisecond more expires', async () => {
   const at = (age: number): Stored[] => storedOf([entry(report('THV-1041', 'sid-b', NOW - age))])
-  const ctx = { now: NOW, prs: undefined, linear: undefined, onBoard: new Set<never>() }
+  const ctx = { now: NOW, prs: undefined, linear: undefined, onBoard: new Set<never>(), closed: new Set<never>() }
   expect(expired(at(EXPIRY_MS), ctx)).toEqual([])
   expect(expired(at(EXPIRY_MS + 1), ctx).map((e) => e.why)).toEqual(['untouched'])
 })
@@ -82,34 +80,34 @@ test('FE #138 merged and THV-1038 reads Done: every fresh THV-1038 key goes once
   const fresh = NOW - 60_000
   const keys = storedOf([entry(report('THV-1038', 'sid-b', fresh)), entry({ kind: 'happened', ticket: tk('THV-1038'), event: idOf(isLinearEventId, 'merged-138'), at: fresh }), entry(report('THV-1045', 'sid-b', fresh))])
   expect(isMergedAndDone(tk('THV-1038'), prs(), DONE)).toBe(true)
-  expect(expired(keys, { now: NOW, prs: prs(), linear: DONE, onBoard: new Set() })).toEqual([
+  expect(expired(keys, { now: NOW, prs: prs(), linear: DONE, onBoard: new Set(), closed: new Set() })).toEqual([
     { key: 'cockpit:report:THV-1038:sid-b', why: 'merged-done' },
     { key: 'cockpit:happened:THV-1038:merged-138', why: 'merged-done' },
   ])
   // Still on screen, not Done yet, no Linear read, or no merged PR: nothing goes.
-  expect(expired(keys, { now: NOW, prs: prs(), linear: DONE, onBoard: new Set([tk('THV-1038')]) })).toEqual([])
-  expect(expired(keys, { now: NOW, prs: prs(), linear: new Map([[tk('THV-1038'), read('In Review', 'started')]]), onBoard: new Set() })).toEqual([])
-  expect(expired(keys, { now: NOW, prs: prs(), linear: undefined, onBoard: new Set() })).toEqual([])
-  expect(expired(keys, { now: NOW, prs: prs().filter((p) => p.number !== 138), linear: DONE, onBoard: new Set() })).toEqual([])
+  expect(expired(keys, { now: NOW, prs: prs(), linear: DONE, onBoard: new Set([tk('THV-1038')]), closed: new Set() })).toEqual([])
+  expect(expired(keys, { now: NOW, prs: prs(), linear: new Map([[tk('THV-1038'), linearEntry('In Review', 'started')]]), onBoard: new Set(), closed: new Set() })).toEqual([])
+  expect(expired(keys, { now: NOW, prs: prs(), linear: undefined, onBoard: new Set(), closed: new Set() })).toEqual([])
+  expect(expired(keys, { now: NOW, prs: prs().filter((p) => p.number !== 138), linear: DONE, onBoard: new Set(), closed: new Set() })).toEqual([])
 })
 
 test('Done is a completed state, whatever its name: THV-1038 in Shipped loses its keys, one in a started state named Done keeps them', async () => {
   const fresh = NOW - 60_000
   const keys = storedOf([entry(report('THV-1038', 'sid-b', fresh)), entry({ kind: 'happened', ticket: tk('THV-1038'), event: idOf(isLinearEventId, 'merged-138'), at: fresh })])
-  const shipped: LinearStates = new Map([[tk('THV-1038'), read('Shipped', 'completed')]])
+  const shipped: LinearEntries = new Map([[tk('THV-1038'), linearEntry('Shipped', 'completed')]])
   expect(isMergedAndDone(tk('THV-1038'), prs(), shipped)).toBe(true)
-  expect(expired(keys, { now: NOW, prs: prs(), linear: shipped, onBoard: new Set() })).toEqual([
+  expect(expired(keys, { now: NOW, prs: prs(), linear: shipped, onBoard: new Set(), closed: new Set() })).toEqual([
     { key: 'cockpit:report:THV-1038:sid-b', why: 'merged-done' },
     { key: 'cockpit:happened:THV-1038:merged-138', why: 'merged-done' },
   ])
-  const startedDone: LinearStates = new Map([[tk('THV-1038'), read('Done', 'started')]])
-  expect(expired(keys, { now: NOW, prs: prs(), linear: startedDone, onBoard: new Set() })).toEqual([])
+  const startedDone: LinearEntries = new Map([[tk('THV-1038'), linearEntry('Done', 'started')]])
+  expect(expired(keys, { now: NOW, prs: prs(), linear: startedDone, onBoard: new Set(), closed: new Set() })).toEqual([])
 })
 
 test('a happened key whose ticket is on the board never expires by age; its report and an off-board event still do', async () => {
   const event = (ticket: string, id: string): Fact => ({ kind: 'happened', ticket: tk(ticket), event: idOf(isLinearEventId, id), at: NOW - 15 * DAY })
   const keys = storedOf([entry(event('THV-1045', 'report-DONE')), entry(report('THV-1045', 'sid-b', NOW - 15 * DAY)), entry(event('THV-1041', 'report-DONE'))])
-  expect(expired(keys, { now: NOW, prs: undefined, linear: undefined, onBoard: new Set([tk('THV-1045')]) })).toEqual([
+  expect(expired(keys, { now: NOW, prs: undefined, linear: undefined, onBoard: new Set([tk('THV-1045')]), closed: new Set() })).toEqual([
     { key: 'cockpit:report:THV-1045:sid-b', why: 'untouched' },
     { key: 'cockpit:happened:THV-1041:report-DONE', why: 'untouched' },
   ])
@@ -138,9 +136,9 @@ const LATE: Fact[] = [...roundTrip({ report: 15 * DAY, happened: 15 * DAY, updat
 
 function cellAcrossExpiry(facts: Fact[], onBoard: ReadonlySet<Ticket>) {
   const stored = storedOf(facts.map(entry))
-  const gone = new Set(expired(stored, { now: NOW, prs: undefined, linear: undefined, onBoard }).map((e) => e.key))
+  const gone = new Set(expired(stored, { now: NOW, prs: undefined, linear: undefined, onBoard, closed: new Set() }).map((e) => e.key))
   const left = stored.flatMap((s) => (gone.has(s.key) ? [] : (parseFact(s.key, s.value) ?? [])))
-  const cell = (fs: readonly Fact[]) => linearOf(tk('THV-1045'), indexFacts(fs).about(tk('THV-1045')), [], VIEW_1045).k
+  const cell = (fs: readonly Fact[]) => linearOf(tk('THV-1045'), byKind(fs, tk('THV-1045')), [], VIEW_1045).k
   return { deleted: [...gone].sort(), before: cell(facts), after: cell(left) }
 }
 
@@ -226,13 +224,19 @@ test('doctor in a space with no Project says Linear is not read here, not ok', a
   expect(at('Thoven cockpit')).toContain('  Linear: ok')
 })
 
+test('doctor whose Live spaces never answered says that is why Linear is not read, not that the space has no Project', async () => {
+  const health: Health = { ...HEALTH, spaces: { k: 'unavailable' } }
+  const lines = doctorText(doctor({ now: NOW, stored: [], space: idOf(isSpaceId, 'w18'), pane: idOf(isPaneId, 'w18:p8W'), board: { health, project: undefined, build: [] }, plugin: { root: mainCheckoutDir(HOME), env: undefined, home: HOME } })).split('\n')
+  expect(lines.filter((l) => l.startsWith('  Linear:'))).toEqual(['  Linear: not read here, Live spaces is unavailable'])
+})
+
 test('doctor in main flags exactly the keys main deletes: THV-1045 on the board keeps its round trip, THV-1041 off it does not', async () => {
   const board = project(worldOf(mainOf('w18', 'w18:p8W'), SNAPSHOT))
   const stored = storedOf(LATE.map(entry))
   const r = doctor({ now: NOW, stored, space: idOf(isSpaceId, 'w18'), pane: idOf(isPaneId, 'w18:p8W'), board, plugin: { root: mainCheckoutDir(HOME), env: undefined, home: HOME } })
   const flagged = r.keys.flatMap((k) => (k.isExpired ? [k.key] : [])).sort()
   expect(flagged).toEqual(['cockpit:happened:THV-1041:report-DONE_WITH_CONCERNS', 'cockpit:report:THV-1045:sid-b'])
-  expect(flagged).toEqual(expired(stored, { now: NOW, prs: undefined, linear: undefined, onBoard: ticketsOn(board) }).map((e) => e.key).sort())
+  expect(flagged).toEqual(expired(stored, { now: NOW, prs: undefined, linear: undefined, ...keptBy(board) }).map((e) => e.key).sort())
   expect(doctorText(r).split('\n').filter((l) => l.includes('THV-1045:'))).toEqual([
     '  15 d   cockpit:report:THV-1045:sid-b  older than 14 days, main deletes it',
     '  15 d   cockpit:update:THV-1045:report-DONE_WITH_CONCERNS',
@@ -290,7 +294,7 @@ test('main keeps a 15-day-old happened key for the ticket on screen, so its even
   expect(s.setKeys).toEqual(['cockpit:main:w18'])
 })
 
-test('doctor in main flags exactly the keys main\'s next pass deletes, and THV-1045 on screen keeps its round trip', { timeoutMs: 20_000 }, async ($, on) => {
+test('doctor in main flags exactly the keys main\'s next pass deletes, and THV-1045 on screen keeps its round trip', async ($, on) => {
   const s = stage(on, { pane: 'w18:p8W', snapshot: SNAPSHOT })
   await s.clock.set(NOW)
   await start($)
@@ -306,7 +310,7 @@ test('doctor in main flags exactly the keys main\'s next pass deletes, and THV-1
   expect(LATE.map(keyOf).filter((k) => !s.saved.has(k)).sort()).toEqual(['cockpit:happened:THV-1041:report-DONE_WITH_CONCERNS', 'cockpit:report:THV-1045:sid-b'])
 })
 
-test('main runs an expiry pass once an hour, not every tick', { timeoutMs: 20_000 }, async ($, on) => {
+test('main runs an expiry pass once an hour, not every tick', async ($, on) => {
   const s = stage(on, { pane: 'w18:p8W', snapshot: SNAPSHOT })
   await s.clock.set(NOW)
   await start($)

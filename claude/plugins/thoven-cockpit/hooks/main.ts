@@ -9,16 +9,18 @@
 import { labelRecords, recordKey } from './background.ts'
 import { project } from './board.ts'
 import { COMMANDS, type Req } from './commands.ts'
-import { EXPIRY_PASS_MS, expired, ticketsOn, type Stored } from './expiry.ts'
+import { EXPIRY_PASS_MS, expired, keptBy, type Stored } from './expiry.ts'
 import { claimOf } from './facts.ts'
 import { linearEntries, updateArgs } from './linear.ts'
-import type { Board, Fact, FactKind, FactOf, Intent, Main, Me, Ms, PaneId, PaneUi, Pending, SourceId, Sources, SourceValues, World } from './model.ts'
+import { messageOf, type Board, type Fact, type FactKind, type FactOf, type Intent, type Main, type Me, type Ms, type PaneId, type PaneUi, type Pending, type SourceId, type Sources, type SourceValues, type World } from './model.ts'
 import { BY_ID, HEARTBEAT_MS, STAGES, due, settle, unpolled, valueOf, type Ask, type Seen } from './sources.ts'
 
 /** The effects main performs, each a closure over `$` that register.ts builds. */
 export type Shell = {
-  /** The reads a poll makes. `proc` also runs the label push and herdr focus. */
+  /** The reads a poll makes. */
   ask: Ask
+  /** Run a process that changes herdr: the label push and the pane focus. */
+  proc(req: Req): Promise<string>
   now(): Promise<Ms>
   loadFacts(only?: FactKind): Promise<Fact[]>
   loadStored(): Promise<Stored[]>
@@ -34,7 +36,7 @@ export type Shell = {
   debug(where: string, err: unknown): Promise<void>
 }
 
-/** What only main holds. becomeMain builds it fresh and loseClaim drops it, so a re-claim polls every source at once. */
+/** What only main holds. becomeMain builds it fresh and becomeOther drops it, so a re-claim polls every source at once. */
 type MainState = {
   who: Main
   sources: Sources
@@ -43,7 +45,6 @@ type MainState = {
   polling: Set<SourceId>
   board: Board | undefined
   heartbeat: { cancel(): void }
-  isDrawing: boolean
   /** When the last expiry pass ran; undefined runs one on the first tick that drew. */
   expiredAt: Ms | undefined
   /** The label record last pushed to each pane, so a push happens only on change (ADR9). */
@@ -51,7 +52,10 @@ type MainState = {
 }
 
 // ── Module state: caches only. Everything here can be lost on reload and rebuilt in one tick. ──
-/** Who this session is, main's state while it holds the claim, and the pane's selection. register.ts reads and sets `me` too. */
+/**
+ * Who this session is, main's state while it holds the claim, and the pane's selection. Every role
+ * change is becomeMain or becomeOther; register.ts's `record` only keeps what an observer saw.
+ */
 export const held: { me: Me; main: MainState | undefined; ui: PaneUi } = {
   me: { k: 'inert' },
   main: undefined,
@@ -72,16 +76,16 @@ export function becomeMain(sh: Shell, claim: FactOf<'main'>, place: Pick<Main, '
   })
   held.me = who
   const sources = herdr ? { ...unpolled(), herdr } : unpolled()
-  held.main = { who, sources, lastRun: herdr ? { herdr: claim.at } : {}, polling: new Set(), board: undefined, heartbeat, isDrawing: false, expiredAt: undefined, pushed }
+  held.main = { who, sources, lastRun: herdr ? { herdr: claim.at } : {}, polling: new Set(), board: undefined, heartbeat, expiredAt: undefined, pushed }
   void tick(sh)
 }
 
-/** The one way out of main. A session that is not main does nothing. */
-export async function loseClaim(sh: Shell): Promise<void> {
+/** The one way to any role but main. A session that held main stops its heartbeat and closes its pane. */
+export async function becomeOther(sh: Shell, next: Exclude<Me, Main>): Promise<void> {
   const m = held.main
+  held.me = next
   if (!m) return
   m.heartbeat.cancel()
-  held.me = { k: 'pane', pane: m.who.pane, sid: m.who.sid, engagements: [] }
   held.main = undefined
   await sh.closePane()
 }
@@ -96,7 +100,7 @@ async function tick(sh: Shell): Promise<void> {
   if (!m) return
   try {
     if (claimOf(await sh.loadFacts('main'), m.who.space)?.pane !== m.who.pane) {
-      if (held.main === m) await loseClaim(sh)
+      if (held.main === m) await becomeOther(sh, { k: 'pane', pane: m.who.pane, sid: m.who.sid, engagements: [] })
       return
     }
     const now = await sh.now()
@@ -104,7 +108,7 @@ async function tick(sh: Shell): Promise<void> {
       const ids = due(m.lastRun, now, seenOf(m, now)).filter((id) => stage.includes(id) && !m.polling.has(id))
       await Promise.all(ids.map((id) => poll(sh, m, id, now)))
     }
-    await draw(sh, m)
+    if (held.main === m) await draw(sh)
     if (m.board && held.main === m && (m.expiredAt === undefined || now - m.expiredAt >= EXPIRY_PASS_MS)) {
       m.expiredAt = now
       await expire(sh, m, now)
@@ -123,7 +127,7 @@ async function pushLabels(sh: Shell, m: MainState): Promise<void> {
     if (m.pushed.get(pane) === key) continue
     m.pushed.set(pane, key)
     try {
-      await sh.ask.proc(COMMANDS['herdr pane report-metadata'](pane, label))
+      await sh.proc(COMMANDS['herdr pane report-metadata'](pane, label))
     } catch (err) {
       if (m.pushed.get(pane) === key) m.pushed.delete(pane)
       await sh.debug('label push', err)
@@ -138,27 +142,42 @@ async function pushLabels(sh: Shell, m: MainState): Promise<void> {
 async function expire(sh: Shell, m: MainState, now: Ms): Promise<void> {
   const board = m.board
   if (!board) return
-  const gone = expired(await sh.loadStored(), { now, prs: valueOf(m.sources.github)?.prs, linear: linearEntries(m.sources), onBoard: ticketsOn(board) })
+  const gone = expired(await sh.loadStored(), { now, prs: valueOf(m.sources.github)?.prs, linear: linearEntries(m.sources), ...keptBy(board) })
   for (const { key } of gone) await sh.deleteKey(key)
 }
 
 /**
- * Project and redraw. One draw at a time, from facts loaded now: two overlapping ticks never
- * write one `happened` twice, and a tick that waited on a hung source draws no stale facts.
+ * One draw at a time in this session, not per MainState: after a re-claim the old main's draw and
+ * the new one's never both write.
  */
-async function draw(sh: Shell, m: MainState): Promise<void> {
-  if (m.isDrawing || held.main !== m) return
-  m.isDrawing = true
+const drawing = { isRunning: false, isAgain: false }
+
+/**
+ * Project and redraw the current main, from facts loaded now: two overlapping ticks never write one
+ * `happened` twice, and a tick that waited on a hung source draws no stale facts. A draw asked for
+ * while one runs is run once it ends, so a poll that settled meanwhile is drawn at once.
+ */
+async function draw(sh: Shell): Promise<void> {
+  if (drawing.isRunning) {
+    drawing.isAgain = true
+    return
+  }
+  drawing.isRunning = true
   try {
-    const facts = await sh.loadFacts()
-    const now = await sh.now()
-    const board = project(worldOf(m, now, facts))
-    m.board = board
-    // Set once: the board lists only events with no `happened` fact in what this draw loaded.
-    for (const e of board.newEvents) await sh.writeFact({ kind: 'happened', ticket: e.ticket, event: e.id, at: now })
-    sh.redraw()
+    do {
+      drawing.isAgain = false
+      const m = held.main
+      if (!m) return
+      const facts = await sh.loadFacts()
+      const now = await sh.now()
+      const board = project(worldOf(m, now, facts))
+      m.board = board
+      // Set once: the board lists only events with no `happened` fact in what this draw loaded.
+      for (const e of board.newEvents) await sh.writeFact({ kind: 'happened', ticket: e.ticket, event: e.id, at: now })
+      sh.redraw()
+    } while (drawing.isAgain)
   } finally {
-    m.isDrawing = false
+    drawing.isRunning = false
   }
 }
 
@@ -228,8 +247,7 @@ async function sendUpdate(sh: Shell, args: string, pending: readonly Pending[]):
     await sh.workspace(args)
     const at = await sh.now()
     for (const p of pending) await sh.writeFact({ kind: 'update', ticket: p.ticket, event: p.id, at })
-    const m = held.main
-    if (m) await draw(sh, m)
+    await draw(sh)
   } catch (err) {
     await sh.debug('update', err)
   }
@@ -237,7 +255,7 @@ async function sendUpdate(sh: Shell, args: string, pending: readonly Pending[]):
 
 async function focusPane(sh: Shell, req: Req): Promise<void> {
   try {
-    await sh.ask.proc(req)
+    await sh.proc(req)
   } catch (err) {
     await sh.debug('focus', err)
   }
@@ -250,8 +268,4 @@ function seenOf(m: MainState, now: Ms): Seen {
 
 function worldOf(m: MainState, now: Ms, facts: Fact[]): World {
   return { now, me: m.who, sources: m.sources, facts }
-}
-
-export function messageOf(err: unknown): string {
-  return err instanceof Error ? err.message : String(err)
 }

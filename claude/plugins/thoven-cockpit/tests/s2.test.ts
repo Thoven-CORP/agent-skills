@@ -2,7 +2,7 @@
 // cells it fills, then the hooks under kit stubs: a prompt or hand-back writes a fact, main's own
 // send.sh call writes a fact, the inbox marks an unsent report, and main reads them all.
 
-import { expect, test } from 'claude-code/testing'
+import { expect } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { ciCell } from '../hooks/cells.ts'
 import { inboxFile, readPrompt, sendCalls, statusLines, unwrapPasted } from '../hooks/dispatch.ts'
@@ -28,7 +28,7 @@ import {
 import { BUILT_CONCERNS_TABLE_THV_1045 } from './fixtures/built.ts'
 import { SEND_1, SEND_2, SEND_3, SEND_4, SEND_5, SEND_6, SEND_FIX2_THV_1004 } from './fixtures/send.ts'
 import { GH_AGENT_SKILLS_WAVE, SEND_P_THV_1095, SNAPSHOT_AFTER_WAVE, STORE_WAVE } from './fixtures/wave.ts'
-import { PANE, bash, cockpit, fresh, idOf, mainOf, must, receive, relabelPane, relabelTab, rowOf, stage, start, submit, tk, worldOf } from './stage.ts'
+import { PANE, bash, cockpit, fresh, idOf, mainOf, must, receive, relabelPane, relabelTab, rowOf, stage, start, submit, tk, worldOf, test, INBOX_DIR } from './stage.ts'
 
 /** p8V's session id in SNAPSHOT_LIVE (`agent_session.value`). */
 const P8V_SID = '27c71f2d-e064-4ebc-ae51-e993d40abfac'
@@ -412,4 +412,13 @@ test('main draws an unsent report from the inbox, and records report DONE once',
   expect(happened).toEqual({ kind: 'happened', ticket: 'THV-1041', event: 'report-DONE', at: 5000 })
   await s.clock.advance(20_000)
   expect(s.saved.get('cockpit:happened:THV-1041:report-DONE')).toEqual(happened)
+})
+
+test('an inbox file whose name gives no ticket is never read, however many polls list it', async ($, on) => {
+  const s = stage(on, { pane: 'w18:p8W', snapshot: SNAPSHOT_LIVE, store: { 'cockpit:main:w18': { kind: 'main', space: 'w18', sid: 'sid-a', pane: 'w18:p8W', at: 0 } } })
+  s.inbox.set('w18-p8X.md', { text: 'w18:p8X keeps reporting done with live processes', mtimeMs: 1_000 })
+  await start($)
+  await s.clock.advance(30_000)
+  expect(s.fsCalls.filter((c) => c === `list ${INBOX_DIR}`).length).toBeGreaterThan(1)
+  expect(s.fsCalls.filter((c) => c.endsWith('/w18-p8X.md'))).toEqual([])
 })

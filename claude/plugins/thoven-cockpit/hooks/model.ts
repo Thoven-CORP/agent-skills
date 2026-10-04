@@ -68,6 +68,11 @@ export function isOneOf<L extends readonly string[]>(list: L): (v: unknown) => v
   return (v): v is L[number] => list.some((word) => word === v)
 }
 
+/** A thrown value as one line of text. */
+export function messageOf(err: unknown): string {
+  return err instanceof Error ? err.message : String(err)
+}
+
 /** The one way outside text becomes an id: herdr, Claude Code and the store hand out non-empty strings. */
 const isId = (v: unknown): v is string => typeof v === 'string' && v !== ''
 /** A pane id is herdr's `w…:p…` shape, so a send.sh operand the shell never expanded (`$P`) is not one. */
@@ -136,8 +141,12 @@ export type Fact =
   | ({ kind: 'review' } & SkillRun)
   /** `self:<ticket>:<sid>:<skill>`. The same, under any other brief: the builder's own check (ADR12). */
   | ({ kind: 'self' } & SkillRun)
-  /** `ran:<sid>:<skill>`. A Review skill a pane ran holding no brief. A verdict reply names its ticket, makes it `review` and marks it claimed. */
-  | { kind: 'ran'; sid: SessionId; skill: ReviewSkill; at: Ms; claimed?: true }
+  /**
+   * `ran:<sid>:<skill>`. A Review skill a pane ran holding no brief. The first verdict reply after it
+   * names its ticket, makes it `review` and marks it claimed; a run older than a brief the pane holds
+   * is never claimed.
+   */
+  | ({ kind: 'ran'; claimed?: true } & Omit<SkillRun, 'ticket' | 'round'>)
   /** `update:<ticket>:<event>`. Main handed the event to `/workspace update` at `at`; a second press replaces it. */
   | { kind: 'update'; ticket: Ticket; event: LinearEventId; at: Ms }
   /** `readback:<ticket>:<sid>`. The newest `THV-n <State>` or `THV-n ERROR <reason>` line main saw. */

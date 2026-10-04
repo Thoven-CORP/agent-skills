@@ -8,7 +8,7 @@
 // rollout's folder, since no snapshot on file holds a Codex pane. The THV-1096 brief from wave
 // THV-1094 meets a tab relabelled to its ticket, and each poteto-mode playbook name is set into its head.
 
-import { expect, test } from 'claude-code/testing'
+import { expect } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { parseRollout } from '../hooks/codex.ts'
 import { briefOf } from '../hooks/dispatch.ts'
@@ -24,7 +24,7 @@ import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import * as REPORTS from './fixtures/reports.ts'
 import { BRIEF_BUG_FIX_THV_1096 } from './fixtures/wave.ts'
 import { ROLLOUT_VERIFY_THV_1000, ROLLOUT_VERIFY_THV_1000_PATH, SKILL_PROMPT_DESLOP, SKILL_TOOL_CALL, SKILL_TOOL_RESULT } from './fixtures/review.ts'
-import { HOME, cockpit, fakeAsk, fresh, idOf, mainOf, must, relabelTab, rowOf, rowsOf, stage, start, submit, tk, turnEnd, worldOf, type Stage } from './stage.ts'
+import { HOME, cockpit, fakeAsk, fresh, idOf, linearEntry, mainOf, must, relabelTab, rowOf, rowsOf, stage, start, submit, tk, turnEnd, worldOf, type Stage, test } from './stage.ts'
 
 const P8V_SID = '27c71f2d-e064-4ebc-ae51-e993d40abfac'
 const W18 = mainOf('w18', 'w18:p8W')
@@ -181,9 +181,10 @@ test('merged-done expiry does not let a later verdict reclaim another ticket\'s 
 
   const removed = expired([...s.saved].map(([key, value]) => ({ key, value })), {
     now: 3000,
-    prs: [{ ...BE_142, state: 'MERGED' }],
-    linear: new Map([[tk('THV-1003'), { state: { name: 'Done', type: 'completed', position: 0 }, parent: undefined, at: 0 }]]),
+    prs: [BE_142],
+    linear: new Map([[tk('THV-1003'), linearEntry('Done', 'completed')]]),
     onBoard: new Set(),
+    closed: new Set(),
   })
   expect(removed.map(({ key }) => key).sort()).toEqual([
     `cockpit:brief:THV-1003:${P8V_SID}`,
@@ -281,6 +282,18 @@ test('main relaying a VERIFIED line is not a verifier', async ($, on) => {
   await cockpit($)
   await turnEnd($, 'VERIFIED THV-1003\n\nThe verifier pane signed it off.')
   expect(briefKeys(s)).toEqual([])
+})
+
+test('a verifier pane with no ticket in its label or title that replies for a second ticket gives each ticket a Review row titled by itself', async () => {
+  // Derived: p8V's terminal title dropped, so only the briefs its two verdict replies wrote tie it.
+  const root = JSON.parse(SNAPSHOT_LIVE)
+  for (const p of root.result.snapshot.panes) if (p.pane_id === 'w18:p8V') delete p.terminal_title_stripped
+  const brief = (t: string, at: number): Fact => ({ kind: 'brief', k: 'first', ticket: tk(t), role: 'verifier', sid: idOf(isSessionId, P8V_SID), pane: idOf(isPaneId, 'w18:p8V'), at })
+  const rows = rowsOf(project(worldOf(W18, JSON.stringify(root), { facts: [brief('THV-1003', 2000), brief('THV-1004', 62_000)] })))
+  expect(rows.map((r) => [r.ticket, r.kind, r.title])).toEqual([
+    ['THV-1003', 'Review', 'THV-1003'],
+    ['THV-1004', 'Review', 'THV-1004'],
+  ])
 })
 
 // ── Skill capture rules ───────────────────────────────────────────────────────────────────────

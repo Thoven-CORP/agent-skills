@@ -3,13 +3,13 @@
 // list. commands.ts makes the bad argv hard to write; this test proves none was run. linear.ts's
 // StateQuery makes a mutation body impossible to type; the last two tests prove none was sent.
 
-import { expect, test } from 'claude-code/testing'
+import { expect } from 'claude-code/testing'
 import { COMMANDS, type CommandName, type Req } from '../hooks/commands.ts'
 import { isPaneId } from '../hooks/model.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import { stateQuery, type StateQuery } from '../hooks/linear.ts'
 import { LINEAR_STATES_945_1038 } from './fixtures/linear.ts'
-import { HOME, PANE, cockpit, idOf, relabelTab, stage, start, tk } from './stage.ts'
+import { HOME, PANE, cockpit, idOf, relabelTab, stage, start, tk, test } from './stage.ts'
 
 const SNAPSHOT = relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Consent evidence hardening (THV-1045)')
 

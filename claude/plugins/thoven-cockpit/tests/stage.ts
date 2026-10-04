@@ -2,15 +2,25 @@
 // stubs: a herdr that answers from a real snapshot (or fails, or hangs), a Map for $.store, and
 // recorders for what the mod opened, closed and ran.
 
-import { mock } from 'claude-code/testing'
+import { mock, test as kitTest, type TestBody, type TestOptions } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { COMMANDS, type Req } from '../hooks/commands.ts'
 import { ticket } from '../hooks/dispatch.ts'
 import { parseSnapshot } from '../hooks/herdr.ts'
+import type { LinearEntry, LinearState } from '../hooks/linear.ts'
 import { isPaneId, isSessionId, isSpaceId, type Board, type Fact, type Main, type Polled, type Row, type Sources, type Ticket, type World } from '../hooks/model.ts'
 import { parseLiveSpaces, unpolled, type Ask, type Listing } from '../hooks/sources.ts'
 import { PANE_GET_P8W } from './fixtures/herdr.ts'
 import { WORKFLOW_LIVE_SPACES } from './fixtures/workflow.ts'
+
+/**
+ * The kit's `test`, 30 s by default rather than 5 s: a kit test drives many `mock.clock` ticks, and
+ * under machine load (load average 31 on 2026-10-03) one timed out at random.
+ */
+export function test(name: string, ...rest: readonly [TestBody] | readonly [TestOptions, TestBody]): void {
+  if (rest.length === 1) kitTest(name, { timeoutMs: 30_000 }, rest[0])
+  else kitTest(name, { timeoutMs: 30_000, ...rest[0] }, rest[1])
+}
 
 export const HOME = '/Users/andresmartinez'
 export const MAIN_CWD = '/Users/andresmartinez/thoven/frontend'
@@ -35,6 +45,9 @@ export function idOf<T>(isT: (v: unknown) => v is T, text: string): T {
 
 /** A literal as a ticket, through dispatch.ts's `ticket()`, the one place tickets are made. */
 export const tk = (text: string): Ticket => must(ticket(text))
+
+/** What a Linear read said of a ticket: a state of this name and type, no parent. */
+export const linearEntry = (name: string, type: LinearState['type']): LinearEntry => ({ state: { name, type, position: 0 }, parent: undefined, at: 0 })
 
 export function mainOf(space: string, pane: string, cwd = MAIN_CWD): Main {
   return { k: 'main', space: idOf(isSpaceId, space), pane: idOf(isPaneId, pane), sid: idOf(isSessionId, 'sid-main'), cwd, home: HOME, tmp: TMPDIR }
@@ -139,6 +152,8 @@ export type Stage = {
   storeCalls: number
   /** `$TMPDIR/dispatch/out/`: file name → text and mtime. Empty means the folder does not exist. */
   inbox: Map<string, { text: string; mtimeMs: number }>
+  /** Set to make listing the inbox hang, as a stuck disk can. */
+  inboxHangs: boolean
   /** What `herdr api snapshot` does now (`slow` answers after 2 s); a test changes `snapshot` to move the space on. */
   herdr: { mode: 'ok' | 'fail' | 'hang' | 'slow'; snapshot: string }
   /** What `gh pr list --repo <repo>` answers, by repo. A repo with no entry lists `[]`. */
@@ -176,6 +191,7 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
     logs: [],
     storeCalls: 0,
     inbox: new Map(),
+    inboxHangs: false,
     herdr: { mode: 'ok', snapshot: o.snapshot },
     gh: { mode: 'ok', byRepo: {} },
     files: new Map(),
@@ -238,8 +254,9 @@ export function stage(on: any, o: { pane?: string; sid?: string; snapshot: strin
   // A folder exists when `files` holds something under it, so `<cwd>/.git/HEAD` makes `.git` a folder.
   const under = (dir: string): string[] => [...s.files.keys()].filter((k) => k.startsWith(`${dir}/`)).map((k) => k.slice(dir.length + 1))
   on('fs.exists', (_$: unknown, e: { path: string }) => (s.fsCalls.push(`exists ${e.path}`), { value: e.path === INBOX_DIR ? s.inbox.size > 0 : s.files.has(e.path) || under(e.path).length > 0 }))
-  on('fs.list', (_$: unknown, e: { path: string }) => {
+  on('fs.list', async (_$: unknown, e: { path: string }) => {
     s.fsCalls.push(`list ${e.path}`)
+    if (e.path === INBOX_DIR && s.inboxHangs) await clock.sleep(40_000)
     if (e.path === INBOX_DIR) return { value: [...s.inbox].map(([name, f]) => ({ name, kind: 'file', size: f.text.length, mtimeMs: f.mtimeMs, isLink: false })) }
     const kinds = new Map(under(e.path).map((rest) => [rest.split('/')[0] ?? '', rest.includes('/') ? 'dir' : 'file']))
     return kinds.size > 0 ? { value: [...kinds].map(([name, kind]) => ({ name, kind, size: 0, mtimeMs: 0, isLink: false })) } : { deny: `ENOENT: ${e.path}` }

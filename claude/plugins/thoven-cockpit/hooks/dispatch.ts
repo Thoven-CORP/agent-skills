@@ -255,7 +255,7 @@ const HEAD_MAX = 300
 const ESCALATION = /^\[thoven verify\]/
 
 /** The ticket an inbox file name gives: `THV-1041.md` → THV-1041, `w40-p1.md` → undefined. */
-function inboxTicket(name: string): Ticket | undefined {
+export function inboxTicket(name: string): Ticket | undefined {
   const m = /^(THV-\d+)\.md$/i.exec(name)
   return m?.[1] ? ticket(m[1]) : undefined
 }

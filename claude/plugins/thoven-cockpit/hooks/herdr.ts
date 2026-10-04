@@ -77,10 +77,10 @@ export function findMe(snapshot: Snapshot, envPane: string | undefined, sid: Ses
 }
 
 /**
- * `w18:p8W` → `w18`: herdr 0.9.0 prefixes every pane id with its workspace id. Used only when the
- * snapshot cannot be read, so `/cockpit` can still claim and say "herdr unavailable".
+ * `w18:p8W` → `w18`: herdr 0.9.0 prefixes every pane id with its workspace id. Only a pane id
+ * (model.ts isPaneId) has a space, so `$P` or `18:8W` names none.
  */
 export function spaceOfPane(pane: string | undefined): SpaceId | undefined {
-  const space = pane === undefined ? undefined : /^([^:\s]+):[^:\s]+$/.exec(pane)?.[1]
+  const space = isPaneId(pane) ? pane.split(':')[0] : undefined
   return isSpaceId(space) ? space : undefined
 }

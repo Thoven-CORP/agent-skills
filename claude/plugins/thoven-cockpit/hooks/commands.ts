@@ -1,8 +1,9 @@
 // commands.ts: every process the cockpit can run, built here and only here.
 //
 // The spec's static gate forbids any process argv that merges. Rather than list what is banned,
-// this module lists what is allowed: each entry below is one read-only subcommand, keyed by its
-// own words, its flags are literals, and only its operands come from data. `mint` and its symbol
+// this module lists what is allowed: each entry below is one subcommand, keyed by its own words,
+// its flags are literals, and only its operands come from data. Every entry reads, except the
+// herdr label push (`pane report-metadata`) and `agent focus`, which moves herdr's focus. `mint` and its symbol
 // are not exported, so no other file can make a `Req`, and register.ts runs nothing else.
 // tests/gate.test.ts builds every entry and replays a session against this list.
 

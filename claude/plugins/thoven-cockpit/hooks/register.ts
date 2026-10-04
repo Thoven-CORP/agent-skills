@@ -12,8 +12,8 @@
 //   inert  (no HERDR_PANE_ID)  one regex per prompt and one substring test per Bash command; a
 //                              store write only for a report or verdict. No timers, no processes
 //   pane   (not main)          the same, and a brief, a send.sh call, a Review skill run (a `ran`
-//                              while it holds no brief) and a verdict its own answer gave are written too;
-//                              a send.sh in a space with no main makes it main (ADR3)
+//                              while it holds no brief) and a verdict its own answer gave are
+//                              written too; a send.sh in a space with no main makes it main (ADR3)
 //   main   (claimed a space)   one 5 s heartbeat timer; all polling, projection, drawing
 //
 // Crash safety: every hook is one line over a shape below, and no try/catch wraps `next`:
@@ -25,14 +25,14 @@
 import type { EngineInterface, Register, RenderElement } from 'claude-code'
 import { CHECKPOINT_FRESH_MS, briefPath, briefsSent, builderTickets, checkpointOf, checkpointText, isWatching, rulingsFrom, sentLines, statusWarning, watcherWarning, type BackgroundTasks } from './background.ts'
 import { readPrompt, sendCalls, statusLines } from './dispatch.ts'
-import { answerSeen, bashSeen, promptSeen, readbackSeen, sendClaim, skillSeen, verdictSeen, type Observer } from './observe.ts'
+import { answerSeen, bashSeen, promptSeen, readbackSeen, sendClaim, skillSeen, type Observer } from './observe.ts'
 import { reviewSkill } from './review.ts'
 import { LINEAR_URL, readbacks, type StateQuery } from './linear.ts'
 import { claimHeldBy } from './facts.ts'
 import { COMMANDS, type Req } from './commands.ts'
 import { findMe, parseSnapshot, spaceOfPane } from './herdr.ts'
-import { act, becomeMain, held, loseClaim, messageOf, noteFocus, type Shell } from './main.ts'
-import { isPaneId, isSessionId, type Fact, type FactKind, type FactOf, type Main, type PaneId, type SessionId, type Snapshot } from './model.ts'
+import { act, becomeMain, becomeOther, held, noteFocus, type Shell } from './main.ts'
+import { isPaneId, isSessionId, messageOf, type Fact, type FactKind, type FactOf, type Main, type PaneId, type SessionId, type Snapshot } from './model.ts'
 import { settle, type Ask, type Listing } from './sources.ts'
 import { isCockpitKey, isFactKey, keyOf, parseFact } from './store.ts'
 import { doctorText, drawCockpit } from './view.ts'
@@ -120,8 +120,8 @@ async function passThenObserve<E, R>($: Api, where: string, e: E, next: (e: E) =
 // ── Top-level effects. Each takes `$` and is the only code that performs its kind of effect. ──
 
 /**
- * Pass on, then add one line under the answer when this turn needs it, and note a verdict the
- * answer gave. A line other than the answer is what Claude Code shows beneath it, so a hook
+ * Pass on, then add one line under the answer when this turn needs it, and note the status lines
+ * the answer gave. A line other than the answer is what Claude Code shows beneath it, so a hook
  * beneath that already added one keeps it.
  */
 async function endTurn<E extends { answer: string; reason: string; agentId?: string }, R extends { text: string }>($: Api, e: E, next: (e: E) => Promise<R>): Promise<R> {
@@ -136,12 +136,7 @@ async function endTurn<E extends { answer: string; reason: string; agentId?: str
   stopped = undefined
   let warning: string | undefined
   try {
-    if (e.reason === 'answer') warning = await turnWarning($, e.answer, stop)
-  } catch (err) {
-    await debug($, 'turn.complete', err)
-  }
-  try {
-    if (e.reason === 'answer') await noteVerdicts($, e.answer)
+    if (e.reason === 'answer') warning = await noteAnswer($, e.answer, stop)
   } catch (err) {
     await debug($, 'turn.complete', err)
   }
@@ -220,8 +215,7 @@ async function resolveMe($: Api, sid: SessionId): Promise<void> {
     becomeMain(shellOf($), { ...claim, sid }, await placeOf($))
     return
   }
-  await loseClaim(shellOf($))
-  held.me = pane ? { k: 'pane', pane, sid, engagements: held.me.k === 'pane' ? held.me.engagements : [] } : { k: 'inert' }
+  await becomeOther(shellOf($), pane ? { k: 'pane', pane, sid, engagements: held.me.k === 'pane' ? held.me.engagements : [] } : { k: 'inert' })
 }
 
 /**
@@ -280,18 +274,19 @@ function noteStop(tasks: BackgroundTasks): void {
 }
 
 /**
- * The line this turn ends with, if any. Main: panes working and no watch.sh at its Stop. A pane
- * holding a builder brief: no status line for a ticket it holds, else the line is its status fact.
+ * The line this turn ends with, if any, after recording what a pane's answer gave (answerSeen).
+ * Main: panes working and no watch.sh at its Stop. A pane holding a builder brief: no status line
+ * for a ticket it holds. Inert pays nothing per answer.
  */
-async function turnWarning($: Api, answer: string, stop: { watching: boolean } | undefined): Promise<string | undefined> {
+async function noteAnswer($: Api, answer: string, stop: { watching: boolean } | undefined): Promise<string | undefined> {
   if (held.main) return stop === undefined ? undefined : watcherWarning(held.main.board?.working ?? [], stop.watching)
   if (held.me.k !== 'pane') return undefined
-  const tickets = builderTickets(await loadFacts($, 'brief'), held.me.sid)
-  if (tickets.length === 0) return undefined
-  const lines = sentLines(tickets, answer)
-  if (lines.length === 0) return statusWarning(tickets)
-  await record($, answerSeen, lines)
-  return undefined
+  const sid = held.me.sid
+  const lines = statusLines(answer)
+  const briefs = await loadBriefs($)
+  const tickets = builderTickets(briefs, sid)
+  if (lines.length > 0) await record($, answerSeen, { lines, briefs, ran: tickets.length === 0 ? await loadRan($) : [] })
+  return tickets.length > 0 && sentLines(tickets, lines).length === 0 ? statusWarning(tickets) : undefined
 }
 
 /** `/cockpit doctor`: read only, in any session. */
@@ -329,6 +324,7 @@ function askOf($: Api): Ask {
 function shellOf($: Api): Shell {
   return {
     ask: askOf($),
+    proc: (req) => runProc($, req),
     now: () => $.clock.now(),
     loadFacts: (only) => loadFacts($, only),
     loadStored: () => loadStored($),
@@ -433,13 +429,12 @@ async function noteBash($: Api, r: object, command: unknown): Promise<void> {
   if (held.me.k === 'pane') await claimBySend($)
 }
 
-/** The first send.sh in a space no session holds makes this session its main. The pane opens unfocused: the model sent, nobody pressed. */
+/** The first send.sh in a space no session holds makes this session its main. It claims only: `/cockpit` opens the pane. */
 async function claimBySend($: Api): Promise<void> {
   const claim = sendClaim(held.me, await loadFacts($, 'main'), await $.clock.now())
   if (!claim) return
   await writeFact($, claim)
   becomeMain(shellOf($), claim, await placeOf($))
-  await $.ui.open({ id: PANE_ID, title: 'Cockpit' })
 }
 
 /** A loop's event carries `agentId` only inside a subagent or teammate: their skills are not this session's. */
@@ -475,15 +470,12 @@ async function noteSkill($: Api, name: string): Promise<void> {
   await record($, skillSeen, { skill, briefs: await loadBriefs($) })
 }
 
-/** A verdict this pane's own answer gave makes it that ticket's verifier. Inert and main pay nothing per answer. */
-async function noteVerdicts($: Api, answer: string): Promise<void> {
-  if (held.me.k !== 'pane') return
-  const lines = statusLines(answer)
-  if (lines.length > 0) await record($, verdictSeen, { lines, briefs: await loadBriefs($), ran: (await loadFacts($, 'ran')).flatMap((f) => (f.kind === 'ran' ? [f] : [])) })
-}
-
 async function loadBriefs($: Api): Promise<Array<FactOf<'brief'>>> {
   return (await loadFacts($, 'brief')).flatMap((f) => (f.kind === 'brief' ? [f] : []))
+}
+
+async function loadRan($: Api): Promise<Array<FactOf<'ran'>>> {
+  return (await loadFacts($, 'ran')).flatMap((f) => (f.kind === 'ran' ? [f] : []))
 }
 
 /** Run a pure observer on what a hook saw, keep its `me`, and write its facts. */
