@@ -422,10 +422,19 @@ export type Intent =
   | { k: 'focus-pane'; pane: PaneId }
   | { k: 'checks'; pr: string } // `c`, or a PR row pressed: show or hide that PR's unfinished and failed checks
   | { k: 'update'; pending: Pending[] } // ↻ on a row, or `u` for every row: hand the events to `/workspace update`
+  | { k: 'help' } // `?`: show or hide what the columns and keys mean
   | { k: 'fill'; text: string } // `m` or `r` on the PRs tab: a draft in the prompt box, which Andres sends or not
 
 /**
  * `selected` is the ticket of the Work row whose button holds the focus ring, `selectedPr` the
  * same for a PR row (`owner/name#n`). `checks` is the PR whose checks are listed.
  */
-export type PaneUi = { tab: TabName; selected: string | undefined; selectedPr: string | undefined; checks: string | undefined }
+export type PaneUi = {
+  tab: TabName
+  selected: string | undefined
+  selectedPr: string | undefined
+  checks: string | undefined
+  /** What the last press did, shown above the footer until the selection or tab changes. */
+  notice?: string | undefined
+  isHelpOpen?: boolean
+}

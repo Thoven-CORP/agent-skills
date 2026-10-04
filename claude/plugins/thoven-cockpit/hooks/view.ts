@@ -8,6 +8,7 @@
 import type { Elements, RenderElement } from 'claude-code'
 import type { DoctorReport } from './doctor.ts'
 import { ciCell } from './cells.ts'
+import { LEGEND, SENT_LINE, detailLines } from './detail.ts'
 import { pendingOf } from './linear.ts'
 import { AGENT_SKILLS, BACKEND, FRONTEND } from './github.ts'
 import { LETTERS } from './model.ts'
@@ -20,6 +21,8 @@ type Act = (i: Intent) => void | Promise<void>
 const DASH = '–'
 const MIN_WORK = 10
 const KIND_WIDTH = 9
+/** The Work tab's leftmost column: `▸` on the row the keys act on. */
+const MARK_WIDTH = 2
 
 /** What one cell reads, and its colour. `parts`, when set, are its pieces each in their own colour; `text` is them joined. */
 type Drawn = { text: string; color?: string | undefined; parts?: ReadonlyArray<{ text: string; color?: string | undefined; dim?: boolean }> }
@@ -98,59 +101,61 @@ export function drawCockpit(raw: El, board: Board | undefined, ui: PaneUi, colum
       ...healthLines(board.health).map((line) => Text({ color: 'yellow', children: [line] })),
       Text({ children: [' '] }),
       DRAW_TAB[ui.tab](el, board, ui, columns, act),
-      helpBlock(el, board, ui.tab),
+      footer(el, board, ui, act),
     ],
   })
 }
 
 /**
- * `m`, `r` and `t` for one open PR, led by the ticket and PR they act on. Each only drafts a prompt in
- * main's box; Andres sends it. `r` and `t` ask main to start the verifier pane (dispatch-work step 5), so the
- * Review cell lights from that pane's own run. `t` adds thermo whatever the diff size.
+ * `m`, `r` and `t` for one open PR, each only a draft in main's prompt box that Andres sends. `r` and `t`
+ * ask main to start the verifier pane (dispatch-work step 5), so the Review cell lights from that pane's own
+ * run; `t` adds thermo whatever the diff size. `isLabelled` leads them with the ticket and PR they act on,
+ * for the PRs tab, which has no detail strip. Without an open PR they read as one dim line saying why.
  */
-function draftButtons({ Text, Button }: El, pr: Pr | undefined, tickets: readonly string[], act: Act): RenderElement[] {
-  if (pr?.state !== 'OPEN') return []
+function draftButtons({ Text, Button }: El, pr: Pr | undefined, tickets: readonly string[], act: Act, isLabelled: boolean): RenderElement[] {
+  if (pr?.state !== 'OPEN') return [Text({ dimColor: true, children: ['m, r and t need an open PR'] })]
   const target = tickets.length > 0 ? tickets.join(' ') : pr.branch
   const verify = `Start the verifier for ${target} (${prKey(pr)}, base origin/${pr.base}) as dispatch-work step 5 says.`
   const draft = (key: string, label: string, hotkey: string, text: string) => Button({ key, label, hotkey, plain: true, onPress: () => act({ k: 'fill', text }) })
   return [
-    Text({ dimColor: true, children: [`${target} #${pr.number}:`] }),
+    ...(isLabelled ? [Text({ dimColor: true, children: [`${target} #${pr.number}:`] })] : []),
     draft('fill-merge', 'merge it', 'm', `merge it ${prKey(pr)}`),
     draft('fill-review', 'review', 'r', verify),
-    draft('fill-thermo', 'thermo', 't', `${verify} Run /thermo-nuclear-code-quality-review whatever the diff size.`),
+    draft('fill-thermo', 'review + thermo', 't', `${verify} Run /thermo-nuclear-code-quality-review whatever the diff size.`),
   ]
 }
 
-/** What each screen's keys do, drawn dim at the bottom so a lost reader can find them. */
-const HELP: Record<PaneUi['tab'], string[]> = {
-  work: [
-    'f, or pressing a title, jumps into the highlighted ticket\'s agent pane',
-    'm merge it · r review · t review plus thermo: each drafts a request in this session for the ticket named before the keys; you press send, and r and t start a verifier pane',
-    '1 2 3 switch tab',
-  ],
-  prs: [
-    'c, or pressing a PR, lists its failed or running checks',
-    'm merge it · r review · t review plus thermo: each drafts a request in this session for the PR named before the keys; you press send, and r and t start a verifier pane',
-    '1 2 3 switch tab',
-  ],
-  all: ['Press a pane to jump into it · 1 2 3 switch tab'],
+/** What the last press did, the one sentence every screen ends with, and `?` for what the columns and keys mean. */
+function footer({ Box, Text, Button }: El, board: Board, ui: PaneUi, act: Act): RenderElement {
+  const legend = [...LEGEND[ui.tab], ...(ui.tab === 'work' && board.pending.length > 0 ? ['Linear    ↻ has events to send; u sends every one to /workspace update.'] : [])]
+  return Box({
+    flexDirection: 'column',
+    children: [
+      Text({ children: [' '] }),
+      ui.notice === undefined ? null : Text({ color: 'green', children: [ui.notice] }),
+      Text({ dimColor: true, children: [SENT_LINE] }),
+      Button({ key: 'help', label: ui.isHelpOpen === true ? 'hide what the columns mean' : 'what the columns mean', hotkey: 'h', plain: true, dimColor: true, onPress: () => act({ k: 'help' }) }),
+      ...(ui.isHelpOpen === true ? legend.map((line) => Text({ dimColor: true, children: [line] })) : []),
+    ],
+  })
 }
-/** `u` is mentioned only while it is offered. */
-const UPDATE_HELP = 'u sends every pending ↻ Linear update to /workspace update'
-const helpBlock = ({ Box, Text }: El, board: Board, tab: PaneUi['tab']): RenderElement => {
-  const lines = tab === 'work' && board.pending.length > 0 ? [...HELP.work.slice(0, -1), UPDATE_HELP, ...HELP.work.slice(-1)] : HELP[tab]
-  return Box({ flexDirection: 'column', children: [Text({ children: [' '] }), Text({ dimColor: true, children: ['HELP'] }), ...lines.map((line) => Text({ dimColor: true, children: [line] }))] })
+
+/** Under the table: what the highlighted row means in sentences, then what to do with it. */
+function detailStrip({ Box, Text }: El, row: Row, columns: number): RenderElement {
+  const rule = `─ ${row.ticket} ${'─'.repeat(Math.max(3, columns - row.ticket.length - 3))}`
+  return Box({ flexDirection: 'column', children: [Text({ dimColor: true, wrap: 'truncate-end', children: [rule] }), ...detailLines(row).map((line) => Text({ children: [line] }))] })
 }
 
 function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): RenderElement {
   const { Box, Text, Button } = el
-  const { work, shown } = columnsFor(columns, board)
+  const { work: tableWidth, shown } = columnsFor(columns, board)
+  const work = tableWidth - MARK_WIDTH
   const rows = board.build.flatMap(rowsOf)
   const selected = rows.find((r) => r.ticket === ui.selected) ?? rows[0]
   const focusTarget = selected?.panes.k === 'live' ? selected.panes.list[0].pane : undefined
 
   const isStale = (c: Column) => c.source !== undefined && board.health[c.source].k === 'stale'
-  const headingRow = Box({ flexDirection: 'row', children: [cell(el, work, { text: 'Work' }, true), ...shown.map((c) => cell(el, c.width, { text: c.heading }, true))] })
+  const headingRow = Box({ flexDirection: 'row', children: [cell(el, MARK_WIDTH, { text: ' ' }), cell(el, work, { text: 'Work' }, true), ...shown.map((c) => cell(el, c.width, { text: c.heading }, true))] })
 
   const buildRow = (row: Row) => {
     const lead = row.panes.k === 'live' ? row.panes.list[0] : undefined
@@ -158,6 +163,7 @@ function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): 
     return Box({
       flexDirection: 'row',
       children: [
+        cell(el, MARK_WIDTH, { text: row === selected ? '▸' : ' ' }),
         Box({
           width: work,
           flexShrink: 0,
@@ -192,18 +198,16 @@ function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): 
         : [headingRow, ...board.build.flatMap((g) => (g.k === 'single' ? [buildRow(g.row)] : [parentLine(g), ...g.children.map(buildRow)]))],
       board.other.length === 0 ? null : [Text({ children: [' '] }), Text({ dimColor: true, children: ['OTHER'] }), ...board.other.map((o) => otherLine(el, o, columns))],
       Text({ children: [' '] }),
+      selected === undefined ? null : detailStrip(el, selected, columns),
+      Text({ children: [' '] }),
       Box({
         flexDirection: 'row',
         columnGap: 3,
         children: [
-          Button({
-            key: 'focus-row',
-            label: 'open pane',
-            hotkey: 'f',
-            plain: true,
-            onPress: () => (focusTarget === undefined ? undefined : act({ k: 'focus-pane', pane: focusTarget })),
-          }),
-          ...draftButtons(el, selected?.cells.pr.k === 'none' ? undefined : selected?.cells.pr.pr, selected === undefined ? [] : [selected.ticket], act),
+          focusTarget === undefined
+            ? Text({ dimColor: true, children: ['f go to pane: this ticket has no live pane'] })
+            : Button({ key: 'focus-row', label: 'go to pane', hotkey: 'f', plain: true, onPress: () => act({ k: 'focus-pane', pane: focusTarget }) }),
+          ...draftButtons(el, selected?.cells.pr.k === 'none' ? undefined : selected?.cells.pr.pr, selected === undefined ? [] : [selected.ticket], act, false),
           // `u` sends every pending event in one `/workspace update` (ADR5); with none it is not offered.
           board.pending.length === 0 ? null : Button({ key: 'update-all', label: 'update all ↻', hotkey: 'u', plain: true, onPress: () => act({ k: 'update', pending: board.pending }) }),
         ],
@@ -301,7 +305,7 @@ function drawPrs(el: El, board: Board, ui: PaneUi, columns: number, act: Act): R
         columnGap: 3,
         children: [
           Button({ key: 'checks', label: 'checks', hotkey: 'c', plain: true, onPress: () => (focused === undefined ? undefined : act({ k: 'checks', pr: prKey(focused.pr) })) }),
-          ...draftButtons(el, focused?.pr, focused?.tickets ?? [], act),
+          ...draftButtons(el, focused?.pr, focused?.tickets ?? [], act, true),
         ],
       }),
     ],
@@ -381,9 +385,9 @@ const LIGHT_TEXT: Record<Light, (letter: Letter) => string> = { lit: (l) => l, d
 /** The mock's classes: a letter that ran green, the amber dot, a VERIFIED claim with no run red, a skill Codex only selected dim. */
 const LIGHT_STYLE: Record<Light, { color?: string; dim?: boolean }> = { lit: { color: 'green' }, dim: { dim: true }, claimed: { color: 'red' }, amber: { color: 'yellow' }, na: { dim: true }, off: { dim: true } }
 
-/** Until a verifier reports, every letter is a dash. A verifier no trace can come from reads n/a once. */
+/** Until a verifier runs, the cell reads `not run`. A verifier no trace can come from reads n/a once. */
 function reviewDrawn(r: Cells['review']): Drawn {
-  if (r.k !== 'review') return { text: LETTERS.map(() => DASH).join(' ') }
+  if (r.k !== 'review') return { text: 'not run' }
   if (LETTERS.every((l) => r.lights[l] === 'na')) return { text: 'n/a' }
   const parts = LETTERS.flatMap((l, i) => [...(i === 0 ? [] : [{ text: ' ' }]), { text: LIGHT_TEXT[r.lights[l]](l), ...LIGHT_STYLE[r.lights[l]] }])
   return { text: parts.map((p) => p.text).join(''), parts }

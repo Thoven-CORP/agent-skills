@@ -339,7 +339,7 @@ test('the PRs tab groups by repo with state and CI, offers m and r only for an o
   await ui.press({ key: 'tab-prs' })
   for (const text of ['FE', 'BE', 'held', 'merged', '✗ 4', '✓']) expect(await ui.find({ type: 'Text', text })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: 'o open' })).toBeUndefined()
-  expect((await ui.findAll({ type: 'Button' })).map((b) => b.key)).toEqual(['tab-work', 'tab-all', `pr-${FRONTEND}#141`, `pr-${BACKEND}#148`, 'checks', 'fill-merge', 'fill-review', 'fill-thermo'])
+  expect((await ui.findAll({ type: 'Button' })).map((b) => b.key)).toEqual(['tab-work', 'tab-all', `pr-${FRONTEND}#141`, `pr-${BACKEND}#148`, 'checks', 'fill-merge', 'fill-review', 'fill-thermo', 'help'])
   expect(await ui.find({ type: 'Text', text: 'vitest shard 1/4' })).toBeUndefined()
   await ui.press({ key: 'checks' })
   for (const text of ['vitest shard 1/4', 'vitest shard 2/4', 'vitest shard 3/4', 'CI']) expect(await ui.find({ type: 'Text', text })).toBeDefined()
@@ -373,7 +373,7 @@ test('m and r put a draft in the prompt box for the focused PR and send nothing'
 
 })
 
-test('the Work tab drafts merge, a verifier request and thermo for the highlighted row\'s open PR, naming its ticket, and its HELP names those keys', async ($, on) => {
+test('the Work tab drafts merge, a verifier request and thermo for the highlighted row\'s open PR, and the detail strip and legend', async ($, on) => {
   const s = stage(on, { pane: 'w18:p8W', snapshot: relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Consent evidence hardening (THV-1045)') })
   s.gh.byRepo = { [FRONTEND]: GH_FRONTEND, [BACKEND]: GH_BACKEND }
   const fills: string[] = []
@@ -388,10 +388,16 @@ test('the Work tab drafts merge, a verifier request and thermo for the highlight
   }
   const verify = `Start the verifier for THV-1045 (${FRONTEND}#141, base origin/main) as dispatch-work step 5 says.`
   expect(fills).toEqual([`merge it ${FRONTEND}#141`, verify, `${verify} Run /thermo-nuclear-code-quality-review whatever the diff size.`])
-  expect(await ui.find({ type: 'Text', text: 'THV-1045 #141:' })).toBeDefined()
-  expect(await ui.find({ type: 'Text', text: 'HELP' })).toBeDefined()
+  const texts = async () => (await ui.findAll({ type: 'Text' })).map((t) => String(t.text))
+  expect((await texts()).some((t) => t.startsWith('─ THV-1045 ─'))).toBe(true)
+  expect(await ui.find({ type: 'Text', text: 'Drafted in the prompt box. Press enter to send it.' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: 'Next: Get the failing checks fixed.' })).toBeDefined()
+  await ui.press({ key: 'help' })
+  await s.clock.advance(0)
+  expect((await texts()).some((t) => /^Pane +○ idle/.test(t))).toBe(true)
   await ui.press({ key: 'tab-prs' })
-  expect(await ui.find({ type: 'Text', text: 'HELP' })).toBeDefined()
+  await s.clock.advance(0)
+  expect((await texts()).some((t) => /^CI +✓ pass/.test(t))).toBe(true)
 })
 
 test('the All tab lists every space with its agent panes, this space first, and pressing one focuses it', async ($, on) => {
@@ -401,7 +407,7 @@ test('the All tab lists every space with its agent panes, this space first, and 
   const ui = await $.ui.mount(PANE)
   await ui.press({ key: 'tab-all' })
   for (const text of ['Research (this space)', 'UI Polishes', 'Coppa', 'thoven']) expect(await ui.find({ type: 'Text', text })).toBeDefined()
-  expect((await ui.findAll({ type: 'Button' })).map((b) => b.key)).toEqual(['tab-work', 'tab-prs', 'all-w18:p8P', 'all-w18:p8V', 'all-w4D:pH', 'all-w54:p1', 'all-w56:p1', 'all-w57:p1'])
+  expect((await ui.findAll({ type: 'Button' })).map((b) => b.key)).toEqual(['tab-work', 'tab-prs', 'all-w18:p8P', 'all-w18:p8V', 'all-w4D:pH', 'all-w54:p1', 'all-w56:p1', 'all-w57:p1', 'help'])
   expect((await ui.find({ type: 'Button', key: 'all-w56:p1' }))?.props.label).toBe("children's media URL expiry")
   expect(await ui.find({ type: 'Button', key: 'all-w18:p8W' })).toBeUndefined()
   await ui.press({ key: 'all-w56:p1' })

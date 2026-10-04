@@ -88,7 +88,7 @@ test('a builder session records `self`, never `review`: V stays unlit and the se
   const report: Fact = { kind: 'report', ticket: tk('THV-1003'), sid: idOf(isSessionId, 'sid-main'), status: 'DONE', text: 'DONE THV-1003', concerns: 0, at: 9000 }
   const row = rowOf(world1003([...factsOf(s), report], [BE_142]), 'THV-1003')
   expect(row.cells.review).toEqual({ k: 'none' })
-  expect(cellText(row, 'review')).toBe('– – – –')
+  expect(cellText(row, 'review')).toBe('not run')
   expect(cellText(row, 'report')).toBe('✓ᵛ')
 
   // A fix round's brief asks for /verify-this again, so the mark waits for it.

@@ -203,8 +203,8 @@ async function poll<K extends SourceId>(sh: Shell, m: MainState, id: K, now: Ms)
 export function noteFocus(element: string): void {
   const ticket = /^row-(THV-\d+)$/.exec(element)?.[1]
   const pr = /^pr-(.+#\d+)$/.exec(element)?.[1]
-  if (ticket) held.ui = { ...held.ui, selected: ticket }
-  if (pr) held.ui = { ...held.ui, selectedPr: pr }
+  if (ticket && ticket !== held.ui.selected) held.ui = { ...held.ui, selected: ticket, notice: undefined }
+  if (pr && pr !== held.ui.selectedPr) held.ui = { ...held.ui, selectedPr: pr, notice: undefined }
 }
 
 /** A press, as data. herdr focus runs from a timer, outside the press handler. */
@@ -212,11 +212,17 @@ export async function act(sh: Shell, intent: Intent): Promise<void> {
   try {
     switch (intent.k) {
       case 'tab':
-        held.ui = { ...held.ui, tab: intent.tab }
+        held.ui = { ...held.ui, tab: intent.tab, notice: undefined }
+        sh.redraw()
+        return
+      case 'help':
+        held.ui = { ...held.ui, isHelpOpen: held.ui.isHelpOpen !== true }
         sh.redraw()
         return
       case 'focus-pane': {
         const req = COMMANDS['herdr agent focus'](intent.pane)
+        held.ui = { ...held.ui, notice: `Went to pane ${intent.pane}. Press f to go there again.` }
+        sh.redraw()
         sh.after(0, () => {
           void focusPane(sh, req)
         })
@@ -237,6 +243,8 @@ export async function act(sh: Shell, intent: Intent): Promise<void> {
       }
       case 'fill': {
         const { text } = intent
+        held.ui = { ...held.ui, notice: 'Drafted in the prompt box. Press enter to send it.' }
+        sh.redraw()
         sh.after(0, () => {
           void fillPrompt(sh, text)
         })
