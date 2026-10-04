@@ -4,10 +4,10 @@
 // Derived input: the wave THV-1094 replay runs main's real pane w5E:p1 over SNAPSHOT_LIVE, which
 // predates space w5E. A send's claim reads no snapshot, so only the board it then draws is empty.
 
-import { expect, test } from 'claude-code/testing'
+import { expect } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { branchTicket, parseLabel, pickLabel } from '../hooks/dispatch.ts'
-import { parseSnapshot } from '../hooks/herdr.ts'
+import { parseSnapshot, spaceOfPane } from '../hooks/herdr.ts'
 import { isPaneId, type Board } from '../hooks/model.ts'
 import { COMMANDS } from '../hooks/commands.ts'
 import { BACKEND, FRONTEND } from '../hooks/github.ts'
@@ -16,7 +16,7 @@ import { cellText, columnsFor } from '../hooks/view.ts'
 import { DOT_GIT_THV_481, DOT_GIT_WORKTREE, HEAD_COCKPIT, HEAD_THV_481 } from './fixtures/git.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import { MAIN_SID_THV_1094, SEND_1947_THV_1095_1097 } from './fixtures/wave.ts'
-import { MAIN_CWD, PANE, bash, cockpit, dropPane, fakeAsk, fresh, idOf, mainOf, must, ranTimes, relabelPane, relabelTab, rowOf, rowsOf, stage, start, worldOf } from './stage.ts'
+import { MAIN_CWD, PANE, bash, cockpit, dropPane, fakeAsk, fresh, idOf, mainOf, must, ranTimes, relabelPane, relabelTab, rowOf, rowsOf, stage, start, worldOf, test } from './stage.ts'
 
 const CONSENT = 'Build · Consent evidence hardening (THV-1045)'
 /** w18 with its `Mods` tab named the way label.sh names a build tab. p8V sits in it with no pane label. */
@@ -34,6 +34,10 @@ test('a Build tab label with a null pane label gives a Build row titled from the
   expect(pickLabel([undefined, '1', undefined])).toBeUndefined()
   expect(branchTicket('legal/thv-1045')).toBe('THV-1045')
   expect(branchTicket('sentry-error')).toBeUndefined()
+})
+
+test('a space comes only from a pane id: w18:p8W is in w18, and $P or 18:8W is in none', async () => {
+  expect([spaceOfPane('w18:p8W'), spaceOfPane('$P'), spaceOfPane('18:8W')]).toEqual(['w18', undefined, undefined])
 })
 
 test('a multi-ticket label gives three tickets', async () => {
@@ -280,8 +284,8 @@ test("wave THV-1094 replayed: main's 19:47 send.sh makes it the space's main, wi
   const claim = { kind: 'main', space: 'w5E', sid: MAIN_SID_THV_1094, pane: 'w5E:p1', at: 186_000 }
   expect(s.saved.get('cockpit:main:w5E')).toEqual(claim)
   expect([...s.saved.keys()].filter((k) => k.startsWith('cockpit:send:')).sort()).toEqual(['cockpit:send:THV-1095:w5E:p2:builder:0', 'cockpit:send:THV-1097:w5E:p3:builder:0'])
-  // Unasked, so it takes no focus from the turn that ran send.sh.
-  expect(s.opened).toEqual([{ id: 'cockpit', title: 'Cockpit' }])
+  // A send claims only: the pane opens when /cockpit asks for it.
+  expect(s.opened).toEqual([])
   // Its first tick runs at the claim, then the 5 s heartbeat polls herdr.
   await s.clock.advance(15_000)
   expect(s.snapshots()).toBe(4)
@@ -289,7 +293,7 @@ test("wave THV-1094 replayed: main's 19:47 send.sh makes it the space's main, wi
   // Main's next send leaves its own claim as it is.
   await bash($, SEND_1947_THV_1095_1097)
   expect(s.saved.get('cockpit:main:w5E')).toEqual(claim)
-  expect(s.opened).toHaveLength(1)
+  expect(s.opened).toEqual([])
 })
 
 test('a send.sh never takes main from the session that holds it (ADR3)', async ($, on) => {

@@ -7,19 +7,19 @@
 // Linear answer has a ticket moved to the team's own `In Progress` node from the same answer.
 
 import type { RenderNode } from 'claude-code'
-import { expect, test } from 'claude-code/testing'
+import { expect } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { AGENT_SKILLS, BACKEND, FRONTEND, parsePrList } from '../hooks/github.ts'
 import { EXPIRY_MS, expired, keptBy } from '../hooks/expiry.ts'
 import { LINEAR_URL, carry, eventOf, linearEntries, parseStates, pendingOf, readbacks, stateQuery, updateArgs } from '../hooks/linear.ts'
-import { eventId, isLinearEventId, isSessionId, type Board, type Fact, type Pr } from '../hooks/model.ts'
+import { eventId, isLinearEventId, isSessionId, type Board, type Fact, type Pr, isPaneId } from '../hooks/model.ts'
 import { SOURCES, parseLiveSpaces, valueOf } from '../hooks/sources.ts'
 import { keyOf, parseFact } from '../hooks/store.ts'
 import { cellText, drawCockpit, type ColumnId } from '../hooks/view.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import { LINEAR_STATES_945_1038, READBACK_DONE_THV_1038, READBACK_ERROR_THV_1038 } from './fixtures/linear.ts'
 import { GH_AGENT_SKILLS_WAVE, LINEAR_WAVE, LINEAR_WAVE_CHILDREN, SNAPSHOT_AFTER_WAVE, STORE_WAVE, WORKFLOW_LIVE_SPACES_COCKPIT } from './fixtures/wave.ts'
-import { HOME, PANE, bash, cockpit, fakeAsk, fresh, idOf, mainOf, must, relabelPane, relabelTab, rowOf, rowsOf, stage, start, submit, tk, worldOf } from './stage.ts'
+import { HOME, PANE, bash, cockpit, fakeAsk, fresh, idOf, mainOf, must, relabelPane, relabelTab, rowOf, rowsOf, stage, start, submit, tk, worldOf, test } from './stage.ts'
 
 const KEY = 'lin_api_fixture_not_a_real_key'
 
@@ -392,4 +392,12 @@ test('a stale Linear read counts the parent from the rows on screen, and the sum
   const group = must(project(stale).build.find((g) => g.k === 'parent'))
   expect(group.k === 'parent' && [group.done, group.total, group.counted]).toEqual([2, 3, 'screen'])
   expect(workText(project(stale))).toContain('Cockpit: tidy-ups from the S2 re-verify THV-1094: 2 of 3 done on screen')
+})
+
+test('an Other pane whose label names two tickets holds both: the second, which main sent it, gets no pane-gone row', async () => {
+  const snap = relabelTab(COPPA, 'w18:t30', 'Plan · Practice log research (THV-1101 1102)')
+  const sent: Fact = { kind: 'send', ticket: tk('THV-1102'), pane: idOf(isPaneId, 'w18:p8P'), role: 'builder', round: 0, file: 'THV-1102.md', at: 1_000 }
+  const board = project(worldOf(mainOf('w18', 'w18:p8W'), snap, { facts: [sent] }))
+  expect(board.other.some((o) => o.k === 'labelled' && o.ticket === tk('THV-1101'))).toBe(true)
+  expect(rowsOf(board).map((r) => r.ticket)).not.toContain('THV-1102')
 })

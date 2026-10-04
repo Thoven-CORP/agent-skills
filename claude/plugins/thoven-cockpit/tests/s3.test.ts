@@ -8,7 +8,7 @@
 // rollout's folder, since no snapshot on file holds a Codex pane. The THV-1096 brief from wave
 // THV-1094 meets a tab relabelled to its ticket, and each poteto-mode playbook name is set into its head.
 
-import { expect, test } from 'claude-code/testing'
+import { expect } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { parseRollout } from '../hooks/codex.ts'
 import { briefOf } from '../hooks/dispatch.ts'
@@ -24,7 +24,7 @@ import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import * as REPORTS from './fixtures/reports.ts'
 import { BRIEF_BUG_FIX_THV_1096 } from './fixtures/wave.ts'
 import { ROLLOUT_VERIFY_THV_1000, ROLLOUT_VERIFY_THV_1000_PATH, SKILL_PROMPT_DESLOP, SKILL_TOOL_CALL, SKILL_TOOL_RESULT } from './fixtures/review.ts'
-import { HOME, cockpit, fakeAsk, fresh, idOf, linearEntry, mainOf, must, relabelTab, rowOf, rowsOf, stage, start, submit, tk, turnEnd, worldOf, type Stage } from './stage.ts'
+import { HOME, cockpit, fakeAsk, fresh, idOf, linearEntry, mainOf, must, relabelTab, rowOf, rowsOf, stage, start, submit, tk, turnEnd, worldOf, type Stage, test } from './stage.ts'
 
 const P8V_SID = '27c71f2d-e064-4ebc-ae51-e993d40abfac'
 const W18 = mainOf('w18', 'w18:p8W')

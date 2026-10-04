@@ -429,13 +429,12 @@ async function noteBash($: Api, r: object, command: unknown): Promise<void> {
   if (held.me.k === 'pane') await claimBySend($)
 }
 
-/** The first send.sh in a space no session holds makes this session its main. The pane opens unfocused: the model sent, nobody pressed. */
+/** The first send.sh in a space no session holds makes this session its main. It claims only: `/cockpit` opens the pane. */
 async function claimBySend($: Api): Promise<void> {
   const claim = sendClaim(held.me, await loadFacts($, 'main'), await $.clock.now())
   if (!claim) return
   await writeFact($, claim)
   becomeMain(shellOf($), claim, await placeOf($))
-  await $.ui.open({ id: PANE_ID, title: 'Cockpit' })
 }
 
 /** A loop's event carries `agentId` only inside a subagent or teammate: their skills are not this session's. */

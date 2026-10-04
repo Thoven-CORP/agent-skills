@@ -19,7 +19,7 @@
 // only checks are Cursor's two NEUTRAL bot checks and no CI ran (THV-1101 item 5).
 
 import type { RenderElement, RenderNode } from 'claude-code'
-import { expect, test } from 'claude-code/testing'
+import { expect } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { briefOf, inboxFile, sendCalls, unwrapPasted } from '../hooks/dispatch.ts'
 import { BACKEND, FRONTEND, configPathOf, parseOrigin, parsePrList } from '../hooks/github.ts'
@@ -32,7 +32,7 @@ import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import { OUT_ESCALATION_THV_1004, OUT_RESEARCH_THV_1038_HEAD } from './fixtures/inbox.ts'
 import * as REPORTS from './fixtures/reports.ts'
 import * as SENDS from './fixtures/send.ts'
-import { MAIN_CWD, PANE, bash, cockpit, fresh, idOf, mainOf, must, receive, relabelPane, relabelTab, stage, start, submit, tk, worldOf, type Stage } from './stage.ts'
+import { MAIN_CWD, PANE, bash, cockpit, fresh, idOf, mainOf, must, receive, relabelPane, relabelTab, stage, start, submit, tk, worldOf, type Stage, test } from './stage.ts'
 
 
 

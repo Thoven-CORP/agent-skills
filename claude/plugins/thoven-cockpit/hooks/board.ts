@@ -23,11 +23,12 @@
 //      were in: a `send:` to one, or a brief one received. A `happened:` key names no space.
 
 import { branchTicket, pickLabel } from './dispatch.ts'
-import { indexFacts, newest, type BoardFacts } from './facts.ts'
+import { byKind, newest, type BoardFacts } from './facts.ts'
 import { rowOf } from './cells.ts'
 import { groupRows, linearOf, pendingOf } from './linear.ts'
 import { prJoin } from './prs.ts'
 import type { Board, Branches, CodexRollout, Health, Main, Ms, Kind, LivePane, NonEmpty, OtherItem, Pane, PaneCell, PaneId, PaneLabels, Panes, Polled, RowIdentity, SourceHealth, SourceId, Sources, SpaceMap, Ticket, World } from './model.ts'
+import { spaceOfPane } from './herdr.ts'
 import { sharing, valueOf } from './sources.ts'
 
 /** What ties a pane to its work: its label, else its folder's branch, else what main sent it. No `title`: each row is titled by its own ticket. */
@@ -54,13 +55,14 @@ export function project(world: World): Board {
 
   const panes = (snap?.panes ?? []).filter((p) => p.space === me.space && p.pane !== me.pane)
   const branches = valueOf(world.sources.branches)
-  const facts = indexFacts(world.facts)
+  const facts = byKind(world.facts)
 
   // A Build row is ordered by its first Build pane, a Review-only row after them all by its first Review pane.
   const builds = new Map<Ticket, { tie: Tie; panes: NonEmpty<LivePane> }>()
   const reviews = new Map<Ticket, { tie: Tie; pane: Pane; verifier: Pane }>()
   const other: OtherItem[] = []
-  for (const s of panes.map((p) => slotOf(tieOf(facts.all, p, labels, branches), p))) {
+  const otherTickets: Ticket[] = []
+  for (const s of panes.map((p) => slotOf(tieOf(facts, p, labels, branches), p))) {
     if (s.k === 'build')
       for (const t of s.tie.tickets) {
         const b = builds.get(t)
@@ -72,7 +74,10 @@ export function project(world: World): Board {
         const r = reviews.get(t)
         reviews.set(t, { tie: r?.tie ?? s.tie, pane: r?.pane ?? s.pane, verifier: s.pane })
       }
-    else if (s.k === 'other') other.push(otherItem(s.tie, s.pane))
+    else if (s.k === 'other') {
+      other.push(otherItem(s.tie, s.pane))
+      otherTickets.push(...(s.tie?.tickets ?? []))
+    }
   }
 
   const verifierOf = (t: Ticket): PaneCell => {
@@ -87,15 +92,18 @@ export function project(world: World): Board {
   if (mine && !ids.some((id) => id.ticket === mine.ticket)) ids.push(mine)
   // No Project, no Linear column (spec "Spaces"), so no state read, no ↻, no parent groups, and no Linear state for a closed row to wait on.
   const view = projectName === undefined ? undefined : valueOf(world.sources.linear)
-  const held = new Set([...ids.map((id) => id.ticket), ...other.flatMap((o) => (o.k === 'labelled' && o.ticket ? [o.ticket] : []))])
-  if (projectName !== undefined) ids.push(...closedRows(facts.all, me, held))
+  const held = new Set([...ids.map((id) => id.ticket), ...otherTickets])
+  if (projectName !== undefined) ids.push(...closedRows(facts, me, held))
 
   const join = prJoin(world, panes, ids)
   const inbox = valueOf(world.sources.inbox) ?? []
   const codex = codexOf(valueOf(world.sources.codex), panes, world.now)
   const rows = ids
-    .map((id) => rowOf(id, { facts: facts.about(id.ticket), inbox, join, codex }))
-    .map(({ row, events }) => ({ row: { ...row, cells: { ...row.cells, linear: linearOf(row.ticket, facts.about(row.ticket), events, view) } }, events }))
+    .map((id) => {
+      const about = byKind(world.facts, id.ticket)
+      const { row, events } = rowOf(id, { facts: about, inbox, join, codex })
+      return { row: { ...row, cells: { ...row.cells, linear: linearOf(row.ticket, about, events, view) } }, events }
+    })
     .filter(({ row }) => row.panes.k !== 'gone' || row.cells.linear.k !== 'ok')
   const build = groupRows(rows.map(({ row }) => row), view, { isFresh: world.sources.linear.k === 'fresh' })
 
@@ -164,7 +172,7 @@ function thisSession(world: World, mainPane: Pane | undefined): RowIdentity | un
  * now, in the order they were dispatched. Main's own pane is left out: its work is the this-session row.
  */
 function closedRows(facts: BoardFacts, me: Main, held: ReadonlySet<Ticket>): RowIdentity[] {
-  const isMine = (p: PaneId) => p !== me.pane && p.startsWith(`${me.space}:`)
+  const isMine = (p: PaneId) => p !== me.pane && spaceOfPane(p) === me.space
   const sent = [...facts.send.filter((f) => isMine(f.pane)), ...facts.brief.filter((f) => isMine(f.pane))].sort((a, b) => a.at - b.at)
   const tickets = [...new Set(sent.map((f) => f.ticket))].filter((t) => !held.has(t))
   return tickets.map((t) => {

@@ -6,7 +6,7 @@
 // built in the shape observe.ts writes; a Monitor task in the shape the 2.1.288 types give
 // BackgroundTaskSummary (no `command`), because no Stop log on file holds one.
 
-import { expect, test } from 'claude-code/testing'
+import { expect } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { builderTickets, checkpointOf, isWatching, labelRecords, rulingsFrom, sentLines, watcherWarning } from '../hooks/background.ts'
 import { rulingsOf, statusLines } from '../hooks/dispatch.ts'
@@ -14,7 +14,7 @@ import { isPaneId, isSessionId, type Fact } from '../hooks/model.ts'
 import { keyOf, parseFact } from '../hooks/store.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import { ANSWER_DONE_THV_978, ANSWER_NO_STATUS_THV_1082, BRIEF_FILE_THV_978, STOP_TASKS_SLEEP, WATCH_BASH_INPUT } from './fixtures/turns.ts'
-import { idOf, mainOf, relabelPane, relabelTab, tk, worldOf } from './stage.ts'
+import { idOf, mainOf, relabelPane, relabelTab, tk, worldOf, test } from './stage.ts'
 
 const ME = mainOf('w18', 'w18:p8W')
 const SID = idOf(isSessionId, 'sid-b')

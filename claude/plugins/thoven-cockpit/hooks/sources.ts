@@ -9,7 +9,7 @@
 import { COMMANDS, type Req } from './commands.ts'
 import { FIXED_REPOS, configPathOf, parseOrigin, parsePrList } from './github.ts'
 import { parsePaneLabel, parseSnapshot } from './herdr.ts'
-import { inboxFile } from './dispatch.ts'
+import { inboxFile, inboxTicket } from './dispatch.ts'
 import { carry, keyPath, parseStates, stateQuery, ticketsOn, type LinearView, type StateQuery } from './linear.ts'
 import { readRollouts } from './codex.ts'
 import type { Board, Branches, CodexRollout, GithubView, HeadPaths, InboxFile, Ms, Origins, Pane, PaneId, PaneLabels, Polled, Pr, HealthId, Snapshot, SourceId, SourceValues, Sources, SpaceMap, Ticket, World } from './model.ts'
@@ -287,7 +287,8 @@ export const SOURCES = {
     },
   }),
 
-  // An unchanged file keeps its last read, so a 46 KB deliverable is read once.
+  // An unchanged file keeps its last read, so a 46 KB deliverable is read once. A file whose name
+  // gives no ticket (`w18-p8X.md`) is never read: inboxFile would drop it whatever it holds.
   inbox: source({
     everyMs: 10_000,
     needs: [],
@@ -296,7 +297,7 @@ export const SOURCES = {
       if (dir === undefined) return []
       const listing = await ask.list(dir)
       const known = valueOf(world.sources.inbox) ?? []
-      const files = await Promise.all(listing.filter((e) => e.kind === 'file').map(async (e) => {
+      const files = await Promise.all(listing.filter((e) => e.kind === 'file' && inboxTicket(e.name) !== undefined).map(async (e) => {
         const kept = known.filter((f) => f.name === e.name && f.at === e.mtimeMs)
         if (kept.length > 0) return kept
         const text = await tolerate(ask.read(`${dir}/${e.name}`))

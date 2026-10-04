@@ -8,29 +8,12 @@ type TicketKind = { [K in FactKind]: FactOf<K> extends { ticket: Ticket } ? K : 
 
 /** The facts that name a ticket, one list per kind. */
 export type BoardFacts = { readonly [K in TicketKind]: ReadonlyArray<FactOf<K>> }
-type Lists = { [K in TicketKind]: Array<FactOf<K>> }
 
-/** Every fact that names a ticket, and the same facts per ticket. Built once per tick. */
-export type FactIndex = { all: BoardFacts; about(t: Ticket): BoardFacts }
-
-const lists = (): Lists => ({ brief: [], report: [], verdict: [], send: [], happened: [], status: [], review: [], self: [], update: [], readback: [] })
-const NONE: BoardFacts = lists()
-
-const put = <K extends TicketKind>(into: Lists, kind: K, f: FactOf<K>): void => {
-  into[kind].push(f)
-}
-
-export function indexFacts(facts: readonly Fact[]): FactIndex {
-  const all = lists()
-  const byTicket = new Map<Ticket, Lists>()
-  for (const f of facts) {
-    if (!('ticket' in f)) continue
-    let mine = byTicket.get(f.ticket)
-    if (mine === undefined) byTicket.set(f.ticket, (mine = lists()))
-    put(all, f.kind, f)
-    put(mine, f.kind, f)
-  }
-  return { all, about: (t) => byTicket.get(t) ?? NONE }
+/** The facts that name a ticket, grouped by kind; with `ticket`, only that ticket's. */
+export function byKind(facts: readonly Fact[], ticket?: Ticket): BoardFacts {
+  const of = <K extends TicketKind>(kind: K): Array<FactOf<K>> =>
+    facts.filter((f): f is FactOf<K> => f.kind === kind && (ticket === undefined || ('ticket' in f && f.ticket === ticket)))
+  return { brief: of('brief'), report: of('report'), verdict: of('verdict'), send: of('send'), happened: of('happened'), status: of('status'), review: of('review'), self: of('self'), update: of('update'), readback: of('readback') }
 }
 
 /** The fact with the latest `at`. */

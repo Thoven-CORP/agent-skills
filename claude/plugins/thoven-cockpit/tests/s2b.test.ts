@@ -7,17 +7,17 @@
 // test needs two panes on one branch; p8P moved into the backend checkout; and BE #145 retitled
 // with the spec's `(THV-851, THV-847, THV-843)`, because no PR on file has a multi-ticket title group.
 
-import { expect, test } from 'claude-code/testing'
+import { expect } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { COMMANDS } from '../hooks/commands.ts'
 import { BACKEND, FRONTEND, configPathOf, parseOrigin, parsePrList } from '../hooks/github.ts'
 import { isLinearEventId, type Board, type Fact, type Pr, type Sources } from '../hooks/model.ts'
-import { SOURCES, headPathOf, parseHead } from '../hooks/sources.ts'
+import { SOURCES, headPathOf, parseHead, STAGES } from '../hooks/sources.ts'
 import { cellText } from '../hooks/view.ts'
 import { CONFIG_AGENT_SKILLS, CONFIG_BACKEND, CONFIG_FRONTEND, DOT_GIT_THV_481, DOT_GIT_WORKTREE, HEAD_THV_481 } from './fixtures/git.ts'
 import { GH_AGENT_SKILLS, GH_BACKEND, GH_FRONTEND } from './fixtures/github.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
-import { MAIN_CWD, PANE, cockpit, fakeAsk, fresh, idOf, mainOf, must, ranTimes, relabelPane, relabelTab, rowOf, stage, start, tk, worldOf } from './stage.ts'
+import { MAIN_CWD, PANE, cockpit, fakeAsk, fresh, idOf, mainOf, must, ranTimes, relabelPane, relabelTab, rowOf, stage, start, tk, worldOf, test, INBOX_DIR } from './stage.ts'
 
 const AGENT_SKILLS = 'Thoven-CORP/agent-skills'
 const THOVEN = '/Users/andresmartinez/thoven'
@@ -292,6 +292,17 @@ test('a failed gh poll keeps the last PRs, says gh stale since hh:mm, and the Pa
   expect(await ui.find({ type: 'Text', text: '◐ C' })).toBeDefined()
   await ui.press({ key: 'tab-prs' })
   expect(await ui.find({ type: 'Button', key: `pr-${FRONTEND}#136` })).toBeDefined()
+})
+
+test('two sources of one stage both hang and neither waits on the other: herdr and the inbox are both asked on the first tick', async ($, on) => {
+  const s = stage(on, { pane: 'w18:p8W', snapshot: SNAPSHOT_LIVE, store: { 'cockpit:main:w18': { kind: 'main', space: 'w18', sid: 'sid-a', pane: 'w18:p8W', at: 0 } } })
+  s.herdr.mode = 'hang'
+  s.inboxHangs = true
+  s.inbox.set('THV-1041.md', { text: 'DONE THV-1041', mtimeMs: 0 })
+  await start($)
+  await s.clock.advance(1_000)
+  expect(['herdr', 'inbox'].every((id) => STAGES[0]?.some((s0) => s0 === id))).toBe(true)
+  expect([s.snapshots(), s.fsCalls.filter((c) => c === `list ${INBOX_DIR}`).length]).toEqual([1, 1])
 })
 
 test('a hanging gh holds up no other source: the next tick draws the Pane column herdr just gave', async ($, on) => {

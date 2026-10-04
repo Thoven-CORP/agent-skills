@@ -8,11 +8,11 @@
 // is on file; and the watch.sh background task, built from WATCH_BASH_INPUT in the shape
 // STOP_TASKS_SLEEP shows.
 
-import { expect, test } from 'claude-code/testing'
+import { expect } from 'claude-code/testing'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import { PASTED_CONCERNS_THV_1041, VERIFY_BRIEF_THV_1016 } from './fixtures/reports.ts'
 import { ANSWER_DONE_THV_978, ANSWER_NO_STATUS_THV_1082, BRIEF_FILE_THV_978, STOP_TASKS_SLEEP, WATCH_BASH_INPUT } from './fixtures/turns.ts'
-import { MAIN_CWD, TMPDIR, bash, cockpit, relabelTab, stage, start, submit, turnEnd } from './stage.ts'
+import { MAIN_CWD, TMPDIR, bash, cockpit, relabelTab, stage, start, submit, turnEnd, test } from './stage.ts'
 
 const TITLE_978 = "The teacher's Daily join starts the Session record"
 const SNAPSHOT_978 = relabelTab(SNAPSHOT_LIVE, 'w18:t45', `Build · ${TITLE_978} (THV-978)`)

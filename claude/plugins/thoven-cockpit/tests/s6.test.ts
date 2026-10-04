@@ -5,11 +5,11 @@
 // fixtures/reports.ts, and whose `at` places them in time. The Linear entries are built literals
 // (stage.ts linearEntry), so each test names the one state it turns on.
 
-import { expect, test } from 'claude-code/testing'
+import { expect } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { doctor, mainCheckoutDir } from '../hooks/doctor.ts'
 import { EXPIRY_MS, ageOf, expired, isMergedAndDone, keptBy, type LinearEntries, type Stored } from '../hooks/expiry.ts'
-import { indexFacts } from '../hooks/facts.ts'
+import { byKind } from '../hooks/facts.ts'
 import { FRONTEND, parsePrList } from '../hooks/github.ts'
 import { linearOf, parseStates, readbacks, type LinearView } from '../hooks/linear.ts'
 import { isLinearEventId, isPaneId, isSessionId, isSpaceId, type Fact, type Health, type Pr, type Ticket } from '../hooks/model.ts'
@@ -19,7 +19,7 @@ import { doctorText } from '../hooks/view.ts'
 import { GH_FRONTEND } from './fixtures/github.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import { LINEAR_STATES_945_1038 } from './fixtures/linear.ts'
-import { HOME, cockpit, idOf, linearEntry, mainOf, must, relabelTab, stage, start, tk, worldOf } from './stage.ts'
+import { HOME, cockpit, idOf, linearEntry, mainOf, must, relabelTab, stage, start, tk, worldOf, test } from './stage.ts'
 
 const DAY = 86_400_000
 /** The clock when the sessions below run: 20 days after the epoch the stored `at`s count from. */
@@ -138,7 +138,7 @@ function cellAcrossExpiry(facts: Fact[], onBoard: ReadonlySet<Ticket>) {
   const stored = storedOf(facts.map(entry))
   const gone = new Set(expired(stored, { now: NOW, prs: undefined, linear: undefined, onBoard, closed: new Set() }).map((e) => e.key))
   const left = stored.flatMap((s) => (gone.has(s.key) ? [] : (parseFact(s.key, s.value) ?? [])))
-  const cell = (fs: readonly Fact[]) => linearOf(tk('THV-1045'), indexFacts(fs).about(tk('THV-1045')), [], VIEW_1045).k
+  const cell = (fs: readonly Fact[]) => linearOf(tk('THV-1045'), byKind(fs, tk('THV-1045')), [], VIEW_1045).k
   return { deleted: [...gone].sort(), before: cell(facts), after: cell(left) }
 }
 
@@ -294,7 +294,7 @@ test('main keeps a 15-day-old happened key for the ticket on screen, so its even
   expect(s.setKeys).toEqual(['cockpit:main:w18'])
 })
 
-test('doctor in main flags exactly the keys main\'s next pass deletes, and THV-1045 on screen keeps its round trip', { timeoutMs: 20_000 }, async ($, on) => {
+test('doctor in main flags exactly the keys main\'s next pass deletes, and THV-1045 on screen keeps its round trip', async ($, on) => {
   const s = stage(on, { pane: 'w18:p8W', snapshot: SNAPSHOT })
   await s.clock.set(NOW)
   await start($)
@@ -310,7 +310,7 @@ test('doctor in main flags exactly the keys main\'s next pass deletes, and THV-1
   expect(LATE.map(keyOf).filter((k) => !s.saved.has(k)).sort()).toEqual(['cockpit:happened:THV-1041:report-DONE_WITH_CONCERNS', 'cockpit:report:THV-1045:sid-b'])
 })
 
-test('main runs an expiry pass once an hour, not every tick', { timeoutMs: 20_000 }, async ($, on) => {
+test('main runs an expiry pass once an hour, not every tick', async ($, on) => {
   const s = stage(on, { pane: 'w18:p8W', snapshot: SNAPSHOT })
   await s.clock.set(NOW)
   await start($)

@@ -45,7 +45,6 @@ type MainState = {
   polling: Set<SourceId>
   board: Board | undefined
   heartbeat: { cancel(): void }
-  isDrawing: boolean
   /** When the last expiry pass ran; undefined runs one on the first tick that drew. */
   expiredAt: Ms | undefined
   /** The label record last pushed to each pane, so a push happens only on change (ADR9). */
@@ -77,7 +76,7 @@ export function becomeMain(sh: Shell, claim: FactOf<'main'>, place: Pick<Main, '
   })
   held.me = who
   const sources = herdr ? { ...unpolled(), herdr } : unpolled()
-  held.main = { who, sources, lastRun: herdr ? { herdr: claim.at } : {}, polling: new Set(), board: undefined, heartbeat, isDrawing: false, expiredAt: undefined, pushed }
+  held.main = { who, sources, lastRun: herdr ? { herdr: claim.at } : {}, polling: new Set(), board: undefined, heartbeat, expiredAt: undefined, pushed }
   void tick(sh)
 }
 
@@ -109,7 +108,7 @@ async function tick(sh: Shell): Promise<void> {
       const ids = due(m.lastRun, now, seenOf(m, now)).filter((id) => stage.includes(id) && !m.polling.has(id))
       await Promise.all(ids.map((id) => poll(sh, m, id, now)))
     }
-    await draw(sh, m)
+    if (held.main === m) await draw(sh)
     if (m.board && held.main === m && (m.expiredAt === undefined || now - m.expiredAt >= EXPIRY_PASS_MS)) {
       m.expiredAt = now
       await expire(sh, m, now)
@@ -148,22 +147,37 @@ async function expire(sh: Shell, m: MainState, now: Ms): Promise<void> {
 }
 
 /**
- * Project and redraw. One draw at a time, from facts loaded now: two overlapping ticks never
- * write one `happened` twice, and a tick that waited on a hung source draws no stale facts.
+ * One draw at a time in this session, not per MainState: after a re-claim the old main's draw and
+ * the new one's never both write.
  */
-async function draw(sh: Shell, m: MainState): Promise<void> {
-  if (m.isDrawing || held.main !== m) return
-  m.isDrawing = true
+const drawing = { isRunning: false, isAgain: false }
+
+/**
+ * Project and redraw the current main, from facts loaded now: two overlapping ticks never write one
+ * `happened` twice, and a tick that waited on a hung source draws no stale facts. A draw asked for
+ * while one runs is run once it ends, so a poll that settled meanwhile is drawn at once.
+ */
+async function draw(sh: Shell): Promise<void> {
+  if (drawing.isRunning) {
+    drawing.isAgain = true
+    return
+  }
+  drawing.isRunning = true
   try {
-    const facts = await sh.loadFacts()
-    const now = await sh.now()
-    const board = project(worldOf(m, now, facts))
-    m.board = board
-    // Set once: the board lists only events with no `happened` fact in what this draw loaded.
-    for (const e of board.newEvents) await sh.writeFact({ kind: 'happened', ticket: e.ticket, event: e.id, at: now })
-    sh.redraw()
+    do {
+      drawing.isAgain = false
+      const m = held.main
+      if (!m) return
+      const facts = await sh.loadFacts()
+      const now = await sh.now()
+      const board = project(worldOf(m, now, facts))
+      m.board = board
+      // Set once: the board lists only events with no `happened` fact in what this draw loaded.
+      for (const e of board.newEvents) await sh.writeFact({ kind: 'happened', ticket: e.ticket, event: e.id, at: now })
+      sh.redraw()
+    } while (drawing.isAgain)
   } finally {
-    m.isDrawing = false
+    drawing.isRunning = false
   }
 }
 
@@ -233,8 +247,7 @@ async function sendUpdate(sh: Shell, args: string, pending: readonly Pending[]):
     await sh.workspace(args)
     const at = await sh.now()
     for (const p of pending) await sh.writeFact({ kind: 'update', ticket: p.ticket, event: p.id, at })
-    const m = held.main
-    if (m) await draw(sh, m)
+    await draw(sh)
   } catch (err) {
     await sh.debug('update', err)
   }
