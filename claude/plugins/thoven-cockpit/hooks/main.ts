@@ -138,7 +138,7 @@ async function pushLabels(sh: Shell, m: MainState): Promise<void> {
 async function expire(sh: Shell, m: MainState, now: Ms): Promise<void> {
   const board = m.board
   if (!board) return
-  const gone = expired(await sh.loadStored(), { now, prs: valueOf(m.sources.github)?.prs, linear: new Map([...linearEntries(m.sources)].map(([t, e]) => [t, e.state.name])), onBoard: ticketsOn(board) })
+  const gone = expired(await sh.loadStored(), { now, prs: valueOf(m.sources.github)?.prs, linear: linearEntries(m.sources), onBoard: ticketsOn(board) })
   for (const { key } of gone) await sh.deleteKey(key)
 }
 
