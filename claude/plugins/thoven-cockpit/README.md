@@ -23,6 +23,8 @@ Main deletes a key 14 days after its last write. It also deletes a ticket's keys
 
 ## How it loads
 
+Tested with Claude Code 2.1.289. It loads as a sideloaded mod, `thoven-cockpit@inline`, and `/plugin` shows whether it loaded. Managed `allowManagedModsOnly` or `disableSideloadFlags`, `--safe-mode`, `--bare` and `disableAllHooks` each stop it loading.
+
 Every Claude session loads the mod through `CLAUDE_CODE_PLUGIN_DIRS`. The installer sets it in the `env` block of `~/.claude/settings.json`:
 
 ```json
