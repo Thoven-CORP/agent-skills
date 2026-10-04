@@ -1,4 +1,5 @@
-// observe.ts: what a session learns from a prompt or a Bash command, as facts.
+// observe.ts: what a session learns from a prompt, a Bash command, a skill run or its own answer,
+// as facts.
 //
 // Pure. register.ts parses what a hook saw (dispatch.ts), supplies who this session is, its id and
 // the time, then writes the facts and keeps the `me` that come back. Every rule about what a brief,

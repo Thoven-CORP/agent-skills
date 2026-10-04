@@ -2,7 +2,7 @@
 // cells are fixed-width Boxes (widths from `COLUMNS`).
 //
 // The view never calls `$`. It takes the element constructors `$.ui.resolve(e)` returned and one
-// `act(intent)` callback, so a drawing test presses a key and register.ts alone decides what the
+// `act(intent)` callback, so a drawing test presses a key and main.ts alone decides what the
 // Intent does. Every glyph the cockpit shows is in this file.
 
 import type { Elements, RenderElement } from 'claude-code'

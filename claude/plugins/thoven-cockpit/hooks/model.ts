@@ -391,7 +391,7 @@ export type Board = {
   newEvents: Pending[]
 }
 
-// ── Intents: what a press asks for, as data (view.ts emits, register.ts performs) ──────────
+// ── Intents: what a press asks for, as data (view.ts emits, main.ts performs) ──────────
 
 export type Intent =
   | { k: 'tab'; tab: 'work' | 'prs' }
