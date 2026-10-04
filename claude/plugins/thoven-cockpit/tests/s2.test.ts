@@ -4,8 +4,10 @@
 
 import { expect, test } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
+import { ciCell } from '../hooks/cells.ts'
 import { inboxFile, readPrompt, sendCalls, statusLines, unwrapPasted } from '../hooks/dispatch.ts'
-import { isLinearEventId, isSessionId, type Fact, type InboxFile } from '../hooks/model.ts'
+import { isLinearEventId, isPaneId, isSessionId, type Fact, type InboxFile } from '../hooks/model.ts'
+import { AGENT_SKILLS, parsePrList } from '../hooks/github.ts'
 import { parseFact } from '../hooks/store.ts'
 import { cellText } from '../hooks/view.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
@@ -24,7 +26,8 @@ import {
 } from './fixtures/reports.ts'
 import { BUILT_CONCERNS_TABLE_THV_1045 } from './fixtures/built.ts'
 import { SEND_1, SEND_2, SEND_3, SEND_4, SEND_5, SEND_6, SEND_FIX2_THV_1004 } from './fixtures/send.ts'
-import { PANE, bash, cockpit, fresh, idOf, mainOf, receive, relabelTab, rowOf, stage, start, submit, tk, worldOf } from './stage.ts'
+import { GH_AGENT_SKILLS_WAVE, SEND_P_THV_1095, SNAPSHOT_AFTER_WAVE, STORE_WAVE } from './fixtures/wave.ts'
+import { PANE, bash, cockpit, fresh, idOf, mainOf, must, receive, relabelPane, relabelTab, rowOf, stage, start, submit, tk, worldOf } from './stage.ts'
 
 /** p8V's session id in SNAPSHOT_LIVE (`agent_session.value`). */
 const P8V_SID = '27c71f2d-e064-4ebc-ae51-e993d40abfac'
@@ -127,6 +130,31 @@ test('send.sh calls give the pane, ticket, role and round from the brief file na
   expect(sendCalls(SEND_5)).toEqual([{ pane: 'w18:p7W', ticket: 'THV-980', role: 'verifier', round: 0, file: 'THV-980-verify.md' }])
   expect(sendCalls(SEND_6)).toEqual([{ pane: 'w18:p5J', ticket: 'THV-768', role: 'verifier', round: 0, file: 'THV-768-verify.md' }])
   expect(sendCalls('herdr agent read w4V:p2 --source visible --lines 15')).toEqual([])
+})
+
+test('send.sh $P from the THV-1094 wave gives no send call, and its stored key no fact: only a herdr w…:p… id is a pane', async () => {
+  expect(sendCalls(SEND_P_THV_1095)).toEqual([])
+  expect(parseFact('cockpit:send:THV-1095:$P:verifier:0', STORE_WAVE['cockpit:send:THV-1095:$P:verifier:0'])).toBeUndefined()
+  expect(parseFact('cockpit:send:THV-1095:w5E:p5:verifier:2', STORE_WAVE['cockpit:send:THV-1095:w5E:p5:verifier:2'])).toEqual(STORE_WAVE['cockpit:send:THV-1095:w5E:p5:verifier:2'])
+  for (const text of ['$P', '"$P"', '--clear-title', 'p1', 'w5E', 'w5E:t1', 'w5E:p5 ']) expect(isPaneId(text)).toBe(false)
+  for (const text of ['w5E:p1', 'w18:p8W', 'w40:pC']) expect(isPaneId(text)).toBe(true)
+})
+
+test('a Bash send.sh $P writes no send fact', async ($, on) => {
+  const s = stage(on, { pane: 'w5E:p1', sid: 'sid-main', snapshot: SNAPSHOT_AFTER_WAVE })
+  await start($)
+  await bash($, SEND_P_THV_1095)
+  expect([...s.saved.keys()].filter((k) => k.startsWith('cockpit:send:'))).toEqual([])
+})
+
+test('CI reads – for a PR whose only checks are NEUTRAL bot checks, as on every agent-skills PR of the wave', async () => {
+  const prs = must(parsePrList(AGENT_SKILLS, GH_AGENT_SKILLS_WAVE))
+  const pr35 = must(prs.find((p) => p.number === 35))
+  expect(pr35.checks).toEqual({ total: 0, done: 0, failed: [], running: [] })
+  expect(ciCell(pr35)).toEqual({ k: 'none' })
+  // Derived: w5E:p9 labelled the way label.sh labelled THV-1097's builder pane.
+  const row = rowOf(worldOf(mainOf('w5E', 'w5E:p1'), relabelPane(SNAPSHOT_AFTER_WAVE, 'w5E:p9', 'Build · Delete dead code (THV-1097)'), { sources: { github: fresh({ prs }) } }), 'THV-1097')
+  expect([cellText(row, 'pr'), cellText(row, 'ci')]).toEqual(['#35', '–'])
 })
 
 // ── unit: the inbox ────────────────────────────────────────────────────────────────────────

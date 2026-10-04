@@ -86,9 +86,16 @@ function prOf(repo: string, v: unknown): Pr | undefined {
   }
 }
 
-/** A CheckRun is done at `status: COMPLETED`; a StatusContext once its `state` leaves PENDING. */
+/** CheckRun conclusions of a check that ran no CI: Cursor's bot agents end NEUTRAL, a job its condition skipped ends SKIPPED. */
+const NO_CI = new Set(['NEUTRAL', 'SKIPPED'])
+
+/**
+ * A CheckRun is done at `status: COMPLETED`; a StatusContext once its `state` leaves PENDING. A PR
+ * whose every check is a CheckRun that ran no CI has no checks, so its CI cell reads `–`, not ✓.
+ */
 function checksOf(rollup: unknown): Checks {
-  const checks = Array.isArray(rollup) ? rollup.filter(isObj) : []
+  const all = Array.isArray(rollup) ? rollup.filter(isObj) : []
+  const checks = all.every((c) => c.__typename !== 'StatusContext' && c.status === 'COMPLETED' && NO_CI.has(String(c.conclusion))) ? [] : all
   const failed: string[] = []
   const running: string[] = []
   for (const c of checks) {
