@@ -10,7 +10,7 @@ import type { RenderNode } from 'claude-code'
 import { expect, test } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { AGENT_SKILLS, BACKEND, FRONTEND, parsePrList } from '../hooks/github.ts'
-import { EXPIRY_MS, expired, ticketsOn } from '../hooks/expiry.ts'
+import { EXPIRY_MS, expired, keptBy } from '../hooks/expiry.ts'
 import { LINEAR_URL, carry, eventOf, linearEntries, parseStates, pendingOf, readbacks, stateQuery, updateArgs } from '../hooks/linear.ts'
 import { eventId, isLinearEventId, isSessionId, type Board, type Fact, type Pr } from '../hooks/model.ts'
 import { SOURCES, parseLiveSpaces, valueOf } from '../hooks/sources.ts'
@@ -346,7 +346,7 @@ test('a closed row with a pending ↻ survives a 14-day expiry pass, and its key
   const stored = Object.entries(STORE_WAVE).map(([key, value]) => ({ key, value }))
   const pass = (keys: typeof stored, linearText: string, now: number) => {
     const world = { ...waveWorld(keys.flatMap((s) => parseFact(s.key, s.value) ?? []), linearText), now }
-    const gone = new Set(expired(keys, { now, prs: valueOf(world.sources.github)?.prs, linear: linearEntries(world.sources), onBoard: ticketsOn(project(world)) }).map((e) => e.key))
+    const gone = new Set(expired(keys, { now, prs: valueOf(world.sources.github)?.prs, linear: linearEntries(world.sources), ...keptBy(project(world)) }).map((e) => e.key))
     return keys.filter((s) => !gone.has(s.key))
   }
   // 14 days and an hour after the wave's last write, THV-1097 still reads Ready: its ↻ merged 35 is pending.
@@ -354,6 +354,8 @@ test('a closed row with a pending ↻ survives a 14-day expiry pass, and its key
   const kept = pass(stored, ready, AFTER_WAVE + EXPIRY_MS + 3_600_000)
   const row = rowOf(waveWorld(kept.flatMap((s) => parseFact(s.key, s.value) ?? []), ready), 'THV-1097')
   expect([row.panes.k, cellText(row, 'linear')]).toEqual(['gone', '↻'])
+  // A closed row's every key stays with it: its Report and Review cells do not go blank under the ↻.
+  expect([cellText(row, 'report'), cellText(row, 'review')]).toEqual(['✓', 'V C T D'])
   expect(pendingOf(row.cells.linear).map((p) => p.id)).toContain(`merged-${AGENT_SKILLS}-35`)
 
   // Every event handed back and Linear Done: the rows leave, and the next pass deletes each wave ticket's keys as merged-done.
@@ -374,6 +376,13 @@ test("the parent summary counts its children from Linear: after ↻ hands back T
   const group = must(board.build.find((g) => g.k === 'parent' && g.parent === tk('THV-1094')))
   expect(group.k === 'parent' && { done: group.done, total: group.total, counted: group.counted, children: group.children.map((r) => r.ticket) }).toEqual({ done: 2, total: 4, counted: 'linear', children: ['THV-1096'] })
   expect(workText(board)).toContain('Cockpit: tidy-ups from the S2 re-verify THV-1094: 2 of 4 done')
+})
+
+test("a parent summary has no ↻, so it keeps none of the parent's keys: a 15-day-old happened for THV-1094 goes", async () => {
+  const board = project(waveWorld(waveFacts(), waveAt({ 'THV-1096': 'Ready' })))
+  expect(board.build.some((g) => g.k === 'parent' && g.parent === tk('THV-1094'))).toBe(true)
+  const started: Fact = { kind: 'happened', ticket: tk('THV-1094'), event: idOf(isLinearEventId, 'started'), at: 0 }
+  expect(expired([{ key: keyOf(started), value: started }], { now: EXPIRY_MS + 1, prs: undefined, linear: undefined, ...keptBy(board) })).toEqual([{ key: keyOf(started), why: 'untouched' }])
 })
 
 test('a stale Linear read counts the parent from the rows on screen, and the summary says so', async () => {

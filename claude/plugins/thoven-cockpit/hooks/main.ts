@@ -9,7 +9,7 @@
 import { labelRecords, recordKey } from './background.ts'
 import { project } from './board.ts'
 import { COMMANDS, type Req } from './commands.ts'
-import { EXPIRY_PASS_MS, expired, ticketsOn, type Stored } from './expiry.ts'
+import { EXPIRY_PASS_MS, expired, keptBy, type Stored } from './expiry.ts'
 import { claimOf } from './facts.ts'
 import { linearEntries, updateArgs } from './linear.ts'
 import { messageOf, type Board, type Fact, type FactKind, type FactOf, type Intent, type Main, type Me, type Ms, type PaneId, type PaneUi, type Pending, type SourceId, type Sources, type SourceValues, type World } from './model.ts'
@@ -143,7 +143,7 @@ async function pushLabels(sh: Shell, m: MainState): Promise<void> {
 async function expire(sh: Shell, m: MainState, now: Ms): Promise<void> {
   const board = m.board
   if (!board) return
-  const gone = expired(await sh.loadStored(), { now, prs: valueOf(m.sources.github)?.prs, linear: linearEntries(m.sources), onBoard: ticketsOn(board) })
+  const gone = expired(await sh.loadStored(), { now, prs: valueOf(m.sources.github)?.prs, linear: linearEntries(m.sources), ...keptBy(board) })
   for (const { key } of gone) await sh.deleteKey(key)
 }
 

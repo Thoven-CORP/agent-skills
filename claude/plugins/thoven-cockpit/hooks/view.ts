@@ -360,7 +360,8 @@ export function doctorText(r: DoctorReport): string {
     ? ['Sources: polled only by main, and this session is not main.']
     : ['Sources:', ...Object.keys(polled.health).filter(isHealthId).map((id) => {
         const h = polled.health[id]
-        if (id === 'linear' && !polled.isLinearRead) return `  ${HEALTH_WORDS[id].name}: not read here, this space has no Project`
+        if (id === 'linear' && polled.linear === 'no-project') return `  ${HEALTH_WORDS[id].name}: not read here, this space has no Project`
+        if (id === 'linear' && polled.linear === 'no-live-spaces') return `  ${HEALTH_WORDS[id].name}: not read here, ${HEALTH_WORDS.spaces.name} is unavailable`
         return `  ${HEALTH_WORDS[id].name}: ${h.k === 'ok' ? 'ok' : h.k === 'stale' ? `${HEALTH_WORDS[id].down} since ${hhmm(h.since)}` : 'unavailable'}`
       })]
   const where = r.plugin.isMainCheckout ? 'the main checkout' : `not the main checkout (${r.plugin.expected})`

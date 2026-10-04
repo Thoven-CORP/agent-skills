@@ -2,13 +2,14 @@
 //
 // It reads and never writes: the store's cockpit keys with their ages, the claim on this
 // session's space, each source's health when this session is main, and where the plugin loaded.
-// A space with no Project has no Linear read (spec "Spaces"), so its Linear health says nothing.
+// A space with no Project has no Linear read (spec "Spaces"), so its Linear health says nothing;
+// while the Live spaces table cannot be read, no space's Project is known, so the same holds.
 // Which keys main deletes is expiry.ts's own rule over main's board. A session that is not main has
 // no board, so every key past 14 days shows as deleted, a Linear key of a ticket on screen included.
 
 import { claimOf } from './facts.ts'
-import { ageOf, expiresByAge, ticketsOn, type Stored } from './expiry.ts'
-import type { Board, Health, Ms, PaneId, SessionId, SpaceId, Ticket } from './model.ts'
+import { ageOf, expiresByAge, keptBy, type Stored } from './expiry.ts'
+import type { Board, Health, Ms, PaneId, SessionId, SpaceId } from './model.ts'
 import { isCockpitKey, parseFact } from './store.ts'
 
 /** ADR2: the one folder `CLAUDE_CODE_PLUGIN_DIRS` should name, in the main checkout. */
@@ -37,21 +38,22 @@ export type DoctorReport = {
   keys: DoctorKey[]
   claim: DoctorClaim
   /** Undefined in any session that is not main. */
-  sources: { health: Health; isLinearRead: boolean } | undefined
+  /** `linear`: read, or why not: the space has no Project, or Live spaces never answered. */
+  sources: { health: Health; linear: 'read' | 'no-project' | 'no-live-spaces' } | undefined
   plugin: { root: string; isMainCheckout: boolean; expected: string; env: string | undefined }
 }
 
 export function doctor(i: DoctorInput): DoctorReport {
   const cockpit = i.stored.filter((s) => isCockpitKey(s.key))
-  const onBoard = i.board ? ticketsOn(i.board) : new Set<Ticket>()
-  const keys = cockpit.map((s): DoctorKey => ({ key: s.key, ageMs: ageOf(s.value, i.now), isExpired: expiresByAge(s, i.now, onBoard), isReadable: parseFact(s.key, s.value) !== undefined }))
+  const kept = keptBy(i.board)
+  const keys = cockpit.map((s): DoctorKey => ({ key: s.key, ageMs: ageOf(s.value, i.now), isExpired: expiresByAge(s, i.now, kept), isReadable: parseFact(s.key, s.value) !== undefined }))
   keys.sort((a, b) => Number(b.isExpired) - Number(a.isExpired) || (b.ageMs ?? -Infinity) - (a.ageMs ?? -Infinity) || a.key.localeCompare(b.key))
   const facts = cockpit.flatMap(({ key, value }) => parseFact(key, value) ?? [])
   const expected = mainCheckoutDir(i.plugin.home)
   return {
     keys,
     claim: claimFor(i, facts),
-    sources: i.board && { health: i.board.health, isLinearRead: i.board.project !== undefined },
+    sources: i.board && { health: i.board.health, linear: i.board.project !== undefined ? 'read' : i.board.health.spaces.k === 'ok' ? 'no-project' : 'no-live-spaces' },
     plugin: { root: i.plugin.root, isMainCheckout: i.plugin.root.replace(/\/+$/, '') === expected, expected, env: i.plugin.env },
   }
 }

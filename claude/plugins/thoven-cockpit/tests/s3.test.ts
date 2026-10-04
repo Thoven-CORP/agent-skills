@@ -184,6 +184,7 @@ test('merged-done expiry does not let a later verdict reclaim another ticket\'s 
     prs: [BE_142],
     linear: new Map([[tk('THV-1003'), linearEntry('Done', 'completed')]]),
     onBoard: new Set(),
+    closed: new Set(),
   })
   expect(removed.map(({ key }) => key).sort()).toEqual([
     `cockpit:brief:THV-1003:${P8V_SID}`,
