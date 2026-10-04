@@ -10,7 +10,8 @@
 // claim, because that would be a read-then-write against a newer claim (ADR3). Nor does a key the
 // Linear cell reads while its ticket is on the board: without its `happened:` the next draw records
 // the event again, and without its `update:` and newer `readback:` a report event, which no Linear
-// state ever shows, is pending again. Either way its ↻ comes back.
+// state ever shows, is pending again. Either way its ↻ comes back. Nor do the `send:` and `brief:`
+// keys that place a closed row (board.ts): without them the row, and its pending ↻, leave the board.
 
 import { isDone, type LinearEntry } from './linear.ts'
 import { isCockpitKey, isFactKey, parseFact } from './store.ts'
@@ -44,14 +45,14 @@ export function ageOf(value: unknown, now: Ms): Ms | undefined {
 
 const isPastExpiry = (age: Ms | undefined): boolean => age !== undefined && age > EXPIRY_MS
 
-/** The kinds linear.ts linearOf reads from the store. */
-const CELL_KINDS: ReadonlySet<FactKind> = new Set(['happened', 'update', 'readback'])
+/** The kinds linear.ts linearOf reads from the store, and the kinds board.ts places a closed row by. */
+const KEPT_ON_BOARD: ReadonlySet<FactKind> = new Set(['happened', 'update', 'readback', 'send', 'brief'])
 
-/** Whether main deletes a stored key for its age: past the 14-day line, not a `main:` claim, and not read by the Linear cell of a ticket on the board. */
+/** Whether main deletes a stored key for its age: past the 14-day line, not a `main:` claim, and not one that keeps a ticket on the board in its row or its Linear cell. */
 export function expiresByAge({ key, value }: Stored, now: Ms, onBoard: ReadonlySet<Ticket>): boolean {
   if (isFactKey(key, 'main') || !isPastExpiry(ageOf(value, now))) return false
   const fact = parseFact(key, value)
-  return !(fact && 'ticket' in fact && CELL_KINDS.has(fact.kind) && onBoard.has(fact.ticket))
+  return !(fact && 'ticket' in fact && KEPT_ON_BOARD.has(fact.kind) && onBoard.has(fact.ticket))
 }
 
 /** A ticket whose PR merged and whose Linear state is completed, whatever the team named it. */

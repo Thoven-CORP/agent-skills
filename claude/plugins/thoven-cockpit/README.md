@@ -19,7 +19,7 @@ Run `/cockpit doctor` in any session to see:
 - each source's health, in main only;
 - the folder the plugin loaded from.
 
-Main deletes a key 14 days after its last write. It also deletes a ticket's keys once its PR has merged, Linear reads Done and the ticket has left the board. A `main:` claim never expires. Nor do the keys a ticket's Linear cell reads (`happened:`, `update:` and `readback:`) while the ticket is on the board, so its ↻ does not come back. Doctor in main marks the same keys; in any other session it has no board and marks every key past 14 days.
+Main deletes a key 14 days after its last write. It also deletes a ticket's keys once its PR has merged, Linear reads Done and the ticket has left the board. A `main:` claim never expires. Nor do the keys a ticket's Linear cell reads (`happened:`, `update:` and `readback:`) while the ticket is on the board, so its ↻ does not come back, nor the `send:` and `brief:` keys that keep a row whose panes have closed on the board. Doctor in main marks the same keys; in any other session it has no board and marks every key past 14 days.
 
 ## How it loads
 

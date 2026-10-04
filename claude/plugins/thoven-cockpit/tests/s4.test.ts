@@ -11,10 +11,11 @@ import { expect, test } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { FRONTEND, BACKEND } from '../hooks/github.ts'
 import { AGENT_SKILLS, parsePrList } from '../hooks/github.ts'
-import { LINEAR_URL, carry, eventOf, linearEntries, parseStates, readbacks, stateQuery, updateArgs } from '../hooks/linear.ts'
+import { EXPIRY_MS, expired, ticketsOn } from '../hooks/expiry.ts'
+import { LINEAR_URL, carry, eventOf, linearEntries, parseStates, pendingOf, readbacks, stateQuery, updateArgs } from '../hooks/linear.ts'
 import { eventId, isLinearEventId, isSessionId, type Fact, type Pr } from '../hooks/model.ts'
-import { SOURCES, parseLiveSpaces } from '../hooks/sources.ts'
-import { parseFact } from '../hooks/store.ts'
+import { SOURCES, parseLiveSpaces, valueOf } from '../hooks/sources.ts'
+import { keyOf, parseFact } from '../hooks/store.ts'
 import { cellText, drawCockpit, type ColumnId } from '../hooks/view.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import { LINEAR_STATES_945_1038, READBACK_DONE_THV_1038, READBACK_ERROR_THV_1038 } from './fixtures/linear.ts'
@@ -332,4 +333,27 @@ test('a row whose panes closed leaves once Linear shows every event on it, and n
   expect(rowsOf(project(done)).map((r) => r.ticket)).not.toContain('THV-1097')
   const elsewhere = worldOf(mainOf('w57', 'w57:p1'), SNAPSHOT_AFTER_WAVE, { facts: waveFacts(), sources: { spaces: fresh(parseLiveSpaces(WORKFLOW_LIVE_SPACES_COCKPIT)), linear: linear(LINEAR_WAVE, WAVE) } })
   expect(rowsOf(project(elsewhere)).map((r) => r.ticket).filter((t) => WAVE.includes(t))).toEqual([])
+})
+
+test('a closed row with a pending ↻ survives a 14-day expiry pass, and its keys go on the first pass after it leaves', async () => {
+  const stored = Object.entries(STORE_WAVE).map(([key, value]) => ({ key, value }))
+  const pass = (keys: typeof stored, linearText: string, now: number) => {
+    const world = { ...waveWorld(keys.flatMap((s) => parseFact(s.key, s.value) ?? []), linearText), now }
+    const gone = new Set(expired(keys, { now, prs: valueOf(world.sources.github)?.prs, linear: linearEntries(world.sources), onBoard: ticketsOn(project(world)) }).map((e) => e.key))
+    return keys.filter((s) => !gone.has(s.key))
+  }
+  // 14 days and an hour after the wave's last write, THV-1097 still reads Ready: its ↻ merged 35 is pending.
+  const ready = waveAt({ 'THV-1097': 'Ready', 'THV-1096': 'Ready' })
+  const kept = pass(stored, ready, AFTER_WAVE + EXPIRY_MS + 3_600_000)
+  const row = rowOf(waveWorld(kept.flatMap((s) => parseFact(s.key, s.value) ?? []), ready), 'THV-1097')
+  expect([row.panes.k, cellText(row, 'linear')]).toEqual(['gone', '↻'])
+  expect(pendingOf(row.cells.linear).map((p) => p.id)).toContain(`merged-${AGENT_SKILLS}-35`)
+
+  // Every event handed back and Linear Done: the rows leave, and the next pass deletes each wave ticket's keys as merged-done.
+  const back = [...stored, ...['THV-1095', 'THV-1096', 'THV-1097'].flatMap(handedBack).map((f) => ({ key: keyOf(f), value: f }))]
+  // The three `$P` sends no longer parse (F4), so no ticket names them: they go by age, as any unreadable key does.
+  const unreadable = ['cockpit:send:THV-1095:$P:verifier:0', 'cockpit:send:THV-1096:$P:builder:0', 'cockpit:send:THV-1096:$P:verifier:0']
+  const left = pass(back, LINEAR_WAVE, AFTER_WAVE + 3_600_000)
+  expect(left.map((s) => s.key).filter((k) => /THV-109[5-7]:/.test(k))).toEqual(unreadable)
+  expect(pass(left, LINEAR_WAVE, AFTER_WAVE + EXPIRY_MS + 3_600_000).map((s) => s.key).filter((k) => /THV-109[5-7]:/.test(k))).toEqual([])
 })
