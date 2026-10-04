@@ -122,6 +122,18 @@ test('every poteto-mode playbook whose name has more than one word reads as a bu
   expect(briefOf(BRIEF_BUG_FIX_THV_1096.replace('/poteto-mode Bug fix ', '$poteto-mode Perf issue '))).toEqual({ k: 'first', ticket: 'THV-1096', role: 'builder', title: TITLE_1096 })
 })
 
+test('a head that names no playbook is no brief: "Verification only for THV-1003", then FINDINGS, makes a verifier whose skills write `review`', async ($, on) => {
+  // The verifier's probe on fix round 1: the real verify brief with its head's playbook replaced.
+  const s = await paneRan($, on, VERIFY_THV_1003.replace('/poteto-mode Verify THV-1003', '/poteto-mode Verification only for THV-1003'), [])
+  expect(briefKeys(s)).toEqual([])
+  await turnEnd($, 'FINDINGS THV-1003\n\nThe purge skips an archived learner with a pending booking request.')
+  await s.clock.advance(1000)
+  for (const skill of ['verify-this', 'code-review']) await skillPrompt($, skill)
+  expect(reviewKeys(s)).toEqual([`cockpit:review:THV-1003:${P8V_SID}:code-review`, `cockpit:review:THV-1003:${P8V_SID}:verify-this`])
+  expect(cellText(rowOf(world1003(factsOf(s), [FE_137]), 'THV-1003'), 'review')).toBe('V C – –')
+  expect(briefOf('/poteto-mode why does the cockpit drop rows for THV-1097')).toBeUndefined()
+})
+
 // ── A verifier by its reply (THV-1095) ────────────────────────────────────────────────────────
 
 test('a pane that replies FINDINGS THV-1003 with no brief is its verifier: the skills it runs next write `review`', async ($, on) => {
