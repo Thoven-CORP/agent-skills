@@ -118,6 +118,28 @@ test('a verdict reply makes the whole session the verifier: verify-this and code
   expect(row.cells.review.k === 'review' && row.cells.review.lights).toEqual({ V: 'lit', C: 'lit', T: 'off', D: 'claimed' })
 })
 
+test('a run counts for the first verdict that claims it: VERIFIED THV-1004 a minute after FINDINGS THV-1003 gets none of its runs', async ($, on) => {
+  const s = await paneRan($, on, 'Look over the THV-1003 purge diff for me.', ['verify-this', 'code-review'])
+  await s.clock.advance(1000)
+  await turnEnd($, 'FINDINGS THV-1003')
+  await s.clock.advance(60_000)
+  await turnEnd($, 'VERIFIED THV-1004')
+  expect(briefKeys(s).sort()).toEqual([`cockpit:brief:THV-1003:${P8V_SID}`, `cockpit:brief:THV-1004:${P8V_SID}`])
+  expect(reviewKeys(s)).toEqual([`cockpit:review:THV-1003:${P8V_SID}:code-review`, `cockpit:review:THV-1003:${P8V_SID}:verify-this`])
+  // A run after the first verdict is the verifier brief's own, and lights only that ticket.
+  await skillPrompt($, 'deslop')
+  expect(reviewKeys(s)).toContain(`cockpit:review:THV-1004:${P8V_SID}:deslop`)
+  expect(reviewKeys(s).filter((k) => k.includes('THV-1004'))).toEqual([`cockpit:review:THV-1004:${P8V_SID}:deslop`])
+})
+
+test('one answer naming two tickets makes the pane both tickets\' verifier, and credits its runs to the first it names', async ($, on) => {
+  const s = await paneRan($, on, 'Look over THV-1003 and THV-1004 for me.', ['verify-this'])
+  await s.clock.advance(1000)
+  await turnEnd($, 'FINDINGS THV-1003\n\nThe purge skips a pending booking request.\n\nVERIFIED THV-1004')
+  expect(briefKeys(s).sort()).toEqual([`cockpit:brief:THV-1003:${P8V_SID}`, `cockpit:brief:THV-1004:${P8V_SID}`])
+  expect(reviewKeys(s)).toEqual([`cockpit:review:THV-1003:${P8V_SID}:verify-this`])
+})
+
 test('a builder that replies FINDINGS on its own ticket keeps its builder brief, its status-line warning and its self-check', async ($, on) => {
   const s = await paneRan($, on, REPORTS.BUILD_BRIEF_THV_1014, [])
   const brief = s.saved.get(`cockpit:brief:THV-1014:${P8V_SID}`)
@@ -145,6 +167,20 @@ test('a builder in a tab whose label names no ticket stays a Build pane for its 
   expect(labelRecords(before).get(p8v)?.title).toMatch(/\(THV-1014\)$/)
   expect(labelRecords(after).get(p8v)).toEqual(labelRecords(before).get(p8v))
   expect(reviewKeys(s)).toEqual([`cockpit:self:THV-1014:${P8V_SID}:verify-this`])
+})
+
+test('after a fix round, the builder of THV-1014 that replies VERIFIED THV-1003 stays a Build pane for THV-1014 alone', async ($, on) => {
+  const s = await paneRan($, on, REPORTS.BUILD_BRIEF_THV_1014, [])
+  await s.clock.advance(1000)
+  await submit($, REPORTS.FIX_ROUND_3_THV_1015.replaceAll('THV-1015', 'THV-1014'))
+  expect(s.saved.get(`cockpit:brief:THV-1014:${P8V_SID}`)).toMatchObject({ k: 'fix', labelKind: 'Build' })
+  const board = () => project(worldOf(W18, SNAPSHOT_LIVE, { facts: factsOf(s) }))
+  const rows = (b: ReturnType<typeof board>) => rowsOf(b).map((r) => [r.ticket, r.kind, r.title])
+  const before = board()
+  await turnEnd($, 'VERIFIED THV-1003')
+  expect(briefKeys(s)).toEqual([`cockpit:brief:THV-1014:${P8V_SID}`])
+  expect(rowsOf(board()).find((r) => r.ticket === tk('THV-1014'))?.kind).toBe('Build')
+  expect(rows(board())).toEqual(rows(before))
 })
 
 test('an aborted turn that ends on FINDINGS THV-1003 makes no verifier; an answer does', async ($, on) => {
