@@ -338,7 +338,7 @@ test('the PRs tab groups by repo with state and CI, hints no key it cannot act o
   await ui.press({ key: 'tab-prs' })
   for (const text of ['FE', 'BE', 'held', 'merged', '✗ 4', '✓']) expect(await ui.find({ type: 'Text', text })).toBeDefined()
   for (const text of ['o open', 'm merge it', 'm merge it #141']) expect(await ui.find({ type: 'Text', text })).toBeUndefined()
-  expect((await ui.findAll({ type: 'Button' })).map((b) => b.key)).toEqual(['tab-work', 'tab-prs', `pr-${FRONTEND}#141`, `pr-${BACKEND}#148`, 'checks'])
+  expect((await ui.findAll({ type: 'Button' })).map((b) => b.key)).toEqual(['tab-work', `pr-${FRONTEND}#141`, `pr-${BACKEND}#148`, 'checks'])
   expect(await ui.find({ type: 'Text', text: 'vitest shard 1/4' })).toBeUndefined()
   await ui.press({ key: 'checks' })
   for (const text of ['vitest shard 1/4', 'vitest shard 2/4', 'vitest shard 3/4', 'CI']) expect(await ui.find({ type: 'Text', text })).toBeDefined()
