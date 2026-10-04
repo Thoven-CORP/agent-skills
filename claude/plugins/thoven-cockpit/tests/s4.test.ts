@@ -10,12 +10,16 @@ import type { RenderNode } from 'claude-code'
 import { expect, test } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
 import { FRONTEND, BACKEND } from '../hooks/github.ts'
-import { LINEAR_URL, carry, eventOf, linearEntries, parseStates, readbacks, stateQuery, updateArgs } from '../hooks/linear.ts'
-import { eventId, isLinearEventId, isSessionId, type Fact, type Pr } from '../hooks/model.ts'
-import { SOURCES } from '../hooks/sources.ts'
-import { cellText, drawCockpit } from '../hooks/view.ts'
+import { AGENT_SKILLS, parsePrList } from '../hooks/github.ts'
+import { EXPIRY_MS, expired, ticketsOn } from '../hooks/expiry.ts'
+import { LINEAR_URL, carry, eventOf, linearEntries, parseStates, pendingOf, readbacks, stateQuery, updateArgs } from '../hooks/linear.ts'
+import { eventId, isLinearEventId, isSessionId, type Board, type Fact, type Pr } from '../hooks/model.ts'
+import { SOURCES, parseLiveSpaces, valueOf } from '../hooks/sources.ts'
+import { keyOf, parseFact } from '../hooks/store.ts'
+import { cellText, drawCockpit, type ColumnId } from '../hooks/view.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import { LINEAR_STATES_945_1038, READBACK_DONE_THV_1038, READBACK_ERROR_THV_1038 } from './fixtures/linear.ts'
+import { GH_AGENT_SKILLS_WAVE, LINEAR_WAVE, LINEAR_WAVE_CHILDREN, SNAPSHOT_AFTER_WAVE, STORE_WAVE, WORKFLOW_LIVE_SPACES_COCKPIT } from './fixtures/wave.ts'
 import { HOME, PANE, bash, cockpit, fakeAsk, fresh, idOf, mainOf, must, relabelPane, relabelTab, rowOf, rowsOf, stage, start, submit, tk, worldOf } from './stage.ts'
 
 const KEY = 'lin_api_fixture_not_a_real_key'
@@ -117,7 +121,8 @@ test('Sub-issues: THV-978, 979 and 980 sit under a THV-945 summary row, which ha
   // Derived: THV-979 moved back to In Progress, so the summary reads 2 of 3.
   const moving = project(worldOf(SUBS_MAIN, SUBS, { facts, sources: { linear: linear(inProgress('THV-979'), ['THV-978', 'THV-979', 'THV-980']) } }))
   const drawn = texts(drawCockpit(EL, moving, { tab: 'work', selected: undefined, selectedPr: undefined, checks: undefined }, 100, () => undefined))
-  expect(drawn).toContain('Daily video: webhooks, recordings and rooms THV-945: 2 of 3 done, 1 needs you')
+  // Its 2026-10-03 answer predates the children field, so the count comes from the rows on screen and says so.
+  expect(drawn).toContain('Daily video: webhooks, recordings and rooms THV-945: 2 of 3 done on screen, 1 needs you')
   // THV-979's `started` shows at In Progress; only the report on THV-980 is pending, on its own row.
   expect(moving.pending.map((p) => [p.ticket, p.id])).toEqual([['THV-980', 'report-NEEDS_CONTEXT']])
   expect(drawn.filter((t) => t.includes('↻'))).toEqual(['[↻]', '[update all ↻]'])
@@ -271,4 +276,109 @@ test('no Project: no Linear read, no key read, no Linear column and no u', async
   expect(s.fsCalls.filter((c) => c.includes('.linear-api-key'))).toEqual([])
   expect(await ui.find({ type: 'Text', text: 'Linear' })).toBeUndefined()
   expect(await ui.find({ type: 'Button', key: 'update-all' })).toBeUndefined()
+})
+
+// ── Rows outlive their panes (THV-1102, F3 and F7 of the THV-1094 wave) ─────────────────────
+//
+// Derived inputs, each from a fixture in fixtures/wave.ts: the store keys as they stood when a
+// replayed moment happened (every key written by then), and the Linear answer with tickets moved to
+// the team's own state node truth.log read for them at that moment.
+
+const WAVE_MAIN = mainOf('w5E', 'w5E:p1')
+const waveFacts = (until = Infinity): Fact[] => Object.entries(STORE_WAVE).flatMap(([key, value]) => parseFact(key, value) ?? []).filter((f) => f.at <= until)
+/** A wave Linear answer with tickets moved to a state node from the same answer, as truth.log read them, in their own node and in their parent's children. */
+function waveAt(moves: Record<string, string>, answer = LINEAR_WAVE): string {
+  const root = JSON.parse(answer)
+  const nodes: Array<{ name: string; type: string }> = root.data.teams.nodes[0].states.nodes
+  const moved = (id: string) => must(nodes.find((s) => s.name === moves[id]))
+  for (const n of root.data.issues.nodes) {
+    if (moves[n.identifier]) n.state = moved(n.identifier)
+    for (const c of n.parent?.children?.nodes ?? []) if (moves[c.identifier]) c.state = { type: moved(c.identifier).type }
+  }
+  return JSON.stringify(root)
+}
+const WAVE = ['THV-1094', 'THV-1095', 'THV-1096', 'THV-1097']
+const waveWorld = (facts: Fact[], linearText: string) =>
+  worldOf(WAVE_MAIN, SNAPSHOT_AFTER_WAVE, {
+    facts,
+    sources: { spaces: fresh(parseLiveSpaces(WORKFLOW_LIVE_SPACES_COCKPIT)), github: fresh({ prs: must(parsePrList(AGENT_SKILLS, GH_AGENT_SKILLS_WAVE)) }), linear: linear(linearText, WAVE) },
+  })
+/** `happened:THV-1097:merged-…-35`, written 46 s after #35 merged; main closed both panes right after. */
+/** Derived: what a ↻ press leaves for a ticket after the wave, an `update` fact for each of its events and a newer `THV-n Done` read-back. */
+const handedBack = (t: string): Fact[] => [
+  ...waveFacts().flatMap((f): Fact[] => (f.kind === 'happened' && f.ticket === t ? [{ kind: 'update', ticket: f.ticket, event: f.event, at: AFTER_WAVE }] : [])),
+  { kind: 'readback', ticket: tk(t), sid: idOf(isSessionId, 'sid-main'), isError: false, text: 'Done', at: AFTER_WAVE + 1 },
+]
+const AFTER_WAVE = Math.max(...waveFacts().map((f) => f.at)) + 1
+const MERGED_35_AT = must(waveFacts().find((f) => f.kind === 'happened' && f.event === `merged-${AGENT_SKILLS}-35`)).at
+
+test('THV-1097 after #35 merged and its panes closed keeps its row: pane gone, ↻ merged 35, its Review cell', async () => {
+  // 20:04, truth.log: THV-1097 and THV-1095 read Ready, and no wave pane is left in w5E.
+  const world = waveWorld(waveFacts(MERGED_35_AT), waveAt({ 'THV-1097': 'Ready', 'THV-1095': 'Ready', 'THV-1096': 'Backlog' }))
+  const row = rowOf(world, 'THV-1097')
+  expect(row.panes).toEqual({ k: 'gone' })
+  const columns: ColumnId[] = ['pane', 'report', 'review', 'pr', 'linear']
+  expect(columns.map((c) => cellText(row, c))).toEqual(['gone', '✓', 'V C T D', '#35', '↻'])
+  expect(project(world).pending.filter((p) => p.ticket === tk('THV-1097')).map((p) => p.id)).toEqual(['report-DONE', 'report-NEEDS_CONTEXT', `merged-${AGENT_SKILLS}-35`])
+})
+
+test("THV-1094's summary counts the rows whose panes closed: 2 of 3 done while THV-1096 reads Ready", async () => {
+  // 20:41, truth.log's last read: THV-1095 and THV-1097 Done, THV-1096 Ready, every wave pane closed.
+  const board = project(waveWorld(waveFacts(), waveAt({ 'THV-1096': 'Ready' })))
+  const group = must(board.build.find((g) => g.k === 'parent' && g.parent === tk('THV-1094')))
+  expect(group.k === 'parent' && { done: group.done, total: group.total, children: group.children.map((r) => [r.ticket, r.panes.k]) }).toEqual({
+    done: 2,
+    total: 3,
+    children: [['THV-1095', 'gone'], ['THV-1097', 'gone'], ['THV-1096', 'gone']],
+  })
+})
+
+test('a row whose panes closed leaves once Linear shows every event on it, and never shows in another space', async () => {
+  const done = waveWorld([...waveFacts(), ...['THV-1095', 'THV-1096', 'THV-1097'].flatMap((t) => handedBack(t))], LINEAR_WAVE)
+  expect(rowsOf(project(done)).map((r) => r.ticket)).not.toContain('THV-1097')
+  const elsewhere = worldOf(mainOf('w57', 'w57:p1'), SNAPSHOT_AFTER_WAVE, { facts: waveFacts(), sources: { spaces: fresh(parseLiveSpaces(WORKFLOW_LIVE_SPACES_COCKPIT)), linear: linear(LINEAR_WAVE, WAVE) } })
+  expect(rowsOf(project(elsewhere)).map((r) => r.ticket).filter((t) => WAVE.includes(t))).toEqual([])
+})
+
+test('a closed row with a pending ↻ survives a 14-day expiry pass, and its keys go on the first pass after it leaves', async () => {
+  const stored = Object.entries(STORE_WAVE).map(([key, value]) => ({ key, value }))
+  const pass = (keys: typeof stored, linearText: string, now: number) => {
+    const world = { ...waveWorld(keys.flatMap((s) => parseFact(s.key, s.value) ?? []), linearText), now }
+    const gone = new Set(expired(keys, { now, prs: valueOf(world.sources.github)?.prs, linear: linearEntries(world.sources), onBoard: ticketsOn(project(world)) }).map((e) => e.key))
+    return keys.filter((s) => !gone.has(s.key))
+  }
+  // 14 days and an hour after the wave's last write, THV-1097 still reads Ready: its ↻ merged 35 is pending.
+  const ready = waveAt({ 'THV-1097': 'Ready', 'THV-1096': 'Ready' })
+  const kept = pass(stored, ready, AFTER_WAVE + EXPIRY_MS + 3_600_000)
+  const row = rowOf(waveWorld(kept.flatMap((s) => parseFact(s.key, s.value) ?? []), ready), 'THV-1097')
+  expect([row.panes.k, cellText(row, 'linear')]).toEqual(['gone', '↻'])
+  expect(pendingOf(row.cells.linear).map((p) => p.id)).toContain(`merged-${AGENT_SKILLS}-35`)
+
+  // Every event handed back and Linear Done: the rows leave, and the next pass deletes each wave ticket's keys as merged-done.
+  const back = [...stored, ...['THV-1095', 'THV-1096', 'THV-1097'].flatMap(handedBack).map((f) => ({ key: keyOf(f), value: f }))]
+  // The three `$P` sends no longer parse (F4), so no ticket names them: they go by age, as any unreadable key does.
+  const unreadable = ['cockpit:send:THV-1095:$P:verifier:0', 'cockpit:send:THV-1096:$P:builder:0', 'cockpit:send:THV-1096:$P:verifier:0']
+  const left = pass(back, LINEAR_WAVE, AFTER_WAVE + 3_600_000)
+  expect(left.map((s) => s.key).filter((k) => /THV-109[5-7]:/.test(k))).toEqual(unreadable)
+  expect(pass(left, LINEAR_WAVE, AFTER_WAVE + EXPIRY_MS + 3_600_000).map((s) => s.key).filter((k) => /THV-109[5-7]:/.test(k))).toEqual([])
+})
+
+const workText = (board: Board): string[] => texts(drawCockpit(EL, board, { tab: 'work', selected: undefined, selectedPr: undefined, checks: undefined }, 100, () => undefined))
+
+test("the parent summary counts its children from Linear: after ↻ hands back THV-1095 and THV-1097, THV-1094 reads 2 of 4 done", async () => {
+  // 20:41 with the ↻ pressed: THV-1096 reads Ready, and Linear lists THV-1100 (Backlog) as THV-1094's fourth child.
+  const handed = [...waveFacts(), ...['THV-1095', 'THV-1097'].flatMap(handedBack)]
+  const board = project(waveWorld(handed, waveAt({ 'THV-1096': 'Ready' }, LINEAR_WAVE_CHILDREN)))
+  const group = must(board.build.find((g) => g.k === 'parent' && g.parent === tk('THV-1094')))
+  expect(group.k === 'parent' && { done: group.done, total: group.total, counted: group.counted, children: group.children.map((r) => r.ticket) }).toEqual({ done: 2, total: 4, counted: 'linear', children: ['THV-1096'] })
+  expect(workText(board)).toContain('Cockpit: tidy-ups from the S2 re-verify THV-1094: 2 of 4 done')
+})
+
+test('a stale Linear read counts the parent from the rows on screen, and the summary says so', async () => {
+  const world = waveWorld(waveFacts(), waveAt({ 'THV-1096': 'Ready' }, LINEAR_WAVE_CHILDREN))
+  const read = must(valueOf(world.sources.linear))
+  const stale = { ...world, sources: { ...world.sources, linear: { k: 'stale' as const, value: read, at: 0, since: 0, error: 'Bad Gateway' } } }
+  const group = must(project(stale).build.find((g) => g.k === 'parent'))
+  expect(group.k === 'parent' && [group.done, group.total, group.counted]).toEqual([2, 3, 'screen'])
+  expect(workText(project(stale))).toContain('Cockpit: tidy-ups from the S2 re-verify THV-1094: 2 of 3 done on screen')
 })

@@ -24,7 +24,7 @@ export const keyPath = (home: string): string => `${home}/.linear-api-key`
 // ── The state read (ADR10) ───────────────────────────────────────────────────────────────────
 
 const STATE_QUERY =
-  'query CockpitStates($numbers: [Float!]) { issues(first: 100, filter: { team: { key: { eq: "THV" } }, number: { in: $numbers } }) { nodes { identifier state { name type position } parent { identifier title } } } teams(filter: { key: { eq: "THV" } }) { nodes { states { nodes { name type position } } } } }'
+  'query CockpitStates($numbers: [Float!]) { issues(first: 100, filter: { team: { key: { eq: "THV" } }, number: { in: $numbers } }) { nodes { identifier state { name type position } parent { identifier title children(first: 100) { nodes { identifier state { type } } } } } } teams(filter: { key: { eq: "THV" } }) { nodes { states { nodes { name type position } } } } }'
 
 /** The one Linear request body. `query` can only be STATE_QUERY, and the variables are numbers. */
 export type StateQuery = { readonly query: typeof STATE_QUERY; readonly variables: { readonly numbers: readonly number[] } }
@@ -39,8 +39,10 @@ type StateType = (typeof STATE_TYPES)[number]
 const RANK: Record<StateType, number> = { triage: 0, backlog: 0, unstarted: 1, started: 2, completed: 3, canceled: 3, duplicate: 3 }
 
 export type LinearState = { name: string; type: StateType; position: number }
-/** What the last read that asked about a ticket said of it, and when (`at`). */
-export type LinearEntry = { state: LinearState; parent: { ticket: Ticket; title: string } | undefined; at: Ms }
+/** One of a parent's sub-issues, and whether its state is completed. */
+export type LinearChild = { ticket: Ticket; isDone: boolean }
+/** What the last read that asked about a ticket said of it, and when (`at`). A parent's `children` is empty when the answer did not list them. */
+export type LinearEntry = { state: LinearState; parent: { ticket: Ticket; title: string; children: readonly LinearChild[] } | undefined; at: Ms }
 /**
  * The Linear source's value. Each read asks only about the tickets on screen, and carries forward
  * every entry it did not re-read, so a ticket that left the board keeps the last state read for it
@@ -81,10 +83,18 @@ export function parseStates(text: string, asked: readonly Ticket[], at: Ms): Lin
     if (!t || !state || !isRaw(n) || !asked.includes(t)) continue
     const p = n.parent
     const parent = isRaw(p) && typeof p.identifier === 'string' ? ticket(p.identifier) : undefined
-    issues.set(t, { state, parent: parent && isRaw(p) ? { ticket: parent, title: typeof p.title === 'string' ? p.title : parent } : undefined, at })
+    issues.set(t, { state, parent: parent && isRaw(p) ? { ticket: parent, title: typeof p.title === 'string' ? p.title : parent, children: childrenOf(p) } : undefined, at })
   }
   const states = (list(list(root, 'data', 'teams', 'nodes')?.[0], 'states', 'nodes') ?? []).flatMap((s) => stateOf(s) ?? [])
   return { asked, issues, states }
+}
+
+function childrenOf(parent: Raw): LinearChild[] {
+  return (list(parent, 'children', 'nodes') ?? []).flatMap((c) => {
+    const t = isRaw(c) && typeof c.identifier === 'string' ? ticket(c.identifier) : undefined
+    const type = isRaw(c) && isRaw(c.state) ? c.state.type : undefined
+    return t && isOneOf(STATE_TYPES)(type) ? [{ ticket: t, isDone: type === 'completed' }] : []
+  })
 }
 
 /** One read on top of the last value: what it asked about is replaced, everything else carried forward. */
@@ -225,8 +235,11 @@ export const pendingOf = (c: LinearCell): Pending[] => (c.k === 'pending' || c.k
  * Rows nested under their Linear parent, at the place of the first row of the group. A row for
  * the parent ticket itself is replaced by the summary, which has no ↻. Without a state read every
  * row stands alone.
+ *
+ * The summary counts the parent's sub-issues as Linear lists them, so a child that has left the
+ * board still counts (F7). While the read is stale, or listed no children, it counts the rows on screen.
  */
-export function groupRows(rows: readonly Row[], view: LinearView | undefined): Group[] {
+export function groupRows(rows: readonly Row[], view: LinearView | undefined, { isFresh }: { isFresh: boolean }): Group[] {
   const parentOf = (t: Ticket) => view?.issues.get(t)?.parent
   const parents = new Set(rows.flatMap((r) => parentOf(r.ticket)?.ticket ?? []))
   const groups = new Map<Ticket, Extract<Group, { k: 'parent' }>>()
@@ -234,7 +247,7 @@ export function groupRows(rows: readonly Row[], view: LinearView | undefined): G
   const groupFor = (parent: Ticket, title: string) => {
     let g = groups.get(parent)
     if (!g) {
-      g = { k: 'parent', parent, title, done: 0, total: 0, needsYou: 0, children: [] }
+      g = { k: 'parent', parent, title, done: 0, total: 0, counted: 'screen', needsYou: 0, children: [] }
       groups.set(parent, g)
       out.push(g)
     }
@@ -251,6 +264,14 @@ export function groupRows(rows: readonly Row[], view: LinearView | undefined): G
       if (needsYou(row)) g.needsYou += 1
     } else if (parents.has(row.ticket)) groupFor(row.ticket, row.title)
     else out.push({ k: 'single', row })
+  }
+  for (const g of groups.values()) {
+    const first = g.children[0]
+    const listed = first === undefined ? [] : (parentOf(first.ticket)?.children ?? [])
+    if (!isFresh || listed.length === 0) continue
+    g.done = listed.filter((c) => c.isDone).length
+    g.total = listed.length
+    g.counted = 'linear'
   }
   return out
 }

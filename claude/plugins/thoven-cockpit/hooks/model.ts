@@ -70,7 +70,8 @@ export function isOneOf<L extends readonly string[]>(list: L): (v: unknown) => v
 
 /** The one way outside text becomes an id: herdr, Claude Code and the store hand out non-empty strings. */
 const isId = (v: unknown): v is string => typeof v === 'string' && v !== ''
-export const isPaneId = (v: unknown): v is PaneId => isId(v)
+/** A pane id is herdr's `w…:p…` shape, so a send.sh operand the shell never expanded (`$P`) is not one. */
+export const isPaneId = (v: unknown): v is PaneId => typeof v === 'string' && /^w[0-9A-Za-z]+:p[0-9A-Za-z]+$/.test(v)
 export const isTabId = (v: unknown): v is TabId => isId(v)
 export const isSpaceId = (v: unknown): v is SpaceId => isId(v)
 export const isSessionId = (v: unknown): v is SessionId => isId(v)
@@ -238,7 +239,7 @@ export type Pr = {
   topDirs: number
   url: string
 }
-/** `statusCheckRollup`, CheckRuns and StatusContexts alike. `failed` and `running` hold check names. */
+/** `statusCheckRollup`, CheckRuns and StatusContexts alike; none when every check ran no CI (github.ts). `failed` and `running` hold check names. */
 export type Checks = { total: number; done: number; failed: string[]; running: string[] }
 
 export type GithubView = { prs: Pr[] }
@@ -357,10 +358,13 @@ export type Cells = {
 
 export type Row = RowIdentity & { cells: Cells }
 
-/** A parent and its on-screen children, or one parentless row. */
+/**
+ * A parent and its on-screen children, or one parentless row. `done of total` counts the parent's
+ * sub-issues as Linear lists them (`linear`), or, while Linear is stale, the rows on screen (`screen`).
+ */
 export type Group =
   | { k: 'single'; row: Row }
-  | { k: 'parent'; parent: Ticket; title: string; done: number; total: number; needsYou: number; children: Row[] }
+  | { k: 'parent'; parent: Ticket; title: string; done: number; total: number; counted: 'linear' | 'screen'; needsYou: number; children: Row[] }
 
 /** A pane with no Build or Review row: by its label, or, with none, by its tab's name. */
 export type OtherItem = { k: 'labelled'; title: string; kind: Kind | undefined; ticket: Ticket | undefined; pane: PaneCell } | { k: 'unlabelled'; tab: string; pane: PaneCell }

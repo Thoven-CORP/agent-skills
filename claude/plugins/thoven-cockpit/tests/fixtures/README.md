@@ -16,7 +16,7 @@ Nothing here is hand-made except `built.ts`, which says for each constant why no
 | `turns.ts` | `ANSWER_DONE_THV_978`, `ANSWER_NO_STATUS_THV_1082`, `BRIEF_FILE_THV_978`, `STOP_TASKS_SLEEP`, `WATCH_BASH_INPUT` | builder transcripts' last `text` block (lines named in the file), `$TMPDIR/dispatch/THV-978.md`, the S0 spike's `classic.Stop` log, and a main session's Bash `tool_use` |
 | `review.ts` | `SKILL_PROMPT_DESLOP`, `SKILL_TOOL_CALL`, `SKILL_TOOL_RESULT`, `ROLLOUT_VERIFY_THV_1000` | `/tmp/cockpit-spike/log/events.jsonl` lines 81 and 88, `/tmp/cockpit-fixtures/skills/skill-tool-result.jsonl`, and seven lines of a real Codex verifier rollout (path in the file; its `session_meta` drops `base_instructions` and the creator account ids) |
 | `linear.ts` | `LINEAR_STATES_945_1038`, `READBACK_DONE_THV_1038`, `READBACK_ERROR_THV_1038` | the answer to `STATE_QUERY` from `api.linear.app/graphql` on 2026-10-03 (read only); the read-back lines are set-status.js's printed form with the spec's literals, since no transcript holds one yet, and the file says so |
-| `wave.ts` | `BRIEF_BUG_FIX_THV_1096`, `MAIN_SID_THV_1094`, `SEND_1947_THV_1095_1097` | the live acceptance wave THV-1094 (2026-10-03): the THV-1096 builder's first prompt and main's 19:47 send.sh `tool_use`, transcript lines named in the file |
+| `wave.ts` | `BRIEF_BUG_FIX_THV_1096`, `MAIN_SID_THV_1094`, `SEND_1947_THV_1095_1097`, `STORE_WAVE`, `SEND_P_THV_1095`, `SNAPSHOT_AFTER_WAVE`, `LINEAR_WAVE`, `LINEAR_WAVE_CHILDREN`, `GH_AGENT_SKILLS_WAVE`, `WORKFLOW_LIVE_SPACES_COCKPIT` | the live acceptance wave THV-1094 (2026-10-03, space `Cockpit`): the THV-1096 builder's first prompt and main's 19:47 send.sh `tool_use` (transcript lines named in the file); its store keys, main's `send.sh $P` Bash command (transcript line named in the file), and `herdr api snapshot`, the Linear state read, `gh pr list` and WORKFLOW.md's Live spaces, each read after the wave |
 | `built.ts` | `BUILT_CONCERNS_TABLE_THV_1045` | built by hand, not captured: no log holds a concerns table; shaped on brief.md's REPORT section (`skills/dev/dispatch-work/references/brief.md`), and said so in the file |
 
 Two test inputs are derived from these, not copied, and say so where they are built
@@ -34,6 +34,10 @@ S2b derives its inputs where `tests/s2b.test.ts` builds them: relabelled tabs an
 checkout's branch set to `ui/thv-481` or `sentry-error`, a pane moved into the backend checkout, and
 BE #145 retitled with the spec's `(THV-851, THV-847, THV-843)`, since no PR on file has a
 multi-ticket title group.
+
+S4's wave replay (THV-1102) derives two inputs where `tests/s4.test.ts` builds them: the store keys
+as they stood at a replayed moment, and `LINEAR_WAVE` with tickets moved to the state truth.log read
+for them then (THV-1096 at Ready; it reads Done today), in its own node and in its parent's children. S2 labels `w5E:p9` as THV-1097's builder was.
 
 Later slices add their sources here as they land: Skill events and the Codex rollout (S3), the Linear answer (S4), and the measured event payloads
 (S5). Each is in `/tmp/cockpit-fixtures/` or `/tmp/cockpit-spike/log/events.jsonl` today.
