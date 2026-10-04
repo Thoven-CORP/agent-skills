@@ -60,33 +60,39 @@ export const answerSeen: Observer<ReadonlyArray<StatusLine & { word: ReportStatu
 /**
  * A Review skill this session ran itself, with the brief facts it wrote (ADR12): one fact per ticket
  * it holds a brief for, `review` under a verifier brief and `self` under any other, in the round of
- * that brief. A session with no brief (main, a /clear, Andres's own sessions) records nothing.
+ * that brief. A pane with no brief records a `ran`, for a verdict reply to name (verdictSeen). Main
+ * and a session outside herdr record nothing.
  */
-export const skillSeen: Observer<{ skill: ReviewSkill; briefs: ReadonlyArray<FactOf<'brief'>> }> = (me, { skill, briefs }, sid, at) => ({
-  me,
-  facts: briefs.flatMap((b): Fact[] => {
-    if (b.sid !== sid) return []
-    const run = { ticket: b.ticket, sid, skill, round: b.at, at }
-    return [b.k === 'first' && b.role === 'verifier' ? { kind: 'review', ...run } : { kind: 'self', ...run }]
-  }),
-})
+export const skillSeen: Observer<{ skill: ReviewSkill; briefs: ReadonlyArray<FactOf<'brief'>> }> = (me, { skill, briefs }, sid, at) => {
+  const held = briefs.filter((b) => b.sid === sid)
+  if (held.length === 0) return { me, facts: me.k === 'pane' ? [{ kind: 'ran', sid, skill, at }] : [] }
+  return {
+    me,
+    facts: held.map((b): Fact => {
+      const run = { ticket: b.ticket, sid, skill, round: b.at, at }
+      return b.k === 'first' && b.role === 'verifier' ? { kind: 'review', ...run } : { kind: 'self', ...run }
+    }),
+  }
+}
 
 /**
  * The verdicts a pane's own answer gave. Replying `VERIFIED THV-n` or `FINDINGS THV-n` makes it
- * THV-n's verifier (spec, Review row): it writes the verifier brief a `Verify THV-n` would have, so
- * the Review skills it runs next write `review`. A pane holding a builder or fix-round brief is a
+ * THV-n's verifier (spec, Review row, and Andres's ruling on THV-1095): it writes the verifier brief
+ * a `Verify THV-n` would have, so the Review skills it runs next write `review`, and each skill it
+ * already ran with no brief (`ran`) becomes `review` in that round too. A pane holding a builder or fix-round brief is a
  * builder, whatever it replies: its role, self-check and pane kind stay (ADR12). A pane keeps any
  * brief it already holds for the ticket, and with it the round its skills ran in. Main relays
  * verdicts, so only a pane.
  */
-export const verdictSeen: Observer<{ lines: readonly StatusLine[]; briefs: ReadonlyArray<FactOf<'brief'>> }> = (me, { lines, briefs }, sid, at) => {
+export const verdictSeen: Observer<{ lines: readonly StatusLine[]; briefs: ReadonlyArray<FactOf<'brief'>>; ran: ReadonlyArray<FactOf<'ran'>> }> = (me, { lines, briefs, ran }, sid, at) => {
   const held = briefs.filter((b) => b.sid === sid)
   if (me.k !== 'pane' || held.some((b) => b.k === 'fix' || b.role === 'builder')) return { me, facts: [] }
   return lines.reduce<Observed>(
     (seen, l) => {
       if (!isOneOf(VERDICTS)(l.word) || held.some((b) => b.ticket === l.ticket)) return seen
       const next = promptSeen(seen.me, { k: 'brief', brief: { k: 'first', ticket: l.ticket, role: 'verifier' } }, sid, at)
-      return { me: next.me, facts: [...seen.facts, ...next.facts] }
+      const runs = ran.flatMap((r): Fact[] => (r.sid === sid ? [{ kind: 'review', ticket: l.ticket, sid, skill: r.skill, round: at, at: r.at }] : []))
+      return { me: next.me, facts: [...seen.facts, ...next.facts, ...runs] }
     },
     { me, facts: [] },
   )

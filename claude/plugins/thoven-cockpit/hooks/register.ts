@@ -466,7 +466,7 @@ async function noteSkill($: Api, name: string): Promise<void> {
 async function noteVerdicts($: Api, answer: string): Promise<void> {
   if (held.me.k !== 'pane') return
   const lines = statusLines(answer)
-  if (lines.length > 0) await record($, verdictSeen, { lines, briefs: await loadBriefs($) })
+  if (lines.length > 0) await record($, verdictSeen, { lines, briefs: await loadBriefs($), ran: (await loadFacts($, 'ran')).flatMap((f) => (f.kind === 'ran' ? [f] : [])) })
 }
 
 async function loadBriefs($: Api): Promise<Array<FactOf<'brief'>>> {

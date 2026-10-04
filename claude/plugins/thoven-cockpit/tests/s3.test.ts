@@ -106,6 +106,18 @@ test('a pane that replies FINDINGS THV-1003 with no brief is its verifier: the s
   expect(cellText(rowOf(world1003(factsOf(s), [FE_137]), 'THV-1003'), 'review')).toBe('V C – –')
 })
 
+test('a verdict reply makes the whole session the verifier: verify-this and code-review run before FINDINGS THV-1003 light V and C', async ($, on) => {
+  const s = await paneRan($, on, 'Look over the THV-1003 purge diff for me.', ['verify-this', 'code-review'])
+  await s.clock.advance(1000)
+  await turnEnd($, 'FINDINGS THV-1003\n\nThe purge skips an archived learner with a pending booking request.')
+  expect(reviewKeys(s)).toEqual([`cockpit:review:THV-1003:${P8V_SID}:code-review`, `cockpit:review:THV-1003:${P8V_SID}:verify-this`])
+  expect(s.saved.get(`cockpit:review:THV-1003:${P8V_SID}:verify-this`)).toEqual({ kind: 'review', ticket: 'THV-1003', sid: P8V_SID, skill: 'verify-this', round: 3000, at: 2000 })
+  expect(cellText(rowOf(world1003(factsOf(s), [FE_137]), 'THV-1003'), 'review')).toBe('V C – –')
+  // A VERIFIED after it claims only D: the two that ran stay lit.
+  const row = rowOf(world1003([...factsOf(s), verdict('VERIFIED', 4000)], [FE_137]), 'THV-1003')
+  expect(row.cells.review.k === 'review' && row.cells.review.lights).toEqual({ V: 'lit', C: 'lit', T: 'off', D: 'claimed' })
+})
+
 test('a builder that replies FINDINGS on its own ticket keeps its builder brief, its status-line warning and its self-check', async ($, on) => {
   const s = await paneRan($, on, REPORTS.BUILD_BRIEF_THV_1014, [])
   const brief = s.saved.get(`cockpit:brief:THV-1014:${P8V_SID}`)
