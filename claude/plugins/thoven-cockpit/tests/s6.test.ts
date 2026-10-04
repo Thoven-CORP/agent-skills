@@ -11,6 +11,7 @@ import { EXPIRY_MS, ageOf, expired, isMergedAndDone, type LinearStates, type Sto
 import { FRONTEND, parsePrList } from '../hooks/github.ts'
 import type { LinearEntry, LinearState } from '../hooks/linear.ts'
 import { isLinearEventId, isPaneId, isSessionId, isSpaceId, type Fact, type Health, type Pr } from '../hooks/model.ts'
+import { HEARTBEAT_MS } from '../hooks/sources.ts'
 import { keyOf } from '../hooks/store.ts'
 import { doctorText } from '../hooks/view.ts'
 import { GH_FRONTEND } from './fixtures/github.ts'
@@ -100,6 +101,15 @@ test('Done is a completed state, whatever its name: THV-1038 in Shipped loses it
   ])
   const startedDone: LinearStates = new Map([[tk('THV-1038'), read('Done', 'started')]])
   expect(expired(keys, { now: NOW, prs: prs(), linear: startedDone, onBoard: new Set() })).toEqual([])
+})
+
+test('a happened key whose ticket is on the board never expires by age; its report and an off-board event still do', async () => {
+  const event = (ticket: string, id: string): Fact => ({ kind: 'happened', ticket: tk(ticket), event: idOf(isLinearEventId, id), at: NOW - 15 * DAY })
+  const keys = storedOf([entry(event('THV-1045', 'report-DONE')), entry(report('THV-1045', 'sid-b', NOW - 15 * DAY)), entry(event('THV-1041', 'report-DONE'))])
+  expect(expired(keys, { now: NOW, prs: undefined, linear: undefined, onBoard: new Set([tk('THV-1045')]) })).toEqual([
+    { key: 'cockpit:report:THV-1045:sid-b', why: 'untouched' },
+    { key: 'cockpit:happened:THV-1041:report-DONE', why: 'untouched' },
+  ])
 })
 
 // ── unit: the doctor report ──────────────────────────────────────────────────────────────────
@@ -195,6 +205,18 @@ test('Expiry: doctor lists the 15-day-old key first, then main deletes it and wr
   expect(after[2]).toBe('Main of w18: this session, claimed 0 s ago.')
   expect(after.slice(3, 10)).toEqual(['Sources:', '  herdr: ok', '  pane labels: ok', '  Live spaces: ok', '  git: ok', '  gh: ok', '  dispatch inbox: ok'])
   expect(after.some((l) => l.includes('older than 14 days'))).toBe(false)
+})
+
+test('main keeps a 15-day-old happened key for the ticket on screen, so its event is not recorded again', async ($, on) => {
+  const started: Fact = { kind: 'happened', ticket: tk('THV-1045'), event: idOf(isLinearEventId, 'started'), at: NOW - 15 * DAY }
+  const s = stage(on, { pane: 'w18:p8W', snapshot: SNAPSHOT, store: Object.fromEntries([entry(started)]) })
+  await s.clock.set(NOW)
+  await start($)
+  await cockpit($)
+  await s.clock.advance(0)
+  await s.clock.advance(HEARTBEAT_MS)
+  expect(s.saved.get('cockpit:happened:THV-1045:started')).toEqual(started)
+  expect(s.setKeys).toEqual(['cockpit:main:w18'])
 })
 
 test('main runs an expiry pass once an hour, not every tick', { timeoutMs: 20_000 }, async ($, on) => {
