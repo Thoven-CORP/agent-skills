@@ -7,9 +7,10 @@ import { project } from '../hooks/board.ts'
 import { ciCell } from '../hooks/cells.ts'
 import { inboxFile, readPrompt, sendCalls, statusLines, unwrapPasted } from '../hooks/dispatch.ts'
 import { isLinearEventId, isPaneId, isSessionId, type Fact, type InboxFile } from '../hooks/model.ts'
-import { AGENT_SKILLS, parsePrList } from '../hooks/github.ts'
+import { AGENT_SKILLS, FRONTEND, parsePrList } from '../hooks/github.ts'
 import { parseFact } from '../hooks/store.ts'
 import { cellText } from '../hooks/view.ts'
+import { GH_FRONTEND } from './fixtures/github.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import { OUT_ESCALATION_THV_1004, OUT_RESEARCH_THV_1038_HEAD } from './fixtures/inbox.ts'
 import {
@@ -155,6 +156,13 @@ test('CI reads – for a PR whose only checks are NEUTRAL bot checks, as on ever
   // Derived: w5E:p9 labelled the way label.sh labelled THV-1097's builder pane.
   const row = rowOf(worldOf(mainOf('w5E', 'w5E:p1'), relabelPane(SNAPSHOT_AFTER_WAVE, 'w5E:p9', 'Build · Delete dead code (THV-1097)'), { sources: { github: fresh({ prs }) } }), 'THV-1097')
   expect([cellText(row, 'pr'), cellText(row, 'ci')]).toEqual(['#35', '–'])
+})
+
+test('a PR mixing NEUTRAL bot checks with real CI counts every check: frontend #136 reads 13 of 13 and ✓', async () => {
+  const pr136 = must(must(parsePrList(FRONTEND, GH_FRONTEND)).find((p) => p.number === 136))
+  expect(JSON.parse(GH_FRONTEND).find((p: { number: number }) => p.number === 136).statusCheckRollup.filter((c: { conclusion?: string }) => c.conclusion === 'NEUTRAL').length).toBe(2)
+  expect(pr136.checks).toEqual({ total: 13, done: 13, failed: [], running: [] })
+  expect(ciCell(pr136)).toEqual({ k: 'pass' })
 })
 
 // ── unit: the inbox ────────────────────────────────────────────────────────────────────────
