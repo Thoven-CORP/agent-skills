@@ -3,8 +3,8 @@
 // Two rules (spec "Store keys"):
 //   merged-done  a fact about a ticket whose PR merged and whose Linear state is completed, once the
 //                ticket has left the board, so a row still on screen keeps its cells
-//   untouched    a key whose value was last written more than 14 days ago. Every write replaces a
-//                whole value with a fresh `at`, so `at` is when the key was last touched
+//   untouched    a key whose `at` is more than 14 days old. A write stamps the time it was made,
+//                except a `review` and a claimed `ran`, which keep the time the skill ran
 //
 // A `main:` claim never expires by age: its `at` is the claim time, and a main does not rewrite its
 // claim, because that would be a read-then-write against a newer claim (ADR3). Nor does a key the
@@ -23,14 +23,14 @@ export const EXPIRY_MS = 14 * 24 * 60 * 60_000
 export type Stored = { key: string; value: unknown }
 
 /** What the Linear read last saw of each ticket. */
-export type LinearStates = ReadonlyMap<Ticket, LinearEntry>
+export type LinearEntries = ReadonlyMap<Ticket, LinearEntry>
 
 export type ExpiryContext = {
   now: Ms
   /** The last `gh pr list` answer; undefined while gh never answered. */
   prs: readonly Pr[] | undefined
   /** Undefined until a Linear read answered: no read, no merged-done deletion. */
-  linear: LinearStates | undefined
+  linear: LinearEntries | undefined
   /** Tickets with a row on the board main last drew. */
   onBoard: ReadonlySet<Ticket>
 }
@@ -56,7 +56,7 @@ export function expiresByAge({ key, value }: Stored, now: Ms, onBoard: ReadonlyS
 }
 
 /** A ticket whose PR merged and whose Linear state is completed, whatever the team named it. */
-export function isMergedAndDone(t: Ticket, prs: readonly Pr[], linear: LinearStates): boolean {
+export function isMergedAndDone(t: Ticket, prs: readonly Pr[], linear: LinearEntries): boolean {
   const e = linear.get(t)
   return e !== undefined && isDone(e) && prs.some((pr) => pr.state === 'MERGED' && pr.tickets.includes(t))
 }

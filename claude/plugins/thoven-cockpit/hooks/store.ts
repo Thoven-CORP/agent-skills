@@ -57,15 +57,16 @@ type Raw = Readonly<Record<string, unknown>>
 const isStr = (v: unknown): v is string => typeof v === 'string' && v !== ''
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
 const isTicket = (v: unknown): v is Ticket => typeof v === 'string' && ticket(v) === v
+
 /** One shape check per kind: a new Fact kind without one fails to compile. */
 const SHAPES: { [K in FactKind]: (v: Raw) => FactOf<K> | undefined } = {
   main: (v) => (isSpaceId(v.space) && isSessionId(v.sid) && isPaneId(v.pane) && isNum(v.at) ? { kind: 'main', space: v.space, sid: v.sid, pane: v.pane, at: v.at } : undefined),
   brief: (v) => {
     if (!isTicket(v.ticket) || !isSessionId(v.sid) || !isPaneId(v.pane) || !isNum(v.at)) return undefined
-    const held = { ...(isOneOf(KINDS)(v.labelKind) ? { labelKind: v.labelKind } : {}), ...(isStr(v.title) ? { title: v.title } : {}) }
+    const named = { ...(isOneOf(KINDS)(v.labelKind) ? { labelKind: v.labelKind } : {}), ...(isStr(v.title) ? { title: v.title } : {}) }
     const writer = { sid: v.sid, pane: v.pane, at: v.at }
-    if (v.k === 'first' && isOneOf(ROLES)(v.role)) return { kind: 'brief', k: 'first', ticket: v.ticket, role: v.role, ...held, ...writer }
-    if (v.k === 'fix' && isNum(v.round) && isNum(v.of)) return { kind: 'brief', k: 'fix', ticket: v.ticket, round: v.round, of: v.of, ...held, ...writer }
+    if (v.k === 'first' && isOneOf(ROLES)(v.role)) return { kind: 'brief', k: 'first', ticket: v.ticket, role: v.role, ...named, ...writer }
+    if (v.k === 'fix' && isNum(v.round) && isNum(v.of)) return { kind: 'brief', k: 'fix', ticket: v.ticket, round: v.round, of: v.of, ...named, ...writer }
     return undefined
   },
   report: (v) =>
@@ -99,7 +100,10 @@ const SHAPES: { [K in FactKind]: (v: Raw) => FactOf<K> | undefined } = {
     isTicket(v.ticket) && isSessionId(v.sid) && typeof v.isError === 'boolean' && isStr(v.text) && isNum(v.at)
       ? { kind: 'readback', ticket: v.ticket, sid: v.sid, isError: v.isError, text: v.text, at: v.at }
       : undefined,
-  ran: (v) => (isSessionId(v.sid) && isOneOf(REVIEW_SKILLS)(v.skill) && isNum(v.at) ? { kind: 'ran', sid: v.sid, skill: v.skill, at: v.at, ...(v.claimed === true ? { claimed: true } : {}) } : undefined),
+  ran: (v) =>
+    isSessionId(v.sid) && isOneOf(REVIEW_SKILLS)(v.skill) && isNum(v.at)
+      ? { kind: 'ran', sid: v.sid, skill: v.skill, at: v.at, ...(v.claimed === true ? { claimed: true } : {}) }
+      : undefined,
 }
 
 function skillRun(v: Raw): SkillRun | undefined {

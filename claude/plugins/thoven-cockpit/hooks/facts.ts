@@ -3,7 +3,7 @@
 
 import type { Fact, FactKind, FactOf, PaneId, SpaceId, Ticket } from './model.ts'
 
-/** The fact kinds that name a ticket: every kind but `main`, `checkpoint` and `ran`. */
+/** The fact kinds that name a ticket. */
 type TicketKind = { [K in FactKind]: FactOf<K> extends { ticket: Ticket } ? K : never }[FactKind]
 
 /** The facts that name a ticket, one list per kind. */

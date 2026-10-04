@@ -24,7 +24,7 @@ import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
 import * as REPORTS from './fixtures/reports.ts'
 import { BRIEF_BUG_FIX_THV_1096 } from './fixtures/wave.ts'
 import { ROLLOUT_VERIFY_THV_1000, ROLLOUT_VERIFY_THV_1000_PATH, SKILL_PROMPT_DESLOP, SKILL_TOOL_CALL, SKILL_TOOL_RESULT } from './fixtures/review.ts'
-import { HOME, cockpit, fakeAsk, fresh, idOf, mainOf, must, relabelTab, rowOf, rowsOf, stage, start, submit, tk, turnEnd, worldOf, type Stage } from './stage.ts'
+import { HOME, cockpit, fakeAsk, fresh, idOf, linearEntry, mainOf, must, relabelTab, rowOf, rowsOf, stage, start, submit, tk, turnEnd, worldOf, type Stage } from './stage.ts'
 
 const P8V_SID = '27c71f2d-e064-4ebc-ae51-e993d40abfac'
 const W18 = mainOf('w18', 'w18:p8W')
@@ -181,8 +181,8 @@ test('merged-done expiry does not let a later verdict reclaim another ticket\'s 
 
   const removed = expired([...s.saved].map(([key, value]) => ({ key, value })), {
     now: 3000,
-    prs: [{ ...BE_142, state: 'MERGED' }],
-    linear: new Map([[tk('THV-1003'), { state: { name: 'Done', type: 'completed', position: 0 }, parent: undefined, at: 0 }]]),
+    prs: [BE_142],
+    linear: new Map([[tk('THV-1003'), linearEntry('Done', 'completed')]]),
     onBoard: new Set(),
   })
   expect(removed.map(({ key }) => key).sort()).toEqual([

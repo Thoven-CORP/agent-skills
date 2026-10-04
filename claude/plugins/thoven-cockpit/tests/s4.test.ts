@@ -9,8 +9,7 @@
 import type { RenderNode } from 'claude-code'
 import { expect, test } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
-import { FRONTEND, BACKEND } from '../hooks/github.ts'
-import { AGENT_SKILLS, parsePrList } from '../hooks/github.ts'
+import { AGENT_SKILLS, BACKEND, FRONTEND, parsePrList } from '../hooks/github.ts'
 import { EXPIRY_MS, expired, ticketsOn } from '../hooks/expiry.ts'
 import { LINEAR_URL, carry, eventOf, linearEntries, parseStates, pendingOf, readbacks, stateQuery, updateArgs } from '../hooks/linear.ts'
 import { eventId, isLinearEventId, isSessionId, type Board, type Fact, type Pr } from '../hooks/model.ts'
@@ -286,7 +285,10 @@ test('no Project: no Linear read, no key read, no Linear column and no u', async
 
 const WAVE_MAIN = mainOf('w5E', 'w5E:p1')
 const waveFacts = (until = Infinity): Fact[] => Object.entries(STORE_WAVE).flatMap(([key, value]) => parseFact(key, value) ?? []).filter((f) => f.at <= until)
-/** A wave Linear answer with tickets moved to a state node from the same answer, as truth.log read them, in their own node and in their parent's children. */
+/**
+ * A wave Linear answer with tickets moved to a state node from the same answer, as truth.log read
+ * them: in their own node and in their parent's children.
+ */
 function waveAt(moves: Record<string, string>, answer = LINEAR_WAVE): string {
   const root = JSON.parse(answer)
   const nodes: Array<{ name: string; type: string }> = root.data.teams.nodes[0].states.nodes
@@ -303,13 +305,13 @@ const waveWorld = (facts: Fact[], linearText: string) =>
     facts,
     sources: { spaces: fresh(parseLiveSpaces(WORKFLOW_LIVE_SPACES_COCKPIT)), github: fresh({ prs: must(parsePrList(AGENT_SKILLS, GH_AGENT_SKILLS_WAVE)) }), linear: linear(linearText, WAVE) },
   })
-/** `happened:THV-1097:merged-…-35`, written 46 s after #35 merged; main closed both panes right after. */
 /** Derived: what a ↻ press leaves for a ticket after the wave, an `update` fact for each of its events and a newer `THV-n Done` read-back. */
 const handedBack = (t: string): Fact[] => [
   ...waveFacts().flatMap((f): Fact[] => (f.kind === 'happened' && f.ticket === t ? [{ kind: 'update', ticket: f.ticket, event: f.event, at: AFTER_WAVE }] : [])),
   { kind: 'readback', ticket: tk(t), sid: idOf(isSessionId, 'sid-main'), isError: false, text: 'Done', at: AFTER_WAVE + 1 },
 ]
 const AFTER_WAVE = Math.max(...waveFacts().map((f) => f.at)) + 1
+/** `happened:THV-1097:merged-…-35`, written 46 s after #35 merged; main closed both panes right after. */
 const MERGED_35_AT = must(waveFacts().find((f) => f.kind === 'happened' && f.event === `merged-${AGENT_SKILLS}-35`)).at
 
 test('THV-1097 after #35 merged and its panes closed keeps its row: pane gone, ↻ merged 35, its Review cell', async () => {

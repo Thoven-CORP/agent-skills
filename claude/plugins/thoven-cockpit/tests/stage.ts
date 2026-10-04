@@ -7,6 +7,7 @@ import { project } from '../hooks/board.ts'
 import { COMMANDS, type Req } from '../hooks/commands.ts'
 import { ticket } from '../hooks/dispatch.ts'
 import { parseSnapshot } from '../hooks/herdr.ts'
+import type { LinearEntry, LinearState } from '../hooks/linear.ts'
 import { isPaneId, isSessionId, isSpaceId, type Board, type Fact, type Main, type Polled, type Row, type Sources, type Ticket, type World } from '../hooks/model.ts'
 import { parseLiveSpaces, unpolled, type Ask, type Listing } from '../hooks/sources.ts'
 import { PANE_GET_P8W } from './fixtures/herdr.ts'
@@ -35,6 +36,9 @@ export function idOf<T>(isT: (v: unknown) => v is T, text: string): T {
 
 /** A literal as a ticket, through dispatch.ts's `ticket()`, the one place tickets are made. */
 export const tk = (text: string): Ticket => must(ticket(text))
+
+/** What a Linear read said of a ticket: a state of this name and type, no parent. */
+export const linearEntry = (name: string, type: LinearState['type']): LinearEntry => ({ state: { name, type, position: 0 }, parent: undefined, at: 0 })
 
 export function mainOf(space: string, pane: string, cwd = MAIN_CWD): Main {
   return { k: 'main', space: idOf(isSpaceId, space), pane: idOf(isPaneId, pane), sid: idOf(isSessionId, 'sid-main'), cwd, home: HOME, tmp: TMPDIR }
