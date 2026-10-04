@@ -1,4 +1,5 @@
-// observe.ts: what a session learns from a prompt or a Bash command, as facts.
+// observe.ts: what a session learns from a prompt, a Bash command, a skill run or its own answer,
+// as facts.
 //
 // Pure. register.ts parses what a hook saw (dispatch.ts), supplies who this session is, its id and
 // the time, then writes the facts and keeps the `me` that come back. Every rule about what a brief,
@@ -59,13 +60,47 @@ export const answerSeen: Observer<ReadonlyArray<StatusLine & { word: ReportStatu
 /**
  * A Review skill this session ran itself, with the brief facts it wrote (ADR12): one fact per ticket
  * it holds a brief for, `review` under a verifier brief and `self` under any other, in the round of
- * that brief. A session with no brief (main, a /clear, Andres's own sessions) records nothing.
+ * that brief. A pane with no brief records a `ran`, for a verdict reply to name (verdictSeen). Main
+ * and a session outside herdr record nothing.
  */
-export const skillSeen: Observer<{ skill: ReviewSkill; briefs: ReadonlyArray<FactOf<'brief'>> }> = (me, { skill, briefs }, sid, at) => ({
-  me,
-  facts: briefs.flatMap((b): Fact[] => {
-    if (b.sid !== sid) return []
-    const run = { ticket: b.ticket, sid, skill, round: b.at, at }
-    return [b.k === 'first' && b.role === 'verifier' ? { kind: 'review', ...run } : { kind: 'self', ...run }]
-  }),
-})
+export const skillSeen: Observer<{ skill: ReviewSkill; briefs: ReadonlyArray<FactOf<'brief'>> }> = (me, { skill, briefs }, sid, at) => {
+  const held = briefs.filter((b) => b.sid === sid)
+  if (held.length === 0) return { me, facts: me.k === 'pane' ? [{ kind: 'ran', sid, skill, at }] : [] }
+  return {
+    me,
+    facts: held.map((b): Fact => {
+      const run = { ticket: b.ticket, sid, skill, round: b.at, at }
+      return b.k === 'first' && b.role === 'verifier' ? { kind: 'review', ...run } : { kind: 'self', ...run }
+    }),
+  }
+}
+
+/**
+ * The verdicts a pane's own answer gave. Replying `VERIFIED THV-n` or `FINDINGS THV-n` makes it
+ * THV-n's verifier (spec, Review row, and Andres's ruling on THV-1095): it writes the verifier brief
+ * a `Verify THV-n` would have, so the Review skills it runs next write `review`, and each skill it
+ * already ran with no brief (`ran`) becomes `review` in that round too. A run counts once, for the
+ * first verdict that claims it: only an unclaimed run newer than every brief the pane holds counts, and
+ * one answer naming two tickets credits its runs to the first it names. A pane holding a builder or
+ * fix-round brief is a builder, whatever it replies: its role, self-check and pane kind stay
+ * (ADR12). A pane keeps any brief it already holds for the ticket, and with it the round its skills
+ * ran in. Main relays verdicts, so only a pane.
+ */
+export const verdictSeen: Observer<{ lines: readonly StatusLine[]; briefs: ReadonlyArray<FactOf<'brief'>>; ran: ReadonlyArray<FactOf<'ran'>> }> = (me, { lines, briefs, ran }, sid, at) => {
+  const held = briefs.filter((b) => b.sid === sid)
+  if (me.k !== 'pane' || held.some((b) => b.k === 'fix' || b.role === 'builder')) return { me, facts: [] }
+  // Persist claims on the runs because they can outlive the brief that first claimed them.
+  const claimedUntil = Math.max(-Infinity, ...held.map((b) => b.at))
+  const unclaimed = ran.filter((r) => r.sid === sid && !r.claimed && r.at > claimedUntil)
+  const out = lines.reduce<Observed & { runs: ReadonlyArray<FactOf<'ran'>> }>(
+    (seen, l) => {
+      if (!isOneOf(VERDICTS)(l.word) || held.some((b) => b.ticket === l.ticket)) return seen
+      const next = promptSeen(seen.me, { k: 'brief', brief: { k: 'first', ticket: l.ticket, role: 'verifier' } }, sid, at)
+      const reviews = seen.runs.map((r): Fact => ({ kind: 'review', ticket: l.ticket, sid, skill: r.skill, round: at, at: r.at }))
+      const claims = seen.runs.map((r): Fact => ({ ...r, claimed: true }))
+      return { me: next.me, facts: [...seen.facts, ...next.facts, ...reviews, ...claims], runs: [] }
+    },
+    { me, facts: [], runs: unclaimed },
+  )
+  return { me: out.me, facts: out.facts }
+}

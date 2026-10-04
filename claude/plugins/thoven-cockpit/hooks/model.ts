@@ -131,10 +131,12 @@ export type Fact =
   | { kind: 'status'; ticket: Ticket; sid: SessionId; status: ReportStatus; text: string; at: Ms }
   /** `checkpoint:<sid>`. Main's state when it last compacted, handed back after the compaction (S5). */
   | ({ kind: 'checkpoint'; sid: SessionId; at: Ms } & Checkpoint)
-  /** `review:<ticket>:<sid>:<skill>`. A Review skill a session ran itself while it held a verifier brief for the ticket. */
+  /** `review:<ticket>:<sid>:<skill>`. A Review skill a session ran itself while it held a verifier brief for the ticket, or a `ran` its verdict reply claimed. */
   | ({ kind: 'review' } & SkillRun)
   /** `self:<ticket>:<sid>:<skill>`. The same, under any other brief: the builder's own check (ADR12). */
   | ({ kind: 'self' } & SkillRun)
+  /** `ran:<sid>:<skill>`. A Review skill a pane ran holding no brief. A verdict reply names its ticket, makes it `review` and marks it claimed. */
+  | { kind: 'ran'; sid: SessionId; skill: ReviewSkill; at: Ms; claimed?: true }
   /** `update:<ticket>:<event>`. Main handed the event to `/workspace update` at `at`; a second press replaces it. */
   | { kind: 'update'; ticket: Ticket; event: LinearEventId; at: Ms }
   /** `readback:<ticket>:<sid>`. The newest `THV-n <State>` or `THV-n ERROR <reason>` line main saw. */
@@ -152,7 +154,7 @@ export type Checkpoint = {
   next: string[]
 }
 
-/** One Review skill run. `round` is the `at` of the brief the session held when it ran: a new brief starts a new round. */
+/** One Review skill run. `round` is the `at` of the brief the session held when it ran, or, for a `ran` a verdict reply claimed, of the brief that reply wrote: a new brief starts a new round. */
 export type SkillRun = { ticket: Ticket; sid: SessionId; skill: ReviewSkill; round: Ms; at: Ms }
 
 export type FactKind = Fact['kind']
@@ -391,7 +393,7 @@ export type Board = {
   newEvents: Pending[]
 }
 
-// ── Intents: what a press asks for, as data (view.ts emits, register.ts performs) ──────────
+// ── Intents: what a press asks for, as data (view.ts emits, main.ts performs) ──────────
 
 export type Intent =
   | { k: 'tab'; tab: 'work' | 'prs' }
