@@ -100,7 +100,7 @@ domain row over a universal one. When two rows match equally, ask one question.
 | Strip AI slop from a diff | `/deslop` |
 | Sharpen prose, remove AI tells | `/unslop` |
 | Remove comments that restate the code | `/no-comments` |
-| Review a branch against standards and spec | `/code-review` |
+| Review a branch against standards and spec | `/mattpocock-skills:code-review` |
 | Write the test first | `/tdd` |
 
 ### Domain
@@ -126,7 +126,7 @@ A chain is worth naming when the order matters and the wrong order wastes work.
 | New component | `/thoven-designer` → `/building-components` → `/verify` |
 | New component with motion | `/thoven-designer` → `/motion` → `/motion-react` → `/verify` |
 | Pre-ship quality pass | `/impeccable polish` → `/accessibility-check` → `/qa-flow` → `/publish` |
-| Pre-commit | `/deslop` → `/no-comments` → `/code-review` → `/verify` |
+| Pre-commit | `/deslop` → `/no-comments` → `/mattpocock-skills:code-review` → `/verify` |
 
 ## Quality work, `/impeccable` or a `better-*` skill
 
