@@ -203,8 +203,16 @@ async function poll<K extends SourceId>(sh: Shell, m: MainState, id: K, now: Ms)
 export function noteFocus(element: string): void {
   const ticket = /^row-(THV-\d+)$/.exec(element)?.[1]
   const pr = /^pr-(.+#\d+)$/.exec(element)?.[1]
-  if (ticket) held.ui = { ...held.ui, selected: ticket }
-  if (pr) held.ui = { ...held.ui, selectedPr: pr }
+  if (ticket && ticket !== held.ui.selected) held.ui = { ...held.ui, selected: ticket, notice: undefined }
+  if (pr && pr !== held.ui.selectedPr) held.ui = { ...held.ui, selectedPr: pr, notice: undefined }
+}
+
+/** Which tab the press went to, named as the Work table names the row; a pane no Work row owns gets its id. */
+function switchedNotice(pane: PaneId): string {
+  const rows = held.main?.board?.build.flatMap((g) => (g.k === 'single' ? [g.row] : g.children)) ?? []
+  const row = rows.find((r) => r.panes.k === 'live' && r.panes.list[0].pane === pane)
+  if (row === undefined) return `Switched to pane ${pane}`
+  return row.kind === undefined ? `Switched to the agent tab for ${row.ticket}` : `Switched to ${row.kind} · ${row.title} (${row.ticket})`
 }
 
 /** A press, as data. herdr focus runs from a timer, outside the press handler. */
@@ -212,11 +220,21 @@ export async function act(sh: Shell, intent: Intent): Promise<void> {
   try {
     switch (intent.k) {
       case 'tab':
-        held.ui = { ...held.ui, tab: intent.tab }
+        held.ui = { ...held.ui, tab: intent.tab, notice: undefined }
+        sh.redraw()
+        return
+      case 'help':
+        held.ui = { ...held.ui, isHelpOpen: held.ui.isHelpOpen !== true }
+        sh.redraw()
+        return
+      case 'select':
+        if (intent.ticket !== held.ui.selected) held.ui = { ...held.ui, selected: intent.ticket, notice: undefined }
         sh.redraw()
         return
       case 'focus-pane': {
         const req = COMMANDS['herdr agent focus'](intent.pane)
+        held.ui = { ...held.ui, notice: switchedNotice(intent.pane) }
+        sh.redraw()
         sh.after(0, () => {
           void focusPane(sh, req)
         })
@@ -237,6 +255,8 @@ export async function act(sh: Shell, intent: Intent): Promise<void> {
       }
       case 'fill': {
         const { text } = intent
+        held.ui = { ...held.ui, notice: 'Drafted in the prompt box. Press enter to send it.' }
+        sh.redraw()
         sh.after(0, () => {
           void fillPrompt(sh, text)
         })

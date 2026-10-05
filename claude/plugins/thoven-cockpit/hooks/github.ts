@@ -77,6 +77,7 @@ function prOf(repo: string, v: unknown): Pr | undefined {
     number: v.number,
     title: trailing?.rest || title,
     branch,
+    base: str(v.baseRefName) ?? 'main',
     state,
     tickets: [...new Set([branchTicket(branch), ...(trailing?.tickets ?? [])].filter((t): t is Ticket => t !== undefined))],
     checks: checksOf(v.statusCheckRollup),

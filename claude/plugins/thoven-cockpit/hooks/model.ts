@@ -238,6 +238,8 @@ export type Pr = {
   /** The title without its trailing `(THV-n …)` group, which is in `tickets`. */
   title: string
   branch: string
+  /** The branch the PR merges into, which a review diffs against. */
+  base: string
   state: PrState
   /** Tickets named by the branch `thv-(\d+)`, then every ticket in the title's trailing `(…)`. Prose mentions are not tickets. */
   tickets: Ticket[]
@@ -418,12 +420,22 @@ export type TabName = 'work' | 'prs' | 'all'
 export type Intent =
   | { k: 'tab'; tab: TabName }
   | { k: 'focus-pane'; pane: PaneId }
+  | { k: 'select'; ticket: Ticket } // a Work row pressed: the box follows it, nothing else runs
   | { k: 'checks'; pr: string } // `c`, or a PR row pressed: show or hide that PR's unfinished and failed checks
   | { k: 'update'; pending: Pending[] } // ↻ on a row, or `u` for every row: hand the events to `/workspace update`
+  | { k: 'help' } // `?`: show or hide what the columns and keys mean
   | { k: 'fill'; text: string } // `m` or `r` on the PRs tab: a draft in the prompt box, which Andres sends or not
 
 /**
  * `selected` is the ticket of the Work row whose button holds the focus ring, `selectedPr` the
  * same for a PR row (`owner/name#n`). `checks` is the PR whose checks are listed.
  */
-export type PaneUi = { tab: TabName; selected: string | undefined; selectedPr: string | undefined; checks: string | undefined }
+export type PaneUi = {
+  tab: TabName
+  selected: string | undefined
+  selectedPr: string | undefined
+  checks: string | undefined
+  /** What the last press did, shown above the footer until the selection or tab changes. */
+  notice?: string | undefined
+  isHelpOpen?: boolean
+}

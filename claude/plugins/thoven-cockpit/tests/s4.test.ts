@@ -69,7 +69,7 @@ test('no ↻ before Linear answered for the ticket, and none in a space with no 
 })
 
 test('FE #138 and BE #138 are two events; /workspace update still reads merged 138 for each', async () => {
-  const pr = (repo: string): Pr => ({ repo, number: 138, title: 'x', branch: 'docs/thv-1038', state: 'MERGED', tickets: [tk('THV-1038')], checks: { total: 0, done: 0, failed: [], running: [] }, changedLines: 0, topDirs: 0, url: '' })
+  const pr = (repo: string): Pr => ({ repo, number: 138, title: 'x', branch: 'docs/thv-1038', base: 'main', state: 'MERGED', tickets: [tk('THV-1038')], checks: { total: 0, done: 0, failed: [], running: [] }, changedLines: 0, topDirs: 0, url: '' })
   const world = worldOf(mainOf('w18', 'w18:p8W'), W18_1038, { sources: { github: fresh({ prs: [pr(FRONTEND), pr(BACKEND)] }), linear: linear(inProgress('THV-1038'), ['THV-1038']) } })
   const merged = project(world).pending.filter((p) => p.event.k === 'merged')
   expect(merged.map((p) => p.id)).toEqual([`merged-${BACKEND}-138`, `merged-${FRONTEND}-138`])
@@ -124,7 +124,7 @@ test('Sub-issues: THV-978, 979 and 980 sit under a THV-945 summary row, which ha
   expect(drawn).toContain('Daily video: webhooks, recordings and rooms THV-945: 2 of 3 done on screen, 1 needs you')
   // THV-979's `started` shows at In Progress; only the report on THV-980 is pending, on its own row.
   expect(moving.pending.map((p) => [p.ticket, p.id])).toEqual([['THV-980', 'report-NEEDS_CONTEXT']])
-  expect(drawn.filter((t) => t.includes('↻'))).toEqual(['[↻]', '[update all ↻]'])
+  expect(drawn.filter((t) => t.startsWith('[') && t.includes('↻'))).toEqual(['[↻]', '[update all ↻]'])
   expect(rowsOf(moving).some((r) => r.ticket === tk('THV-945'))).toBe(false)
 })
 

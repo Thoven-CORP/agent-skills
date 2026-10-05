@@ -230,7 +230,7 @@ test('the heads cache keeps only answers that succeeded, and only for folders st
 
 test('cellText: an S1 row shows its Pane glyph and tool tag, and a dash in every later column', async () => {
   const row = rowOf(worldOf(mainOf('w18', 'w18:p8W'), SNAPSHOT_W18_BUILD), 'THV-1045')
-  expect((['pane', 'report', 'fix', 'review', 'pr', 'ci', 'linear'] as const).map((id) => cellText(row, id))).toEqual(['○ C', '–', '–', '– – – –', '–', '–', '–'])
+  expect((['pane', 'report', 'fix', 'review', 'pr', 'ci', 'linear'] as const).map((id) => cellText(row, id))).toEqual(['○ C', '–', '–', 'not run', '–', '–', '–'])
   expect(cellText({ ...row, panes: { k: 'live', list: [{ status: 'working', tool: 'X', pane: idOf(isPaneId, 'w18:p8V') }] } }, 'pane')).toBe('◐ X')
   expect(cellText({ ...row, panes: { k: 'gone' } }, 'pane')).toBe('gone')
 })
@@ -528,8 +528,8 @@ test('a drawn Build row and the heading row share the column widths for the pane
   const holds = (pred: (n: Node) => boolean) => (n: Node) => n.type === 'Box' && n.props.flexDirection === 'row' && kids(n).some((c) => findNode(c, pred) !== undefined)
   const row = findNode(root, holds((n) => n.props.key === 'row-THV-1045'))
   const heading = findNode(root, holds((n) => n.type === 'Text' && n.children?.[0] === 'Review'))
-  expect(row && kids(row).map((c) => c.props.width)).toEqual([38, 5, 8, 5, 9, 9, 6])
-  expect(heading && kids(heading).map((c) => c.props.width)).toEqual([38, 5, 8, 5, 9, 9, 6])
+  expect(row && kids(row).map((c) => c.props.width)).toEqual([2, 36, 5, 8, 5, 9, 9, 6])
+  expect(heading && kids(heading).map((c) => c.props.width)).toEqual([2, 36, 5, 8, 5, 9, 9, 6])
 })
 
 test('two sessions in one space: the pane that did not run /cockpit stays a pane and starts no timers', async ($, on) => {

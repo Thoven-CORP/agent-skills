@@ -58,7 +58,7 @@ test('every command in commands.ts starts with its own name and holds no merge v
 test('commands.ts builds only read-only herdr and gh argvs, and the one herdr label push', async () => {
   expect([...BUILT['gh pr list']().argv]).toEqual([
     'gh', 'pr', 'list', '--repo', 'Thoven-CORP/frontend-remote', '--state', 'all',
-    '--json', 'number,title,headRefName,state,statusCheckRollup,url,additions,deletions,files', '--limit', '50',
+    '--json', 'number,title,headRefName,baseRefName,state,statusCheckRollup,url,additions,deletions,files', '--limit', '50',
   ])
   expect(() => COMMANDS['gh pr list']('--admin/x')).toThrow()
   expect([...BUILT['herdr api snapshot']().argv]).toEqual(['herdr', 'api', 'snapshot'])
