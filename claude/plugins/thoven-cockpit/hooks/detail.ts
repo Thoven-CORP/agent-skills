@@ -2,7 +2,7 @@
 // so view.ts draws it and a test reads it. The table says what each cell shows; this says what
 // the row as a whole means and what to do next.
 
-import { LETTERS, type Letter, type PaneStatus, type ReportStatus, type Row, type Tool } from './model.ts'
+import { LETTERS, type Intent, type Letter, type PaneStatus, type Pr, type ReportStatus, type Row, type Tool } from './model.ts'
 
 const TOOL_NAME: Partial<Record<Tool, string>> = { C: 'Claude', X: 'Codex' }
 const STATUS_WORD: Record<PaneStatus, string> = { idle: 'idle', working: 'working', blocked: 'blocked', done: 'finished', unknown: 'in an unknown state' }
@@ -53,23 +53,74 @@ function reviewSentence({ cells: { review } }: Row): string {
   return `Verifier ran ${ran.length > 0 ? ran.join(', ') : 'nothing'}.${due}${claimed}`
 }
 
-/** What to do with this row now, read off its cells. The key letters are the Work tab's own. */
-export function nextStep(row: Row): string {
+export type ActionId = 'review' | 'thermo' | 'merge' | 'tab'
+
+/** `owner/name#n`: a PR's key in PaneUi and in its Button's key. */
+export const prKey = (pr: Pr): string => `${pr.repo}#${pr.number}`
+
+export const NEEDS_PR = 'needs an open PR'
+
+/** The verifier request the review and thermo drafts share (dispatch-work step 5). `target` is the ticket, or the branch when the PR names none. */
+export const verifyDraft = (target: string, pr: Pr): string => `Start the verifier for ${target} (${prKey(pr)}, base origin/${pr.base}) as dispatch-work step 5 says.`
+export const thermoDraft = (target: string, pr: Pr): string => `${verifyDraft(target, pr)} Run /thermo-nuclear-code-quality-review whatever the diff size.`
+export const mergeDraft = (pr: Pr): string => `merge it ${prKey(pr)}`
+
+const openPrOf = ({ cells: { pr } }: Row): Pr | undefined => (pr.k !== 'none' && pr.pr.state === 'OPEN' ? pr.pr : undefined)
+const needsPr = (row: Row): string | undefined => (openPrOf(row) === undefined ? NEEDS_PR : undefined)
+/** The draft needs the open PR `unavailable` has already ruled in; a Button is only drawn when it did. */
+const openPr = (row: Row): Pr => {
+  const pr = openPrOf(row)
+  if (pr === undefined) throw new Error(`${row.ticket} has no open PR`)
+  return pr
+}
+
+type Action = {
+  label: string
+  /** The few words drawn beside the button. */
+  blurb: string
+  /** The Button's key, so a test and the hotkey reach it. */
+  key: string
+  hotkey: string
+  /** Why it cannot run now, or undefined when it can. */
+  unavailable(row: Row): string | undefined
+  intent(row: Row): Intent
+}
+
+/** What the Work tab's box offers, in the order it draws. Every action is a draft or a herdr focus; none sends or merges. */
+export const ACTIONS: Record<ActionId, Action> = {
+  review: { label: 'Review', blurb: 'start a verifier', key: 'fill-review', hotkey: 'r', unavailable: needsPr, intent: (row) => ({ k: 'fill', text: verifyDraft(row.ticket, openPr(row)) }) },
+  thermo: { label: '+ thermo', blurb: 'verifier + deep review', key: 'fill-thermo', hotkey: 't', unavailable: needsPr, intent: (row) => ({ k: 'fill', text: thermoDraft(row.ticket, openPr(row)) }) },
+  merge: { label: 'Merge', blurb: 'draft the merge', key: 'fill-merge', hotkey: 'm', unavailable: needsPr, intent: (row) => ({ k: 'fill', text: mergeDraft(openPr(row)) }) },
+  tab: {
+    label: 'Switch tab',
+    blurb: 'go to its agent',
+    key: 'focus-row',
+    hotkey: 'f',
+    unavailable: ({ panes }) => (panes.k === 'live' ? undefined : 'no live pane'),
+    intent: ({ panes }) => {
+      if (panes.k !== 'live') throw new Error('no live pane to switch to')
+      return { k: 'focus-pane', pane: panes.list[0].pane }
+    },
+  },
+}
+
+/** What to do with this row now, read off its cells, and the action that does it, if one button does. */
+export function nextStep(row: Row): { text: string; action: ActionId | undefined } {
   const { report, pr, ci, review } = row.cells
-  if (report.k === 'in' && (report.status === 'NEEDS_CONTEXT' || report.status === 'BLOCKED')) return 'Answer it in its pane (f).'
-  if (pr.k === 'none') return row.panes.k === 'live' && row.panes.list[0].status === 'working' ? 'Wait for it to finish.' : 'It has no PR to review.'
-  if (pr.pr.state !== 'OPEN') return pr.pr.state === 'MERGED' ? 'Nothing. The PR is merged.' : 'Nothing. The PR was closed.'
-  if (ci.k === 'fail') return 'Get the failing checks fixed.'
-  if (ci.k === 'running') return 'Wait for CI.'
-  if (review.k === 'none') return 'Review it (r).'
-  if (Object.values(review.lights).includes('claimed')) return 'Review it again (r): a step it claimed never ran.'
-  if (review.lights.T === 'amber') return 'Run thermo (t).'
-  return 'Merge it (m).'
+  if (report.k === 'in' && (report.status === 'NEEDS_CONTEXT' || report.status === 'BLOCKED')) return { text: 'Answer it in its pane (f).', action: 'tab' }
+  if (pr.k === 'none') return { text: row.panes.k === 'live' && row.panes.list[0].status === 'working' ? 'Wait for it to finish.' : 'It has no PR to review.', action: undefined }
+  if (pr.pr.state !== 'OPEN') return { text: pr.pr.state === 'MERGED' ? 'Nothing. The PR is merged.' : 'Nothing. The PR was closed.', action: undefined }
+  if (ci.k === 'fail') return { text: 'Get the failing checks fixed.', action: undefined }
+  if (ci.k === 'running') return { text: 'Wait for CI.', action: undefined }
+  if (review.k === 'none') return { text: 'Review it (r).', action: 'review' }
+  if (Object.values(review.lights).includes('claimed')) return { text: 'Review it again (r): a step it claimed never ran.', action: 'review' }
+  if (review.lights.T === 'amber') return { text: 'Run thermo (t).', action: 'thermo' }
+  return { text: 'Merge it (m).', action: 'merge' }
 }
 
 /** The lines under the table for the highlighted row: what it is, then what to do. */
 export function detailLines(row: Row): string[] {
-  return [`${paneSentence(row)} ${reportSentence(row)}`, prSentence(row), reviewSentence(row), `Next: ${nextStep(row)}`]
+  return [`${paneSentence(row)} ${reportSentence(row)}`, prSentence(row), reviewSentence(row), `Next: ${nextStep(row).text}`]
 }
 
 /** The one line every screen ends with. */
