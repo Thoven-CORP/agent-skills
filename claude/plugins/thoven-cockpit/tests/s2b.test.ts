@@ -9,11 +9,11 @@
 
 import { expect } from 'claude-code/testing'
 import { project } from '../hooks/board.ts'
+import { cellText, drawCockpit } from '../hooks/view.ts'
 import { COMMANDS } from '../hooks/commands.ts'
 import { BACKEND, FRONTEND, configPathOf, parseOrigin, parsePrList } from '../hooks/github.ts'
-import { isLinearEventId, isPaneId, type Board, type Fact, type Pr, type Sources } from '../hooks/model.ts'
+import { isLinearEventId, isPaneId, type Board, type Cells, type Fact, type Letter, type Light, type Pr, type Row, type Sources } from '../hooks/model.ts'
 import { SOURCES, headPathOf, parseHead, STAGES } from '../hooks/sources.ts'
-import { cellText } from '../hooks/view.ts'
 import { CONFIG_AGENT_SKILLS, CONFIG_BACKEND, CONFIG_FRONTEND, DOT_GIT_THV_481, DOT_GIT_WORKTREE, HEAD_THV_481 } from './fixtures/git.ts'
 import { GH_AGENT_SKILLS, GH_BACKEND, GH_FRONTEND } from './fixtures/github.ts'
 import { SNAPSHOT_LIVE } from './fixtures/herdr.ts'
@@ -373,24 +373,13 @@ test('m and r put a draft in the prompt box for the focused PR and send nothing'
 
 })
 
-test('the Work tab drafts merge, a verifier request and thermo for the highlighted row\'s open PR, and the detail strip and legend', async ($, on) => {
+test('the Work tab legend and the PRs tab open from the h and tab buttons', async ($, on) => {
   const s = stage(on, { pane: 'w18:p8W', snapshot: relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Consent evidence hardening (THV-1045)') })
   s.gh.byRepo = { [FRONTEND]: GH_FRONTEND, [BACKEND]: GH_BACKEND }
-  const fills: string[] = []
-  on('prompt.fill', (_$: unknown, e: { text: string }) => (fills.push(e.text), { isFilled: true }))
   await start($)
   await cockpit($)
   const ui = await $.ui.mount(PANE)
-  expect((await ui.findAll({ type: 'Button' })).map((b) => b.key)).toContain('fill-thermo')
-  for (const key of ['fill-merge', 'fill-review', 'fill-thermo']) {
-    await ui.press({ key })
-    await s.clock.advance(0)
-  }
-  const verify = `Start the verifier for THV-1045 (${FRONTEND}#141, base origin/main) as dispatch-work step 5 says.`
-  expect(fills).toEqual([`merge it ${FRONTEND}#141`, verify, `${verify} Run /thermo-nuclear-code-quality-review whatever the diff size.`])
   const texts = async () => (await ui.findAll({ type: 'Text' })).map((t) => String(t.text))
-  expect((await texts()).some((t) => t.startsWith('─ THV-1045 ─'))).toBe(true)
-  expect(await ui.find({ type: 'Text', text: 'Drafted in the prompt box. Press enter to send it.' })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: 'Next: Get the failing checks fixed.' })).toBeDefined()
   await ui.press({ key: 'help' })
   await s.clock.advance(0)
@@ -398,6 +387,169 @@ test('the Work tab drafts merge, a verifier request and thermo for the highlight
   await ui.press({ key: 'tab-prs' })
   await s.clock.advance(0)
   expect((await texts()).some((t) => /^CI +✓ pass/.test(t))).toBe(true)
+})
+
+// ── the Work tab's action box (decisions/click-first-box.md) ─────────────────────────────────
+
+type Drawn = { type: string; props: Record<string, unknown>; children: unknown[] }
+const kidsOf = (n: Drawn): Drawn[] => n.children.filter((c): c is Drawn => typeof c === 'object' && c !== null)
+function walk(n: Drawn, visit: (n: Drawn) => void): void {
+  visit(n)
+  for (const c of kidsOf(n)) walk(c, visit)
+}
+const plain = (p: Record<string, unknown>) => Object.fromEntries(Object.entries(p).filter(([, v]) => ['string', 'number', 'boolean'].includes(typeof v)))
+const flat = (c: unknown): unknown[] => (Array.isArray(c) ? c.flatMap(flat) : c === null || c === undefined ? [] : [c])
+const PURE: Parameters<typeof drawCockpit>[0] = {
+  Box: (p) => ({ type: 'Box', props: plain(p), children: flat(p.children) }) as never,
+  Text: (p) => ({ type: 'Text', props: plain(p), children: flat(p.children) }) as never,
+  Button: (p) => ({ type: 'Button', props: { key: p.key ?? '', label: p.label ?? '', hotkey: p.hotkey ?? '', plain: p.plain ?? false }, children: [] }) as never,
+}
+
+/** THV-1045 as the board has it, with PR #141 open, 4 CI checks failed, no report, no review and one live pane. */
+function boxRow(): Row {
+  const world = worldOf(mainOf('w18', 'w18:p8W'), relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Consent evidence hardening (THV-1045)'), { sources: { github: fresh({ prs: ALL_PRS() }) } })
+  return rowOf(world, 'THV-1045')
+}
+
+/** The Work tab drawn for this row, as a tree of the elements it made. */
+function boxOf(row: Row, columns: number): Drawn {
+  const board: Board = { ...project(worldOf(mainOf('w18', 'w18:p8W'), SNAPSHOT_LIVE)), build: [{ k: 'single', row }], other: [] }
+  const tree = drawCockpit(PURE, board, { tab: 'work', selected: undefined, selectedPr: undefined, checks: undefined }, columns, () => undefined) as unknown as Drawn
+  let box: Drawn | undefined
+  walk(tree, (n) => {
+    if (n.props.key === 'action-box') box = n
+  })
+  return must(box)
+}
+
+const textsIn = (n: Drawn): string[] => {
+  const out: string[] = []
+  walk(n, (m) => {
+    if (m.type === 'Text') out.push(m.children.join(''))
+  })
+  return out
+}
+const buttonKeys = (n: Drawn): string[] => {
+  const out: string[] = []
+  walk(n, (m) => {
+    if (m.type === 'Button') out.push(String(m.props.key))
+  })
+  return out
+}
+/** The Button inside the Box with a bold border, if the box has one. */
+function boldButton(n: Drawn): string | undefined {
+  const out: string[] = []
+  walk(n, (m) => {
+    if (m.type === 'Box' && m.props.borderStyle === 'bold') walk(m, (b) => b.type === 'Button' && out.push(String(b.props.key)))
+  })
+  expect(out.length).toBeLessThanOrEqual(1)
+  return out[0]
+}
+
+const lit = { V: 'lit', C: 'lit', T: 'lit', D: 'lit' } as const
+const reviewed = (lights: Record<Letter, Light>): Cells['review'] => ({ k: 'review', lights, round: 1, tool: 'C' })
+const withCells = (row: Row, cells: Partial<Cells>): Row => ({ ...row, cells: { ...row.cells, ...cells } })
+
+test('the box lays its two halves side by side from 70 columns and stacks them below', async () => {
+  const row = boxRow()
+  const halves = (columns: number) => kidsOf(must(kidsOf(boxOf(row, columns)).find((n) => n.type === 'Box'))).length
+  for (const [columns, direction] of [[160, 'row'], [80, 'row'], [70, 'row'], [69, 'column'], [40, 'column']] as const) {
+    const box = boxOf(row, columns)
+    const body = must(kidsOf(box).find((n) => n.type === 'Box'))
+    expect(body.props.flexDirection).toBe(direction)
+    expect(halves(columns)).toBe(2)
+    expect(kidsOf(box)[0]?.children).toEqual(['THV-1045'])
+    expect(textsIn(box)).toContain('Do something')
+    expect(textsIn(box)).toContain('Next: Get the failing checks fixed.')
+    expect(buttonKeys(box)).toEqual(['fill-review', 'fill-thermo', 'fill-merge', 'focus-row'])
+  }
+})
+
+test('a ticket with no open PR draws Review, + thermo and Merge dim with their reason, and one with no live pane draws Switch tab dim', async () => {
+  const row = boxRow()
+  for (const pr of [{ k: 'none' } as const, { k: 'own', pr: { ...(row.cells.pr.k === 'none' ? must(undefined) : row.cells.pr.pr), state: 'MERGED' } } as const]) {
+    const box = boxOf(withCells(row, { pr }), 80)
+    expect(buttonKeys(box)).toEqual(['focus-row'])
+    const dim = textsIn(box)
+    for (const label of ['Review', '+ thermo', 'Merge']) expect(dim).toContain(`[ ${label} ]`)
+    expect(dim.filter((t) => t === 'needs an open PR').length).toBe(3)
+  }
+  const away = boxOf({ ...row, panes: { k: 'gone' } }, 80)
+  expect(buttonKeys(away)).toEqual(['fill-review', 'fill-thermo', 'fill-merge'])
+  expect(textsIn(away)).toContain('[ Switch tab ]')
+  expect(textsIn(away)).toContain('no live pane')
+  expect(buttonKeys(boxOf({ ...row, panes: { k: 'none' } }, 40))).toEqual(['fill-review', 'fill-thermo', 'fill-merge'])
+})
+
+test('the bold border sits on the button the Next sentence names, and nowhere when it names none', async () => {
+  const row = boxRow()
+  const pr = row.cells.pr.k === 'none' ? must(undefined) : row.cells.pr.pr
+  const own = (state: Pr['state']): Cells['pr'] => ({ k: 'own', pr: { ...pr, state } })
+  const states: Array<[string, Row, string | undefined]> = [
+    ['no PR', withCells(row, { pr: { k: 'none' } }), undefined],
+    ['CI failing', row, undefined],
+    ['CI running', withCells(row, { ci: { k: 'running', done: 3, total: 9 } }), undefined],
+    ['review not run', withCells(row, { ci: { k: 'pass' }, review: { k: 'none' } }), 'fill-review'],
+    ['review claimed but missing', withCells(row, { ci: { k: 'pass' }, review: reviewed({ ...lit, T: 'claimed' }) }), 'fill-review'],
+    ['thermo due', withCells(row, { ci: { k: 'pass' }, review: reviewed({ ...lit, T: 'amber' }) }), 'fill-thermo'],
+    ['ready to merge', withCells(row, { ci: { k: 'pass' }, review: reviewed(lit) }), 'fill-merge'],
+    ['merged', withCells(row, { pr: own('MERGED'), ci: { k: 'pass' }, review: reviewed(lit) }), undefined],
+    ['builder asking for context', withCells(row, { report: { k: 'in', status: 'NEEDS_CONTEXT', at: 0, concerns: 0, selfChecked: false } }), 'focus-row'],
+  ]
+  for (const [name, r, key] of states) expect([name, boldButton(boxOf(r, 80))]).toEqual([name, key])
+  expect(boldButton(boxOf(withCells(row, { ci: { k: 'pass' }, review: { k: 'none' } }), 50))).toBe('fill-review')
+})
+
+test('no button is drawn with its hotkey as printed text, and the hotkeys stay set', async () => {
+  const box = boxOf(boxRow(), 80)
+  const buttons: Drawn[] = []
+  walk(box, (n) => n.type === 'Button' && buttons.push(n))
+  expect(buttons.map((b) => [b.props.hotkey, b.props.plain])).toEqual([['r', false], ['t', false], ['m', false], ['f', false]])
+  expect(textsIn(box).filter((t) => /^[fmrt]:/.test(t))).toEqual([])
+})
+
+test('Review, + thermo and Merge fill exactly their drafts and send nothing; Switch tab runs one herdr agent focus and nothing else', async ($, on) => {
+  const s = stage(on, { pane: 'w18:p8W', snapshot: relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Consent evidence hardening (THV-1045)') })
+  s.gh.byRepo = { [FRONTEND]: GH_FRONTEND, [BACKEND]: GH_BACKEND }
+  const fills: string[] = []
+  on('prompt.fill', (_$: unknown, e: { text: string }) => (fills.push(e.text), { isFilled: true }))
+  await start($)
+  await cockpit($)
+  const ui = await $.ui.mount(PANE)
+  const verify = `Start the verifier for THV-1045 (${FRONTEND}#141, base origin/main) as dispatch-work step 5 says.`
+  const focuses = () => s.argvs.filter((a) => a[1] === 'agent')
+  for (const key of ['fill-review', 'fill-thermo', 'fill-merge']) {
+    await ui.press({ key })
+    await s.clock.advance(0)
+    expect(focuses()).toEqual([])
+  }
+  expect(fills).toEqual([verify, `${verify} Run /thermo-nuclear-code-quality-review whatever the diff size.`, `merge it ${FRONTEND}#141`])
+  expect(await ui.find({ type: 'Text', text: 'Drafted in the prompt box. Press enter to send it.' })).toBeDefined()
+  await ui.press({ key: 'focus-row' })
+  await s.clock.advance(0)
+  expect(focuses()).toEqual([[...COMMANDS['herdr agent focus'](idOf(isPaneId, 'w18:p8V')).argv]])
+  expect(fills.length).toBe(3)
+  expect(s.argvs.flat().some((a) => /^merge$/i.test(a))).toBe(false)
+  expect(await ui.find({ type: 'Text', text: 'Switched to Build · Consent evidence hardening (THV-1045)' })).toBeDefined()
+  await ui.press({ key: 'tab-prs' })
+  await s.clock.advance(0)
+  expect(await ui.find({ type: 'Text', text: 'Switched to Build · Consent evidence hardening (THV-1045)' })).toBeUndefined()
+})
+
+test('pressing a Work row title selects the row and the box follows, and runs no herdr agent argv', async ($, on) => {
+  const snapshot = relabelTab(relabelTab(SNAPSHOT_LIVE, 'w18:t45', 'Build · Consent evidence hardening (THV-1045)'), 'w18:t30', 'Build · Practice log research (THV-1046)')
+  const s = stage(on, { pane: 'w18:p8W', snapshot })
+  await start($)
+  await cockpit($)
+  const ui = await $.ui.mount(PANE)
+  const title = async () => String(((await ui.find({ key: 'action-box' })) as Drawn | undefined)?.children?.map((c) => (typeof c === 'object' && c !== null && 'children' in c ? (c as Drawn).children.join('') : ''))[0])
+  for (const ticket of ['THV-1046', 'THV-1045', 'THV-1046']) {
+    await ui.press({ key: `row-${ticket}` })
+    await s.clock.advance(0)
+    await s.clock.settle()
+    expect(await title()).toBe(ticket)
+  }
+  expect(s.argvs.filter((a) => a[1] === 'agent')).toEqual([])
 })
 
 test('the All tab lists every space with its agent panes, this space first, and pressing one focuses it', async ($, on) => {
