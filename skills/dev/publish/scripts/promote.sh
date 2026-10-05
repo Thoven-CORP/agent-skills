@@ -31,6 +31,9 @@ PROD_API=https://api.thoven.co
 PROD_SITE=https://thoven.co
 STAGING_SITE=https://staging.thoven.co
 SNAPSHOT_MAX_AGE=7200
+# A snapshot expires this many days after creation, so an erased child's data cannot
+# outlive the retention promise. Call sites keep the time 1 hour under Neon's cap.
+SNAPSHOT_TTL_DAYS=30
 RELEASES=~/.thoven/releases
 LOCK=$RELEASES/lock
 REL_PTR=$LOCK/release
@@ -46,6 +49,14 @@ retry() {
     sleep 5
   done
   return 1
+}
+# RFC 3339 UTC for a Unix epoch, on BSD or GNU date.
+iso_utc() {
+  local out
+  out=$(date -u -r "$1" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || true)
+  [ -n "$out" ] || out=$(date -u -d "@$1" +%Y-%m-%dT%H:%M:%SZ)
+  [ -n "$out" ] || die "cannot format $1 as RFC 3339 UTC"
+  printf '%s' "$out"
 }
 is_sha() { [[ $1 =~ ^[0-9a-f]{40}$ ]]; }
 
@@ -95,6 +106,28 @@ policy_permits() {
     p = YAML.safe_load($stdin.read) || {}
     ok = (p["permitted"] || []).map(&:to_s).include?(ARGV[0]) && !(p["held"] || []).map(&:to_s).include?(ARGV[0])
     exit(ok ? 0 : 1)' "$2"
+}
+
+# A non-default branch without expires_at keeps a full copy of the database forever, so an
+# erased child's data could outlive the retention promise. A forward plan refuses until each
+# carries an expiry. Suggested time is created_at + 30 days, or now + 30 days - 1 hour when
+# that is already past or beyond Neon's 30-day cap.
+guard_snapshot_ttl() {
+  local out msg
+  out=$(neonctl branches list --project-id "$1" -o json) || die "cannot list the Neon branches of $1"
+  msg=$(jq -r --arg ttl "$SNAPSHOT_TTL_DAYS" --arg proj "$1" '
+    ($ttl | tonumber) as $days
+    | [ .[] | select(.default != true) | select(.expires_at == null) ] as $bad
+    | if ($bad | length) == 0 then empty else
+        "\($bad | length) non-default branch(es) in Neon project \($proj) have no expires_at, so each holds a database copy that can outlive the retention promise. Give each one an expiry, then plan again:",
+        ( $bad[]
+          | (.created_at | sub("\\.[0-9]+Z$"; "Z") | fromdateiso8601) as $ca
+          | ($ca + $days * 86400) as $target
+          | (now + $days * 86400 - 3600) as $cap
+          | (if $target <= now or $target > $cap then $cap else $target end | floor | todateiso8601) as $at
+          | "   neonctl branches set-expiration \(.id) --project-id \($proj) --expires-at \($at)  # \(.name)" )
+      end' <<<"$out") || die "cannot read the expiries of the Neon branches of $1"
+  [ -z "$msg" ] || die "$msg"
 }
 
 # Prints "<uid> <url>" of a READY production build of the SHA in the prod project.
@@ -205,6 +238,7 @@ case "$cmd" in
     mkdir "$LOCK" 2>/dev/null || die "a release is open ($(jq -r .id "$(cat "$REL_PTR" 2>/dev/null)" 2>/dev/null || echo unknown)); finish it or run abort"
     planned=0
     trap '[ "$planned" = 1 ] || { rm -f "$REL_PTR"; rmdir "$LOCK" 2>/dev/null || true; }' EXIT
+    [ "$ROLLBACK" = 1 ] || guard_snapshot_ttl "$NEON_PROJECT"
     auto_assign_off || die "Vercel autoAssignCustomDomains is on, so merges go live by themselves. Switch it off first"
     for r in "$BE_REPO" "$FE_REPO"; do git -C "$r" fetch -q origin main; done
 
@@ -304,8 +338,9 @@ Pass --schema-stays only if the older code runs on the newer schema."
     [ "$ep" = "$host" ] || die "prod connects to ${host:-unknown} but Neon branch $NEON_PROD_BRANCH serves $ep; fix NEON_PROD_BRANCH"
     be=$(rel .be.to)
     name="pre-promote-${be:0:9}-$(TZ=America/New_York date +%Y%m%d%H%M)"
+    expires_at=$(iso_utc $(( $(date +%s) + SNAPSHOT_TTL_DAYS * 86400 - 3600 )))
     neonctl branches create --project-id "$NEON_PROJECT" --parent "$NEON_PROD_BRANCH" \
-      --name "$name" --no-compute --no-secrets -o json >/dev/null
+      --name "$name" --no-compute --no-secrets --expires-at "$expires_at" -o json >/dev/null
     neonctl branches list --project-id "$NEON_PROJECT" -o json | jq -e --arg n "$name" 'any(.[]; .name==$n)' >/dev/null \
       || die "snapshot $name not found after create"
     rel_set --arg n "$name" --argjson t "$(date +%s)" '.snapshot=$n | .snapshot_at=$t | .done.snapshot=true'
