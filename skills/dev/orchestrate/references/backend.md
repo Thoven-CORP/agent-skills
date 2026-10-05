@@ -67,7 +67,7 @@ When two rows match equally, ask one question.
 |---|---|
 | Strip AI slop from a diff | `/deslop` |
 | Remove comments that restate the code | `/no-comments` |
-| Review a branch against standards and spec | `/code-review` |
+| Review a branch against standards and spec | `/mattpocock-skills:code-review` |
 | Write the test first | `/tdd` |
 
 ## Chains
@@ -77,7 +77,7 @@ When two rows match equally, ask one question.
 | Idea to shipped feature | `/grill-with-docs` → `/architect` → `/feature-ledger` |
 | Bug report | `/investigate-thoven` → `/verify` |
 | Schema change | `/safe-migrate` → `/verify` |
-| Pre-commit | `/deslop` → `/no-comments` → `/code-review` → `/verify` |
+| Pre-commit | `/deslop` → `/no-comments` → `/mattpocock-skills:code-review` → `/verify` |
 | Ship | `/verify` → `/publish` → `/loop-on-ci` |
 
 ## Rules
