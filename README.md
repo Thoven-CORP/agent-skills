@@ -50,17 +50,53 @@ The canonical hit is what matters for Codex; agent-specific hits confirm the oth
 
 ## Update after we change skills
 
-Re-run the same install command — **with the `-a` flags**. It overwrites the global copies with
-whatever is on `main`.
+Two commands update two sets of skills, then two follow-ups put your local setup back. Run them in
+this order.
+
+**1. Thoven skills (this repo).** Re-run the install command, **with the `-a` flags**. It overwrites
+the global copies with whatever is on `main`.
+
+```bash
+npx skills@latest add Thoven-CORP/agent-skills -g -y -a claude-code -a cursor --skill '*'
+```
 
 **Push first.** The installer reads `main` on GitHub, not your local checkout, so an unpushed
 commit installs nothing and reports success.
+
+**2. Third-party skills** (cursor/plugins, Matt Pocock, Sentry, Vercel and the rest). The command in
+step 1 does not touch these.
+
+```bash
+npx skills@latest update -g
+```
+
+It updates only skills you already have and adds none. To add a new third-party package, use
+`npx skills@latest add <owner>/<repo> -g -y -a claude-code -a cursor`, then continue with steps 3 and 4.
+
+**3. Put the local patches back.** Both commands overwrite the skill folders, which reverts our
+fixes (the `deslop` description, the `verify-this` rewrite, skill names, the model-invocation
+allowlist). This restores them. It also runs at the start of every new session, so a fresh `claude`
+session does the same, and it prints nothing unless it changed something.
+
+```bash
+python3 ~/thoven/agent-skills/enforcement/hooks/reapply-skill-patches.py
+```
+
+Where the patches live is in [`enforcement/README.md`](./enforcement/README.md).
+
+**4. Shrink the model-visible catalog** (below).
+
+```bash
+bash ~/thoven/agent-skills/scripts/apply-skill-visibility.sh
+```
+
+Then start a new `claude` or Cursor session.
 
 Do **not** run `npx skills remove --all` — that would also wipe third-party skills (GSAP, Neon, Matt Pocock, etc.).
 
 ### Keep the model-visible catalog small
 
-After **any** `npx skills add` or update, run:
+After **any** `npx skills add` or update, run the script in step 4 above:
 
 ```bash
 bash ~/thoven/agent-skills/scripts/apply-skill-visibility.sh
