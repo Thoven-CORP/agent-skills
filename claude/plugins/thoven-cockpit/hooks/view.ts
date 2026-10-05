@@ -8,7 +8,7 @@
 import type { Elements, RenderElement } from 'claude-code'
 import type { DoctorReport } from './doctor.ts'
 import { ciCell } from './cells.ts'
-import { LEGEND, SENT_LINE, detailLines } from './detail.ts'
+import { ACTIONS, LEGEND, detailLines, mergeDraft, nextStep, prKey, thermoDraft, verifyDraft, type ActionId } from './detail.ts'
 import { pendingOf } from './linear.ts'
 import { AGENT_SKILLS, BACKEND, FRONTEND } from './github.ts'
 import { LETTERS } from './model.ts'
@@ -107,21 +107,19 @@ export function drawCockpit(raw: El, board: Board | undefined, ui: PaneUi, colum
 }
 
 /**
- * `m`, `r` and `t` for one open PR, each only a draft in main's prompt box that Andres sends. `r` and `t`
- * ask main to start the verifier pane (dispatch-work step 5), so the Review cell lights from that pane's own
- * run; `t` adds thermo whatever the diff size. `isLabelled` leads them with the ticket and PR they act on,
- * for the PRs tab, which has no detail strip. Without an open PR they read as one dim line saying why.
+ * Merge, review and thermo drafts for one open PR, each only a draft in main's prompt box that Andres sends.
+ * They lead with the ticket and PR they act on, since this tab has no box naming them. The drafts are
+ * detail.ts's, the ones the Work tab's ACTIONS fill. Without an open PR they read as one dim line saying why.
  */
-function draftButtons({ Text, Button }: El, pr: Pr | undefined, tickets: readonly string[], act: Act, isLabelled: boolean): RenderElement[] {
-  if (pr?.state !== 'OPEN') return [Text({ dimColor: true, children: ['m, r and t need an open PR'] })]
+function draftButtons({ Text, Button }: El, pr: Pr | undefined, tickets: readonly string[], act: Act): RenderElement[] {
+  if (pr?.state !== 'OPEN') return [Text({ dimColor: true, children: ['merge, review and thermo need an open PR'] })]
   const target = tickets.length > 0 ? tickets.join(' ') : pr.branch
-  const verify = `Start the verifier for ${target} (${prKey(pr)}, base origin/${pr.base}) as dispatch-work step 5 says.`
-  const draft = (key: string, label: string, hotkey: string, text: string) => Button({ key, label, hotkey, plain: true, onPress: () => act({ k: 'fill', text }) })
+  const draft = (key: string, label: string, hotkey: string, text: string) => Button({ key, label, hotkey, onPress: () => act({ k: 'fill', text }) })
   return [
-    ...(isLabelled ? [Text({ dimColor: true, children: [`${target} #${pr.number}:`] })] : []),
-    draft('fill-merge', 'merge it', 'm', `merge it ${prKey(pr)}`),
-    draft('fill-review', 'review', 'r', verify),
-    draft('fill-thermo', 'review + thermo', 't', `${verify} Run /thermo-nuclear-code-quality-review whatever the diff size.`),
+    Text({ dimColor: true, children: [`${target} #${pr.number}:`] }),
+    draft('fill-merge', 'merge it', 'm', mergeDraft(pr)),
+    draft('fill-review', 'review', 'r', verifyDraft(target, pr)),
+    draft('fill-thermo', 'review + thermo', 't', thermoDraft(target, pr)),
   ]
 }
 
@@ -133,17 +131,52 @@ function footer({ Box, Text, Button }: El, board: Board, ui: PaneUi, act: Act): 
     children: [
       Text({ children: [' '] }),
       ui.notice === undefined ? null : Text({ color: 'green', children: [ui.notice] }),
-      Text({ dimColor: true, children: [SENT_LINE] }),
       Button({ key: 'help', label: ui.isHelpOpen === true ? 'hide what the columns mean' : 'what the columns mean', hotkey: 'h', plain: true, dimColor: true, onPress: () => act({ k: 'help' }) }),
       ...(ui.isHelpOpen === true ? legend.map((line) => Text({ dimColor: true, children: [line] })) : []),
     ],
   })
 }
 
-/** Under the table: what the highlighted row means in sentences, then what to do with it. */
-function detailStrip({ Box, Text }: El, row: Row, columns: number): RenderElement {
-  const rule = `─ ${row.ticket} ${'─'.repeat(Math.max(3, columns - row.ticket.length - 3))}`
-  return Box({ flexDirection: 'column', children: [Text({ dimColor: true, wrap: 'truncate-end', children: [rule] }), ...detailLines(row).map((line) => Text({ children: [line] }))] })
+/** From this width the box's two halves sit side by side; under it they stack. */
+const WIDE_BOX = 70
+const ACTION_WIDTH = 15
+/** The box's own border and padding, which the halves' widths come out of. */
+const BOX_CHROME = 4
+
+/**
+ * Under the table: the highlighted row in sentences, then one button per action. A button that cannot run
+ * is dim text saying why. The border is bold on the action `nextStep` names, so the box says what to press first.
+ */
+function actionBox({ Box, Text, Button }: El, row: Row, columns: number, act: Act): RenderElement {
+  const next = nextStep(row).action
+  const actionRow = (id: ActionId) => {
+    const a = ACTIONS[id]
+    const why = a.unavailable(row)
+    const isNext = id === next && why === undefined
+    return Box({
+      flexDirection: 'row',
+      ...(isNext ? { borderStyle: 'bold' } : { paddingX: 1 }),
+      children: [
+        Box({ width: ACTION_WIDTH, flexShrink: 0, children: [why === undefined ? Button({ key: a.key, label: a.label, hotkey: a.hotkey, onPress: () => act(a.intent(row)) }) : Text({ dimColor: true, children: [`[ ${a.label} ]`] })] }),
+        Text({ dimColor: true, children: [why ?? a.blurb] }),
+      ],
+    })
+  }
+  const inner = columns - BOX_CHROME
+  const isWide = columns >= WIDE_BOX
+  const left = Box({ flexDirection: 'column', ...(isWide ? { width: Math.floor(inner * 0.45), flexShrink: 0 } : {}), children: detailLines(row).map((line) => Text({ children: [line] })) })
+  const right = Box({
+    flexDirection: 'column',
+    ...(isWide ? { flexGrow: 1, paddingLeft: 1 } : {}),
+    children: [Text({ bold: true, children: ['Do something'] }), ...(Object.keys(ACTIONS) as ActionId[]).map(actionRow)],
+  })
+  return Box({
+    key: 'action-box',
+    flexDirection: 'column',
+    borderStyle: 'single',
+    paddingX: 1,
+    children: [Text({ bold: true, children: [row.ticket] }), Box({ flexDirection: isWide ? 'row' : 'column', children: [left, right] })],
+  })
 }
 
 function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): RenderElement {
@@ -152,13 +185,11 @@ function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): 
   const work = tableWidth - MARK_WIDTH
   const rows = board.build.flatMap(rowsOf)
   const selected = rows.find((r) => r.ticket === ui.selected) ?? rows[0]
-  const focusTarget = selected?.panes.k === 'live' ? selected.panes.list[0].pane : undefined
 
   const isStale = (c: Column) => c.source !== undefined && board.health[c.source].k === 'stale'
   const headingRow = Box({ flexDirection: 'row', children: [cell(el, MARK_WIDTH, { text: ' ' }), cell(el, work, { text: 'Work' }, true), ...shown.map((c) => cell(el, c.width, { text: c.heading }, true))] })
 
   const buildRow = (row: Row) => {
-    const lead = row.panes.k === 'live' ? row.panes.list[0] : undefined
     const subtitle = [row.kind, row.ticket].filter((x) => x !== undefined).join(' ') + (row.origin === 'this-session' ? ' (this session)' : '')
     return Box({
       flexDirection: 'row',
@@ -173,7 +204,7 @@ function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): 
               key: `row-${row.ticket}`,
               label: clip(row.title, work - 1),
               plain: true,
-              onPress: () => (lead === undefined ? undefined : act({ k: 'focus-pane', pane: lead.pane })),
+              onPress: () => act({ k: 'select', ticket: row.ticket }),
             }),
             Text({ dimColor: true, children: [subtitle] }),
           ],
@@ -198,20 +229,9 @@ function drawWork(el: El, board: Board, ui: PaneUi, columns: number, act: Act): 
         : [headingRow, ...board.build.flatMap((g) => (g.k === 'single' ? [buildRow(g.row)] : [parentLine(g), ...g.children.map(buildRow)]))],
       board.other.length === 0 ? null : [Text({ children: [' '] }), Text({ dimColor: true, children: ['OTHER'] }), ...board.other.map((o) => otherLine(el, o, columns))],
       Text({ children: [' '] }),
-      selected === undefined ? null : detailStrip(el, selected, columns),
-      Text({ children: [' '] }),
-      Box({
-        flexDirection: 'row',
-        columnGap: 3,
-        children: [
-          focusTarget === undefined
-            ? Text({ dimColor: true, children: ['f go to pane: this ticket has no live pane'] })
-            : Button({ key: 'focus-row', label: 'go to pane', hotkey: 'f', plain: true, onPress: () => act({ k: 'focus-pane', pane: focusTarget }) }),
-          ...draftButtons(el, selected?.cells.pr.k === 'none' ? undefined : selected?.cells.pr.pr, selected === undefined ? [] : [selected.ticket], act, false),
-          // `u` sends every pending event in one `/workspace update` (ADR5); with none it is not offered.
-          board.pending.length === 0 ? null : Button({ key: 'update-all', label: 'update all ↻', hotkey: 'u', plain: true, onPress: () => act({ k: 'update', pending: board.pending }) }),
-        ],
-      }),
+      selected === undefined ? null : actionBox(el, selected, columns, act),
+      // `u` sends every pending event in one `/workspace update` (ADR5); with none it is not offered.
+      board.pending.length === 0 ? null : Button({ key: 'update-all', label: 'update all ↻', hotkey: 'u', plain: true, onPress: () => act({ k: 'update', pending: board.pending }) }),
     ],
   })
 }
@@ -250,9 +270,6 @@ function drawAll(el: El, board: Board, columns: number, act: Act): RenderElement
     ],
   })
 }
-
-/** `owner/name#n`: a PR's key in PaneUi and in its Button's key. */
-const prKey = (pr: Pr): string => `${pr.repo}#${pr.number}`
 
 /**
  * The PRs tab: one block per repo, each PR's state and CI. `c` (or pressing a PR) lists the
@@ -305,7 +322,7 @@ function drawPrs(el: El, board: Board, ui: PaneUi, columns: number, act: Act): R
         columnGap: 3,
         children: [
           Button({ key: 'checks', label: 'checks', hotkey: 'c', plain: true, onPress: () => (focused === undefined ? undefined : act({ k: 'checks', pr: prKey(focused.pr) })) }),
-          ...draftButtons(el, focused?.pr, focused?.tickets ?? [], act, true),
+          ...draftButtons(el, focused?.pr, focused?.tickets ?? [], act),
         ],
       }),
     ],

@@ -420,6 +420,7 @@ export type TabName = 'work' | 'prs' | 'all'
 export type Intent =
   | { k: 'tab'; tab: TabName }
   | { k: 'focus-pane'; pane: PaneId }
+  | { k: 'select'; ticket: Ticket } // a Work row pressed: the box follows it, nothing else runs
   | { k: 'checks'; pr: string } // `c`, or a PR row pressed: show or hide that PR's unfinished and failed checks
   | { k: 'update'; pending: Pending[] } // ↻ on a row, or `u` for every row: hand the events to `/workspace update`
   | { k: 'help' } // `?`: show or hide what the columns and keys mean

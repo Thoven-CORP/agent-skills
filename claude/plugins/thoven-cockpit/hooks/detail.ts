@@ -123,9 +123,6 @@ export function detailLines(row: Row): string[] {
   return [`${paneSentence(row)} ${reportSentence(row)}`, prSentence(row), reviewSentence(row), `Next: ${nextStep(row).text}`]
 }
 
-/** The one line every screen ends with. */
-export const SENT_LINE = "Nothing is sent until you press enter. m, r and t only fill this session's prompt box."
-
 /** Behind `?`: what the columns and keys mean. */
 export const LEGEND = {
   work: [
@@ -134,12 +131,12 @@ export const LEGEND = {
     'Fix       fix round n of the five allowed.',
     'Review    V verify-this · C code-review · T thermo · D deslop. A letter shows once it ran; red was claimed but never ran; · means thermo is due.',
     "PR, CI    the row's PR and its checks: ✓ pass · ✗ n failed · ◐ running.",
-    "Keys      f goes to the ticket's agent pane. r starts a verifier for it, t adds thermo, m drafts the merge. All three need an open PR.",
+    "Buttons   Review starts a verifier for the ticket, + thermo adds thermo, Merge drafts the merge. Those three need an open PR and only fill this session's prompt box. Switch tab goes to the ticket's agent pane.",
   ],
   prs: [
     'State     held is open · merged · closed.',
     'CI        ✓ pass · ✗ n failed · ◐ running · – no checks ran.',
-    "Keys      c lists a PR's failed or running checks. r starts a verifier for its ticket, t adds thermo, m drafts the merge.",
+    "Keys      c lists a PR's failed or running checks. r starts a verifier for its ticket, t adds thermo, m drafts the merge. Each only fills this session's prompt box.",
   ],
   all: ['Every herdr space and its agent panes, this space first. Press a pane to go to it.'],
 } as const
