@@ -81,14 +81,17 @@ you cannot fill means the ticket is not ready. Fix the ticket in Linear, then co
    `<area>/thv-<n>` from `origin/main`, copies the env file and installs dependencies, and its last
    stdout line is the path. Record the base SHA there (`git -C <path> rev-parse HEAD`). Review
    diffs start there.
-2. `herdr worktree open --path <path>` for the issue's tab, or split a pane into it. Label it with
+2. Open the issue's tab in main's own space:
+   `herdr tab create --workspace "${HERDR_PANE_ID%%:*}" --cwd <path> --no-focus`. The pane id is
+   `.result.root_pane.pane_id` in the JSON it returns. A sub-issue pane splits into the issue's
+   existing tab instead. Never use `herdr worktree open`: it opens the worktree as a new space, so
+   the pane lands outside the Project (THV-1007). Label the pane with
    `scripts/label.sh <pane> <Kind> "<title>" THV-x --tab` (drop `--tab` for a sub-issue pane in an
    existing tab). On the first dispatch in a space, also label main:
-   `scripts/label.sh $HERDR_PANE_ID Meta "<Project>" --tab`. herdr opens worktrees here and never
-   creates them: its own create (the new-worktree key or `herdr worktree create`) branches from the
-   checkout's local HEAD, and
-   herdr 0.9.1 has no setting for a default base. If herdr must create one, run `git fetch origin`
-   and pass `--base origin/main`.
+   `scripts/label.sh $HERDR_PANE_ID Meta "<Project>" --tab`. A pane already in the wrong space
+   moves with `herdr pane move <pane> --new-tab --workspace <main's space>`. herdr never creates the
+   worktree: its own create (the new-worktree key or `herdr worktree create`) branches from the
+   checkout's local HEAD, and herdr 0.9.1 has no setting for a default base.
 3. Start the agent with its bypass flag from `agents.md`. Wait for `idle` before prompting. A ticket
    that spans both repos gets one pane: open it in the frontend worktree and add the backend
    worktree with `--add-dir <path>` (Claude, Codex; Devin's dangerous mode already reaches it).
@@ -100,7 +103,8 @@ you cannot fill means the ticket is not ready. Fix the ticket in Linear, then co
    `node ~/.agents/skills/workspace/tools/set-status.js "In Progress" THV-x`. It prints the state it
    read back in one line. A status-only `save_issue` through the Linear MCP echoes the whole issue.
 
-**Done when:** `herdr agent get <pane>` shows `working` and the ticket reads In Progress.
+**Done when:** `herdr agent get <pane>` shows `working` in main's space, and the ticket reads
+In Progress.
 
 ### 4. Watch
 
