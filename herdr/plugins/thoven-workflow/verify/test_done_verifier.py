@@ -4,6 +4,11 @@ import done_verifier as verifier
 
 
 class CompletionProcessTest(unittest.TestCase):
+    def setUp(self):
+        patcher = patch.object(verifier, "SETTLE_SECS", 0)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def snapshot(self, commands):
         procs = {
             100: dict(pid=100, ppid=1, pgid=100, cpu=0, cmd="-zsh"),
@@ -55,6 +60,19 @@ class CompletionProcessTest(unittest.TestCase):
 
     def test_tool_names_without_an_agent_are_not_exempt(self):
         self.assertIn("pid 300", self.check([(300, 100, 300, "codex app-server --listen stdio")], has_agent=False))
+
+    def test_statusline_helpers_and_exiting_processes_do_not_block(self):
+        for command in ("node /Users/example/.claude/hooks/gsd-statusline.js",
+                        "/x/herdr-agent-usage claude-statusline", "(node)", "(herdr-agent-usag)"):
+            with self.subTest(command=command):
+                self.assertIsNone(self.check([(300, 200, 300, command)]))
+
+    def test_process_that_exits_during_settle_does_not_block(self):
+        before = self.snapshot([(300, 200, 300, "sleep 60")])
+        after = self.snapshot([])
+        with patch.object(verifier.tw, "pane_procs", return_value=(100, 200)), \
+             patch.object(verifier.tw, "ps_snapshot", side_effect=[before, after]):
+            self.assertIsNone(verifier.check_processes("fixture", True))
 
 
 if __name__ == "__main__":
