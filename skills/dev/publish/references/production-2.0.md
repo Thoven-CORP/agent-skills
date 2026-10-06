@@ -29,7 +29,7 @@ Its progress and done lines start with `== ` and show SHAs as their first 9 char
    ~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh snapshot <id>
    ```
 
-   Done when it prints `snapshot <name> of <endpoint>`. `backend` refuses a snapshot older than two hours, so run it right before step 6.
+   Done when it prints `snapshot <name> of <endpoint>`. `backend` refuses a snapshot older than two hours, so run it right before step 6. The snapshot deletes itself 30 days after creation, because `snapshot` sets the branch's `expires_at`.
 
 6. **Stop: promote the backend.** After Andres's go, in the background, because it can wait 30 minutes:
 
