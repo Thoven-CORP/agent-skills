@@ -49,6 +49,14 @@ If you catch yourself thinking any of these, STOP:
 
 Run the relevant verification command and report with evidence:
 
+Read the checkout's `TESTING.md` and `config/ci.rb` first; they own the current lane commands.
+On the THV-1126/1127 stack, `bin/ci fast` includes full-controller raw-ID counts and OpenAPI
+breaking detection; offline `bin/ci prepush` includes the raw-ID guard. A changed schema
+requires `oasdiff`, while an unchanged schema skips that detector. The separate weekly
+scorecard replays known-bad patches; green detector proof is not product or whole-suite proof.
+Keep targeted local evidence separate from required hosted `CI` acceptance. Diff-driven
+`bin/verify` and Stop-hook orchestration belong to THV-1131; verify they exist before use.
+
 ```bash
 # For tests:
 bundle exec rspec [relevant spec files]

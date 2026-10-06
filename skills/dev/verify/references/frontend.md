@@ -47,12 +47,20 @@ Use this concrete trigger map when the user says "verify" without specifying:
 
 ## Quick Mode
 
-Run TypeScript type-checking and ESLint.
+Run the type, lint, and contract checks defined by the checkout's `TESTING.md`.
+Read that page first: it owns the current commands and required CI jobs.
+On the THV-1126/1127/1130 stack, generated OpenAPI response types must be current before
+type-check, whole-repository type-aware Oxlint complements changed-file ESLint, and the
+Chromium component suite is required CI. For a compiled-style or browser-component claim,
+run the affected browser test and capture its rendered/computed result.
+Local targeted proof covers only the named paths and revision; required hosted `CI` still
+owns merge acceptance. Diff-driven `bin/verify` and Stop-hook orchestration belong to
+THV-1131; check that implementation exists before invoking it.
 
 ### Steps
 
-1. **Type Check**: Run `timeout 60 pnpm run type-check` and capture output
-2. **Lint**: Run `pnpm run lint` and capture output
+1. **Types**: Where `api-types:check` exists, run it with the paired backend schema (or explicit `BACKEND_OPENAPI_PATH`), then run `pnpm run type-check`. Capture both outputs.
+2. **Lint**: Run `pnpm exec eslint <changed JS/TS paths>` and, where `lint:oxlint` exists, `CI=true pnpm run --silent lint:oxlint`. Capture both outputs.
 3. **Contract Check**: Run `pnpm run contract-check` and capture output (FE↔BE contract parity — fast, static; blocks if an API caller drifts from the committed manifest)
 4. **Report**: Summarize results
 
@@ -78,10 +86,10 @@ Pass/Fail
 ```
 
 ### Rules
-- Always run both checks even if the first fails
+- Run every selected check even if an earlier one fails; report each result separately
 - Show only the actual errors, not the full output
-- If both pass, confirm ready to commit
-- If either fails, list the specific files and errors that need fixing
+- Report the exact paths, revision and passing checks; name required checks still pending
+- If any check fails, list the specific files and errors that need fixing
 
 ---
 

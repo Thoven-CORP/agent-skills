@@ -162,6 +162,12 @@ test-only production seams the audit finds as named follow-ups instead
 
 ## Validation
 
+Read the checkout's `TESTING.md` before choosing commands: it owns unit, browser, contract,
+lint and merge-gate routing. Where adopted, runtime assertions, compiled-style browser proof,
+generated response types and raw-ID guards complement this value bar; passing a detector
+does not establish the behavior a test claims. Use available commands in that revision;
+THV-1131's diff-driven `bin/verify` is separate work until its implementation is present.
+
 Run the tests and checks the change touches, never the full suite when a
 targeted run will do. Never edit source or tests while a test run is going in
 the same worktree.
