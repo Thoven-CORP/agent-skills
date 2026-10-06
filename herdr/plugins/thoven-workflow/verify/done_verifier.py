@@ -21,11 +21,15 @@ import json
 import os
 import re
 import sys
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import twlib as tw  # noqa: E402
 
 MAX_NUDGES = 2
+# A helper launched on a timer (the status line) can be mid-run at the instant a
+# pane goes done. Real work is still there a moment later; that is not.
+SETTLE_SECS = 3
 TOKEN = "tw_verify"
 LOG = "verify.log"
 
@@ -58,7 +62,7 @@ LOG = "verify.log"
 #   reparented to launchd). The tree cannot follow those.
 INFRA_RE = re.compile(
     r"(^|/)(caffeinate|herdr|ps)( |$)|mcp|language-server|(^|[/ -])lsp|gopls|"
-    r"rust-analyzer|pyright|tsserver|sourcekit", re.I)
+    r"rust-analyzer|pyright|tsserver|sourcekit|statusline|herdr-agent-usage", re.I)
 # Codex puts these session runtimes in separate process groups. Exclude the
 # runtime process itself; its child workloads still pass through the checks.
 CODEX_INFRA_RE = re.compile(
@@ -81,11 +85,18 @@ def check_processes(pane_id, has_agent):
             continue
         if agent_pgid and p["pgid"] == agent_pgid:
             continue
+        if p["cmd"].startswith("("):  # ps shows an exiting process as "(name)"
+            continue
         if INFRA_RE.search(p["cmd"]):
             continue
         if agent and CODEX_INFRA_RE.search(p["cmd"]):
             continue
         work.append(p)
+    if not work:
+        return None
+    time.sleep(SETTLE_SECS)
+    alive = tw.ps_snapshot()
+    work = [p for p in work if p["pid"] in alive]
     if not work:
         return None
     # Collapse each group to its most informative member: a non-wrapper leaf.
