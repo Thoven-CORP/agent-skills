@@ -540,14 +540,14 @@ Andres, and proposes bounded panes; the main session still owns synthesis and sh
 
 ### Live spaces
 
-Updated 2026-10-03 (THV-1054). A space with no row here has no Project: hotfix, scratch and
+Updated 2026-10-06 (Design System space replaces UI Polishes). A space with no row here has no Project: hotfix, scratch and
 repo-home spaces. The cockpit mod (THV-1053) shows their tabs without a Linear column. Add the row
 when a space is opened for a Project.
 
 | herdr space | Linear Project |
 |---|---|
 | `COPPA` | COPPA and Data Compliance Audit |
-| `UI Polishes` | Design System |
+| `Design System` | Design System |
 | `Cockpit` | Thoven cockpit |
 
 ### Ledger bind
