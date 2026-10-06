@@ -59,6 +59,12 @@ LOG = "verify.log"
 INFRA_RE = re.compile(
     r"(^|/)(caffeinate|herdr|ps)( |$)|mcp|language-server|(^|[/ -])lsp|gopls|"
     r"rust-analyzer|pyright|tsserver|sourcekit", re.I)
+# Codex puts these session runtimes in separate process groups. Exclude the
+# runtime process itself; its child workloads still pass through the checks.
+CODEX_INFRA_RE = re.compile(
+    r"^(?:\S*/)?(?:node_repl|codex-code-mode-host)(?:\s|$)|"
+    r"^(?:\S*/)?codex\s+app-server(?:\s|$)|"
+    r"^(?:\S*/)?node\s+\S*/@oai/cua-repl/bin/cua-repl\.mjs(?:\s|$)")
 WRAPPER_RE = re.compile(r"/shell-snapshots/|^(/bin/)?(ba|z)?sh -c ")
 
 
@@ -76,6 +82,8 @@ def check_processes(pane_id, has_agent):
         if agent_pgid and p["pgid"] == agent_pgid:
             continue
         if INFRA_RE.search(p["cmd"]):
+            continue
+        if agent and CODEX_INFRA_RE.search(p["cmd"]):
             continue
         work.append(p)
     if not work:

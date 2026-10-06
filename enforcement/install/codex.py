@@ -10,6 +10,7 @@ Dry run by default. Pass --apply to write.
 import argparse
 import copy
 import json
+import shlex
 import sys
 from pathlib import Path
 
@@ -60,6 +61,23 @@ def add_hook(config: dict, event: str, matcher, command: str, timeout: int) -> N
     config["hooks"][event].append(block)
 
 
+def soften_stop_notifications(config: dict) -> int:
+    """Desktop access is optional; notification failures must not block completion."""
+    changed = 0
+    for entry in config.get("hooks", {}).get("Stop", []):
+        for hook in entry.get("hooks", []):
+            command = hook.get("command", "")
+            try:
+                argv = shlex.split(command)
+            except ValueError:
+                continue
+            if (len(argv) == 3 and argv[0] in ("osascript", "/usr/bin/osascript")
+                    and argv[1] == "-e" and argv[2].startswith("display notification ")):
+                hook["command"] = command + " >/dev/null 2>&1 || :"
+                changed += 1
+    return changed
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apply", action="store_true", help="write changes; default is dry run")
@@ -67,6 +85,7 @@ def main():
 
     original = read_json(HOOKS_JSON, {"hooks": {}})
     config = copy.deepcopy(original)
+    notifications_changed = soften_stop_notifications(config)
 
     plan = []
     for script_name, event, matcher, timeout in HOOK_SPECS:
@@ -81,6 +100,8 @@ def main():
 
     print(f"Target hooks.json: {HOOKS_JSON}")
     print(f"Target hooks dir: {HOOKS_DIR}")
+    if notifications_changed:
+        print(f"- Stop desktop notification: make {notifications_changed} hook(s) nonfatal")
     for script_name, event, matcher, timeout, command, copy_needed, settings_needed in plan:
         print(f"- {script_name}: copy={'yes' if copy_needed else 'no (already matches)'} "
               f"hooks_entry[{event}/{matcher or '-'}]={'add' if settings_needed else 'already present'}")
