@@ -62,7 +62,12 @@ tool calls 5228 to 0.
 `thoven-require-evidence` runs at `Stop`. For a done-claim after code edits, it
 requires one complete, fresh PASS block from `bin/verify` for every edited repo.
 Missing, stale, failing, malformed, or rowless evidence blocks the claim. The
-local verifier owns receipt freshness and the check set.
+local verifier owns receipt freshness and the check set. Recursive Stop
+continuations (`stop_hook_active: true`) and explicitly historical or quoted
+status reports do not repeat the refusal. Once admitted, receipts are remembered
+for this session and revalidated by each repo on later completion claims; source
+changes, changed HEAD/check sets, and invalid explicit blocks still require fresh
+evidence. The remembered receipt never grants admission on its own.
 
 `graph-session-reminder` runs at `SessionStart` and says nothing unless this
 repo's graph is more than seven days behind its last commit, in which case it

@@ -3,9 +3,10 @@
 set -o pipefail
 
 payload="$(cat)"
+# A refusal-triggered continuation must be allowed to stop (Claude Stop contract).
+[ "$(jq -r '.stop_hook_active == true' <<<"$payload")" = true ] && exit 0
 cwd="$(jq -r '.cwd // empty' <<<"$payload")"
 session_id="$(jq -r '.session_id // empty' <<<"$payload")"
-last_msg="$(jq -r '.last_assistant_message // empty' <<<"$payload")"
 
 case "$cwd" in
   "$HOME"/thoven|"$HOME"/thoven/*|"$HOME"/.herdr/worktrees/*) ;;
@@ -16,20 +17,6 @@ state="/tmp/claude-thoven/${session_id:-unknown}"
 [ -d "$state" ] || exit 0
 edited_file="$state/edited"
 [ -f "$edited_file" ] || exit 0
-
-pattern='\b(done|built|shipped|complete|completed|finished|fixed|implemented|ready to (review|merge|ship))\b'
-found_claim=0
-while IFS=: read -r off _rest; do
-  [ -n "$off" ] || continue
-  start=$(( off > 12 ? off - 12 : 0 ))
-  pre="${last_msg:$start:$(( off - start ))}"
-  prelow="$(printf '%s' "$pre" | tr '[:upper:]' '[:lower:]')"
-  if [[ "$prelow" != *"not "* && "$prelow" != *"n't "* ]]; then
-    found_claim=1
-    break
-  fi
-done < <(grep -oiEb "$pattern" <<<"$last_msg" 2>/dev/null)
-[ "$found_claim" -eq 1 ] || exit 0
 
 python3 - "$payload" "$edited_file" <<'PY'
 import json
@@ -49,9 +36,38 @@ try:
     payload = json.loads(sys.argv[1])
     message = payload.get("last_assistant_message") or ""
     working_cwd = Path(payload.get("cwd") or os.getcwd()).resolve()
-    paths = Path(sys.argv[2]).read_text().splitlines()
+    edited_file = Path(sys.argv[2])
+    paths = edited_file.read_text().splitlines()
+    admission = edited_file.parent / "verified-evidence.json"
 except (json.JSONDecodeError, OSError):
     fail("Thoven verification gate could not read this session's edited paths.")
+
+# Completion words in quoted reports, code, or explicitly historical status
+# sentences are not claims about the work being delivered by this response.
+def claims_completion(text):
+    fenced = False
+    pattern = re.compile(r"\b(done|built|shipped|complete|completed|finished|fixed|implemented|ready to (?:review|merge|ship))\b", re.I)
+    for line in text.splitlines():
+        if line.lstrip().startswith(("```", "~~~")):
+            fenced = not fenced
+            continue
+        if fenced or line.lstrip().startswith(">"):
+            continue
+        for sentence in re.split(r"(?<=[.!?])\s+", line):
+            if re.search(r"\b(previously|earlier|yesterday|historical|last (?:week|month)|prior (?:agent|session))\b", sentence, re.I):
+                continue
+            if (re.search(r"\bTHV-\d+\s*:", sentence)
+                    and re.search(r"\b(?:report missing|awaiting|fix round \d+)\b", sentence, re.I)):
+                continue
+            for match in pattern.finditer(sentence):
+                prefix = sentence[max(0, match.start() - 12):match.start()].lower()
+                if "not " not in prefix and "n't " not in prefix:
+                    return True
+    return False
+
+
+if not claims_completion(message):
+    raise SystemExit(0)
 
 def is_code(path):
     location = Path(path)
@@ -92,6 +108,15 @@ if not roots:
 begins = list(re.finditer(r"(?m)^THOVEN_VERIFY_BEGIN\n", message))
 ends = list(re.finditer(r"(?m)^THOVEN_VERIFY_END\s*$", message))
 blocks = []
+# A remembered block is only a candidate: every reuse goes through the repo
+# verifier again, which binds it to HEAD, source contents and the check set.
+if not begins and not ends and admission.is_file():
+    try:
+        saved = json.loads(admission.read_text())
+        if isinstance(saved, list) and all(isinstance(item, dict) for item in saved):
+            blocks = saved
+    except (OSError, json.JSONDecodeError):
+        pass
 cursor = 0
 for begin in begins:
     end = next((candidate for candidate in ends if candidate.start() > begin.end()), None)
@@ -135,6 +160,14 @@ for root in sorted(roots):
         fail(f"Thoven verification gate timed out checking evidence for {root}.")
     if result.returncode:
         fail(f"Thoven verification gate rejected stale or invalid evidence for {root}.")
+
+# Publish only after every edited repo accepted its candidate.
+try:
+    temporary = admission.with_name(f".{admission.name}.{os.getpid()}")
+    temporary.write_text(json.dumps(blocks))
+    temporary.replace(admission)
+except OSError:
+    pass  # Remembering evidence is optional; validation above is authoritative.
 PY
 rc=$?
 if [ "$rc" -ne 0 ]; then
