@@ -34,8 +34,10 @@ class VerifyReceiptTest(unittest.TestCase):
         return subprocess.run(["git", *args], cwd=self.repo, check=True, text=True, capture_output=True)
 
     def verify(self, *args, input=None):
+        lock_fd = os.environ.get("THOVEN_VERIFY_LOCK_FD")
         return subprocess.run([sys.executable, str(self.engine), *args], cwd=self.repo,
-                              input=input, text=True, capture_output=True)
+                              input=input, text=True, capture_output=True,
+                              pass_fds=(int(lock_fd),) if lock_fd else ())
 
     def receipt_from(self, output):
         lines = output.splitlines()
