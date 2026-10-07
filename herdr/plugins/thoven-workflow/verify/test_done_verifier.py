@@ -78,7 +78,8 @@ class CompletionProcessTest(unittest.TestCase):
 
     def test_dev_registration_rejects_test_and_wrong_pane_processes(self):
         procs = self.snapshot([(300, 200, 300, "node /project/node_modules/next/dist/bin/next dev"),
-                               (310, 200, 310, "pnpm test")])
+                               (310, 200, 310, "pnpm test"),
+                               (320, 200, 320, "python3 audit.py --label 'next dev'")])
         with patch.dict(verifier.os.environ, {"TW_PANE": "fixture"}), \
              patch.object(verifier.tw, "pane_procs", return_value=(100, 200)), \
              patch.object(verifier.tw, "ps_snapshot", return_value=procs), \
@@ -88,6 +89,8 @@ class CompletionProcessTest(unittest.TestCase):
             verifier.allow_process("300")
             with self.assertRaisesRegex(ValueError, "only a live development server"):
                 verifier.allow_process("310")
+            with self.assertRaisesRegex(ValueError, "only a live development server"):
+                verifier.allow_process("320")
             with self.assertRaisesRegex(ValueError, "descendant"):
                 verifier.allow_process("999")
             write_json.assert_called_once()

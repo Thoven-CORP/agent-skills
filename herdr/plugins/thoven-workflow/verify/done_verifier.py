@@ -73,7 +73,11 @@ CODEX_INFRA_RE = re.compile(
     r"^(?:\S*/)?codex\s+app-server(?:\s|$)|"
     r"^(?:\S*/)?node\s+\S*/@oai/cua-repl/bin/cua-repl\.mjs(?:\s|$)")
 WRAPPER_RE = re.compile(r"/shell-snapshots/|^(/bin/)?(ba|z)?sh -c ")
-DEV_RE = re.compile(r"(?:^|[/\s])(?:next\s+dev|vite(?:\s|$)|webpack-dev-server(?:\s|$))")
+DEV_RE = re.compile(
+    r"^(?:(?:node|nodejs)\s+\S*/next(?:/\S+)?/next\s+dev|next\s+dev|"
+    r"(?:node|nodejs)\s+\S*/vite(?:/bin/vite\.js)?(?:\s|$)|vite(?:\s|$)|"
+    r"(?:node|nodejs)\s+\S*webpack-dev-server(?:\s|$)|webpack-dev-server(?:\s|$)|"
+    r"(?:npm|pnpm|yarn|bun)\s+run\s+dev(?:\s|$))")
 
 
 def process_intent_path(pane_id):
