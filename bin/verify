@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+"""Serialize native tooling checks; evidence validation remains read-only."""
+import fcntl
+import os
+from pathlib import Path
+import signal
+import sys
+import time
+
+engine = Path(__file__).resolve().parents[1] / "enforcement/bin/verify-engine.py"
+argv = [sys.executable, str(engine), *sys.argv[1:]]
+if sys.argv[1:] == ["--check-evidence"]:
+    os.execv(sys.executable, argv)
+
+cancelled = False
+announced_wait = False
+
+def cancel(*_):
+    global cancelled
+    cancelled = True
+
+signal.signal(signal.SIGINT, cancel)
+signal.signal(signal.SIGTERM, cancel)
+with open(f"/tmp/thoven-verify-{os.getuid()}.lock", "a") as lock:
+    while not cancelled:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            break
+        except BlockingIOError:
+            if not announced_wait:
+                print("bin/verify: waiting for verification lock", file=sys.stderr, flush=True)
+                announced_wait = True
+            time.sleep(.05)
+    if cancelled:
+        sys.exit(130)
+    os.set_inheritable(lock.fileno(), True)
+    os.environ["THOVEN_VERIFY_LOCK_FD"] = str(lock.fileno())
+    os.execv(sys.executable, argv)

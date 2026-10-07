@@ -24,25 +24,11 @@ recur.
 It only touches a file a harness already has, so it never installs a hook into a
 harness that was not running it.
 
-## The rule
+## Verification contract
 
-**A hook may ask for a statement, or refuse a destructive command. It may not
-require work.**
+The Stop hook validates evidence; it does not launch checks. After a code or gate-config edit, a done-claim needs a fresh PASS block from each changed repository's `bin/verify`. Empty, failing, stale or incomplete evidence refuses the claim. Read-only evidence validation does not acquire the machine verification lock.
 
-That rule was bought on 2026-09-18. `thoven-require-evidence` used to demand an
-artifact under `test-results/` before letting a done-claim through. A type-check
-and a lint finish in seconds and write no file, so satisfying it meant reaching
-for a tool that does. One session stood up dev servers on three ports, drove a
-real browser, and ran 718 unit tests. Another left a Ruby suite hung for 27
-minutes. Three parallel panes did this within seven minutes of each other,
-because nothing coordinates panes.
-
-The same day, `thoven-track-edits` was injecting "prove the change with a browser
-test" on every component edit. Two hooks were pushing the same expensive tool
-from different directions.
-
-It asks a question now. A question costs nothing, so parallel panes need no lock,
-and an honest answer was the signal wanted all along.
+The native runners select checks from the diff and serialize heavyweight runs using one stable kernel lock. Production mutation checks run in private snapshots. Exact first-added verifier owners are bootstrap infrastructure: their owner suites and independent valid-code detector controls are required; deleting a new CLI is setup failure, not a behavior mutation kill. Later edits to those owners enter ordinary mutation selection.
 
 ## The hooks
 
@@ -53,8 +39,7 @@ tool arguments, because auto mode writes files with `cat` and heredocs and a hoo
 watching only `Edit` sees nothing. It injects one line pointing at the
 `thoven-designer` skill the first time a component is touched.
 
-`thoven-guard-bash` runs before `Bash` and is the only hook that refuses
-anything. It denies the unit-test runner's exclude flag, which replaces the
+`thoven-guard-bash` runs before `Bash` and refuses destructive or invalid commands. It denies the unit-test runner's exclude flag, which replaces the
 config's exclude array and reports failures that do not exist, and it denies
 `git clean`, `git reset --hard`, and `stash`/`checkout`/`restore` against paths
 this session did not edit. Worktrees here are shared, and a stash before a rebase
@@ -215,7 +200,7 @@ deny. If the guard fails to run, the command proceeds, as it does in every other
 harness when a hook errors. `install/opencode.py` installs both.
 
 The guard and the edit tracker cross to Cursor, Devin and OpenCode, so the guard
-tells a session's own files from another's in all five. The evidence question
+tells a session's own files from another's in all five. Evidence-block enforcement
 stays Claude and Codex only.
 
 The two unconditional denies, `git clean` and `git reset --hard`, are also

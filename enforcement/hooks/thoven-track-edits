@@ -79,10 +79,8 @@ PY_PATH
     fi
     ;;
   Bash)
-    # A verification command is the answer thoven-require-evidence asks for, so
-    # record it. That hook exits when $state/checks is non-empty, but before
-    # 2026-09-19 nothing ever wrote the file: the escape hatch never fired and it
-    # nudged even in sessions that had just run a check.
+    # Preserve check commands for diagnostics. Command text alone does not
+    # satisfy the evidence hook; it validates the native runner's receipt.
     checks_regex='\b(tsc|rspec|vitest|jest|playwright|eslint|rubocop|contract-check|type-check|typecheck)\b|\b(npm|pnpm|yarn|bun)[[:space:]]+(run[[:space:]]+)?(test|lint|check)\b|\bnext[[:space:]]+lint\b|\brails[[:space:]]+(test|spec)\b'
     if [ -n "$command" ] && grep -qE "$checks_regex" <<<"$command"; then
       printf '%s\n' "$command" >> "$state/checks"
@@ -92,10 +90,12 @@ PY_PATH
     newly=()
     if [ -n "$toplevel" ]; then
       touch "$edited_file"
-      while IFS= read -r line; do
+      while IFS= read -r -d '' line; do
         [ -n "$line" ] || continue
         rel="${line:3}"
-        case "$rel" in *" -> "*) rel="${rel#*" -> "}" ;; esac
+        # Porcelain -z reports the destination first and the rename source
+        # as a second NUL record. Consume it without treating it as status.
+        case "${line:0:2}" in *R*|*C*) IFS= read -r -d '' || break ;; esac
         abs="$toplevel/$rel"
         if [ ! -f "$abs" ] && [[ "${line:0:2}" != *D* ]]; then
           continue
@@ -107,7 +107,7 @@ PY_PATH
         echo "$abs" >> "$edited_file"
         newly+=("$abs")
         touch "$state/last-edit"
-      done < <(git -C "$cwd" status --porcelain --untracked-files=all 2>/dev/null)
+      done < <(git -C "$cwd" status --porcelain -z --untracked-files=all 2>/dev/null)
 
       if [ "$dialect" = claude ] && [ ! -f "$state/ui-rule-shown" ]; then
         match=0
@@ -144,15 +144,15 @@ PY_PATH
         if [[ "$command" != *"$repo"* && "$command" != *"$relative"* && "$command" != *"$relative_from_cwd"* ]]; then
           continue
         fi
-        while IFS= read -r line; do
+        while IFS= read -r -d '' line; do
           [ -n "$line" ] || continue
           rel="${line:3}"
-          case "$rel" in *" -> "*) rel="${rel#*" -> "}" ;; esac
+          case "${line:0:2}" in *R*|*C*) IFS= read -r -d '' || break ;; esac
           abs="$repo/$rel"
           if [ ! -f "$abs" ] && [[ "${line:0:2}" != *D* ]]; then continue; fi
           if [ -f "$abs" ] && [ "$abs" -ot "$state/started" ]; then continue; fi
           grep -qxF "$abs" "$edited_file" || { echo "$abs" >> "$edited_file"; touch "$state/last-edit"; }
-        done < <(git -C "$repo" status --porcelain --untracked-files=all 2>/dev/null)
+        done < <(git -C "$repo" status --porcelain -z --untracked-files=all 2>/dev/null)
       done < <(find "$HOME/thoven" -maxdepth 4 -name .git -print 2>/dev/null)
       ;;
     esac

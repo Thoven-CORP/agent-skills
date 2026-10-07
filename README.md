@@ -141,12 +141,13 @@ These detect which repo you are in and load only that side:
 | Skill | Backend (Rails / `Gemfile`) | Frontend (Next.js App Router) |
 |---|---|---|
 | `publish` | BE release | FE release |
-| `verify` | BE completion checks | FE completion checks |
 | `orchestrate` | BE routing | FE routing |
 | `prompt-generator` | BE prompts | FE prompts |
 | `doc-freshness` | BE docs | FE docs |
 
 If detection is ambiguous, the skill asks once.
+
+`verify` uses the same three steps in either repo: run `bin/verify`, paste its complete evidence block, and fix failing rows. Native diff selection replaces the former frontend/backend prose workflows.
 
 ### Renames (old → new)
 

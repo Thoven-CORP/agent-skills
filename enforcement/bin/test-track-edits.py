@@ -62,6 +62,33 @@ class TrackEditsTest(unittest.TestCase):
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn(str(changed), (self.state / "edited").read_text().splitlines())
 
+    def test_unicode_path_from_repo_cwd_is_recorded(self):
+        changed = self.repo / "src" / "café.ts"
+        changed.write_text("export const value = 2\n")
+        result = self.invoke("touch src/café.ts", cwd=self.repo)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn(str(changed), (self.state / "edited").read_text().splitlines())
+
+    def test_unicode_path_from_sibling_is_recorded(self):
+        changed = self.repo / "src" / "café.ts"
+        changed.write_text("export const value = 2\n")
+        result = self.invoke(f"touch {changed}")
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn(str(changed), (self.state / "edited").read_text().splitlines())
+
+    def test_renamed_path_and_following_record_are_recorded(self):
+        subprocess.run(["git", "-C", str(self.repo), "add", "src/new.ts"], check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(self.repo), "commit", "-m", "base"], check=True, capture_output=True)
+        renamed = self.repo / "src" / "café -> renamed.ts"
+        subprocess.run(["git", "-C", str(self.repo), "mv", "src/new.ts", str(renamed)], check=True)
+        following = self.repo / "src" / "z-following.ts"
+        following.write_text("export const following = 1\n")
+        result = self.invoke(f"git -C {self.repo} status --short")
+        self.assertEqual(0, result.returncode, result.stderr)
+        edited = (self.state / "edited").read_text().splitlines()
+        self.assertIn(str(renamed), edited)
+        self.assertIn(str(following), edited)
+
     def test_workspace_root_relative_editor_path_is_normalized(self):
         payload = {
             "cwd": str(self.workspace),
