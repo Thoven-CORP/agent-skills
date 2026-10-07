@@ -108,6 +108,43 @@ class RequireEvidenceTest(unittest.TestCase):
         self.assertEqual(0, self.call_hook().returncode)
         self.assertEqual(2, self.call_hook("Done. No check run.").returncode)
 
+    def test_workspace_archive_json_reports_are_documents(self):
+        workspace = self.root.parent
+        subprocess.run(["git", "init", str(workspace)], check=True, capture_output=True)
+        report = workspace / "archive" / "verification" / "receipt.json"
+        report.parent.mkdir(parents=True)
+        report.write_text('{}')
+        self.payload['cwd'] = str(workspace)
+        for path in (str(report), 'archive/verification/receipt.json'):
+            with self.subTest(path=path):
+                (self.state / 'edited').write_text(path + '\n')
+                result = self.call_hook('Done. Reports archived.')
+                self.assertEqual(0, result.returncode, result.stderr)
+
+    def test_archive_exception_cannot_hide_configuration_or_code(self):
+        workspace = self.root.parent
+        subprocess.run(["git", "init", str(workspace)], check=True, capture_output=True)
+        archive = workspace / 'archive'
+        archive.mkdir()
+        report = archive / 'receipt.json'
+        report.write_text('{}')
+        config = self.root / 'config.json'
+        config.write_text('{}')
+        escaped = archive / 'escaped.json'
+        escaped.symlink_to(config)
+        nested_archive = self.root / 'archive'
+        nested_archive.mkdir()
+        linked = nested_archive / 'linked.json'
+        linked.symlink_to(report)
+        paths = (workspace / 'config.json', nested_archive / 'config.json',
+                 archive / 'script.py', escaped, linked)
+        for path in paths:
+            with self.subTest(path=str(path)):
+                (self.state / 'edited').write_text(str(path) + '\n')
+                result = self.call_hook('Done. No check run.')
+                self.assertEqual(2, result.returncode)
+                self.assertIn('needs one complete THOVEN_VERIFY block', result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

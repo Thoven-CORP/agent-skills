@@ -54,6 +54,16 @@ except (json.JSONDecodeError, OSError):
     fail("Thoven verification gate could not read this session's edited paths.")
 
 def is_code(path):
+    location = Path(path)
+    if not location.is_absolute():
+        location = working_cwd / location
+    archive = Path.home() / "thoven" / "archive"
+    # Workspace verification receipts are documents, not application JSON.
+    # Both checks keep symlinks and nested repository archives from escaping
+    # the exact workspace document boundary.
+    if (location.suffix == ".json" and location.is_relative_to(archive)
+            and location.resolve().is_relative_to(archive.resolve())):
+        return False
     if path.endswith((".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".rb", ".erb", ".css", ".scss", ".py", ".sh", ".yml", ".yaml", ".json", ".toml", ".ini", ".cfg", ".xml")) or Path(path).name in {"Dockerfile", "Makefile", "Gemfile", "Rakefile"}:
         return True
     return re.search(r"/(?:bin|hooks)/[^/]+$", path) is not None

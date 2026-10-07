@@ -28,6 +28,8 @@ harness that was not running it.
 
 The Stop hook validates evidence; it does not launch checks. After a code or gate-config edit, a done-claim needs a fresh PASS block from each changed repository's `bin/verify`. Empty, failing, stale or incomplete evidence refuses the claim. Read-only evidence validation does not acquire the machine verification lock.
 
+JSON reports under the workspace's exact `~/thoven/archive/` document boundary do not count as code edits. Application JSON, workspace configuration, archived scripts and symlinks crossing that boundary still require verification.
+
 The native runners select checks from the diff and serialize heavyweight runs using one stable kernel lock. Production mutation checks run in private snapshots. Exact first-added verifier owners are bootstrap infrastructure: their owner suites and independent valid-code detector controls are required; deleting a new CLI is setup failure, not a behavior mutation kill. Later edits to those owners enter ordinary mutation selection.
 
 ## The hooks
