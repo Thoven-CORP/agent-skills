@@ -7,24 +7,27 @@
 #
 #   thoven-stale-refs                   one line per hit, then a count per root; exit 1 on any hit
 #   thoven-stale-refs --count           the counts only
-#   thoven-stale-refs [--count] ROOT...  scan ROOTs instead of the default roots
+#   thoven-stale-refs [--count] [--base REF] [-- ROOT...]  scan roots and deleted callers
 #
-# A root that is a git checkout is scanned through git grep, so untracked local files do not count.
+# Git checkouts include tracked and untracked, non-ignored files in the live scan.
 set -uo pipefail
 
 PATTERN='release/2\.0|feature/teacher-2\.0|integrate/2\.0|thoven\.vercel\.app|thoven2\.0'
+SCRIPT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+WORKSPACE_ROOT="${THOVEN_WORKSPACE_ROOT:-$(dirname "$SCRIPT_ROOT")}"
 ROOTS=(
-  "$HOME/thoven/frontend"
-  "$HOME/thoven/backend"
-  "$HOME/thoven/agent-skills"
+  "$WORKSPACE_ROOT/frontend"
+  "$WORKSPACE_ROOT/backend"
+  "$SCRIPT_ROOT"
   # The rest of .workspace is session history (THV-1038 inventory). These three are live law.
-  "$HOME/thoven/.workspace/CLAUDE-root.md"
-  "$HOME/thoven/.workspace/AGENTS-root.md"
-  "$HOME/thoven/.workspace/CONTEXT-MAP.md"
-  "$HOME/thoven/CI_CD.md"
+  "$WORKSPACE_ROOT/.workspace/CLAUDE-root.md"
+  "$WORKSPACE_ROOT/.workspace/AGENTS-root.md"
+  "$WORKSPACE_ROOT/.workspace/CONTEXT-MAP.md"
+  "$WORKSPACE_ROOT/CI_CD.md"
 )
 # Paths whose job is to record the past.
-EXEMPT='/(archive|_archive|audit|audits|history|node_modules|\.git|\.next|coverage|tmp|log|vendor|orchestrate|checkins|runs|reports|scratch|\.specs|resume-prompts|wireframe)/|/TODO\.md|/TECH_DEBT\.md|/thoven-stale-refs|CHANGELOG|/decisions/|/adr/|/plans/20[0-9]{2}-|/plans/[^/]*20[0-9]{2}-[0-9]{2}|\.bak|\.jsonl$|/graphify-out/|/test-results/|/playwright-report/|package-lock\.json$|/\.agents/|/\.claude/worktrees/'
+# Test fixtures can describe retired names without being live instructions.
+EXEMPT='/(archive|_archive|audit|audits|history|tests|node_modules|\.git|\.next|coverage|tmp|log|vendor|orchestrate|checkins|runs|reports|scratch|\.specs|resume-prompts|wireframe)/|/TODO\.md|/TECH_DEBT\.md|/thoven-stale-refs|CHANGELOG|/decisions/|/adr/|/plans/20[0-9]{2}-|/plans/[^/]*20[0-9]{2}-[0-9]{2}|\.bak|\.jsonl$|/graphify-out/|/test-results/|/playwright-report/|package-lock\.json$|/\.agents/|/\.claude/worktrees/'
 
 # Records the THV-1038 inventory ruled history, per repo. They cite thoven2.0 as it was then.
 # Matched against the root-relative path only.
@@ -47,6 +50,9 @@ scan_relative() {
   if git -C "$1" rev-parse --git-dir >/dev/null 2>&1; then
     git -C "$1" grep -nIE "$PATTERN" -- . ':(exclude,glob)**/public/**' ':(exclude,glob)**/storage/**' \
       ':(exclude)*.lock' ':(exclude)package-lock.json' ':(exclude)*.min.js' ':(exclude)*.map'
+    while IFS= read -r -d "" rel; do
+      grep -HnIE "$PATTERN" "$1/$rel" 2>/dev/null | sed "s|^$1/||" || true
+    done < <(git -C "$1" ls-files --others --exclude-standard -z)
   else
     grep -rInE "$PATTERN" "$1" \
       --exclude-dir={node_modules,.git,.next,coverage,tmp,log,vendor,graphify-out,test-results,playwright-report,worktrees,storage,public} \
@@ -64,12 +70,45 @@ scan() {
 }
 
 count_only=0
-[ "${1:-}" = --count ] && { count_only=1; shift; }
-[ $# -gt 0 ] && ROOTS=("$@")
+base=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --count) count_only=1; shift ;;
+    --base)
+      [ "$#" -ge 2 ] || { echo 'usage: thoven-stale-refs [--count] [--base REF] [-- ROOT...]' >&2; exit 2; }
+      base="$2"; shift 2 ;;
+    --) shift; break ;;
+    *) break ;;
+  esac
+done
+if [ "$#" -gt 0 ]; then
+  for root in "$@"; do
+    if [ -z "$root" ] || [ ! -e "$root" ]; then
+      printf 'thoven-stale-refs: root is empty or missing: %s\n' "$root" >&2
+      exit 2
+    fi
+  done
+  ROOTS=("$@")
+fi
 total=0
 for root in "${ROOTS[@]}"; do
-  [ -e "$root" ] || continue
-  hits=$(scan "$root" 2>/dev/null | grep -vE "$EXEMPT" | grep -viE "$ALLOW" || true)
+  if [ ! -e "$root" ]; then
+    printf 'thoven-stale-refs: default root is missing: %s\n' "$root" >&2
+    exit 2
+  fi
+  hits=$(scan "$root" | grep -vE "$EXEMPT" | grep -viE "$ALLOW" || true)
+  if [ -n "$base" ] && [ -d "$root" ] && git -C "$root" rev-parse --git-dir >/dev/null 2>&1; then
+    call_hits="$("$(dirname "${BASH_SOURCE[0]}")/thoven-stale-ref-calls.py" "$base" "$root")" || call_rc=$?
+    call_rc="${call_rc:-0}"
+    if [ "$call_rc" -gt 1 ]; then
+      exit "$call_rc"
+    fi
+    if [ -n "$call_hits" ]; then
+      call_hits="$(printf '%s\n' "$call_hits" | sed "s|^|$root/|")"
+      hits="$(printf '%s\n%s\n' "$hits" "$call_hits" | grep -vE "$EXEMPT" || true)"
+    fi
+    unset call_rc
+  fi
   n=$(printf '%s' "$hits" | grep -c . || true)
   total=$((total + n))
   [ "$count_only" = 1 ] || { [ -n "$hits" ] && printf '%s\n' "$hits"; }

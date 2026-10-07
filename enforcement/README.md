@@ -47,8 +47,8 @@ and an honest answer was the signal wanted all along.
 ## The hooks
 
 `thoven-track-edits` runs after `Edit`, `Write` and `Bash`. It records which
-source files a session touched and which check commands it ran, under
-`/tmp/claude-thoven/<session>/`. It reads `git status --porcelain` rather than the
+source files a session touched, including tracked deletions, and keeps a
+diagnostic log of check commands under `/tmp/claude-thoven/<session>/`. It reads `git status --porcelain` rather than the
 tool arguments, because auto mode writes files with `cat` and heredocs and a hook
 watching only `Edit` sees nothing. It injects one line pointing at the
 `thoven-designer` skill the first time a component is touched.
@@ -72,10 +72,10 @@ command depending on mode, so keying on one tool name is a guess about which get
 picked. Measured over two days in this setup, shell searches outnumbered `Grep`
 tool calls 5228 to 0.
 
-`thoven-require-evidence` runs at `Stop`. On a session that edited source,
-claimed done, and ran no check, it asks once what was run and what it returned.
-"No check run" is an accepted answer. It has eight ways to stay silent and one to
-speak.
+`thoven-require-evidence` runs at `Stop`. For a done-claim after code edits, it
+requires one complete, fresh PASS block from `bin/verify` for every edited repo.
+Missing, stale, failing, malformed, or rowless evidence blocks the claim. The
+local verifier owns receipt freshness and the check set.
 
 `graph-session-reminder` runs at `SessionStart` and says nothing unless this
 repo's graph is more than seven days behind its last commit, in which case it

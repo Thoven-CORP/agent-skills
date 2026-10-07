@@ -49,7 +49,7 @@ case "$dialect" in
 esac
 
 case "$cwd" in
-  "$HOME"/thoven/*|"$HOME"/.herdr/worktrees/*) ;;
+  "$HOME"/thoven|"$HOME"/thoven/*|"$HOME"/.herdr/worktrees/*) ;;
   *) exit 0 ;;
 esac
 
@@ -66,8 +66,15 @@ edited_file="$state/edited"
 case "$tool_name" in
   Edit|Write)
     if [ -n "$file_path" ]; then
+      abs_path="$(python3 - "$cwd" "$file_path" <<'PY_PATH'
+from pathlib import Path
+import sys
+path = Path(sys.argv[2])
+print((path if path.is_absolute() else Path(sys.argv[1]) / path).resolve())
+PY_PATH
+)"
       touch "$edited_file"
-      grep -qxF "$file_path" "$edited_file" || echo "$file_path" >> "$edited_file"
+      grep -qxF "$abs_path" "$edited_file" || echo "$abs_path" >> "$edited_file"
       touch "$state/last-edit"
     fi
     ;;
@@ -82,19 +89,23 @@ case "$tool_name" in
     fi
 
     toplevel="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null)"
+    newly=()
     if [ -n "$toplevel" ]; then
       touch "$edited_file"
       count="$(wc -l < "$edited_file" | tr -d '[:space:]')"
       [[ "$count" =~ ^[0-9]+$ ]] || count=0
-      newly=()
       while IFS= read -r line; do
         [ -n "$line" ] || continue
         [ "$count" -ge 200 ] && break
         rel="${line:3}"
         case "$rel" in *" -> "*) rel="${rel#*" -> "}" ;; esac
         abs="$toplevel/$rel"
-        [ -f "$abs" ] || continue
-        [ "$abs" -ot "$state/started" ] && continue
+        if [ ! -f "$abs" ] && [[ "${line:0:2}" != *D* ]]; then
+          continue
+        fi
+        if [ -f "$abs" ] && [ "$abs" -ot "$state/started" ]; then
+          continue
+        fi
         grep -qxF "$abs" "$edited_file" && continue
         echo "$abs" >> "$edited_file"
         newly+=("$abs")
@@ -118,6 +129,28 @@ case "$tool_name" in
           touch "$state/ui-rule-shown"
         fi
       fi
+    fi
+    # A command issued from the Thoven workspace root can edit a sibling checkout,
+    # which `git status` from cwd cannot see. Inspect only checkouts named in the
+    # command, and preserve the same session-start mtime boundary as the cwd path.
+    if [ "$cwd" = "$HOME/thoven" ]; then
+      while IFS= read -r dotgit; do
+        [ -n "$dotgit" ] || continue
+        repo="${dotgit%/.git}"
+        relative="${repo#"$HOME/thoven"/}"
+        if [[ "$command" != *"$repo"* && "$command" != *"$relative"* ]]; then
+          continue
+        fi
+        while IFS= read -r line; do
+          [ -n "$line" ] || continue
+          rel="${line:3}"
+          case "$rel" in *" -> "*) rel="${rel#*" -> "}" ;; esac
+          abs="$repo/$rel"
+          if [ ! -f "$abs" ] && [[ "${line:0:2}" != *D* ]]; then continue; fi
+          if [ -f "$abs" ] && [ "$abs" -ot "$state/started" ]; then continue; fi
+          grep -qxF "$abs" "$edited_file" || { echo "$abs" >> "$edited_file"; touch "$state/last-edit"; }
+        done < <(git -C "$repo" status --porcelain --untracked-files=all 2>/dev/null)
+      done < <(find "$HOME/thoven" -maxdepth 4 -name .git -print 2>/dev/null)
     fi
     ;;
 esac

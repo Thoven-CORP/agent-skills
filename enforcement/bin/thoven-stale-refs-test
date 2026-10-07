@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source_script="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/thoven-stale-refs"
+source_helper="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/thoven-stale-ref-calls.py"
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+workspace="$tmp/workspace"
+mkdir -p "$workspace"/{frontend,backend,.workspace,agent-skills/enforcement/bin,agent-skills/skills}
+cp "$source_script" "$workspace/agent-skills/enforcement/bin/thoven-stale-refs"
+cp "$source_helper" "$workspace/agent-skills/enforcement/bin/thoven-stale-ref-calls.py"
+chmod +x "$workspace/agent-skills/enforcement/bin/thoven-stale-ref-calls.py"
+touch "$workspace/.workspace/CLAUDE-root.md" "$workspace/.workspace/AGENTS-root.md" \
+  "$workspace/.workspace/CONTEXT-MAP.md" "$workspace/CI_CD.md"
+scanner="$workspace/agent-skills/enforcement/bin/thoven-stale-refs"
+
+expect_status() {
+  local wanted="$1"; shift
+  local output="$tmp/output" error="$tmp/error" actual=0
+  "$@" >"$output" 2>"$error" || actual=$?
+  if [ "$actual" -ne "$wanted" ]; then
+    cat "$output" "$error" >&2
+    printf 'expected exit %s, got %s\n' "$wanted" "$actual" >&2
+    exit 1
+  fi
+}
+
+# The relocated default scans its own checkout and sibling roots, then succeeds clean.
+expect_status 0 "$scanner" --count
+
+# A stale live instruction under the default checkout turns the default red.
+printf 'old: %s\n' "$(printf 'thoven%s' '2.0')" > "$workspace/agent-skills/skills/live.md"
+expect_status 1 "$scanner" --count
+rm "$workspace/agent-skills/skills/live.md"
+
+# Explicit roots cannot silently disappear from the scan.
+expect_status 2 "$scanner" --count "$tmp/missing"
+expect_status 2 "$scanner" --count ''
+
+# A removed export with one live import is found against the base, then clears when repaired.
+repo="$workspace/agent-skills"
+git -C "$repo" init -b main >/dev/null
+git -C "$repo" config user.email verify@example.test
+git -C "$repo" config user.name 'Verify Test'
+mkdir -p "$repo/lib" "$repo/src"
+printf 'export const oldName = 1\n' > "$repo/lib/module.ts"
+printf "import { oldName } from '../lib/module'\nvoid oldName\n" > "$repo/src/caller.ts"
+git -C "$repo" add lib/module.ts src/caller.ts
+git -C "$repo" commit -m base >/dev/null
+git -C "$repo" update-ref refs/remotes/origin/main HEAD
+printf 'export const newName = 1\n' > "$repo/lib/module.ts"
+expect_status 1 "$scanner" --count --base origin/main -- "$repo"
+printf "import { newName } from '../lib/module'\nvoid newName\n" > "$repo/src/caller.ts"
+expect_status 0 "$scanner" --count --base origin/main -- "$repo"
+
+# A same-named declaration elsewhere cannot hide a removed export import.
+printf 'export const oldName = 9\n' > "$repo/lib/unrelated.ts"
+printf "import { oldName } from '../lib/module'\nvoid oldName\n" > "$repo/src/caller.ts"
+printf 'export const newName = 1\n' > "$repo/lib/module.ts"
+expect_status 1 "$scanner" --count --base origin/main -- "$repo"
+rm "$repo/lib/unrelated.ts"
+printf "import { newName } from '../lib/module'\nvoid newName\n" > "$repo/src/caller.ts"
+expect_status 0 "$scanner" --count --base origin/main -- "$repo"
+
+# An untracked live file is scanned correctly even when invoked from another cwd.
+printf 'live route thoven2.0\n' > "$repo/live.md"
+actual=0
+(cd "$tmp" && "$scanner" --count -- "$repo") >"$tmp/output" 2>"$tmp/error" || actual=$?
+if [ "$actual" -ne 1 ]; then
+  cat "$tmp/output" "$tmp/error" >&2
+  printf 'external-cwd canary expected exit 1, got %s\n' "$actual" >&2
+  exit 1
+fi
+rm "$repo/live.md"
+
+# A deleted/renamed path with a caller is red until its import points at the new path.
+git -C "$repo" mv lib/module.ts lib/renamed.ts
+expect_status 1 "$scanner" --count --base origin/main -- "$repo"
+printf "import { newName } from '../lib/renamed'\nvoid newName\n" > "$repo/src/caller.ts"
+expect_status 0 "$scanner" --count --base origin/main -- "$repo"
+
+printf 'thoven-stale-refs default-root checks passed\n'

@@ -1,16 +1,5 @@
 #!/usr/bin/env bash
-# Asks once, on a claimed-done code session, what check ran and what it returned.
-#
-# It used to demand an artifact under test-results/. That is what made it
-# expensive: `tsc --noEmit` and `next lint` finish in seconds and write no file,
-# so a blocked model had to escalate to something that does. On 2026-09-18 that
-# meant dev servers on three ports, Playwright on a real Chrome channel, 718
-# vitest tests, and an rspec that hung for 27 minutes. Three herdr panes did it
-# within seven minutes of each other, because nothing coordinates panes.
-#
-# So it asks for a statement instead of a run. "No check run" is an accepted
-# answer, and an honest one is the signal worth having. A free question cannot
-# pile up across panes, which is why this needs no lock.
+# Admit a done claim only when each edited code checkout has a fresh local bin/verify receipt.
 set -o pipefail
 
 payload="$(cat)"
@@ -19,26 +8,15 @@ session_id="$(jq -r '.session_id // empty' <<<"$payload")"
 last_msg="$(jq -r '.last_assistant_message // empty' <<<"$payload")"
 
 case "$cwd" in
-  "$HOME"/thoven/*|"$HOME"/.herdr/worktrees/*) ;;
+  "$HOME"/thoven|"$HOME"/thoven/*|"$HOME"/.herdr/worktrees/*) ;;
   *) exit 0 ;;
 esac
 
 state="/tmp/claude-thoven/${session_id:-unknown}"
 [ -d "$state" ] || exit 0
-
-# Once per session. A nudge that repeats is nagging, and the first one already
-# either landed or did not.
-[ -f "$state/nudged" ] && exit 0
-
-# A check already ran, recorded by thoven-track-edits. Nothing to ask.
-[ -s "$state/checks" ] && exit 0
-
 edited_file="$state/edited"
 [ -f "$edited_file" ] || exit 0
-extensions_regex='\.(ts|tsx|js|jsx|mjs|rb|erb|css|scss)$'
-grep -qE "$extensions_regex" "$edited_file" || exit 0
 
-# A done-claim, ignoring a negated one ("not done", "isn't finished").
 pattern='\b(done|built|shipped|complete|completed|finished|fixed|implemented|ready to (review|merge|ship))\b'
 found_claim=0
 while IFS=: read -r off _rest; do
@@ -53,31 +31,109 @@ while IFS=: read -r off _rest; do
 done < <(grep -oiEb "$pattern" <<<"$last_msg" 2>/dev/null)
 [ "$found_claim" -eq 1 ] || exit 0
 
-# A run that wrote a result also answers the question. Bounded so a large
-# results directory costs one stat, not a full walk.
-toplevel="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null)"
-root="${toplevel:-$cwd}"
-ref="$state/last-edit"
-if [ -f "$ref" ]; then
-  for r in test-results reports coverage; do
-    [ -d "$root/$r" ] || continue
-    if [ -n "$(find "$root/$r" -type f -newer "$ref" -print -quit 2>/dev/null)" ]; then
-      exit 0
-    fi
-  done
+python3 - "$payload" "$edited_file" <<'PY'
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+
+
+def fail(message):
+    print(message, file=sys.stderr)
+    raise SystemExit(2)
+
+
+try:
+    payload = json.loads(sys.argv[1])
+    message = payload.get("last_assistant_message") or ""
+    working_cwd = Path(payload.get("cwd") or os.getcwd()).resolve()
+    paths = Path(sys.argv[2]).read_text().splitlines()
+except (json.JSONDecodeError, OSError):
+    fail("Thoven verification gate could not read this session's edited paths.")
+
+def is_code(path):
+    if path.endswith((".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".rb", ".erb", ".css", ".scss", ".py", ".sh", ".yml", ".yaml", ".json", ".toml", ".ini", ".cfg", ".xml")) or Path(path).name in {"Dockerfile", "Makefile", "Gemfile", "Rakefile"}:
+        return True
+    return re.search(r"/(?:bin|hooks)/[^/]+$", path) is not None
+
+
+roots = set()
+for edited in paths:
+    if not is_code(edited):
+        continue
+    location = Path(edited)
+    if not location.is_absolute():
+        location = working_cwd / location
+    if location.is_file() or not location.exists():
+        location = location.parent
+    while not location.exists() and location != location.parent:
+        location = location.parent
+    result = subprocess.run(["git", "-C", str(location), "rev-parse", "--show-toplevel"],
+                            text=True, capture_output=True, timeout=10)
+    if result.returncode:
+        fail(f"Thoven verification gate cannot find the edited repo for {edited}.")
+    roots.add(str(Path(result.stdout.strip()).resolve()))
+
+if not roots:
+    raise SystemExit(0)
+
+begins = list(re.finditer(r"(?m)^THOVEN_VERIFY_BEGIN\n", message))
+ends = list(re.finditer(r"(?m)^THOVEN_VERIFY_END\s*$", message))
+blocks = []
+cursor = 0
+for begin in begins:
+    end = next((candidate for candidate in ends if candidate.start() > begin.end()), None)
+    if end is None or begin.start() < cursor:
+        fail("Thoven verification gate needs one complete THOVEN_VERIFY block per edited repo.")
+    raw = message[begin.end():end.start()].strip()
+    if "\n" in raw:
+        fail("Thoven verification gate requires single-line JSON between the THOVEN_VERIFY markers.")
+    try:
+        block = json.loads(raw)
+    except json.JSONDecodeError:
+        fail("Thoven verification gate found a malformed THOVEN_VERIFY block.")
+    if not isinstance(block, dict):
+        fail("Thoven verification gate found a malformed THOVEN_VERIFY block.")
+    blocks.append(block)
+    cursor = end.end()
+if len(begins) != len(ends) or len(blocks) != len(roots):
+    fail("Thoven verification gate needs one complete THOVEN_VERIFY block per edited repo.")
+
+by_root = {}
+for block in blocks:
+    repo = block.get("repo")
+    if not isinstance(repo, str) or repo in by_root:
+        fail("Thoven verification gate found duplicate or missing repo evidence.")
+    by_root[repo] = block
+if set(by_root) != roots:
+    fail("Thoven verification gate evidence does not cover exactly the edited repos.")
+
+for root in sorted(roots):
+    block = by_root[root]
+    rows = block.get("rows")
+    if block.get("version") != 1 or block.get("status") != "PASS" or not isinstance(rows, list) or not rows:
+        fail(f"Thoven verification gate needs a nonempty PASS receipt for {root}.")
+    verifier = Path(root) / "bin" / "verify"
+    if not verifier.is_file() or not os.access(verifier, os.X_OK):
+        fail(f"Thoven verification gate cannot find executable {verifier}.")
+    try:
+        result = subprocess.run([str(verifier), "--check-evidence"], cwd=root,
+                                input=json.dumps(block), text=True, capture_output=True, timeout=10)
+    except subprocess.TimeoutExpired:
+        fail(f"Thoven verification gate timed out checking evidence for {root}.")
+    if result.returncode:
+        fail(f"Thoven verification gate rejected stale or invalid evidence for {root}.")
+PY
+rc=$?
+if [ "$rc" -ne 0 ]; then
+  if [ ! -f "$state/nudged" ]; then
+    touch "$state/nudged"
+    printf '%s\n' 'Done claims after code edits need a fresh PASS block from bin/verify in every edited repo. Run bin/verify, paste each complete THOVEN_VERIFY block, then finish.' >&2
+  fi
+  exit 2
 fi
 
 touch "$state/nudged"
-
-n="$(wc -l < "$edited_file" | tr -d '[:space:]')"
-first3="$(head -n 3 "$edited_file" | sed "s|^$root/||" | paste -sd, -)"
-
-{
-  printf 'You said done and edited %s file(s). Name the check you ran and what it returned, then finish. ' "$n"
-  printf 'Either the command and its result, or "no check run" and why. '
-  printf 'Answer from what you already ran, or from the cheapest check that covers the change. '
-  printf 'A type-check or a lint finishes in seconds and counts as an answer. '
-  printf 'Edited: %s.' "$first3"
-} >&2
-
-exit 2
+exit 0
