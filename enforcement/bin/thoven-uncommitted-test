@@ -34,7 +34,7 @@ rm "$A/gone.txt"
 mkdir -p "$STATE"
 printf '%s\n' "$A/a.txt" "$B/sub/b.txt" "$A/gone.txt" "$A/never-existed.txt" >"$STATE/edited"
 
-MSG="You edited a.txt, gone.txt, sub/b.txt and they are uncommitted. Commit them by exact path, or say why they stay."
+MSG="Tracked files remain uncommitted: a.txt, gone.txt, sub/b.txt. Commit owned work by exact path, or explain why it stays. Tracking is not proof of ownership."
 BLOCK="$(jq -nc --arg r "$MSG" '{decision:"block",reason:$r}')"
 
 # run <dialect> <payload>: prints "rc=<n> <stdout>"
@@ -45,7 +45,10 @@ run() {
 }
 stop_payload() { jq -nc --arg s "${2:-$SESSION}" --argjson a "${1:-false}" '{session_id:$s,hook_event_name:"Stop",stop_hook_active:$a}'; }
 cursor_payload() { jq -nc --arg s "$SESSION" --argjson n "${1:-0}" --arg st "${2:-completed}" '{conversation_id:$s,hook_event_name:"stop",status:$st,loop_count:$n}'; }
-reset() { rm -f "$STATE/uncommitted-asked"; }
+reset() { rm -f "$STATE/uncommitted-asked" "$STATE/uncommitted-notified.paths"; }
+
+expect "empty input has no work to block" "$(run codex '{}')" "rc=0 "
+expect "path-traversing session id is ignored" "$(run codex '{"session_id":"../escape"}')" "rc=0 "
 
 reset
 expect "claude allows when stop_hook_active is true" "$(run claude "$(stop_payload true)")" "rc=0 "
@@ -71,8 +74,40 @@ reset
 expect "claude asks once" "$(run claude "$(stop_payload)")" "rc=0 $BLOCK"
 echo c >"$A/c.txt"
 echo "$A/c.txt" >>"$STATE/edited"
-MSG_C="You edited a.txt, c.txt, gone.txt, sub/b.txt and they are uncommitted. Commit them by exact path, or say why they stay."
-expect "a different path list is asked again" "$(run claude "$(stop_payload)")" "rc=0 $(jq -nc --arg r "$MSG_C" '{decision:"block",reason:$r}')"
+MSG_C="Tracked files remain uncommitted: c.txt. Commit owned work by exact path, or explain why it stays. Tracking is not proof of ownership."
+expect "only a genuinely new path is asked again" "$(run claude "$(stop_payload)")" "rc=0 $(jq -nc --arg r "$MSG_C" '{decision:"block",reason:$r}')"
+
+# Shrinking a list after a partial commit must not repeat an already raised path.
+g -C "$A" add c.txt && g -C "$A" commit -q -m partial
+expect "partial commit does not repeat old remaining paths" "$(run claude "$(stop_payload)")" "rc=0 "
+
+# Preserve prior-session notifications when upgrading from list-based state.
+reset
+printf '%s\n' "$A/a.txt|$A/gone.txt|$B/sub/b.txt" >"$STATE/uncommitted-asked"
+expect "legacy notifications suppress already raised paths" "$(run claude "$(stop_payload)")" "rc=0 "
+
+# Large output is bounded, but every path is available in an exact absolute manifest.
+reset
+for n in $(seq 1 20); do
+  echo bulk >"$A/bulk-$n.txt"
+  echo "$A/bulk-$n.txt" >>"$STATE/edited"
+done
+large=$(run codex "$(stop_payload)")
+case "$large" in *"and 11 more"*"uncommitted-pending.paths"*) ok "large warning is bounded and links the full manifest" ;; *) fail "large warning is bounded" "$large" ;; esac
+expect "full manifest retains all 23 uncommitted paths" "$(wc -l <"$STATE/uncommitted-pending.paths" | tr -d ' ')" "23"
+expect "a large warning does not repeat on next stop" "$(run codex "$(stop_payload)")" "rc=0 "
+for n in $(seq 1 20); do g -C "$A" add "bulk-$n.txt"; done
+g -C "$A" commit -q -m bulk
+
+# Absolute identity keeps equal relative names in two repositories independent.
+reset
+printf '%s\n' "$A/a.txt" >"$STATE/edited"
+run codex "$(stop_payload)" >/dev/null
+echo peer >"$B/a.txt"
+echo "$B/a.txt" >>"$STATE/edited"
+expect "same relative name in a second repo is new work" "$(run codex "$(stop_payload)")" "rc=0 $(jq -nc --arg r "Tracked files remain uncommitted: a.txt. Commit owned work by exact path, or explain why it stays. Tracking is not proof of ownership." '{decision:"block",reason:$r}')"
+g -C "$B" add a.txt && g -C "$B" commit -q -m peer
+printf '%s\n' "$A/a.txt" "$B/sub/b.txt" "$A/gone.txt" >"$STATE/edited"
 
 reset
 g -C "$A" add a.txt c.txt gone.txt && g -C "$A" commit -q -m a
@@ -88,7 +123,7 @@ mkdir -p "$TMP/home/thoven/frontend-thv-1"
 # Canonical, as a real ~/thoven path is: the scan records git's resolved toplevel.
 E2E="$(cd "$TMP/home/thoven/frontend-thv-1" && pwd -P)"
 g -C "$E2E" init -q && g -C "$E2E" commit -q --allow-empty -m init
-e2e_msg() { printf 'You edited %s and they are uncommitted. Commit them by exact path, or say why they stay.' "$1"; }
+e2e_msg() { printf 'Tracked files remain uncommitted: %s. Commit owned work by exact path, or explain why it stays. Tracking is not proof of ownership.' "$1"; }
 track() { printf '%s' "$2" | HOME="$(cd "$TMP/home" && pwd -P)" "$TRACK" --dialect "$1" >/dev/null 2>&1; }
 
 S="$SESSION-cursor"

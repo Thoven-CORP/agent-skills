@@ -169,9 +169,13 @@ before herdr or the Codex app pick their base. `install/gitconfig.py` sets
 main checkouts. `git maintenance` was left out because its prefetch never moves
 `origin/*`.
 
-`thoven-uncommitted` runs at stop. It reads the paths this session edited from
-`thoven-track-edits`'s log and asks once, by blocking, about any still
-uncommitted. It never stages or commits. OpenCode's `session.idle` cannot block, so
+`thoven-uncommitted` runs at stop. It reads paths recorded by `thoven-track-edits` and asks once per absolute path,
+by blocking, about any still uncommitted. Tracking is not proof of ownership:
+shell scans can include peer edits in shared worktrees. A partial commit does
+not repeat previously raised paths; genuinely new paths still get a warning.
+Warnings show at most 12 paths and retain the full absolute-path manifest under
+`/tmp/claude-thoven/<session>/uncommitted-pending.paths`. Legacy whole-list
+notifications are migrated without repeating them. It never stages or commits. OpenCode's `session.idle` cannot block, so
 there it warns. Every tool writes the edit log: Cursor on `afterFileEdit` and
 `afterShellExecution`, Devin on `PostToolUse`, OpenCode from the plugin's
 `tool.execute.after`.
