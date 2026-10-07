@@ -130,8 +130,6 @@ def checks_for(root: Path, paths: list[str]) -> list[tuple[str, list[str]]]:
         checks.append(("stale-refs-canaries", ["enforcement/bin/thoven-stale-refs-test"]))
     if any(path in ("bin/verify", "enforcement/bin/verify-engine.py", "enforcement/bin/test-verify.py") for path in paths):
         checks.append(("verify-receipt-canaries", [sys.executable, "enforcement/bin/test-verify.py"]))
-    if any(path.endswith(("thoven-require-evidence", "thoven-track-edits", "test-require-evidence.py")) for path in paths):
-        checks.append(("evidence-hook-canaries", [sys.executable, "enforcement/bin/test-require-evidence.py"]))
     if any(path.endswith(("thoven-track-edits", "test-track-edits.py")) for path in paths):
         checks.append(("edit-tracker-canaries", [sys.executable, "enforcement/bin/test-track-edits.py"]))
     return checks
