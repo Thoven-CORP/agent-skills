@@ -11,7 +11,10 @@ EXCLUDED = re.compile(r"/(?:archive|_archive|audit|audits|history|tests|node_mod
 SOURCE_EXTS = (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".py", ".rb")
 EXPORT = re.compile(r"^\s*-\s*export\s+(?:(?:declare|default|async)\s+)*(?:function|class|const|let|var|interface|type|enum)\s+([A-Za-z_$][\w$]*)")
 IMPORT = re.compile(r"\bimport\s+([\s\S]*?)\s+from\s*['\"]([^'\"]+)['\"]|\brequire\s*\(\s*['\"]([^'\"]+)['\"]\s*\)", re.M)
-IMPORT_NAME = re.compile(r"\b([A-Za-z_$][\w$]*)\b")
+PY_FROM = re.compile(r"(?m)^\s*from\s+([.\w]+)\s+import\s+(.+)$")
+PY_DECL = re.compile(r"^\s*-\s*(?:async\s+)?(?:def|class)\s+([A-Za-z_]\w*)\b")
+RB_DECL = re.compile(r"^\s*-\s*(?:def(?:\s+self\.)?|class\s+|module\s+)([A-Za-z_]\w*)\b")
+RB_REQUIRE = re.compile(r"\brequire_relative\s*\(?\s*['\"]([^'\"]+)['\"]\s*\)?")
 
 
 def git(root: Path, *args: str) -> str:
@@ -70,12 +73,18 @@ def patch_for(root: Path, merge: str, path: str):
 
 def removed_exports(root: Path, merge: str, old_path: str):
     found = set()
+    language = "python" if old_path.endswith(".py") else "ruby" if old_path.endswith(".rb") else "javascript"
     for line in patch_for(root, merge, old_path):
-        match = EXPORT.match(line)
-        if match:
-            found.add((match.group(1), False))
-        if re.match(r"^\s*-\s*export\s+default\b", line):
-            found.add(("", True))
+        if language == "javascript":
+            match = EXPORT.match(line)
+            if match:
+                found.add((match.group(1), False, language))
+            if re.match(r"^\s*-\s*export\s+default\b", line):
+                found.add(("", True, language))
+        else:
+            match = (PY_DECL if language == "python" else RB_DECL).match(line)
+            if match:
+                found.add((match.group(1), False, language))
     return found
 
 
@@ -91,28 +100,74 @@ def target_matches(specifier: str, old_path: str, importer: str) -> bool:
     return normalized == old or normalized.endswith("/" + old) or old.endswith("/" + normalized)
 
 
-def declared_in_target(files, old_path: str, name: str) -> bool:
-    """Ignore a removal only when the same module still exports that symbol."""
+def target_path(path: str) -> str:
+    return path.rsplit(".", 1)[0] if path.endswith(SOURCE_EXTS) else path
+
+
+def declared_in_target(files, old_path: str, name: str, language: str) -> bool:
+    """Ignore a removal only when that same module still declares the symbol."""
     if not name:
         return False
-    target = old_path.rsplit(".", 1)[0] if old_path.endswith(SOURCE_EXTS) else old_path
-    decl = re.compile(r"\bexport\s+(?:(?:declare|default|async)\s+)*(?:function|class|const|let|var|interface|type|enum)\s+" + re.escape(name) + r"\b")
-    named = re.compile(r"\bexport\s*\{[^}]*\b" + re.escape(name) + r"\b[^}]*\}")
-    return any(
-        (rel.rsplit(".", 1)[0] if rel.endswith(SOURCE_EXTS) else rel) == target
-        and (decl.search(text) or named.search(text))
-        for rel, text in files
-    )
+    target = target_path(old_path)
+    patterns = {
+        "javascript": [
+            re.compile(r"\bexport\s+(?:(?:declare|default|async)\s+)*(?:function|class|const|let|var|interface|type|enum)\s+" + re.escape(name) + r"\b"),
+            re.compile(r"\bexport\s*\{[^}]*\b" + re.escape(name) + r"\b[^}]*\}"),
+        ],
+        "python": [re.compile(r"(?m)^\s*(?:async\s+)?(?:def|class)\s+" + re.escape(name) + r"\b")],
+        "ruby": [re.compile(r"(?m)^\s*(?:def(?:\s+self\.)?|class\s+|module\s+)" + re.escape(name) + r"\b")],
+    }[language]
+    return any(target_path(rel) == target and any(pattern.search(text) for pattern in patterns)
+               for rel, text in files)
 
 
-def callers(files, old_path: str, name: str, is_default: bool):
-    for rel, text in files:
-        for match in IMPORT.finditer(text):
-            bindings = match.group(1) or ""
-            spec = match.group(2) or match.group(3) or ""
-            if target_matches(spec, old_path, rel) and (is_default or re.search(r"\b" + re.escape(name) + r"\b", bindings)):
+def python_target_matches(specifier: str, old_path: str, importer: str) -> bool:
+    leading = len(specifier) - len(specifier.lstrip("."))
+    module = specifier[leading:]
+    if leading:
+        base = posixpath.dirname(importer)
+        for _ in range(max(0, leading - 1)):
+            base = posixpath.dirname(base)
+        normalized = posixpath.normpath(posixpath.join(base, module.replace(".", "/")))
+    else:
+        normalized = module.replace(".", "/")
+    old = target_path(old_path)
+    return normalized == old or normalized.endswith("/" + old) or old.endswith("/" + normalized)
+
+
+def python_imports(text: str):
+    for match in PY_FROM.finditer(text):
+        module, names = match.groups()
+        imported = {item.strip().split(" as ", 1)[0].strip().split(".")[-1]
+                    for item in names.strip().strip("()").split(",") if item.strip()}
+        yield module, imported, match.start()
+
+
+def callers(files, old_path: str, name: str, is_default: bool, language: str):
+    if language == "javascript":
+        for rel, text in files:
+            for match in IMPORT.finditer(text):
+                bindings = match.group(1) or ""
+                spec = match.group(2) or match.group(3) or ""
+                if target_matches(spec, old_path, rel) and (is_default or re.search(r"\b" + re.escape(name) + r"\b", bindings)):
+                    line = text.count("\n", 0, match.start()) + 1
+                    yield f"{rel}:{line}: imports removed {'default export' if is_default else 'export ' + name} from {spec}"
+    elif language == "python":
+        for rel, text in files:
+            for spec, imported, offset in python_imports(text):
+                if python_target_matches(spec, old_path, rel) and name in imported:
+                    line = text.count("\n", 0, offset) + 1
+                    yield f"{rel}:{line}: imports removed Python name {name} from {spec}"
+    else:
+        for rel, text in files:
+            for match in RB_REQUIRE.finditer(text):
+                spec = match.group(1)
+                if not target_matches(spec, old_path, rel):
+                    continue
                 line = text.count("\n", 0, match.start()) + 1
-                yield f"{rel}:{line}: imports removed {'default export' if is_default else 'export ' + name} from {spec}"
+                code = "\n".join(part.split("#", 1)[0] for part in text.splitlines())
+                if re.search(r"\b" + re.escape(name) + r"\b", code):
+                    yield f"{rel}:{line}: requires removed Ruby name {name} from {spec}"
 
 
 def main() -> int:
@@ -141,10 +196,10 @@ def main() -> int:
                 for line_no, line in enumerate(_text.splitlines(), 1):
                     if re.search(r"\b(?:from|import|require)\b[^\n]*['\"](?:\.{1,2}/|@/)?[^'\"]*" + re.escape(old_path.rsplit(".", 1)[0]) + r"(?:\.[A-Za-z0-9]+)?['\"]", line):
                         found.add(f"{rel}:{line_no}: references removed path {old_path}")
-        for name, is_default in removed_exports(root, merge, old_path):
-            if name and declared_in_target(files, old_path, name):
+        for name, is_default, language in removed_exports(root, merge, old_path):
+            if name and declared_in_target(files, old_path, name, language):
                 continue
-            found.update(callers(files, old_path, name, is_default))
+            found.update(callers(files, old_path, name, is_default, language))
     for finding in sorted(found):
         print(finding)
     return 1 if found else 0

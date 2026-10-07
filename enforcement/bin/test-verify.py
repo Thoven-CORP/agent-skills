@@ -9,6 +9,7 @@ import unittest
 
 
 ENGINE = Path(__file__).resolve().parents[1] / "bin" / "verify-engine.py"
+WRAPPER = Path(__file__).resolve().parents[2] / "bin" / "verify"
 
 
 class VerifyReceiptTest(unittest.TestCase):
@@ -18,13 +19,19 @@ class VerifyReceiptTest(unittest.TestCase):
         self.repo = Path(self.tmp.name)
         (self.repo / "enforcement" / "bin").mkdir(parents=True)
         self.engine = self.repo / "enforcement" / "bin" / "verify-engine.py"
-        self.engine.write_bytes(ENGINE.read_bytes())
-        self.engine.chmod(0o755)
+        if ENGINE.is_file():
+            self.engine.write_bytes(ENGINE.read_bytes())
+            self.engine.chmod(0o755)
+        self.wrapper = self.repo / "bin" / "verify"
+        self.wrapper.parent.mkdir(parents=True)
+        if WRAPPER.is_file():
+            self.wrapper.write_bytes(WRAPPER.read_bytes())
+            self.wrapper.chmod(0o755)
         self.git("init", "-b", "main")
         self.git("config", "user.email", "verify@example.test")
         self.git("config", "user.name", "Verify Test")
         (self.repo / "source.py").write_text("value = 1\n")
-        self.git("add", "source.py", "enforcement/bin/verify-engine.py")
+        self.git("add", ".")
         self.git("commit", "-m", "base")
         self.git("update-ref", "refs/remotes/origin/main", "HEAD")
         self.git("switch", "-c", "testing")
@@ -53,6 +60,11 @@ class VerifyReceiptTest(unittest.TestCase):
         self.assertTrue(receipt["rows"])
         accepted = self.verify("--check-evidence", input=json.dumps(receipt))
         self.assertEqual(0, accepted.returncode, accepted.stderr)
+
+        self.assertTrue(self.wrapper.is_file(), "public bin/verify must provide --check-evidence")
+        public = subprocess.run([str(self.wrapper), "--check-evidence"], cwd=self.repo,
+                                input=json.dumps(receipt), text=True, capture_output=True)
+        self.assertEqual(0, public.returncode, public.stderr)
 
         (self.repo / "source.py").write_text("value = 3\n")
         stale = self.verify("--check-evidence", input=json.dumps(receipt))

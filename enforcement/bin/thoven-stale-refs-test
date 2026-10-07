@@ -79,4 +79,24 @@ expect_status 1 "$scanner" --count --base origin/main -- "$repo"
 printf "import { newName } from '../lib/renamed'\nvoid newName\n" > "$repo/src/caller.ts"
 expect_status 0 "$scanner" --count --base origin/main -- "$repo"
 
+# Deleted Python and Ruby declarations are checked against callers in their modules.
+language_repo="$workspace/language-fixtures"
+git -C "$workspace" init -b main language-fixtures >/dev/null
+git -C "$language_repo" config user.email verify@example.test
+git -C "$language_repo" config user.name 'Verify Test'
+mkdir -p "$language_repo/lib" "$language_repo/src"
+printf 'def old_name():\n    return 1\n' > "$language_repo/lib/python_module.py"
+printf 'from lib.python_module import old_name\nold_name()\n' > "$language_repo/src/python_caller.py"
+printf 'def old_name\n  1\nend\n' > "$language_repo/lib/ruby_module.rb"
+printf "require_relative '../lib/ruby_module'\nold_name\n" > "$language_repo/src/ruby_caller.rb"
+git -C "$language_repo" add .
+git -C "$language_repo" commit -m base >/dev/null
+git -C "$language_repo" update-ref refs/remotes/origin/main HEAD
+printf 'def new_name():\n    return 1\n' > "$language_repo/lib/python_module.py"
+printf 'def new_name\n  1\nend\n' > "$language_repo/lib/ruby_module.rb"
+expect_status 1 "$scanner" --count --base origin/main -- "$language_repo"
+printf 'from lib.python_module import new_name\nnew_name()\n' > "$language_repo/src/python_caller.py"
+printf "require_relative '../lib/ruby_module'\nnew_name\n" > "$language_repo/src/ruby_caller.rb"
+expect_status 0 "$scanner" --count --base origin/main -- "$language_repo"
+
 printf 'thoven-stale-refs default-root checks passed\n'

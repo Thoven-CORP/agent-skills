@@ -92,11 +92,8 @@ PY_PATH
     newly=()
     if [ -n "$toplevel" ]; then
       touch "$edited_file"
-      count="$(wc -l < "$edited_file" | tr -d '[:space:]')"
-      [[ "$count" =~ ^[0-9]+$ ]] || count=0
       while IFS= read -r line; do
         [ -n "$line" ] || continue
-        [ "$count" -ge 200 ] && break
         rel="${line:3}"
         case "$rel" in *" -> "*) rel="${rel#*" -> "}" ;; esac
         abs="$toplevel/$rel"
@@ -109,7 +106,6 @@ PY_PATH
         grep -qxF "$abs" "$edited_file" && continue
         echo "$abs" >> "$edited_file"
         newly+=("$abs")
-        count=$((count + 1))
         touch "$state/last-edit"
       done < <(git -C "$cwd" status --porcelain --untracked-files=all 2>/dev/null)
 
@@ -130,15 +126,22 @@ PY_PATH
         fi
       fi
     fi
-    # A command issued from the Thoven workspace root can edit a sibling checkout,
-    # which `git status` from cwd cannot see. Inspect only checkouts named in the
+    # A command can edit a sibling checkout that `git status` from cwd cannot see.
+    # Inspect only checkouts named in the
     # command, and preserve the same session-start mtime boundary as the cwd path.
-    if [ "$cwd" = "$HOME/thoven" ]; then
+    case "$cwd" in
+      "$HOME/thoven"|"$HOME"/thoven/*)
       while IFS= read -r dotgit; do
         [ -n "$dotgit" ] || continue
         repo="${dotgit%/.git}"
         relative="${repo#"$HOME/thoven"/}"
-        if [[ "$command" != *"$repo"* && "$command" != *"$relative"* ]]; then
+        relative_from_cwd="$(python3 - "$cwd" "$repo" <<'PY_PATH'
+import os
+import sys
+print(os.path.relpath(sys.argv[2], sys.argv[1]))
+PY_PATH
+)"
+        if [[ "$command" != *"$repo"* && "$command" != *"$relative"* && "$command" != *"$relative_from_cwd"* ]]; then
           continue
         fi
         while IFS= read -r line; do
@@ -151,7 +154,8 @@ PY_PATH
           grep -qxF "$abs" "$edited_file" || { echo "$abs" >> "$edited_file"; touch "$state/last-edit"; }
         done < <(git -C "$repo" status --porcelain --untracked-files=all 2>/dev/null)
       done < <(find "$HOME/thoven" -maxdepth 4 -name .git -print 2>/dev/null)
-    fi
+      ;;
+    esac
     ;;
 esac
 

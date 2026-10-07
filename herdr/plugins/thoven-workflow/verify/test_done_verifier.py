@@ -1,3 +1,5 @@
+import contextlib
+import io
 import unittest
 from unittest.mock import patch
 import done_verifier as verifier
@@ -52,6 +54,43 @@ class CompletionProcessTest(unittest.TestCase):
                     ])
                     self.assertIn("1 live process:", reason)
                     self.assertIn("pid 400", reason)
+
+    def test_registered_dev_server_is_allowed_but_unregistered_same_process_blocks(self):
+        command = "node /project/node_modules/next/dist/bin/next dev"
+        commands = [(300, 200, 300, command)]
+        self.assertIn("pid 300", self.check(commands))
+        intent = {"pane_id": "fixture", "pid": 300, "start_time": "started", "command": command}
+        with patch.object(verifier.tw, "read_json", return_value=intent), \
+             patch.object(verifier, "process_start", return_value="started"):
+            self.assertIsNone(self.check(commands))
+        with patch.object(verifier.tw, "read_json", return_value=intent), \
+             patch.object(verifier, "process_start", return_value="reused-pid"):
+            self.assertIn("pid 300", self.check(commands))
+
+    def test_registered_dev_server_does_not_hide_test_child(self):
+        command = "node /project/node_modules/next/dist/bin/next dev"
+        intent = {"pane_id": "fixture", "pid": 300, "start_time": "started", "command": command}
+        with patch.object(verifier.tw, "read_json", return_value=intent), \
+             patch.object(verifier, "process_start", return_value="started"):
+            reason = self.check([(300, 200, 300, command), (310, 300, 310, "vitest run")])
+        self.assertIn("vitest run", reason)
+        self.assertIn("pid 310", reason)
+
+    def test_dev_registration_rejects_test_and_wrong_pane_processes(self):
+        procs = self.snapshot([(300, 200, 300, "node /project/node_modules/next/dist/bin/next dev"),
+                               (310, 200, 310, "pnpm test")])
+        with patch.dict(verifier.os.environ, {"TW_PANE": "fixture"}), \
+             patch.object(verifier.tw, "pane_procs", return_value=(100, 200)), \
+             patch.object(verifier.tw, "ps_snapshot", return_value=procs), \
+             patch.object(verifier, "process_start", return_value="started"), \
+             patch.object(verifier.tw, "write_json") as write_json, \
+             contextlib.redirect_stdout(io.StringIO()):
+            verifier.allow_process("300")
+            with self.assertRaisesRegex(ValueError, "only a live development server"):
+                verifier.allow_process("310")
+            with self.assertRaisesRegex(ValueError, "descendant"):
+                verifier.allow_process("999")
+            write_json.assert_called_once()
 
     def test_unrelated_commands_mentioning_runtime_names_still_block(self):
         for command in ("node /project/node_repl_task.js", "python3 audit.py --name node_repl", "sleep 600 # codex-code-mode-host"):

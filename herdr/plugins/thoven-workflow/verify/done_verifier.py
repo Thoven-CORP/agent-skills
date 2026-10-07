@@ -60,6 +60,9 @@ LOG = "verify.log"
 #   such group, so "pnpm dev" is reported rather than the zsh wrapper.
 # Not seen: processes that daemonised themselves out of the tree (nohup + disown
 #   reparented to launchd). The tree cannot follow those.
+# The Claude Monitor tool is a background task attached to main, not an OS process
+# in the worker pane tree. Main panes are skipped above; no process-name exemption
+# is needed or safe for a Monitor task.
 INFRA_RE = re.compile(
     r"(^|/)(caffeinate|herdr|ps)( |$)|mcp|language-server|(^|[/ -])lsp|gopls|"
     r"rust-analyzer|pyright|tsserver|sourcekit|statusline|herdr-agent-usage", re.I)
@@ -70,6 +73,23 @@ CODEX_INFRA_RE = re.compile(
     r"^(?:\S*/)?codex\s+app-server(?:\s|$)|"
     r"^(?:\S*/)?node\s+\S*/@oai/cua-repl/bin/cua-repl\.mjs(?:\s|$)")
 WRAPPER_RE = re.compile(r"/shell-snapshots/|^(/bin/)?(ba|z)?sh -c ")
+DEV_RE = re.compile(r"(?:^|[/\s])(?:next\s+dev|vite(?:\s|$)|webpack-dev-server(?:\s|$))")
+
+
+def process_intent_path(pane_id):
+    return os.path.join(tw.STATE, "verify-process-intent", f"{tw.safe_name(pane_id)}.json")
+
+
+def process_start(pid):
+    rc, out, _ = tw.run(["ps", "-p", str(pid), "-o", "lstart="], timeout=5)
+    return out.strip() if rc == 0 else ""
+
+
+def registered_dev(pane_id, process):
+    intent = tw.read_json(process_intent_path(pane_id), {}) or {}
+    return (intent.get("pane_id") == pane_id and intent.get("pid") == process["pid"]
+            and intent.get("start_time") == process_start(process["pid"])
+            and intent.get("command") == process["cmd"] and DEV_RE.search(process["cmd"]) is not None)
 
 
 def check_processes(pane_id, has_agent):
@@ -90,6 +110,8 @@ def check_processes(pane_id, has_agent):
         if INFRA_RE.search(p["cmd"]):
             continue
         if agent and CODEX_INFRA_RE.search(p["cmd"]):
+            continue
+        if registered_dev(pane_id, p):
             continue
         work.append(p)
     if not work:
@@ -370,7 +392,40 @@ def on_manual():
     tw.log(LOG, f"{pane_id} manual {ticket} {result} {reasons}")
 
 
+def allow_process(pid_arg):
+    """Register only the focused pane's live dev server, bound to PID identity."""
+    ctx = json.loads(os.environ.get("HERDR_PLUGIN_CONTEXT_JSON") or "{}")
+    pane_id = os.environ.get("TW_PANE") or ctx.get("focused_pane_id") or os.environ.get("HERDR_PANE_ID")
+    try:
+        pid = int(pid_arg)
+    except (TypeError, ValueError):
+        raise ValueError("PID must be an integer")
+    if not pane_id:
+        raise ValueError("no focused pane")
+    shell, _agent = tw.pane_procs(pane_id, True)
+    procs = tw.ps_snapshot()
+    process = procs.get(pid)
+    if not process or not shell or process not in tw.descendants(procs, shell):
+        raise ValueError("PID is not a live descendant of the focused pane")
+    if not DEV_RE.search(process["cmd"]) or re.search(r"\b(test|spec|build|lint|typecheck)\b", process["cmd"], re.I):
+        raise ValueError("only a live development server can be registered")
+    started = process_start(pid)
+    if not started:
+        raise ValueError("could not establish PID start time")
+    tw.write_json(process_intent_path(pane_id), {
+        "pane_id": pane_id, "pid": pid, "start_time": started, "command": process["cmd"]})
+    print(json.dumps({"pane_id": pane_id, "pid": pid, "registered": True}))
+
+
 def main():
+    if "--allow-process" in sys.argv:
+        index = sys.argv.index("--allow-process")
+        try:
+            allow_process(sys.argv[index + 1] if index + 1 < len(sys.argv) else None)
+            return 0
+        except Exception as e:
+            print(f"verify: {e}", file=sys.stderr)
+            return 2
     try:
         if "--manual" in sys.argv:
             on_manual()
