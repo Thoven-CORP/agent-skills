@@ -72,8 +72,8 @@ class VerifyReceiptTest(unittest.TestCase):
 
     def test_receipt_metadata_and_rows_cannot_be_edited(self):
         result = self.verify()
-        receipt = self.receipt_from(result.stdout)
         self.assertEqual(0, result.returncode, result.stderr)
+        receipt = self.receipt_from(result.stdout)
         for mutate in (
             lambda item: item.update(head="other"),
             lambda item: item.update(base="missing-base"),
@@ -100,6 +100,7 @@ class VerifyReceiptTest(unittest.TestCase):
         self.assertNotEqual(0, empty.returncode)
 
         result = self.verify()
+        self.assertEqual(0, result.returncode, result.stderr)
         receipt = self.receipt_from(result.stdout)
         receipt["rows"] = []
         (self.repo / ".git" / "thoven-verify.json").write_text(json.dumps(receipt))
