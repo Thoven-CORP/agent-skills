@@ -442,18 +442,18 @@ Branch: teacher/thv-42-slug
 
 **Projects are Features, never repos.** A Project spans frontend and backend.
 
-**Apply three labels.** `needs-triage` · `ready-for-agent` · `Bug`. `/to-spec` and
-`/to-tickets` stamp the first two, and they map onto the Triage gate: `ready-for-agent` skips it,
-`needs-triage` does not. `chore` is the one addition worth making, the second time you want that
-filter and cannot have it.
+**Labels name the kind, and `THV` has exactly three:** `Bug` (something is broken),
+`Improvement` (an existing thing made better) and `Feature` (a new capability). Give an issue one
+when its kind is known. Checked against Linear 2026-10-08.
 
-⚠ **Casing is exact.** The label in `THV` is `Bug`, capitalised. Linear rejects case-variant
-duplicates and cannot rename, so `bug` creates a second, unmergeable label.
+**The gate is a Status, not a label.** `Triage` means not yet agreed; `Todo` means an agent may
+claim it. When `/to-spec`, `/to-tickets` or `triage` speak of `needs-triage` or `ready-for-agent`,
+set that Status and leave the label off.
 
-`Improvement` and `Feature` also exist in the workspace from an earlier import. Leave them where they
-are and do not apply them to new issues.
+⚠ **Casing is exact.** Linear rejects case-variant duplicates and cannot rename, so `bug` would
+create a second, unmergeable label. A new label is Andres's call, asked for before it is created.
 
-`feat` is the default, so it labels nothing. The repo belongs in the issue's *Done when*, where a
+The repo is not a label either. It belongs in the issue's *Done when*, where a
 cross-repo issue names both.
 
 **Blocking is a native relation, not a label.**
