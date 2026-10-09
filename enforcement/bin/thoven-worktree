@@ -103,6 +103,18 @@ set_env() {
   rm -f "$tmp"
 }
 
+# strip_prod_env <file>: drop every PROD_ key. Production credentials stay in the main checkout,
+# so no agent in a worktree inherits a connection to production.
+strip_prod_env() {
+  local file="$1" tmp
+  grep -qE '^(export )?PROD_' "$file" || return 0
+  tmp="$(mktemp)"
+  grep -vE '^(export )?PROD_' "$file" > "$tmp"
+  cat "$tmp" > "$file"
+  rm -f "$tmp"
+  log "removed PROD_ keys from $file"
+}
+
 # env_db <file> <key>: the database name at the end of that key's URL.
 env_db() {
   sed -n "s/^$2=//p" "$1" | tail -n 1 | sed -E 's#^.*/([^/?]*)(\?.*)?$#\1#'
@@ -193,6 +205,11 @@ bootstrap() {
     log "copied $env_file from $main"
   else
     log "warning: $main has no $env_file to copy"
+  fi
+  # The main checkout keeps its PROD_ keys. A symlinked .env is main's own file, so it is left too.
+  if [ "$kind" = be ] && [ "$(physical "$path")" != "$(physical "$main")" ] &&
+    [ -f "$path/$env_file" ] && [ ! -L "$path/$env_file" ]; then
+    strip_prod_env "$path/$env_file"
   fi
 
   if [ "$kind" = be ] && [ -d "$main/storage" ]; then

@@ -78,7 +78,7 @@ printf 'X=1\n' > "$TMP/frontend/.env.local"
 make_repo backend seed_backend
 mkdir -p "$TMP/backend/storage/ab"
 printf 'blob\n' > "$TMP/backend/storage/ab/blob"
-printf 'Y=1\nDATABASE_URL=postgresql://localhost/thoven_development\nTEST_DATABASE_URL=postgresql://localhost/neondb_test\n' > "$TMP/backend/.env"
+printf 'Y=1\nDATABASE_URL=postgresql://localhost/thoven_development\nTEST_DATABASE_URL=postgresql://localhost/neondb_test\nPROD_DATABASE_URL=postgresql://prod.example/thoven_production\n' > "$TMP/backend/.env"
 
 FE="$TMP/frontend-thv-969"
 out="$("$TOOL" create fe tooling 969 2>/dev/null)"; code=$?
@@ -116,6 +116,8 @@ expect "main .env untouched" "$(env_line "$TMP/backend/.env" TEST_DATABASE_URL)"
   "TEST_DATABASE_URL=postgresql://localhost/neondb_test"
 expect "main .env keeps its DATABASE_URL" "$(env_line "$TMP/backend/.env" DATABASE_URL)" \
   "DATABASE_URL=postgresql://localhost/thoven_development"
+expect "be .env carries no production key" "$(grep -c '^PROD_' "$BE/.env")" "0"
+expect "main .env keeps its production key" "$(grep -c '^PROD_DATABASE_URL=' "$TMP/backend/.env")" "1"
 
 "$TOOL" create be live-lessons 973 >/dev/null 2>&1
 expect "hyphenated area becomes an identifier" "$(env_line "$TMP/backend-thv-973/.env" TEST_DATABASE_URL)" \
@@ -136,7 +138,8 @@ expect "scratch branch" "$(git -C "$out" branch --show-current)" "worktree-bold-
 expect "scratch .env.local copied" "$(cat "$out/.env.local")" "X=1"
 
 out="$(printf '{"name":"calm-fir-b1c2","cwd":"%s"}' "$TMP/backend" | "$TOOL" hook 2>/dev/null)"
-expect "backend scratch shares main's databases" "$(cat "$out/.env")" "$(cat "$TMP/backend/.env")"
+expect "backend scratch shares main's databases" "$(cat "$out/.env")" "$(grep -v '^PROD_' "$TMP/backend/.env")"
+expect "backend scratch carries no production key" "$(grep -c '^PROD_' "$out/.env")" "0"
 
 out="$(printf '{"name":"../escape","cwd":"%s"}' "$TMP/frontend" | "$TOOL" hook 2>/dev/null)"; code=$?
 expect "hook unsafe name exit" "$code" 2
@@ -169,6 +172,8 @@ env -u THOVEN_WORKTREE_SKIP_INSTALL "$TOOL" bootstrap "$FE" >/dev/null 2>&1
 expect "pnpm-lock.yaml runs pnpm install --frozen-lockfile" "$(installs)" "pnpm install --frozen-lockfile"
 rm -f "$FE/pnpm-lock.yaml"
 rm -f "$TMP/installs"
+"$TOOL" bootstrap "$TMP/backend" >/dev/null 2>&1
+expect "bootstrapping main keeps its production key" "$(grep -c '^PROD_DATABASE_URL=' "$TMP/backend/.env")" "1"
 env -u THOVEN_WORKTREE_SKIP_INSTALL BUNDLE_CHECK_RC=0 "$TOOL" bootstrap "$BE" >/dev/null 2>&1
 expect "satisfied bundle runs no bundle install, then prepares its own test database" "$(installs)" \
   "rails db:test:prepare TEST_DATABASE_URL=postgresql://localhost/neondb_test_api_thv970 in $BE"
