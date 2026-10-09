@@ -119,6 +119,38 @@ class TrackEditsTest(unittest.TestCase):
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn(str(self.file), (self.state / "edited").read_text().splitlines())
 
+    def test_depth_two_sibling_named_in_command_is_logged(self):
+        sibling = self.workspace / "backend-thv-2"
+        sibling.mkdir()
+        subprocess.run(["git", "init", str(sibling)], check=True, capture_output=True)
+        changed = sibling / "change.rb"
+        changed.write_text("class Change; end\n")
+        result = self.invoke(f"touch {changed}", cwd=self.repo)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn(str(changed), (self.state / "edited").read_text().splitlines())
+
+    def test_checkout_nested_under_node_modules_is_never_scanned(self):
+        nested = self.workspace / "x" / "node_modules" / "pkg"
+        nested.mkdir(parents=True)
+        subprocess.run(["git", "init", str(nested)], check=True, capture_output=True)
+        changed = nested / "index.js"
+        changed.write_text("module.exports = 1\n")
+        result = self.invoke(f"touch {changed}", cwd=self.repo)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertNotIn(str(changed), (self.state / "edited").read_text().splitlines())
+
+    def test_large_node_modules_tree_does_not_slow_the_hook(self):
+        base = self.workspace / "x" / "node_modules"
+        for index in range(3000):
+            (base / f"pkg{index}" / "lib").mkdir(parents=True)
+            if index % 10 == 0:
+                (base / f"pkg{index}" / ".git").mkdir()
+        started = time.monotonic()
+        result = self.invoke(f"ls {self.repo}", cwd=self.repo)
+        elapsed = time.monotonic() - started
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertLess(elapsed, 2.0, f"hook took {elapsed:.1f}s on a large node_modules tree")
+
 
 class PerCommandStampTest(unittest.TestCase):
     """A Bash call is charged only with the files that changed while it ran."""
