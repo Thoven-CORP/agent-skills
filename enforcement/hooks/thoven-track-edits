@@ -29,6 +29,20 @@ while [ $# -gt 0 ]; do
   shift
 done
 
+# Path of $2 relative to directory $1, both absolute (os.path.relpath without a subprocess).
+relpath_from() {
+  local from="${1%/}" to="${2%/}" up=""
+  while [ -n "$from" ] && [[ "$to/" != "$from/"* ]]; do
+    from="${from%/*}"
+    up="../$up"
+  done
+  local rest="${to#"$from"}"
+  rest="${rest#/}"
+  local out="$up$rest"
+  out="${out%/}"
+  printf '%s\n' "${out:-.}"
+}
+
 payload="$(cat)"
 case "$dialect" in
   cursor)
@@ -160,14 +174,9 @@ PY_PATH
         [ -n "$dotgit" ] || continue
         repo="${dotgit%/.git}"
         relative="${repo#"$HOME/thoven"/}"
-        relative_from_cwd="$(python3 - "$cwd" "$repo" <<'PY_PATH'
-import os
-import sys
-print(os.path.relpath(sys.argv[2], sys.argv[1]))
-PY_PATH
-)"
-        if [[ "$command" != *"$repo"* && "$command" != *"$relative"* && "$command" != *"$relative_from_cwd"* ]]; then
-          continue
+        if [[ "$command" != *"$repo"* && "$command" != *"$relative"* ]]; then
+          relative_from_cwd="$(relpath_from "$cwd" "$repo")"
+          [[ "$command" == *"$relative_from_cwd"* ]] || continue
         fi
         while IFS= read -r -d '' line; do
           [ -n "$line" ] || continue
@@ -178,7 +187,7 @@ PY_PATH
           if [ -f "$abs" ] && [ "$abs" -ot "$boundary" ]; then continue; fi
           grep -qxF "$abs" "$edited_file" || { echo "$abs" >> "$edited_file"; touch "$state/last-edit"; }
         done < <(git -C "$repo" status --porcelain -z --untracked-files=all 2>/dev/null)
-      done < <(find "$HOME/thoven" -maxdepth 4 -name .git -print 2>/dev/null)
+      done < <(find "$HOME/thoven" -maxdepth 2 -name .git -print 2>/dev/null)
       ;;
     esac
     rm -f "$state/cmd-started"
