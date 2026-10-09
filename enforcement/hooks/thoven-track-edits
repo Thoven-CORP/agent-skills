@@ -7,11 +7,27 @@
 #   devin          PostToolUse; tool_name edit|write|notebook_edit carry tool_input.file_path, exec and
 #                  apply_patch are scanned; no cwd, so DEVIN_PROJECT_DIR (docs.devin.ai/cli/extensibility/hooks)
 #   OpenCode's plugin sends the claude shape (opencode/thoven-uncommitted.js).
-#   thoven-track-edits [--dialect claude|cursor|devin]
+#   thoven-track-edits [--dialect claude|cursor|devin] [--pre]
+#
+# --pre runs before a shell call and only stamps $state/cmd-started. The Bash scan then attributes
+# the files newer than that stamp, i.e. the ones this command changed, so a read-only command that
+# names a checkout another agent is editing is not charged with that agent's files. Without a stamp
+# the boundary is the session start. The stamp is spent by the post call that reads it.
+#   claude, codex  PreToolUse, matcher Bash
+#   cursor         beforeShellExecution, with --dialect cursor
+#   devin          PreToolUse, matcher ^exec$, with --dialect devin
+#   OpenCode       has no pre event wired to this script, so it keeps the session-start boundary.
 set -o pipefail
 
 dialect=claude
-[ "${1:-}" = "--dialect" ] && dialect="${2:-claude}"
+pre=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --dialect) dialect="${2:-claude}"; shift ;;
+    --pre) pre=1 ;;
+  esac
+  shift
+done
 
 payload="$(cat)"
 case "$dialect" in
@@ -21,7 +37,7 @@ case "$dialect" in
     [ -n "$cwd" ] || cwd="${CURSOR_PROJECT_DIR:-$PWD}"
     case "$(jq -r '.hook_event_name // empty' <<<"$payload")" in
       afterFileEdit) tool_name=Edit ;;
-      afterShellExecution) tool_name=Bash ;;
+      afterShellExecution|beforeShellExecution) tool_name=Bash ;;
       *) tool_name="" ;;
     esac
     file_path="$(jq -r '.file_path // empty' <<<"$payload")"
@@ -57,9 +73,15 @@ esac
 # The id names a directory under /tmp/claude-thoven; one that could climb out of it is ignored.
 case "$session_id" in */*|.*) exit 0 ;; esac
 
-state="/tmp/claude-thoven/$session_id"
+# THOVEN_CLAUDE_STATE moves the state root; the tests use it so they never write under the real one.
+state="${THOVEN_CLAUDE_STATE:-/tmp/claude-thoven}/$session_id"
 mkdir -p "$state"
 [ -f "$state/started" ] || touch "$state/started"
+
+if [ "$pre" -eq 1 ]; then
+  [ "$tool_name" = Bash ] && touch "$state/cmd-started"
+  exit 0
+fi
 
 edited_file="$state/edited"
 
@@ -86,6 +108,9 @@ PY_PATH
       printf '%s\n' "$command" >> "$state/checks"
     fi
 
+    boundary="$state/started"
+    [ -f "$state/cmd-started" ] && boundary="$state/cmd-started"
+
     toplevel="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null)"
     newly=()
     if [ -n "$toplevel" ]; then
@@ -100,7 +125,7 @@ PY_PATH
         if [ ! -f "$abs" ] && [[ "${line:0:2}" != *D* ]]; then
           continue
         fi
-        if [ -f "$abs" ] && [ "$abs" -ot "$state/started" ]; then
+        if [ -f "$abs" ] && [ "$abs" -ot "$boundary" ]; then
           continue
         fi
         grep -qxF "$abs" "$edited_file" && continue
@@ -128,7 +153,7 @@ PY_PATH
     fi
     # A command can edit a sibling checkout that `git status` from cwd cannot see.
     # Inspect only checkouts named in the
-    # command, and preserve the same session-start mtime boundary as the cwd path.
+    # command, and use the same mtime boundary as the cwd path.
     case "$cwd" in
       "$HOME/thoven"|"$HOME"/thoven/*)
       while IFS= read -r dotgit; do
@@ -150,12 +175,13 @@ PY_PATH
           case "${line:0:2}" in *R*|*C*) IFS= read -r -d '' || break ;; esac
           abs="$repo/$rel"
           if [ ! -f "$abs" ] && [[ "${line:0:2}" != *D* ]]; then continue; fi
-          if [ -f "$abs" ] && [ "$abs" -ot "$state/started" ]; then continue; fi
+          if [ -f "$abs" ] && [ "$abs" -ot "$boundary" ]; then continue; fi
           grep -qxF "$abs" "$edited_file" || { echo "$abs" >> "$edited_file"; touch "$state/last-edit"; }
         done < <(git -C "$repo" status --porcelain -z --untracked-files=all 2>/dev/null)
       done < <(find "$HOME/thoven" -maxdepth 4 -name .git -print 2>/dev/null)
       ;;
     esac
+    rm -f "$state/cmd-started"
     ;;
 esac
 

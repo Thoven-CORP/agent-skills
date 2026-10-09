@@ -21,11 +21,12 @@ HOOKS_DIR = CODEX_DIR / "hooks"
 HOOKS_JSON = CODEX_DIR / "hooks.json"
 RULES = CODEX_DIR / "rules" / "thoven.rules"
 
-# (script name, event, matcher, timeout)
+# (script name, event, matcher, timeout, args); --pre stamps the start of each shell call
 HOOK_SPECS = [
-    ("thoven-guard-bash", "PreToolUse", "Bash", 10),
-    ("thoven-track-edits", "PostToolUse", "Edit|Write|Bash", 10),
-    ("thoven-uncommitted", "Stop", None, 10),
+    ("thoven-guard-bash", "PreToolUse", "Bash", 10, ""),
+    ("thoven-track-edits", "PreToolUse", "Bash", 10, " --pre"),
+    ("thoven-track-edits", "PostToolUse", "Edit|Write|Bash", 10, ""),
+    ("thoven-uncommitted", "Stop", None, 10, ""),
 ]
 
 
@@ -39,8 +40,8 @@ def render_rules(denies: list) -> str:
     return "\n".join(lines) + "\n"
 
 
-def command_for(script_name: str) -> str:
-    return str(HOOKS_DIR / script_name)
+def command_for(script_name: str, args: str = "") -> str:
+    return str(HOOKS_DIR / script_name) + args
 
 
 def hook_already_present(config: dict, event: str, command: str) -> bool:
@@ -87,8 +88,8 @@ def main():
     notifications_changed = soften_stop_notifications(config)
 
     plan = []
-    for script_name, event, matcher, timeout in HOOK_SPECS:
-        command = command_for(script_name)
+    for script_name, event, matcher, timeout, extra in HOOK_SPECS:
+        command = command_for(script_name, extra)
         src = ENFORCEMENT_DIR / "hooks" / script_name
         copy_needed = needs_copy(src, HOOKS_DIR / script_name)
         settings_needed = not hook_already_present(config, event, command)
