@@ -26,11 +26,12 @@ PLUGIN_DIRS_ENV = "CLAUDE_CODE_PLUGIN_DIRS"
 AGENT_SKILLS_MAIN = Path.home() / "thoven" / "agent-skills"
 COCKPIT_DIR = AGENT_SKILLS_MAIN / "claude" / "plugins" / "thoven-cockpit"
 
-# (script name, event, matcher, timeout)
+# (script name, event, matcher, timeout, args); --pre stamps the start of each shell call
 HOOK_SPECS = [
-    ("thoven-guard-bash", "PreToolUse", "Bash", 10),
-    ("thoven-track-edits", "PostToolUse", "Edit|Write|Bash", 10),
-    ("thoven-uncommitted", "Stop", None, 10),
+    ("thoven-guard-bash", "PreToolUse", "Bash", 10, ""),
+    ("thoven-track-edits", "PreToolUse", "Bash", 10, " --pre"),
+    ("thoven-track-edits", "PostToolUse", "Edit|Write|Bash", 10, ""),
+    ("thoven-uncommitted", "Stop", None, 10, ""),
 ]
 
 
@@ -38,8 +39,8 @@ def deny_token(argv: list) -> str:
     return f"Bash({' '.join(argv)}:*)"
 
 
-def command_for(script_name: str) -> str:
-    return str(HOOKS_DIR / script_name)
+def command_for(script_name: str, args: str = "") -> str:
+    return str(HOOKS_DIR / script_name) + args
 
 
 def hook_already_present(settings: dict, event: str, command: str) -> bool:
@@ -126,8 +127,8 @@ def main():
     settings = copy.deepcopy(original)
 
     plan = []
-    for script_name, event, matcher, timeout in HOOK_SPECS:
-        command = command_for(script_name)
+    for script_name, event, matcher, timeout, extra in HOOK_SPECS:
+        command = command_for(script_name, extra)
         src = ENFORCEMENT_DIR / "hooks" / script_name
         copy_needed = needs_copy(src, HOOKS_DIR / script_name)
         settings_needed = not hook_already_present(settings, event, command)

@@ -24,11 +24,12 @@ DEVIN_DIR = Path.home() / ".config" / "devin"
 HOOKS_DIR = DEVIN_DIR / "hooks"
 CONFIG = DEVIN_DIR / "config.json"
 
-# (script name, event, matcher, timeout); each runs as `<hooks dir>/<script> --dialect devin`
+# (script name, event, matcher, timeout, extra args); each runs as `<hooks dir>/<script> --dialect devin<extra args>`
 HOOK_ENTRIES = [
-    ("thoven-guard-bash", "PreToolUse", "^exec$", 10),
-    ("thoven-track-edits", "PostToolUse", "^(edit|write|notebook_edit|apply_patch|exec)$", 10),
-    ("thoven-uncommitted", "Stop", "", 10),
+    ("thoven-guard-bash", "PreToolUse", "^exec$", 10, ""),
+    ("thoven-track-edits", "PreToolUse", "^exec$", 10, " --pre"),
+    ("thoven-track-edits", "PostToolUse", "^(edit|write|notebook_edit|apply_patch|exec)$", 10, ""),
+    ("thoven-uncommitted", "Stop", "", 10, ""),
 ]
 
 
@@ -52,10 +53,10 @@ def main():
     original = read_json(CONFIG, {})
     config = copy.deepcopy(original)
     hook_plan = []
-    for script_name, event, matcher, timeout in HOOK_ENTRIES:
+    for script_name, event, matcher, timeout, extra in HOOK_ENTRIES:
         src = ENFORCEMENT_DIR / "hooks" / script_name
         dest = HOOKS_DIR / script_name
-        command = f"{dest} --dialect devin"
+        command = f"{dest} --dialect devin{extra}"
         hook_needed = not hook_already_present(config, event, command)
         hook_plan.append((src, dest, needs_copy(src, dest), event, matcher, command, timeout, hook_needed))
     wanted_denies = [deny_token(d["argv"]) for d in load_denies()]

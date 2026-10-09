@@ -26,12 +26,13 @@ CLI_CONFIG = CURSOR_DIR / "cli-config.json"
 
 AGENT_FILES = ["verifier.md", "ui-builder.md", "explorer.md", "poteto-agent.md"]
 
-# (script name, event, timeout); each runs as `<hooks dir>/<script> --dialect cursor`
+# (script name, event, timeout, extra args); each runs as `<hooks dir>/<script> --dialect cursor<extra args>`
 HOOK_ENTRIES = [
-    ("thoven-guard-bash", "beforeShellExecution", 10),
-    ("thoven-track-edits", "afterFileEdit", 10),
-    ("thoven-track-edits", "afterShellExecution", 10),
-    ("thoven-uncommitted", "stop", 10),
+    ("thoven-guard-bash", "beforeShellExecution", 10, ""),
+    ("thoven-track-edits", "beforeShellExecution", 10, " --pre"),
+    ("thoven-track-edits", "afterFileEdit", 10, ""),
+    ("thoven-track-edits", "afterShellExecution", 10, ""),
+    ("thoven-uncommitted", "stop", 10, ""),
 ]
 
 
@@ -53,10 +54,10 @@ def main():
     hooks_orig = read_json(HOOKS_JSON, {"version": 1, "hooks": {}})
     hooks_cfg = copy.deepcopy(hooks_orig)
     hook_plan = []
-    for script_name, event, timeout in HOOK_ENTRIES:
+    for script_name, event, timeout, extra in HOOK_ENTRIES:
         src = ENFORCEMENT_DIR / "hooks" / script_name
         dest = HOOKS_DIR / script_name
-        command = f"{dest} --dialect cursor"
+        command = f"{dest} --dialect cursor{extra}"
         hook_needed = not any(e.get("command") == command for e in hooks_cfg.get("hooks", {}).get(event, []))
         hook_plan.append((src, dest, needs_copy(src, dest), event, command, timeout, hook_needed))
 

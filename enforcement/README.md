@@ -40,6 +40,9 @@ diagnostic log of check commands under `/tmp/claude-thoven/<session>/`. It reads
 tool arguments, because auto mode writes files with `cat` and heredocs and a hook
 watching only `Edit` sees nothing. It injects one line pointing at the
 `thoven-designer` skill the first time a component is touched.
+A `Bash` call is charged only with the files that changed while it ran: the same script runs
+with `--pre` before the call and stamps its start, and `PostToolUse` keeps files newer than
+that stamp (the session start when there is none).
 
 `thoven-guard-bash` runs before `Bash` and refuses destructive or invalid commands. It denies the unit-test runner's exclude flag, which replaces the
 config's exclude array and reports failures that do not exist, and it denies
