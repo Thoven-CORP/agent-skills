@@ -104,11 +104,19 @@ def target_path(path: str) -> str:
     return path.rsplit(".", 1)[0] if path.endswith(SOURCE_EXTS) else path
 
 
+DEFAULT_EXPORT = [re.compile(r"(?m)^\s*export\s+default\b"), re.compile(r"\bexport\s*\{[^}]*\bas\s+default\b[^}]*\}")]
+
+
 def declared_in_target(files, old_path: str, name: str, language: str) -> bool:
-    """Ignore a removal only when that same module still declares the symbol."""
-    if not name:
-        return False
+    """Ignore a removal only when that same module still declares the symbol.
+
+    A removed `export default` line counts as removed only if the module has no default export at
+    HEAD: wrapping a page in Suspense deletes the line and re-adds it lower in the same file."""
     target = target_path(old_path)
+    if not name:
+        return language == "javascript" and any(
+            target_path(rel) == target and any(pattern.search(text) for pattern in DEFAULT_EXPORT)
+            for rel, text in files)
     patterns = {
         "javascript": [
             re.compile(r"\bexport\s+(?:(?:declare|default|async)\s+)*(?:function|class|const|let|var|interface|type|enum)\s+" + re.escape(name) + r"\b"),
@@ -197,7 +205,7 @@ def main() -> int:
                     if re.search(r"\b(?:from|import|require)\b[^\n]*['\"](?:\.{1,2}/|@/)?[^'\"]*" + re.escape(old_path.rsplit(".", 1)[0]) + r"(?:\.[A-Za-z0-9]+)?['\"]", line):
                         found.add(f"{rel}:{line_no}: references removed path {old_path}")
         for name, is_default, language in removed_exports(root, merge, old_path):
-            if name and declared_in_target(files, old_path, name, language):
+            if declared_in_target(files, old_path, name, language):
                 continue
             found.update(callers(files, old_path, name, is_default, language))
     for finding in sorted(found):

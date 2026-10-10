@@ -76,6 +76,7 @@ while [ "$#" -gt 0 ]; do
     --count) count_only=1; shift ;;
     --base)
       [ "$#" -ge 2 ] || { echo 'usage: thoven-stale-refs [--count] [--base REF] [-- ROOT...]' >&2; exit 2; }
+      [ -n "$2" ] || { echo 'thoven-stale-refs: --base is empty' >&2; exit 2; }
       base="$2"; shift 2 ;;
     --) shift; break ;;
     *) break ;;

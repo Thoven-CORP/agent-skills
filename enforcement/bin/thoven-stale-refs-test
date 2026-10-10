@@ -99,4 +99,26 @@ printf 'from lib.python_module import new_name\nnew_name()\n' > "$language_repo/
 printf "require_relative '../lib/ruby_module'\nnew_name\n" > "$language_repo/src/ruby_caller.rb"
 expect_status 0 "$scanner" --count --base origin/main -- "$language_repo"
 
+# A default export reshaped inside its module (a Suspense wrapper re-adds it lower down) is
+# still exported at HEAD, so its importers are live. Removing it for real is still red.
+default_repo="$workspace/default-fixture"
+git -C "$workspace" init -b main default-fixture >/dev/null
+git -C "$default_repo" config user.email verify@example.test
+git -C "$default_repo" config user.name 'Verify Test'
+mkdir -p "$default_repo/app/book"
+printf 'export default function Page() {\n  return 1\n}\n' > "$default_repo/app/book/page.tsx"
+printf "import Page from './page'\nvoid Page\n" > "$default_repo/app/book/page.test.tsx"
+git -C "$default_repo" add .
+git -C "$default_repo" commit -m base >/dev/null
+git -C "$default_repo" update-ref refs/remotes/origin/main HEAD
+printf 'function Content() {\n  return 1\n}\n\nexport default function Page() {\n  return Content()\n}\n' > "$default_repo/app/book/page.tsx"
+expect_status 0 "$scanner" --count --base origin/main -- "$default_repo"
+printf 'export function Page() {\n  return 1\n}\n' > "$default_repo/app/book/page.tsx"
+expect_status 1 "$scanner" --count --base origin/main -- "$default_repo"
+
+# An empty base is refused, never read as "no base" and a skipped caller check.
+expect_status 2 "$scanner" --count --base '' -- "$default_repo"
+expect_status 2 "$source_helper" '' "$default_repo"
+expect_status 2 "$source_helper"
+
 printf 'thoven-stale-refs default-root checks passed\n'
