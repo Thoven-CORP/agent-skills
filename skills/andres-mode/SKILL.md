@@ -34,6 +34,7 @@ Both checks run twice: in the brief before dispatch, and as the reviewer's first
 - **Visual parity against board frames.** Capture every screen and state the work built at 1440 and 390, beside its frame, plus a short video of the flow. Post the images and the difference list to the Linear ticket, and place them on the board.
 - **An unconfirmed difference is a defect.** A difference the user did not confirm in a Linear ruling or in chat is fixed in the PR. A confirmed one cites its ruling. Only fully confirmed board states bind. A small exploratory prototype, or a state the user waived, is listed as "not binding" with the reason.
 - **The board frame beats written prose** on layout and flow. Update the ruling and the ticket to match the frame. Rulings still govern what a frame cannot show.
+- **A frame binds what shows, not how it sizes.** A frame is one static sample at one width. It binds which elements are present, their states, order, hierarchy and tokens. Fill or hug, stretch and reflow at other widths follow component best practice: match the frame at its own width, and give the reason in one line.
 - **Fidelity means visual parity on design-system tokens.** Use the shared component where one exists. Build a missing one with `~/.agents/skills/building-components`, which is normal work, not a defect. Check against `~/.agents/skills/better-ui` and `~/.agents/skills/thoven-designer`.
 - The boards are approved. Read the board and build to it.
 

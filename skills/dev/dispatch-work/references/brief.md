@@ -21,8 +21,11 @@ DESIGN     <"no UI", or the board path and the frames above.> Bring each frame t
            decisions describe it, at visual parity and full fidelity: layout, spacing, type,
            every state, and motion where the frame shows it. Values come from design-system
            tokens; use the shared component where one exists, and build a missing one with
-           /building-components. A difference from a frame that Andres confirmed cites its ruling;
-           any other difference is a defect you fix.
+           /building-components. A frame is one static sample at one width: it binds which
+           elements show, their states, order, hierarchy and tokens. Sizing behaviour (fill or
+           hug, stretch, reflow at other widths) follows component best practice; match the
+           frame at its own width and give the reason in one line. A difference from a frame
+           that Andres confirmed cites its ruling; any other difference is a defect you fix.
 WHERE      Repo <path>, branch <branch>, base <sha>. <Parallel panes, if any, and their Paths.>
 KNOWN      <interfaces, rulings and commits from earlier tickets this one builds on. "none" if none.>
 RULINGS    <main's resolution of anything ambiguous in the ticket. "none" if none.>

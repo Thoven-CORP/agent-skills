@@ -39,7 +39,9 @@ their frames. The verifier's report opens with SPEC PARITY.
 **Design parity.** A build that changes what a user sees captures every touched state at 1440 and
 390 beside its board frame, plus a short video. The images go to the Linear issue as a comment (the
 parent when the work has no issue) and onto the board beside their frames. A difference from a
-confirmed frame that Andres did not approve is a defect. Parity means design-system tokens and
+confirmed frame that Andres did not approve is a defect. A frame binds what shows (elements,
+states, order, hierarchy, tokens), not sizing behaviour (fill or hug, stretch, reflow), which
+follows component best practice and matches the frame at its own width. Parity means design-system tokens and
 shared components; a missing component is built with `/building-components`. Procedure:
 `~/thoven/agent-skills/skills/dev/dispatch-work/references/brief.md`.
 
