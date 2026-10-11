@@ -13,6 +13,15 @@ FITS       <one line: where this ticket sits in its parent issue and what it unb
 SPEC       Linear THV-<id>. Read it in full first with the Linear tools. It is the spec, already
            decided upstream: build it as written. When the ticket and the code disagree, or the
            ticket needs a choice it does not make, send NEEDS_CONTEXT.
+DECISIONS  <every parent decision id this ticket touches, each with the board frame the parent
+           cites for it ("D4 -> A3. Send moment"), from the parent's "Decisions (canonical)".
+           A brief whose spec is a plan section, not a ticket, lists them too. "none" if none.>
+DESIGN     <"no UI", or the board path and the frames above.> Bring each frame to life as the
+           decisions describe it, at visual parity and full fidelity: layout, spacing, type,
+           every state, and motion where the frame shows it. Values come from design-system
+           tokens; use the shared component where one exists, and build a missing one with
+           /building-components. A difference from a frame that Andres confirmed cites its ruling;
+           any other difference is a defect you fix.
 WHERE      Repo <path>, branch <branch>, base <sha>. <Parallel panes, if any, and their Paths.>
 KNOWN      <interfaces, rulings and commits from earlier tickets this one builds on. "none" if none.>
 RULINGS    <main's resolution of anything ambiguous in the ticket. "none" if none.>
@@ -27,13 +36,19 @@ STANDING
 - You and main run side by side. Main owns Linear, product calls and your review. You own
   the code on this branch and your commits.
 - Commit as you go, by exact path, message ending in THV-<id>. Commit only: main pushes the branch and opens the PR.
-- Machine: run only the tests you touch, one process at a time, no dev servers or watch mode.
+- Machine: run only the tests you touch, one process at a time, no watch mode. A dev server
+  runs only for the parity capture, and stops after it.
   Route big logs and wide reads through a subagent and keep its summary.
 - Budget: stop near 250k tokens and send your status with what is done and what is left.
 - Decide what you can and write the ruling into your report. Stop only for: an irreversible or
   destructive step, prod or a secret value, a product call, or a ticket so wrong every path is a
   guess.
-- Leave no files behind outside the repo. Evidence goes in your report.
+- Leave no files behind outside the repo except parity evidence. Other evidence goes in your
+  report.
+- Parity, on a UI ticket, before DONE: capture every state the ticket touches with
+  agent-browser at 1440 and 390, waiting for content so no image is blank, each beside its
+  board frame, plus a short video of the flow, in
+  ~/.thoven-artifacts/THV-<id>/evidence/index.html with the list of differences from the board.
 - Browser: drive agent-browser from this pane only, never from a subagent. Close it when you are
   done. Send Escape in-page (dispatchEvent of a keydown), never with agent-browser press Escape,
   which pins the renderer. A renderer near 100% CPU means start a fresh browser; it is not a
@@ -50,6 +65,8 @@ Then the ASCII block:
   Acceptance   one row per line: ✓/✗, evidence (file:line, command → result)
   Proof        command, red before, green after
   Commits      SHAs and git diff --stat against base
+  Parity       UI tickets: the evidence page path, and each difference from a frame:
+               fixed, or confirmed with its ruling
   Rulings      what you decided and why
   Noticed      out of scope, not fixed
 Label every claim measured, inferred or guess. Then print the same block in this pane and end

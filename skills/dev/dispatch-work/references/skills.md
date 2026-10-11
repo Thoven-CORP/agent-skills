@@ -15,9 +15,10 @@ pick the Thoven lines below that this ticket reaches.
 | Moment in this ticket | Skill |
 | -- | -- |
 | The first edit to a component or a design value | `/thoven-designer` |
-| Turning a proto or wireframe into a shipped component | `/design-to-production` |
+| Building a component the system does not have, or changing one | `/building-components` |
+| Turning a board frame, proto or wireframe into a shipped component | `/design-to-production` |
 | Choosing a library for a UI job | `/pick-ui-library` |
-| A screen is built and needs a polish pass | `/better-ui`, then `/interface-craft` for a taste call |
+| A screen is built, before the parity capture | `/better-ui`, then `/interface-craft` for a taste call |
 | Adding or reviewing motion | `/transitions-dev`, `/review-animations` |
 | Types or a signature crossing a module | `/typescript-best-practices` |
 | A behaviour to pin test-first at a named seam | `/tdd` |
