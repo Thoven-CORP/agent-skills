@@ -28,5 +28,39 @@ a rebase ate a day of the onboarding prototype.)
   checkouts every 30 minutes.
 - Production moves only through `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh`.
 
+**Where records live.** Linear is the source of truth, and the tldraw board is the source of truth
+for design. Decisions live in the Linear parent issue under "Decisions (canonical)", and each cites
+the board frame it rests on. Repo `decisions/api.md` keeps payload fields. Local plans and evidence
+folders are scratch, deleted at close.
+
+**Spec parity.** A brief, a plan section or a review traces its work to parent decision ids and
+their frames. The verifier's report opens with SPEC PARITY.
+
+**Design parity.** A build that changes what a user sees captures every touched state at 1440 and
+390 beside its board frame, plus a short video. The images go to the Linear issue as a comment (the
+parent when the work has no issue) and onto the board beside their frames. A difference from a
+confirmed frame that Andres did not approve is a defect. Parity means design-system tokens and
+shared components; a missing component is built with `/building-components`. Procedure:
+`~/thoven/agent-skills/skills/dev/dispatch-work/references/brief.md`.
+
+**Hardening keeps the design.** Refactor, performance and robustness work changes what a user sees
+only to fix an issue it found at another viewport, in motion or in performance. The commit or report
+names that issue beside the change.
+
+**Targeted tests.** A slice runs its touched test files, one file per run, plus lint on those files.
+CI runs the full suite on the integration PR. `bin/verify` runs once per feature, before it merges
+to `main`. Heavy work (e2e, builds, stacks, perf) takes a `mkdir` lock and runs one at a time. Stop
+the servers you started after each step, and delete scratch you can regenerate.
+
+**Local database.** `thoven-worktree create` sets `TEST_DATABASE_URL` to `neondb_test_<slug>`, drops
+a `DATABASE_URL` that names the shared `thoven_development`, and creates `thoven_dev_<slug>` when the
+branch adds a migration. Every backend command, `git commit` included, names the pane's own local
+database: export `DATABASE_URL` and `TEST_DATABASE_URL` in the same line.
+
+**Review order.** A builder's DONE is a claim. A fresh verifier pane reviews feature slices; a Sonnet
+subagent of main reviews cleanup and hardening work. Both open with spec parity. Main reruns the
+touched files and merges backend before the frontend that reads it. UI merges after Andres sees the
+evidence. Procedure: `dispatch-work/references/review.md`.
+
 **Scope.** Make the surgical edit the ticket asks for. Neighbouring problems go into a new Linear
 issue, and work bigger than the brief stops and reports back.

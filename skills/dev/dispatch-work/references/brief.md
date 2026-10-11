@@ -2,7 +2,8 @@
 
 Copy the block below to `$TMPDIR/dispatch/<THV-x>.md` and fill every `<…>`. `send.sh` fills
 `{{MAIN_PANE}}`. The ticket is the spec, so the brief points at it and adds only what the ticket
-cannot know. A brief that restates the ticket drifts from it.
+cannot know. A brief that restates the ticket drifts from it. STANDING Machine and Database
+restate `enforcement/rules/thoven-law.md` for a pane that never reads it; change both together.
 
 For Codex panes write `$poteto-mode`. For Devin keep the task on the first line.
 
@@ -30,25 +31,32 @@ ACCESS     <the skill lines from skills.md this ticket reaches, each with its mo
            control-cli and control-ui for a running app, tier-5 subagents for wide reads.
 DONE WHEN  <the ticket's Done when, verbatim or by pointer>
            Seams: <where the tests sit>. Proof goes red before your change and green after it.
-           Type-check and the touched test files as you go. No full suite, no full lint.
+           Type-check and the touched test files as you go, one file per run, plus lint on
+           those files.
 
 STANDING
 - You and main run side by side. Main owns Linear, product calls and your review. You own
   the code on this branch and your commits.
 - Commit as you go, by exact path, message ending in THV-<id>. Commit only: main pushes the branch and opens the PR.
-- Machine: run only the tests you touch, one process at a time, no watch mode. A dev server
-  runs only for the parity capture, and stops after it.
-  Route big logs and wide reads through a subagent and keep its summary.
+- Machine: run the touched test files, one file per run, one process at a time, no watch mode.
+  Take a `mkdir` lock before e2e, build, stack or perf work and release it after. Commit with
+  `--no-verify` once the touched tests pass if a hook would run a big suite; CI runs the full suite.
+  Stop the servers you started after each step; a dev server runs for the parity capture and stops
+  after it. Delete scratch you can regenerate. Route big logs and wide reads through a subagent and
+  keep its summary.
+- Database (backend ticket): export the pane's own `DATABASE_URL` and `TEST_DATABASE_URL` in the
+  same line as every backend command, `git commit` included.
 - Budget: stop near 250k tokens and send your status with what is done and what is left.
 - Decide what you can and write the ruling into your report. Stop only for: an irreversible or
   destructive step, prod or a secret value, a product call, or a ticket so wrong every path is a
   guess.
-- Leave no files behind outside the repo except parity evidence. Other evidence goes in your
-  report.
+- Leave no files behind outside the repo. Parity captures go to a scratch folder
+  (`~/.thoven-artifacts/THV-<id>/evidence/`) that main uploads to the Linear issue and the board
+  and then deletes. Other evidence goes in your report.
 - Parity, on a UI ticket, before DONE: capture every state the ticket touches with
   agent-browser at 1440 and 390, waiting for content so no image is blank, each beside its
-  board frame, plus a short video of the flow, in
-  ~/.thoven-artifacts/THV-<id>/evidence/index.html with the list of differences from the board.
+  board frame, plus a short video of the flow, in the scratch folder above with the list of
+  differences from the board.
 - Browser: drive agent-browser from this pane only, never from a subagent. Close it when you are
   done. Send Escape in-page (dispatchEvent of a keydown), never with agent-browser press Escape,
   which pins the renderer. A renderer near 100% CPU means start a fresh browser; it is not a
@@ -65,7 +73,7 @@ Then the ASCII block:
   Acceptance   one row per line: ✓/✗, evidence (file:line, command → result)
   Proof        command, red before, green after
   Commits      SHAs and git diff --stat against base
-  Parity       UI tickets: the evidence page path, and each difference from a frame:
+  Parity       UI tickets: the scratch folder path, and each difference from a frame:
                fixed, or confirmed with its ruling
   Rulings      what you decided and why
   Noticed      out of scope, not fixed

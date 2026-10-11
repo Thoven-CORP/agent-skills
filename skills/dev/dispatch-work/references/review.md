@@ -1,7 +1,16 @@
 # Review: main's verify pass
 
-The builder's own report is a claim. The verifier turns it into evidence. It runs in a fresh pane
-on the model `agents.md` names, so it is not reviewing its own work.
+The builder's own report is a claim. A fresh verifier pane turns it into evidence on a feature
+slice, on the model `agents.md` names, so it is not reviewing its own work. Cleanup and hardening
+work is reviewed by a Sonnet subagent of main with the same brief.
+
+## Main's pass
+
+1. Rerun only the files the builder touched, one per run, and compare with the report.
+2. On a UI ticket, open every parity image, show Andres, upload the images to the Linear issue as a
+   comment (the parent when there is no issue) and place them on the board beside their frames.
+3. Merge backend before the frontend that reads it. UI merges after Andres sees the evidence.
+4. `bin/verify` runs once per feature, before it merges to `main`. CI runs on the integration PR.
 
 ## Working if
 
@@ -10,11 +19,11 @@ Each one that fails is a finding.
 
 - The pane opened by reading the ticket and restating what it would build.
 - A red run exists before the green one, for the proof the ticket names.
-- Type-check and the touched test files ran during the build. No full suite or full lint ran.
+- Type-check, the touched test files (one file per run) and lint on those files ran during the build.
 - Commits land on the named branch, by exact path, each ending in the ticket id.
 - `git diff --stat <base>..HEAD` touches the ticket's Paths, and every other file has a stated reason.
 - The report labels each claim measured, inferred or guess.
-- A UI ticket's report links a parity evidence page with every touched state at 1440 and 390
+- A UI ticket's report links a parity capture folder with every touched state at 1440 and 390
   beside its board frame, and no blank image.
 
 ## Verifier brief
@@ -28,11 +37,12 @@ Repo <path>, branch <branch>, diff <base>..<head>. Read and run only; leave the 
 1. SPEC PARITY. Read the parent's "Decisions (canonical)". Trace every Acceptance line and every
    behaviour in the diff to a decision id. Name invented scope, a decision the diff missed or
    changed, and lexicon slips.
-2. DESIGN PARITY, on a UI ticket. Open the builder's evidence page and the board frames each
+2. DESIGN PARITY, on a UI ticket. Open the builder's parity captures and the board frames each
    decision cites. Compare every state yourself and recapture any state that looks wrong. Run
    /better-ui and /thoven-designer over the built screens. A difference from a frame that Andres
    did not confirm is an important finding.
-3. /verify-this over every Acceptance line and every claim in the report.
+3. /verify-this over every Acceptance line and every claim in the report. Run the touched files
+   one per run, under the `mkdir` lock for e2e or build work.
 4. /mattpocock-skills:code-review against <base>.
 5. /thermo-nuclear-code-quality-review when the diff crosses a module or passes ~300 lines.
 6. /deslop findings only.
