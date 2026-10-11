@@ -4,7 +4,7 @@
 set -uo pipefail
 
 usage() {
-  cat >&2 <<'USAGE'
+  cat <<'USAGE'
 usage: thoven-load-gate [--slots N] [--min-free PCT] [--max-load N] [--wait SECS]
                         [--name LABEL] [--check-only] -- <command...>
 
@@ -17,8 +17,9 @@ usage: thoven-load-gate [--slots N] [--min-free PCT] [--max-load N] [--wait SECS
   THOVEN_GATE_DISABLE=1 runs the command at once. THOVEN_GATE_DIR moves the slot directory.
   Exit codes: the command's own, 2 for bad usage, 75 when the wait ran out.
 USAGE
-  exit 2
 }
+
+bad_usage() { usage >&2; exit 2; }
 
 log() { printf 'thoven-load-gate: %s\n' "$*" >&2; }
 
@@ -33,31 +34,32 @@ check_only=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --slots) [ $# -ge 2 ] || usage; slots="$2"; shift 2 ;;
-    --min-free) [ $# -ge 2 ] || usage; min_free="$2"; shift 2 ;;
-    --max-load) [ $# -ge 2 ] || usage; max_load="$2"; shift 2 ;;
-    --wait) [ $# -ge 2 ] || usage; wait_secs="$2"; shift 2 ;;
-    --name) [ $# -ge 2 ] || usage; label="$2"; shift 2 ;;
+    --slots) [ $# -ge 2 ] || bad_usage; slots="$2"; shift 2 ;;
+    --min-free) [ $# -ge 2 ] || bad_usage; min_free="$2"; shift 2 ;;
+    --max-load) [ $# -ge 2 ] || bad_usage; max_load="$2"; shift 2 ;;
+    --wait) [ $# -ge 2 ] || bad_usage; wait_secs="$2"; shift 2 ;;
+    --name) [ $# -ge 2 ] || bad_usage; label="$2"; shift 2 ;;
+    -h | --help) usage; exit 0 ;;
     --check-only) check_only=1; shift ;;
     --) shift; break ;;
-    *) usage ;;
+    *) bad_usage ;;
   esac
 done
 
 is_int() { case "$1" in '' | *[!0-9]*) return 1 ;; esac; }
 is_num() { case "$1" in '' | *[!0-9.]* | *.*.*) return 1 ;; esac; }
-is_int "$slots" && [ "$slots" -ge 1 ] || usage
-is_int "$min_free" || usage
-is_num "$max_load" || usage
-is_int "$wait_secs" || usage
-is_int "$poll" && [ "$poll" -ge 1 ] || usage
+is_int "$slots" && [ "$slots" -ge 1 ] || bad_usage
+is_int "$min_free" || bad_usage
+is_num "$max_load" || bad_usage
+is_int "$wait_secs" || bad_usage
+is_int "$poll" && [ "$poll" -ge 1 ] || bad_usage
 
 cmd_text=""
 if [ $# -gt 0 ]; then
   cmd_text="$*"
-  case "$cmd_text" in *[![:space:]]*) ;; *) usage ;; esac
+  case "$cmd_text" in *[![:space:]]*) ;; *) bad_usage ;; esac
 elif [ "$check_only" = 0 ]; then
-  usage
+  bad_usage
 fi
 
 [ -n "$label" ] || label="${cmd_text:0:60}"
@@ -67,8 +69,9 @@ if [ "${THOVEN_GATE_DISABLE:-0}" = 1 ]; then
   exec "$@"
 fi
 
+# Fail-open on purpose: an unreadable memory or load probe yields empty output and the gate admits.
 mem_free() { memory_pressure 2>/dev/null | sed -n 's/.*System-wide memory free percentage: *\([0-9][0-9]*\)%.*/\1/p' | head -n 1; }
-load_now() { sysctl -n vm.loadavg 2>/dev/null | awk '{ print $2 }'; }
+load_now() { sysctl -n vm.loadavg 2>/dev/null | awk '$2 ~ /^[0-9.]+$/ { print $2 }'; }
 
 held=""
 child=""

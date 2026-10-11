@@ -164,6 +164,17 @@ by a `THOVEN_GATE_*` variable. It exits 75 when the wait runs out. `--check-only
 on memory and load without taking a slot, and `THOVEN_GATE_DISABLE=1` skips the checks.
 `bin/thoven-load-gate-test` proves it with a temp slot directory, no git and no database.
 
+Exit codes:
+
+| Command | Codes |
+|---|---|
+| `thoven-load-gate` | the command's own code, 2 usage, 75 the wait ran out |
+| `thoven-worktree` | 0 created or already exists, 1 failure, 2 usage, 3 refused (read-only or docs-only kind), 4 reuse an existing tree (its path is the last stdout line) |
+| `thoven-evidence-dedupe` | 0 success, 1 an apply failure, 2 refused input |
+| `bin/verify` (both repos) | the gated command's code, 75 when the gate's wait ran out |
+
+`bin/thoven-exit-codes-test` pins these codes, except 4, with throwaway directories.
+
 `bin/thoven-evidence-dedupe [--apply] <dir>` finds byte-identical files under an
 evidence folder (grouped by size, then sha256) and keeps the lexicographically first
 path of each group. By default it only prints the duplicates and the reclaimable bytes.

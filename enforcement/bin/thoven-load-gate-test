@@ -48,5 +48,28 @@ expect_rc "f) slot with a dead pid is taken over" $? 0
 
 "$TOOL" "${OPEN[@]}" --check-only >/dev/null 2>&1; expect_rc "g) --check-only with passing thresholds" $? 0
 
+# Fail-open: a probe that cannot be read admits the job. Shims go first on PATH, the real PATH follows.
+"$TOOL" --help >/dev/null 2>&1; expect_rc "h) --help exits 0" $? 0
+if [ -n "$("$TOOL" --help 2>/dev/null)" ]; then pass "h) --help prints usage to stdout"; else fail "h) --help prints usage to stdout" "stdout empty"; fi
+"$TOOL" -h >/dev/null 2>&1; expect_rc "h) -h exits 0" $? 0
+if [ -n "$("$TOOL" -h 2>/dev/null)" ]; then pass "h) -h prints usage to stdout"; else fail "h) -h prints usage to stdout" "stdout empty"; fi
+"$TOOL" --bogus >/dev/null 2>&1; expect_rc "h) bad flag still exits 2" $? 2
+if [ -z "$("$TOOL" --bogus 2>/dev/null)" ]; then pass "h) bad flag prints usage to stderr only"; else fail "h) bad flag prints usage to stderr only" "stdout not empty"; fi
+
+shim() { # shim <name> <script body>
+  mkdir -p "$T/shim.$1"
+  printf '#!/bin/sh\n%s\n' "$2" > "$T/shim.$1/$3"
+  chmod +x "$T/shim.$1/$3"
+}
+shim mpgarbage 'echo "no percentage here"' memory_pressure
+PATH="$T/shim.mpgarbage:$PATH" "$TOOL" --min-free 99 --max-load 100000 --wait 2 -- true >/dev/null 2>&1
+expect_rc "i) memory_pressure garbage admits (fail-open)" $? 0
+shim mpfail 'exit 1' memory_pressure
+PATH="$T/shim.mpfail:$PATH" "$TOOL" --min-free 99 --max-load 100000 --wait 2 -- true >/dev/null 2>&1
+expect_rc "i) memory_pressure exit 1 admits (fail-open)" $? 0
+shim slgarbage 'echo "garbage in the load average"' sysctl
+PATH="$T/shim.slgarbage:$PATH" "$TOOL" --min-free 0 --max-load 0 --wait 2 -- true >/dev/null 2>&1
+expect_rc "i) sysctl vm.loadavg garbage admits (fail-open)" $? 0
+
 if [ "$failures" -gt 0 ]; then printf '%s case(s) failed\n' "$failures"; exit 1; fi
 printf 'all cases passed\n'
