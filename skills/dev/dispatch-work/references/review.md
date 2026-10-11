@@ -14,6 +14,8 @@ Each one that fails is a finding.
 - Commits land on the named branch, by exact path, each ending in the ticket id.
 - `git diff --stat <base>..HEAD` touches the ticket's Paths, and every other file has a stated reason.
 - The report labels each claim measured, inferred or guess.
+- A UI ticket's report links a parity evidence page with every touched state at 1440 and 390
+  beside its board frame, and no blank image.
 
 ## Verifier brief
 
@@ -23,12 +25,20 @@ Start the verifier as in step 3 and send:
 /poteto-mode Verify THV-<id> "<ticket title>"
 Read Linear THV-<id> in full. The builder's report is below. Treat every line of it as a claim.
 Repo <path>, branch <branch>, diff <base>..<head>. Read and run only; leave the code as it is.
-1. /verify-this over every Acceptance line and every claim in the report.
-2. /mattpocock-skills:code-review against <base>.
-3. /thermo-nuclear-code-quality-review when the diff crosses a module or passes ~300 lines.
-4. /deslop findings only.
+1. SPEC PARITY. Read the parent's "Decisions (canonical)". Trace every Acceptance line and every
+   behaviour in the diff to a decision id. Name invented scope, a decision the diff missed or
+   changed, and lexicon slips.
+2. DESIGN PARITY, on a UI ticket. Open the builder's evidence page and the board frames each
+   decision cites. Compare every state yourself and recapture any state that looks wrong. Run
+   /better-ui and /thoven-designer over the built screens. A difference from a frame that Andres
+   did not confirm is an important finding.
+3. /verify-this over every Acceptance line and every claim in the report.
+4. /mattpocock-skills:code-review against <base>.
+5. /thermo-nuclear-code-quality-review when the diff crosses a module or passes ~300 lines.
+6. /deslop findings only.
 Reply to main with herdr agent prompt {{MAIN_PANE}} "VERIFIED THV-<id>" or "FINDINGS THV-<id>",
-then a table: Acceptance line or claim, verdict, evidence. Findings carry file:line and a
+then a SPEC PARITY table (decision id, verdict, evidence), a DESIGN PARITY table (state,
+frame, verdict, image) on a UI ticket, and a table: Acceptance line or claim, verdict, evidence. Findings carry file:line and a
 severity: critical, important or minor.
 
 <builder's report, pasted>
