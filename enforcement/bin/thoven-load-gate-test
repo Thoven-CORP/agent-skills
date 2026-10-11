@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Exercises thoven-load-gate with a temp slot directory and tiny thresholds. Touches no git,
+# no database and no real slot directory.
+set -uo pipefail
+
+TOOL="$(cd "$(dirname "$0")" && pwd)/thoven-load-gate"
+T=$(mktemp -d /tmp/thoven-load-gate-test.XXXXXX) || exit 1
+case "$T" in /tmp/thoven-load-gate-test.*) ;; *) exit 1 ;; esac
+trap 'rm -rf "$T"' EXIT
+
+export THOVEN_GATE_DIR="$T/slots"
+export THOVEN_GATE_POLL=1
+unset THOVEN_GATE_DISABLE THOVEN_GATE_SLOTS THOVEN_GATE_MIN_FREE THOVEN_GATE_MAX_LOAD THOVEN_GATE_WAIT
+
+# Thresholds that always pass, so a case fails only for the reason it tests.
+OPEN=(--min-free 0 --max-load 100000)
+failures=0
+pass() { printf 'PASS %s\n' "$1"; }
+fail() { printf 'FAIL %s: %s\n' "$1" "$2"; failures=$((failures + 1)); }
+expect_rc() { if [ "$2" = "$3" ]; then pass "$1"; else fail "$1" "exit $2, want $3"; fi; }
+
+"$TOOL" >/dev/null 2>&1; expect_rc "a) no args refuses" $? 2
+
+"$TOOL" "${OPEN[@]}" -- "" >/dev/null 2>&1; expect_rc "b) empty command refuses" $? 2
+
+"$TOOL" "${OPEN[@]}" -- sh -c 'exit 7' >/dev/null 2>&1; expect_rc "c) exit code passes through" $? 7
+
+rm -f "$T/ran"
+"$TOOL" --min-free 101 --max-load 100000 --wait 3 -- touch "$T/ran" >/dev/null 2>&1
+expect_rc "d) impossible memory threshold exits 75" $? 75
+if [ -e "$T/ran" ]; then fail "d) command did not run" "marker file exists"; else pass "d) command did not run"; fi
+
+"$TOOL" "${OPEN[@]}" --slots 1 -- sleep 6 &
+holder=$!
+sleep 1
+"$TOOL" "${OPEN[@]}" --slots 1 --wait 2 -- true >/dev/null 2>&1
+expect_rc "e) busy slot exits 75 after --wait" $? 75
+wait "$holder"
+"$TOOL" "${OPEN[@]}" --slots 1 --wait 5 -- true >/dev/null 2>&1
+expect_rc "e) slot is free again once the holder ends" $? 0
+if [ -d "$THOVEN_GATE_DIR/slot.1" ]; then fail "e) slot released" "slot.1 still exists"; else pass "e) slot released"; fi
+
+mkdir -p "$THOVEN_GATE_DIR/slot.1"
+printf 'pid=999999\nstart=1\nlabel=dead\ncommand=dead\n' > "$THOVEN_GATE_DIR/slot.1/owner"
+if kill -0 999999 2>/dev/null; then fail "f) setup" "pid 999999 is alive"; fi
+"$TOOL" "${OPEN[@]}" --slots 1 --wait 3 -- true >/dev/null 2>&1
+expect_rc "f) slot with a dead pid is taken over" $? 0
+
+"$TOOL" "${OPEN[@]}" --check-only >/dev/null 2>&1; expect_rc "g) --check-only with passing thresholds" $? 0
+
+if [ "$failures" -gt 0 ]; then printf '%s case(s) failed\n' "$failures"; exit 1; fi
+printf 'all cases passed\n'

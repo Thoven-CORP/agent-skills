@@ -157,6 +157,13 @@ fires after `git worktree add` from any tool, including a herdr create that did 
 go through `thoven-worktree`, and warns when the new HEAD is behind `origin/main`
 with no commits of its own. A hook at that point cannot block.
 
+`bin/thoven-load-gate [--slots N] [--min-free PCT] [--max-load N] [--wait SECS] -- <cmd>`
+runs a heavy job once a slot is free, system memory free is at least 20% and the
+1-minute load is at most 12. Defaults are 2 slots and a 1500 s wait, each overridable
+by a `THOVEN_GATE_*` variable. It exits 75 when the wait runs out. `--check-only` waits
+on memory and load without taking a slot, and `THOVEN_GATE_DISABLE=1` skips the checks.
+`bin/thoven-load-gate-test` proves it with a temp slot directory, no git and no database.
+
 `bin/thoven-sync` runs every 30 minutes from the launchd agent `co.thoven.sync`,
 installed by `install/launchd.py`. It runs `git fetch --prune` in both main
 checkouts and fast-forwards each one only when it is on `main` and clean. When a

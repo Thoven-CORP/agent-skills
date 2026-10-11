@@ -47,7 +47,7 @@ Both checks run twice: in the brief before dispatch, and as the reviewer's first
 
 ## Tests and verification
 
-- **Targeted tests only.** Run the spec or test file the change touches, one file per run, plus the type-check. Full suites, builds and e2e run only when the user asks, and only through the heavy-run lock (`bash $TMPDIR/dispatch/heavy.sh <cmd>`).
+- **Targeted tests only.** Run the spec or test file the change touches, one file per run, plus the type-check. Full suites, builds and e2e run only when the user asks, and only through `/Users/andresmartinez/thoven/agent-skills/enforcement/bin/thoven-load-gate -- <cmd>`, which waits for free memory and a free slot.
 - Every backend command exports its own local `DATABASE_URL` and `TEST_DATABASE_URL` in the same line, `git commit` included. Production is read-only.
 - "Done" means the touched tests ran green and you read the output. Name anything not run.
 - Show the evidence, then merge. Merge the SHA you tested: the tested commit, the PR head and the report must name the same SHA.

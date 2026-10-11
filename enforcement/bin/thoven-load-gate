@@ -1,0 +1,156 @@
+#!/usr/bin/env bash
+# Admission gate for heavy jobs: waits for a free slot, free memory and a calm load average,
+# then runs the command. Replaces the per-session $TMPDIR/dispatch/heavy.sh lock.
+set -uo pipefail
+
+usage() {
+  cat >&2 <<'USAGE'
+usage: thoven-load-gate [--slots N] [--min-free PCT] [--max-load N] [--wait SECS]
+                        [--name LABEL] [--check-only] -- <command...>
+
+  --slots N        jobs allowed at once            (default 2,    env THOVEN_GATE_SLOTS)
+  --min-free PCT   least system memory free, in %  (default 20,   env THOVEN_GATE_MIN_FREE)
+  --max-load N     highest 1-minute load average   (default 12,   env THOVEN_GATE_MAX_LOAD)
+  --wait SECS      give up after this long         (default 1500, env THOVEN_GATE_WAIT)
+  --name LABEL     name shown to the jobs queued behind this one
+  --check-only     wait for memory and load only, take no slot; run the command if given
+  THOVEN_GATE_DISABLE=1 runs the command at once. THOVEN_GATE_DIR moves the slot directory.
+  Exit codes: the command's own, 2 for bad usage, 75 when the wait ran out.
+USAGE
+  exit 2
+}
+
+log() { printf 'thoven-load-gate: %s\n' "$*" >&2; }
+
+slots="${THOVEN_GATE_SLOTS:-2}"
+min_free="${THOVEN_GATE_MIN_FREE:-20}"
+max_load="${THOVEN_GATE_MAX_LOAD:-12}"
+wait_secs="${THOVEN_GATE_WAIT:-1500}"
+poll="${THOVEN_GATE_POLL:-5}"
+dir="${THOVEN_GATE_DIR:-/tmp/thoven-load-gate-$(id -u)}"
+label=""
+check_only=0
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --slots) [ $# -ge 2 ] || usage; slots="$2"; shift 2 ;;
+    --min-free) [ $# -ge 2 ] || usage; min_free="$2"; shift 2 ;;
+    --max-load) [ $# -ge 2 ] || usage; max_load="$2"; shift 2 ;;
+    --wait) [ $# -ge 2 ] || usage; wait_secs="$2"; shift 2 ;;
+    --name) [ $# -ge 2 ] || usage; label="$2"; shift 2 ;;
+    --check-only) check_only=1; shift ;;
+    --) shift; break ;;
+    *) usage ;;
+  esac
+done
+
+is_int() { case "$1" in '' | *[!0-9]*) return 1 ;; esac; }
+is_num() { case "$1" in '' | *[!0-9.]* | *.*.*) return 1 ;; esac; }
+is_int "$slots" && [ "$slots" -ge 1 ] || usage
+is_int "$min_free" || usage
+is_num "$max_load" || usage
+is_int "$wait_secs" || usage
+is_int "$poll" && [ "$poll" -ge 1 ] || usage
+
+cmd_text=""
+if [ $# -gt 0 ]; then
+  cmd_text="$*"
+  case "$cmd_text" in *[![:space:]]*) ;; *) usage ;; esac
+elif [ "$check_only" = 0 ]; then
+  usage
+fi
+
+[ -n "$label" ] || label="${cmd_text:0:60}"
+
+if [ "${THOVEN_GATE_DISABLE:-0}" = 1 ]; then
+  [ $# -gt 0 ] || exit 0
+  exec "$@"
+fi
+
+mem_free() { memory_pressure 2>/dev/null | sed -n 's/.*System-wide memory free percentage: *\([0-9][0-9]*\)%.*/\1/p' | head -n 1; }
+load_now() { sysctl -n vm.loadavg 2>/dev/null | awk '{ print $2 }'; }
+
+held=""
+child=""
+# shellcheck disable=SC2329  # runs from the traps below
+release() { [ -n "$held" ] && rm -rf "$held"; held=""; }
+trap 'release' EXIT
+trap '[ -n "$child" ] && kill "$child" 2>/dev/null; release; exit 130' INT
+trap '[ -n "$child" ] && kill "$child" 2>/dev/null; release; exit 143' TERM
+
+owner_field() { sed -n "s/^$2=//p" "$1/owner" 2>/dev/null | head -n 1; }
+
+# Prints nothing and returns 0 when the slot is ours; otherwise returns 1.
+take_slot() {
+  local i d pid
+  i=1
+  while [ "$i" -le "$slots" ]; do
+    d="$dir/slot.$i"
+    if ! mkdir "$d" 2>/dev/null; then
+      pid="$(owner_field "$d" pid)"
+      if [ -n "$pid" ] && ! kill -0 "$pid" 2>/dev/null; then
+        rm -rf "$d"
+        mkdir "$d" 2>/dev/null || { i=$((i + 1)); continue; }
+      else
+        i=$((i + 1)); continue
+      fi
+    fi
+    printf 'pid=%s\nstart=%s\nlabel=%s\ncommand=%s\n' "$$" "$(date +%s)" "$label" "$cmd_text" > "$d/owner"
+    held="$d"
+    return 0
+  done
+  return 1
+}
+
+# Sets $why to the reasons admission is refused, empty when admitted.
+check() {
+  local mem load busy i d pid since now
+  why=""
+  mem="$(mem_free)"
+  if [ -n "$mem" ] && [ "$mem" -lt "$min_free" ]; then why="memory free ${mem}% < ${min_free}%"; fi
+  load="$(load_now)"
+  if [ -n "$load" ] && [ "$(awk -v l="$load" -v m="$max_load" 'BEGIN { print (l > m) }')" = 1 ]; then
+    why="${why:+$why; }load $load > $max_load"
+  fi
+  [ -n "$why" ] && return 1
+  [ "$check_only" = 1 ] && return 0
+  take_slot && return 0
+  busy=""
+  now="$(date +%s)"
+  i=1
+  while [ "$i" -le "$slots" ]; do
+    d="$dir/slot.$i"
+    pid="$(owner_field "$d" pid)"
+    since="$(owner_field "$d" start)"
+    busy="$busy${busy:+, }pid ${pid:-?} \"$(owner_field "$d" label)\" $((now - ${since:-$now}))s"
+    i=$((i + 1))
+  done
+  why="slots $slots/$slots busy: $busy"
+  return 1
+}
+
+if [ "$check_only" = 0 ]; then mkdir -p "$dir" || { log "cannot create $dir"; exit 2; }; fi
+
+start="$(date +%s)"
+next_msg=30
+while ! check; do
+  elapsed=$(($(date +%s) - start))
+  if [ "$elapsed" -ge "$wait_secs" ]; then
+    log "gave up after ${elapsed}s, nothing was run"
+    exit 75
+  fi
+  if [ "$elapsed" -ge "$next_msg" ]; then
+    log "queued ${elapsed}s ($why)"
+    next_msg=$((next_msg + 30))
+  fi
+  left=$((wait_secs - elapsed))
+  sleep "$([ "$left" -lt "$poll" ] && echo "$left" || echo "$poll")"
+done
+
+[ $# -gt 0 ] || exit 0
+"$@" <&0 &
+child=$!
+wait "$child"
+rc=$?
+child=""
+exit "$rc"
