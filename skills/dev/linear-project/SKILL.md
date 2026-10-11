@@ -58,6 +58,16 @@ A project document is an actual longer artifact; a document template only seeds 
 existing authoritative issues or files where they are. Do not clone or migrate them automatically,
 or assume template edits sync projects or create documents. Do not create issue or document templates.
 
+## Integration branch
+
+When the Project will build code, add two items to the proposal: the integration branch name
+(pattern `<project-slug>/integration`) and the repos it touches (fe, be). After Andres confirms,
+write both in the Project's Sources of truth, because Linear is the source of truth. Then run
+`~/thoven/agent-skills/enforcement/bin/thoven-worktree register-project <project> <fe|be> <branch>`
+for each repo. The registry is a cache of the branch name, and committing its row is a normal
+agent-skills commit. Setup creates no worktree and pushes nothing. The first Build ticket cuts the
+tree, since a pnpm install costs about 1.5 GB and a design-only Project never needs it.
+
 ## Hand off
 
 Read back the applied project and report its link, confirmed setup, missing sources and first work.

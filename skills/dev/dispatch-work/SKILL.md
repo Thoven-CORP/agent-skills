@@ -34,12 +34,14 @@ comment, and it clears the row. Main leaves both to him and does not run `/works
 
 ## Layout
 
-- **Space** is the Linear Project. **Tab** is one issue: `<Kind> · <issue title> (THV-x)`. Kind names
+- **Space** is the Linear Project. **Tab** is one issue: `<Kind> · <issue title> (THV-x)`. Tickets of
+  one Project can share a worktree, and each keeps its own tab and labels. Kind names
   the ticket's work. Pick it by the rule in WORKFLOW.md §8. Main's own tab is `Meta · <Project>`.
   `scripts/label.sh` writes every label and accepts only the kinds `label.sh --kinds` prints. The
   cockpit mod and the herdr sidebar sort work by that word.
 - **Panes** in that tab are the sub-tickets of that issue. Run them in parallel only when their
-  `Paths` share no file. Otherwise run them one after another in the same tab.
+  `Paths` share no file, and that holds for panes in a shared tree too. Otherwise run them one after
+  another in the same tab.
 - The **verifier** gets its own pane in the same tab at step 5 and closes after it reports.
 - Main stays in its own pane. `$HERDR_PANE_ID` is main's address for every return message.
 - The space-to-Project mapping and pane naming live in `~/.agents/skills/workspace/references/WORKFLOW.md` §8.
@@ -76,11 +78,12 @@ you cannot fill means the ticket is not ready. Fix the ticket in Linear, then co
 
 ### 3. Launch and send
 
-1. Create each repo's worktree with
-   `~/thoven/agent-skills/enforcement/bin/thoven-worktree create <fe|be> <area> <n>`. It cuts
-   `<area>/thv-<n>` from `origin/main`, copies the env file and installs dependencies, and its last
-   stdout line is the path. Record the base SHA there (`git -C <path> rev-parse HEAD`). Review
-   diffs start there.
+1. Run each repo's
+   `~/thoven/agent-skills/enforcement/bin/thoven-worktree create <fe|be> <area> <n> --project <P> --kind <K>`
+   and follow what it prints. The Project's integration tree is the unit, so tickets of one Project
+   share a tree and a read-only kind gets none. The decision table lives in the script's usage text
+   and in `enforcement/rules/thoven-law.md`. Its last stdout line is the path. Record the base SHA
+   there (`git -C <path> rev-parse HEAD`). Review diffs start there.
 2. Open the issue's tab in main's own space:
    `herdr tab create --workspace "${HERDR_PANE_ID%%:*}" --cwd <path> --no-focus`. The pane id is
    `.result.root_pane.pane_id` in the JSON it returns. A sub-issue pane splits into the issue's

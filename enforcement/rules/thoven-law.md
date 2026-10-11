@@ -19,13 +19,25 @@ a rebase ate a day of the onboarding prototype.)
 
 **Branches and PRs.**
 - `main` is the only 2.0 branch.
-- One worktree per ticket, on branch `<area>/thv-<n>` cut from `origin/main` with `--no-track`.
-  Create it with `~/thoven/agent-skills/enforcement/bin/thoven-worktree create <fe|be> <area> <n>`,
-  which also copies the env file and installs dependencies. From Claude, `claude --worktree
-  <area>-thv-<n>` runs the same script.
+- The unit of work is the Linear Project's integration branch. Match the ticket's Project, Kind and
+  files to one row:
+
+| # | Ticket | Where it runs |
+|---|---|---|
+| 1 | Review, Audit, Research, Verify | No tree. Read the Project's integration tree, or `git show`. |
+| 2 | Design or Plan, docs only | No tree. Write at the issue's `Writes to:` path. |
+| 3 | Build or Fix, Project has an integration tree | Work in that tree on the integration branch. Every commit ends with the ticket id. |
+| 4 | First Build ticket of a Project | Cut the Project's canonical tree and remote branch `<project-slug>/integration`. |
+| 5 | Build or Fix, no Project (hotfix, scratch) | Own tree on `<area>/thv-<n>` cut from `origin/main` with `--no-track`. |
+
+- Create a tree with `~/thoven/agent-skills/enforcement/bin/thoven-worktree create <fe|be> <area> <n>
+  --project <slug> --kind <kind>`. The script refuses read-only kinds, reuses a Project's tree, and
+  copies the env file and installs dependencies. Add `--new "<reason>"` for a fresh tree when your
+  files overlap another live tree's dirty files, or the work is risky and long. From Claude,
+  `claude --worktree <area>-thv-<n>` runs the same script.
 - Open a held PR into `main`. Merging is `gh pr merge --auto --squash`, gated by the required `CI`
-  check. Commit and merge only on a ticket branch: `co.thoven.sync` fast-forwards the clean `main`
-  checkouts every 30 minutes.
+  check. Commit and merge only on a branch in a tree, never in a `main` checkout: `co.thoven.sync`
+  fast-forwards the clean `main` checkouts every 30 minutes.
 - Production moves only through `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh`.
 
 **Where records live.** Linear is the source of truth, and the tldraw board is the source of truth
@@ -51,7 +63,7 @@ names that issue beside the change.
 
 **Targeted tests.** A slice runs its touched test files, one file per run, plus lint on those files.
 CI runs the full suite on the integration PR. `bin/verify` runs once per feature, before it merges
-to `main`. Heavy work (e2e, builds, stacks, perf) takes a `mkdir` lock and runs one at a time. Stop
+to `main`. Heavy work (e2e, builds, stacks, perf) runs through `~/thoven/agent-skills/enforcement/bin/thoven-load-gate -- <cmd>`. Stop
 the servers you started after each step, and delete scratch you can regenerate.
 
 **Local database.** `thoven-worktree create` sets `TEST_DATABASE_URL` to `neondb_test_<slug>`, drops

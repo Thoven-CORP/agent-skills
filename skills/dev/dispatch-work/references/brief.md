@@ -42,11 +42,17 @@ STANDING
   the code on this branch and your commits.
 - Commit as you go, by exact path, message ending in THV-<id>. Commit only: main pushes the branch and opens the PR.
 - Machine: run the touched test files, one file per run, one process at a time, no watch mode.
-  Take a `mkdir` lock before e2e, build, stack or perf work and release it after. Commit with
+  Run e2e, build, stack and perf work through
+  `/Users/andresmartinez/thoven/agent-skills/enforcement/bin/thoven-load-gate -- <cmd>`, which waits
+  for free memory and a free slot. Commit with
   `--no-verify` once the touched tests pass if a hook would run a big suite; CI runs the full suite.
   Stop the servers you started after each step; a dev server runs for the parity capture and stops
   after it. Delete scratch you can regenerate. Route big logs and wide reads through a subagent and
   keep its summary.
+- Evidence: one folder per ticket, `~/.thoven-artifacts/THV-<id>/evidence/`. Overwrite your own
+  earlier run of the same check so only the last green log of each check stays. Point at a board
+  frame or screenshot that already exists instead of saving a second copy. Write no test or
+  verification file beyond the ticket's own red and green proof.
 - Database (backend ticket): export the pane's own `DATABASE_URL` and `TEST_DATABASE_URL` in the
   same line as every backend command, `git commit` included.
 - Budget: stop near 250k tokens and send your status with what is done and what is left.
