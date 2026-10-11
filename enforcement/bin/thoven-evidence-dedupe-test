@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# Proves thoven-evidence-dedupe in a mktemp copy. Never touches real evidence folders.
+set -u
+here=$(cd "$(dirname "$0")" && pwd)
+tool="$here/thoven-evidence-dedupe"
+w=$(mktemp -d) || exit 1
+trap 'rm -rf "$w"' EXIT
+fails=0
+ino() { stat -f %i "$1" 2>/dev/null || stat -c %i "$1"; }
+ok() { echo "PASS $1"; }
+bad() { echo "FAIL $1"; fails=$((fails + 1)); }
+expect_exit() { # name want cmd...
+	local name=$1 want=$2
+	shift 2
+	"$@" >/dev/null 2>&1
+	local got=$?
+	[ "$got" = "$want" ] && ok "$name" || bad "$name (exit $got, want $want)"
+}
+
+expect_exit "a no args exits 2" 2 "$tool"
+mkdir "$w/empty"
+expect_exit "b empty directory exits 2" 2 "$tool" "$w/empty"
+expect_exit "c nonexistent dir exits 2" 2 "$tool" "$w/nope"
+expect_exit "d --apply with no dir exits 2" 2 "$tool" --apply
+expect_exit "e HOME exits 2" 2 "$tool" "$HOME"
+
+t="$w/tree"
+mkdir -p "$t/a" "$t/b" "$t/c"
+head -c 4096 /dev/zero | tr '\0' 'x' >"$t/a/shot.png"
+cp "$t/a/shot.png" "$t/b/shot.png"
+cp "$t/a/shot.png" "$t/c/shot.png"
+echo different >"$t/other.txt"
+# h: same size as shot.png, different content
+head -c 4096 /dev/zero | tr '\0' 'y' >"$t/c/samesize.png"
+before=$(for f in a/shot.png b/shot.png c/shot.png other.txt c/samesize.png; do ino "$t/$f"; done)
+
+out=$("$tool" "$t" 2>&1)
+rc=$?
+before2=$(for f in a/shot.png b/shot.png c/shot.png other.txt c/samesize.png; do ino "$t/$f"; done)
+if [ $rc = 0 ] && echo "$out" | grep -q "2 duplicate files, 8192 bytes reclaimable" && [ "$before" = "$before2" ]; then
+	ok "f dry run reports 2 duplicates, 2 x size, inodes unchanged"
+else
+	bad "f dry run: rc=$rc out=$out"
+fi
+
+out=$("$tool" --apply "$t" 2>&1)
+rc=$?
+i=$(ino "$t/a/shot.png")
+if [ $rc = 0 ] && [ "$(ino "$t/b/shot.png")" = "$i" ] && [ "$(ino "$t/c/shot.png")" = "$i" ] &&
+	cmp -s "$t/a/shot.png" "$t/b/shot.png" && cmp -s "$t/a/shot.png" "$t/c/shot.png" &&
+	[ "$(cat "$t/other.txt")" = different ] && [ "$(ino "$t/other.txt")" = "$(echo "$before" | sed -n 4p)" ]; then
+	ok "g apply shares one inode, bytes equal, other file untouched"
+else
+	bad "g apply: rc=$rc out=$out"
+fi
+
+if [ "$(ino "$t/c/samesize.png")" != "$i" ] && ! cmp -s "$t/c/samesize.png" "$t/a/shot.png" &&
+	[ "$(ino "$t/c/samesize.png")" = "$(echo "$before" | sed -n 5p)" ]; then
+	ok "h same size, different content not merged"
+else
+	bad "h same-size file was merged"
+fi
+
+out=$("$tool" --apply "$t" 2>&1)
+rc=$?
+if [ $rc = 0 ] && echo "$out" | grep -q "nothing to do"; then
+	ok "i second apply reports nothing to do, exit 0"
+else
+	bad "i second apply: rc=$rc out=$out"
+fi
+
+[ "$fails" = 0 ] && echo "all cases passed" || echo "$fails case(s) failed"
+[ "$fails" = 0 ]

@@ -164,6 +164,15 @@ by a `THOVEN_GATE_*` variable. It exits 75 when the wait runs out. `--check-only
 on memory and load without taking a slot, and `THOVEN_GATE_DISABLE=1` skips the checks.
 `bin/thoven-load-gate-test` proves it with a temp slot directory, no git and no database.
 
+`bin/thoven-evidence-dedupe [--apply] <dir>` finds byte-identical files under an
+evidence folder (grouped by size, then sha256) and keeps the lexicographically first
+path of each group. By default it only prints the duplicates and the reclaimable bytes.
+With `--apply` it replaces each duplicate with a hardlink to the kept file, after it
+re-checks that both files share a device and a hash. Every path still resolves to the
+same bytes, because it never deletes and never makes symlinks. It exits 2 for no
+directory, a missing or empty directory, `$HOME`, `/`, or `/Users`, and 1 when any
+file fails to link. `bin/thoven-evidence-dedupe-test` proves it in a `mktemp -d` tree.
+
 `bin/thoven-sync` runs every 30 minutes from the launchd agent `co.thoven.sync`,
 installed by `install/launchd.py`. It runs `git fetch --prune` in both main
 checkouts and fast-forwards each one only when it is on `main` and clean. When a

@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+# Replace byte-identical files under a directory with hardlinks to one canonical copy.
+# Dry run by default. Hardlinks keep every path resolving to a real file with the same bytes.
+set -u
+export LC_ALL=C
+
+usage() {
+	cat >&2 <<'USAGE'
+usage: thoven-evidence-dedupe [--apply] <dir>
+  Groups the regular files under <dir> by size, then by sha256. The lexicographically
+  first path in each group is canonical. Without --apply it prints the duplicates and
+  the reclaimable bytes and changes nothing. With --apply it replaces each duplicate
+  with a hardlink to the canonical file.
+  Exit 0 success, 1 an apply failure, 2 refused input (also $HOME, /, /Users).
+USAGE
+	exit 2
+}
+
+if stat -f %z / >/dev/null 2>&1; then
+	fsize() { stat -f %z "$1"; }
+	fdevino() { stat -f '%d:%i' "$1"; }
+	fdev() { stat -f %d "$1"; }
+else
+	fsize() { stat -c %s "$1"; }
+	fdevino() { stat -c '%d:%i' "$1"; }
+	fdev() { stat -c %d "$1"; }
+fi
+fhash() { shasum -a 256 -- "$1" | cut -d' ' -f1; }
+
+apply=0
+dir=""
+for arg in "$@"; do
+	case "$arg" in
+	--apply) apply=1 ;;
+	-h | --help) usage ;;
+	-*) usage ;;
+	*) [ -n "$dir" ] && usage; dir="$arg" ;;
+	esac
+done
+[ -n "$dir" ] || usage
+[ -d "$dir" ] || { echo "thoven-evidence-dedupe: not a directory: $dir" >&2; usage; }
+root=$(cd "$dir" && pwd -P) || usage
+home=$(cd "$HOME" 2>/dev/null && pwd -P || echo "$HOME")
+case "$root" in
+/ | /Users | "$home")
+	echo "thoven-evidence-dedupe: refusing broad target: $root" >&2
+	usage
+	;;
+esac
+
+tmp=$(mktemp -d) || exit 2
+trap 'rm -rf "$tmp"' EXIT
+
+find "$root" -name .git -prune -o -type f -print0 |
+	while IFS= read -r -d '' f; do
+		printf '%s\t%s\n' "$(fsize "$f")" "$f"
+	done | sort -t "$(printf '\t')" -k2 >"$tmp/all"
+
+if [ ! -s "$tmp/all" ]; then
+	echo "thoven-evidence-dedupe: no regular files under $root" >&2
+	usage
+fi
+
+# Hash only files whose size collides with another file.
+tab=$(printf '\t')
+awk -F "$tab" '{n[$1]++; l[NR]=$0; s[NR]=$1} END {for (i=1;i<=NR;i++) if (n[s[i]]>1) print l[i]}' "$tmp/all" >"$tmp/cand"
+while IFS="$tab" read -r size path; do
+	printf '%s\t%s\t%s\n' "$size" "$(fhash "$path")" "$path"
+done <"$tmp/cand" | sort -t "$tab" -k1,1n -k2,2 -k3 >"$tmp/hashed"
+
+dups=0
+reclaim=0
+fail=0
+prev=""
+canon=""
+canon_id=""
+while IFS="$tab" read -r size hash path; do
+	key="$size:$hash"
+	if [ "$key" != "$prev" ]; then
+		prev="$key"
+		canon="$path"
+		canon_id=$(fdevino "$canon")
+		header=0
+		continue
+	fi
+	[ "$(fdevino "$path")" = "$canon_id" ] && continue
+	if [ "$header" = 0 ]; then
+		printf 'group %s bytes\n  keep  %s\n' "$size" "$canon"
+		header=1
+	fi
+	dups=$((dups + 1))
+	if [ "$apply" = 0 ]; then
+		printf '  dupe  %s\n' "$path"
+		reclaim=$((reclaim + size))
+		continue
+	fi
+	if [ "$(fdev "$canon")" != "$(fdev "$path")" ]; then
+		echo "  FAIL  $path (different device from $canon)" >&2
+		fail=$((fail + 1))
+		continue
+	fi
+	if [ "$(fhash "$canon")" != "$hash" ] || [ "$(fhash "$path")" != "$hash" ]; then
+		echo "  FAIL  $path (content changed since scan)" >&2
+		fail=$((fail + 1))
+		continue
+	fi
+	t="$path.dedupe.$$"
+	if ln "$canon" "$t" && mv -f "$t" "$path"; then
+		printf '  link  %s\n' "$path"
+		reclaim=$((reclaim + size))
+	else
+		rm -f "$t"
+		echo "  FAIL  $path (ln or mv failed)" >&2
+		fail=$((fail + 1))
+	fi
+done <"$tmp/hashed"
+
+if [ "$dups" = 0 ]; then
+	echo "nothing to do: no duplicate files under $root"
+	exit 0
+fi
+if [ "$apply" = 0 ]; then
+	echo "dry run: $dups duplicate files, $reclaim bytes reclaimable under $root"
+else
+	echo "applied: $dups duplicates processed, $fail failed, $reclaim bytes reclaimed under $root"
+fi
+[ "$fail" = 0 ] || exit 1
+exit 0
