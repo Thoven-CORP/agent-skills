@@ -139,7 +139,7 @@ reported to Andres. Main ends a turn only while a watcher is armed on every live
 
 ### 5. Verify
 
-Follow [references/review.md](references/review.md). The verifier runs in its own fresh pane, on
+Follow [references/review.md](references/review.md): main's pass, then the verifier. The verifier runs in its own fresh pane, on
 the model [references/agents.md](references/agents.md) names, against the base SHA.
 
 **Done when:** every Acceptance line has a verdict with evidence, and every item in the review's
@@ -147,12 +147,14 @@ the model [references/agents.md](references/agents.md) names, against the base S
 
 ### 6. Close
 
-After the verifier passes, show Andres the evidence table. On his confirmation:
+After the verifier passes, show Andres the evidence table and, on a UI ticket, the parity images. On his confirmation:
 
-1. Move the ticket to **Done** with one comment: the evidence table and the commit SHAs.
+1. Move the ticket to **Done** with one comment: the evidence table and the commit SHAs. On a UI
+   ticket, upload the parity images to the issue and place them on the board beside their frames.
 2. File each minor finding as a follow-up ticket, linked to this one.
 3. `herdr pane close` every pane this dispatch opened. Close the tab when it is empty.
-4. Delete `$TMPDIR/dispatch/<THV-x>.md` and any file the dispatch wrote outside the repo.
+4. Delete `$TMPDIR/dispatch/<THV-x>.md`, `~/.thoven-artifacts/THV-x/evidence/` and any file the
+   dispatch wrote outside the repo.
 
 **Done when:** `herdr pane list` no longer shows the dispatch's panes, its brief file is gone, and
 the ticket reads Done.

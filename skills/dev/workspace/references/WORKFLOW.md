@@ -371,7 +371,7 @@ that is a finding for Andres, not a licence to change the shell. `feature-ledger
 | Artifact | Home |
 |---|---|
 | `PRD.md`, specs | local, linked from the Project |
-| `decisions/*.md` | local. Agents grep `api.md` mid-task |
+| `decisions/api.md` | local, payload fields only. Agents grep it mid-task. Every other decision lives in the Linear parent issue |
 | `DESIGN_<PROJECT>.md`, protos | local. Protos are runnable |
 | `plans/*.md` | local. `superpowers:executing-plans` reads and ticks it |
 | `archive/` | local |
@@ -496,7 +496,7 @@ DOCUMENTS
 - Write to the path "Writes to:" names. Done when that file exists and says X. Then set Ready.
 - If the grill produces build work, run /to-tickets after Andres asks. /writing-plans still exists for a session plan.
 - New top-level docs/ folders are Andres's call. Ask in a comment.
-- Link to a decision. Never restate one.
+- Decisions live in the Linear parent issue. Link to one by id and board frame. Never restate one.
 
 BUILDING
 - Every issue is vertical through both repos, and demoable alone.
@@ -508,7 +508,7 @@ BRANCHES AND PULL REQUESTS
   `thoven-worktree create <fe|be> <area> <id>` gives `<area>/thv-<id>`, the same name in both repos.
 - Open a held PR into `main`. On Andres's "merge it", backend first: `gh pr merge --auto --squash`.
 - Put `THV-<id>` in the commit message with no magic word. `Fixes` auto-closes Linear. Merge does not own Done.
-- Write Ready if a surface still needs his eyes. Write Done when the job is finished.
+- Write Ready if a surface still needs his eyes. Write Done when the job is finished. Main merges UI after Andres sees the evidence images.
 - `--auto` merges once the `CI` check passes. Run `/loop-on-ci` when CI goes red.
 - In the same comment, say what you did AND what you deliberately did not do.
 
