@@ -7,7 +7,7 @@ Skills route by tier number. What each tier runs today (CLI, model, effort) live
 
 | Tier | Work |
 | -- | -- |
-| 1 | Hard or extremely complex: cross-cutting design, concurrency, a large unit, a fix loop that failed three rounds |
+| 1 | Hard or extremely complex: cross-cutting design, concurrency, a large unit, a fix loop that failed two rounds |
 | 2 | Build, design, orchestration, verification |
 | 3 | Well-specified multi-file builds where the spec is decided |
 | 4 | Easy mechanical bulk writes: transcription plus a test |
@@ -35,8 +35,8 @@ lists: set a tier, wire a new CLI, or check the config. It merges the change and
   independence that matters (Andres, 2026-09-27). The cockpit mod (THV-1053) sees which review
   skills ran only in Claude panes, so a verifier on another CLI shows a partial Review cell. Use
   one when Andres asks for a second family.
-- Fix rounds 1 to 3 go back to the builder's pane. Rounds 4 and 5 go to a fresh pane one tier up,
-  told: "A prior agent attempted this N times. Read its commits and the findings."
+- Fix rounds follow `review.md` "Handling findings". The fresh round-3 pane is one tier up, told:
+  "A prior agent attempted this twice. Read its commits and the findings."
 
 ## Launch lines
 

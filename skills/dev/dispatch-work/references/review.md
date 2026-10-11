@@ -7,10 +7,10 @@ work is reviewed by a Sonnet subagent of main with the same brief.
 ## Main's pass
 
 1. Rerun only the files the builder touched, one per run, and compare with the report.
-2. On a UI ticket, open every parity image, show Andres, upload the images to the Linear issue as a
-   comment (the parent when there is no issue) and place them on the board beside their frames.
+2. On a UI ticket, open every parity image and show Andres. `SKILL.md` close step 6.1 uploads them
+   after he confirms.
 3. Merge backend before the frontend that reads it. UI merges after Andres sees the evidence.
-4. `bin/verify` runs once per feature, before it merges to `main`. CI runs on the integration PR.
+4. Run `bin/verify` once per diff, before the push, and cite its receipt. CI runs on the integration PR.
 
 ## Working if
 
@@ -64,9 +64,9 @@ severity: critical, important or minor.
 ## Handling findings
 
 - **Critical or important:** a fix round (`brief.md`, fix-round brief) into the builder's pane,
-  then a verifier re-run scoped to the fix diff. Rounds 1 to 3 in the builder's pane. Rounds 4
-  and 5 in a fresh pane one tier up. The ticket stays **Ready** throughout.
-- **After round 5:** main rules on each open finding. Wrong or contestable: park it with the
+  then a verifier re-run scoped to the fix diff. There are 3 fix rounds. Rounds 1 and 2 go to the
+  builder's pane. Round 3 goes to a fresh pane one tier up. The ticket stays **Ready** throughout.
+- **After round 3:** main rules on each open finding. Wrong or contestable: park it with the
   reason. Real but nothing builds on it: park it and file a follow-up. Real and something builds
   on it: rule the smallest change and send it as one more fix round. Record each ruling in the
   Linear comment.

@@ -62,8 +62,8 @@ only to fix an issue it found at another viewport, in motion or in performance. 
 names that issue beside the change.
 
 **Targeted tests.** A slice runs its touched test files, one file per run, plus lint on those files.
-CI runs the full suite on the integration PR. `bin/verify` runs once per feature, before it merges
-to `main`. Heavy work (e2e, builds, stacks, perf) runs through `~/thoven/agent-skills/enforcement/bin/thoven-load-gate -- <cmd>`. Stop
+CI runs the full suite on the integration PR. Run `bin/verify` once per diff, before the push,
+and cite its receipt for "done", for the verifier and for the PR. Heavy work (e2e, builds, stacks, perf) runs through `~/thoven/agent-skills/enforcement/bin/thoven-load-gate -- <cmd>`. Stop
 the servers you started after each step, and delete scratch you can regenerate.
 
 **Local database.** `thoven-worktree create` sets `TEST_DATABASE_URL` to `neondb_test_<slug>`, drops

@@ -79,11 +79,15 @@ you cannot fill means the ticket is not ready. Fix the ticket in Linear, then co
 ### 3. Launch and send
 
 1. Run each repo's
-   `~/thoven/agent-skills/enforcement/bin/thoven-worktree create <fe|be> <area> <n> --project <P> --kind <K>`
-   and follow what it prints. The Project's integration tree is the unit, so tickets of one Project
-   share a tree and a read-only kind gets none. The decision table lives in the script's usage text
-   and in `enforcement/rules/thoven-law.md`. Its last stdout line is the path. Record the base SHA
-   there (`git -C <path> rev-parse HEAD`). Review diffs start there.
+   `~/thoven/agent-skills/enforcement/bin/thoven-worktree create <fe|be> <area> <n> --project <P> --kind <K>`.
+   The Project's integration tree is the unit, so tickets of one Project share a tree and a
+   read-only kind gets none. The decision table lives in the script's usage text and in
+   `enforcement/rules/thoven-law.md`. Read the exit code:
+   - Exit 3: no tree for this kind. Read the Project's tree or `git show`, or write at the issue's `Writes to:` path.
+   - Exit 4: the Project's tree exists, and the last stdout line is its path. Work there on the integration branch and end commits with the ticket id. Add `--new "<reason>"` only for overlap or risky long work.
+   - Success: the last stdout line is the path.
+
+   Record the base SHA there (`git -C <path> rev-parse HEAD`). Review diffs start there.
 2. Open the issue's tab in main's own space:
    `herdr tab create --workspace "${HERDR_PANE_ID%%:*}" --cwd <path> --no-focus`. The pane id is
    `.result.root_pane.pane_id` in the JSON it returns. A sub-issue pane splits into the issue's

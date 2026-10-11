@@ -31,7 +31,7 @@ Thoven work spans a frontend and a backend repo, and is run by a main session th
 Both checks run twice: in the brief before dispatch, and as the reviewer's first two sections. `~/.agents/skills/dispatch-work/references/brief.md` and `review.md` carry the procedure.
 
 - **Spec parity by decision id.** Trace every acceptance line, and every behaviour in the diff, to a parent decision id. Report invented scope and missed decisions. Quote the parent, never a sub-issue's paraphrase.
-- **Visual parity against board frames.** Capture every screen and state the work built at 1440 and 390, beside its frame, plus a short video of the flow. Post the images and the difference list to the Linear ticket, and place them on the board.
+- **Visual parity against board frames.** Capture every screen and state the work built at 1440 and 390, beside its frame, plus a short video of the flow. Upload the images and the difference list once, at close after the user confirms (dispatch-work `SKILL.md` step 6.1).
 - **An unconfirmed difference is a defect.** A difference the user did not confirm in a Linear ruling or in chat is fixed in the PR. A confirmed one cites its ruling. Only fully confirmed board states bind. A small exploratory prototype, or a state the user waived, is listed as "not binding" with the reason.
 - **The board frame beats written prose** on layout and flow. Update the ruling and the ticket to match the frame. Rulings still govern what a frame cannot show.
 - **A frame binds what shows, not how it sizes.** A frame is one static sample at one width. It binds which elements are present, their states, order, hierarchy and tokens. Fill or hug, stretch and reflow at other widths follow component best practice: match the frame at its own width, and give the reason in one line.
@@ -43,21 +43,20 @@ Both checks run twice: in the brief before dispatch, and as the reviewer's first
 - **Hardening keeps the product design.** Improve the architecture, data flow, concurrency and performance underneath. Change visuals only to fix a defect found at another viewport, in motion, or in a perf measurement, and say which.
 - Audit with numbers. Measure on local databases, report the baseline with n and percentiles, and rank fixes by gain over size.
 - A finding whose premise turns out false gets dropped with the evidence, not built.
-- Fix bugs and debt found during the work on the owning branch. File only a genuine product decision. Cap a slice at about three fix rounds.
+- Fix bugs and debt found during the work on the owning branch. File only a genuine product decision. Fix rounds follow dispatch-work `references/review.md`, "Handling findings".
 
 ## Tests and verification
 
-- **Targeted tests only.** Run the spec or test file the change touches, one file per run, plus the type-check. Full suites, builds and e2e run only when the user asks, and only through `/Users/andresmartinez/thoven/agent-skills/enforcement/bin/thoven-load-gate -- <cmd>`, which waits for free memory and a free slot.
-- Every backend command exports its own local `DATABASE_URL` and `TEST_DATABASE_URL` in the same line, `git commit` included. Production is read-only.
+- **Targeted tests only.** Full suites, builds and e2e run only when the user asks. The machine and database rules live in dispatch-work `references/brief.md` (STANDING) and `enforcement/rules/thoven-law.md`. Production is read-only.
 - "Done" means the touched tests ran green and you read the output. Name anything not run.
 - Show the evidence, then merge. Merge the SHA you tested: the tested commit, the PR head and the report must name the same SHA.
-- `bin/verify` runs once per feature, before `main`. Integration-branch slices rely on targeted specs and CI.
-- A feature slice gets a verifier pane. Cleanup and hardening get a Sonnet review subagent. Run the review skill the user named, and say which one ran.
+- Run `bin/verify` once per diff, before the push, and cite its receipt. Integration-branch slices rely on targeted specs and CI.
+- A feature slice gets a verifier pane. Cleanup and hardening get a review subagent (tiers: see dispatch-work `references/agents.md`). Run the review skill the user named, and say which one ran.
 
 ## Delegation
 
-- Main dispatches, verifies and merges. Panes build, and never push, open PRs, merge or write to Linear.
-- Panes run Claude Code with Opus under `/poteto-mode`, which picks its own skills. Codex panes run only when the user asks, at medium effort. Research, fixes and read-only audits run on Sonnet subagents, and Linear relays run on Haiku.
+- Roles: see dispatch-work (Roles table).
+- Panes run under `/poteto-mode`, which picks its own skills. Codex panes run only when the user asks. Tiers: see dispatch-work `references/agents.md`.
 - Guard main's context: route bulk reads to subagents and keep their summaries.
 - A brief quotes the user's words. It states no preference the user did not say.
 - Cutting a lane, dropping a gate or swapping a planned check is a plan edit plus one chat line, in the same turn.
