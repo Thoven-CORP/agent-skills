@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+# Proves thoven-worktree's reuse decision table with real git on throwaway repos. It runs create
+# only under --dry-run or on a path that ends before any install, so it needs no pnpm, bundle,
+# database or network. Stubs for those tools record any call, and the test fails if one happens.
+# pass never fails, so A && pass || flunk is a safe if-else here.
+# shellcheck disable=SC2015
+set -uo pipefail
+
+TOOL="$(cd "$(dirname "$0")" && pwd)/thoven-worktree"
+T=$(mktemp -d /tmp/thvreuse.XXXXXX) || exit 1
+case "$T" in /tmp/thvreuse.*) ;; *) exit 1 ;; esac
+trap 'rm -rf "$T"' EXIT
+TMP="$(cd "$T" && pwd -P)"
+
+export THOVEN_ROOT="$TMP"
+export THOVEN_WORKTREE_SKIP_INSTALL=1
+export THOVEN_WORKTREE_REGISTRY="$TMP/projects.tsv"
+export GIT_CONFIG_GLOBAL="$TMP/gitconfig"
+export GIT_CONFIG_NOSYSTEM=1
+git config --file "$GIT_CONFIG_GLOBAL" user.name test
+git config --file "$GIT_CONFIG_GLOBAL" user.email test@example.com
+git config --file "$GIT_CONFIG_GLOBAL" init.defaultBranch main
+
+STUB="$TMP/stubbin"
+mkdir -p "$STUB"
+for tool in pnpm npx bundle createdb dropdb psql; do
+  # shellcheck disable=SC2016
+  printf '#!/bin/sh\necho "%s $*" >> "$TMP/forbidden"\nexit 1\n' "$tool" > "$STUB/$tool"
+done
+chmod +x "$STUB"/*
+export TMP PATH="$STUB:$PATH"
+
+git init -q "$TMP/seed"
+(cd "$TMP/seed" && echo hi > README && git add -A && git commit -qm init)
+git clone -q --bare "$TMP/seed" "$TMP/origin.git"
+git clone -q "$TMP/origin.git" "$TMP/backend"
+git -C "$TMP/backend" branch int/proj origin/main
+git -C "$TMP/backend" worktree add -q "$TMP/proj-tree" int/proj
+git -C "$TMP/backend" worktree add -q -b tooling/thv-70 "$TMP/other-tree" origin/main
+PROJ_TREE="$(cd "$TMP/proj-tree" && pwd -P)"
+
+FAILS=0
+pass() { printf 'PASS %s\n' "$1"; }
+flunk() { printf 'FAIL %s: %s\n' "$1" "$2"; FAILS=$((FAILS + 1)); }
+# run <cmd...>: sets RC, OUT (stdout), ERR (stderr).
+run() {
+  OUT="$("$@" 2>"$TMP/err")"
+  RC=$?
+  ERR="$(cat "$TMP/err")"
+}
+check() { # <name> <want rc> <pattern in stderr+stdout, or empty>
+  local name="$1" want="$2" pat="$3"
+  if [ "$RC" != "$want" ]; then flunk "$name" "exit $RC, want $want. stderr: $ERR"; return; fi
+  if [ -n "$pat" ] && ! printf '%s\n%s\n' "$OUT" "$ERR" | grep -qF -- "$pat"; then
+    flunk "$name" "output lacks '$pat'. stdout: $OUT stderr: $ERR"
+    return
+  fi
+  pass "$name"
+}
+
+run "$TOOL" register-project Proj be int/proj
+check "register-project writes a row" 0 "registered"
+
+# a
+run "$TOOL" create be tooling 11 --kind review
+check "a: review kind refuses with exit 3 and a read recipe" 3 "archive origin/main"
+[ -z "$OUT" ] && pass "a: refusal prints no path on stdout" || flunk "a: stdout" "$OUT"
+run "$TOOL" create be tooling 11 --project Proj --kind audit
+check "a: audit with a known Project points at its tree" 3 "$PROJ_TREE"
+
+# b
+run "$TOOL" create be tooling 12 --kind design
+check "b: design kind refuses and names the Writes to line" 3 "Writes to:"
+
+# c
+run "$TOOL" create be tooling 13 --kind research --new "need my own"
+check "c: --new does not override research" 3 "--new does not apply"
+run "$TOOL" create be tooling 13 --kind plan --new "need my own"
+check "c: --new does not override plan" 3 "--new does not apply"
+
+# d
+run "$TOOL" create be tooling 14 --project Proj --kind build
+check "d: build with a registered tree exits 4" 4 "end every commit with THV-14"
+[ "$(printf '%s\n' "$OUT" | tail -n 1)" = "$PROJ_TREE" ] && pass "d: last stdout line is the tree path" ||
+  flunk "d: last stdout line" "'$OUT' (want $PROJ_TREE)"
+printf '%s\n' "$ERR" | grep -qF "$TMP/other-tree" && pass "d: lists the other tooling/ tree" ||
+  flunk "d: candidates" "$ERR"
+run "$TOOL" create be tooling 14 --project Proj --kind fix
+check "d: fix is treated like build" 4 ""
+
+# e
+run "$TOOL" create be tooling 15 --project Proj --kind build --new "parallel hotfix" --dry-run
+check "e: --new passes the reuse check" 0 "Reason: parallel hotfix"
+printf '%s\n' "$ERR" | grep -qF "worktree add --no-track -b tooling/thv-15 $TMP/backend-thv-15 origin/main" &&
+  pass "e: the plan cuts from origin/main" || flunk "e: plan" "$ERR"
+run "$TOOL" create be tooling 15 --project Proj --kind build --new "" --dry-run
+check "e: an empty --new reason is a usage error" 2 ""
+
+# f
+run "$TOOL" register-project Gone be int/gone
+run "$TOOL" create be tooling 16 --project Gone --kind build --dry-run
+check "f: a stale row is reported and falls through" 0 "stale row: branch int/gone"
+run "$TOOL" where Gone be
+check "f: where reports the stale row" 1 "stale row"
+run "$TOOL" where Nobody be
+check "f: where reports a missing row" 1 "no registry row"
+run "$TOOL" where Proj be
+check "f: where prints the validated path" 0 "$PROJ_TREE"
+git -C "$TMP/backend" branch int/lonely origin/main
+run "$TOOL" register-project Lonely be int/lonely
+run "$TOOL" where Lonely be
+check "f: where reports a branch with no tree" 1 "no worktree has int/lonely"
+run "$TOOL" create be tooling 17 --project Lonely --kind build --dry-run
+check "f: row 4 plans a tree on the existing branch" 0 "worktree add $TMP/backend-thv-17 int/lonely"
+git -C "$TMP/backend" worktree remove --force "$TMP/other-tree"
+rm -rf "$TMP/proj-tree"
+run "$TOOL" where Proj be
+check "f: a tree missing on disk is stale" 1 "gone from disk"
+
+# g
+run "$TOOL" register-project "" be b
+check "g: register-project with an empty project exits 2" 2 ""
+run "$TOOL" register-project Proj be ""
+check "g: register-project with an empty branch exits 2" 2 ""
+run "$TOOL" register-project Proj xx b
+check "g: register-project with a bad repo exits 2" 2 ""
+run "$TOOL" where "" be
+check "g: where with an empty project exits 2" 2 ""
+run "$TOOL" register-project Proj be int/proj
+[ "$(grep -c '^Proj	be	' "$THOVEN_WORKTREE_REGISTRY")" = 1 ] && pass "g: register-project is idempotent" ||
+  flunk "g: idempotent" "$(cat "$THOVEN_WORKTREE_REGISTRY")"
+! grep -q "$TMP" "$THOVEN_WORKTREE_REGISTRY" &&
+  pass "g: the registry holds no absolute path" || flunk "g: no absolute path" "$(cat "$THOVEN_WORKTREE_REGISTRY")"
+
+# h
+run "$TOOL" create be tooling 18 --dry-run
+check "h: the old call shape reaches the create path" 0 "dry-run: would fetch origin main"
+[ "$(printf '%s\n' "$OUT" | tail -n 1)" = "$TMP/backend-thv-18" ] && pass "h: last stdout line is the tree path" ||
+  flunk "h: last stdout line" "$OUT"
+[ ! -e "$TMP/backend-thv-18" ] && pass "h: dry-run created nothing" || flunk "h: dry-run" "tree exists"
+run "$TOOL" create be tooling
+check "h: too few arguments is a usage error" 2 ""
+run "$TOOL" create be tooling 19 --kind bogus
+check "h: an unknown kind is a usage error" 2 ""
+
+[ ! -e "$TMP/forbidden" ] && pass "no install or database tool was called" || flunk "forbidden tools" "$(cat "$TMP/forbidden")"
+
+if [ "$FAILS" -eq 0 ]; then echo "ALL PASS"; else echo "$FAILS FAILED"; fi
+[ "$FAILS" -eq 0 ]
