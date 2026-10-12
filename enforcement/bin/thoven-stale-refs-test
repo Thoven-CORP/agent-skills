@@ -116,6 +116,28 @@ expect_status 0 "$scanner" --count --base origin/main -- "$default_repo"
 printf 'export function Page() {\n  return 1\n}\n' > "$default_repo/app/book/page.tsx"
 expect_status 1 "$scanner" --count --base origin/main -- "$default_repo"
 
+# A frontend snapshot under another name (bin/verify's thoven-verify-fe-*) keeps its history
+# exemption, for text hits and for deleted-path callers; the same lines in a live file stay red.
+snapshot="$workspace/thoven-verify-fe-snapshot"
+git -C "$workspace" init -b main thoven-verify-fe-snapshot >/dev/null
+git -C "$snapshot" config user.email verify@example.test
+git -C "$snapshot" config user.name 'Verify Test'
+mkdir -p "$snapshot/lib" "$snapshot/docs/superpowers/qa"
+touch "$snapshot/next.config.mjs"
+printf 'export const Gone = 1\n' > "$snapshot/lib/gone.ts"
+git -C "$snapshot" add .
+git -C "$snapshot" commit -m base >/dev/null
+git -C "$snapshot" update-ref refs/remotes/origin/main HEAD
+git -C "$snapshot" rm -q lib/gone.ts
+printf "old: thoven2.0\nimport { Gone } from '@/lib/gone'\n" > "$snapshot/docs/superpowers/qa/record.md"
+expect_status 0 "$scanner" --count --base origin/main -- "$snapshot"
+cp "$snapshot/docs/superpowers/qa/record.md" "$snapshot/docs/live.md"
+expect_status 1 "$scanner" --count -- "$snapshot"
+expect_status 1 "$scanner" --count --base origin/main -- "$snapshot"
+rm "$snapshot/docs/live.md"
+printf "import { Gone } from '@/lib/gone'\n" > "$snapshot/docs/live.md"
+expect_status 1 "$scanner" --count --base origin/main -- "$snapshot"
+
 # An empty base is refused, never read as "no base" and a skipped caller check.
 expect_status 2 "$scanner" --count --base '' -- "$default_repo"
 expect_status 2 "$source_helper" '' "$default_repo"

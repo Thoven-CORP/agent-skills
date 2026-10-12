@@ -37,12 +37,15 @@ BE_HISTORY='^\.scratch/'
 # A live doc may still name the old model when the same line says it is gone.
 ALLOW='retired|deleted|superseded|no longer|formerly|stale-ok'
 
+# Keyed on the checkout's own files, not its name: bin/verify scans a snapshot directory.
 drop_history() {
-  case "$(basename "$1")" in
-    frontend*) grep -vE "$FE_HISTORY" ;;
-    backend*) grep -vE "$BE_HISTORY" ;;
-    *) cat ;;
-  esac
+  if [ -e "$1/next.config.mjs" ] || [ -e "$1/next.config.js" ] || case "$(basename "$1")" in frontend*) true ;; *) false ;; esac; then
+    grep -vE "$FE_HISTORY"
+  elif [ -e "$1/config/application.rb" ] || case "$(basename "$1")" in backend*) true ;; *) false ;; esac; then
+    grep -vE "$BE_HISTORY"
+  else
+    cat
+  fi
 }
 
 # Prints hits as root-relative path:line:text.
@@ -105,7 +108,7 @@ for root in "${ROOTS[@]}"; do
       exit "$call_rc"
     fi
     if [ -n "$call_hits" ]; then
-      call_hits="$(printf '%s\n' "$call_hits" | sed "s|^|$root/|")"
+      call_hits="$(printf '%s\n' "$call_hits" | drop_history "$root" | sed "s|^|$root/|")"
       hits="$(printf '%s\n%s\n' "$hits" "$call_hits" | grep -vE "$EXEMPT" || true)"
     fi
     unset call_rc
