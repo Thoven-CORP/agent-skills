@@ -333,7 +333,7 @@ Pass --schema-stays only if the older code runs on the newer schema."
     from=$(rel .be.from)
     [ "$(live_commit "$API_ID")" = "$from" ] || die "thoven-api already left ${from:0:9}; a snapshot now would be taken after the migrations"
     host=$(retry render_get "/env-groups/$PROD_ENV_GROUP" | jq -r '.envVars[] | select(.key=="EXPECTED_DB_HOST") | .value | split(".")[0]')
-    ep=$(neonctl connection-string "$NEON_PROD_BRANCH" --project-id "$NEON_PROJECT" | sed -E 's#^.*@([^/:?]+).*$#\1#' | cut -d. -f1 | sed 's/-pooler$//')
+    ep=$(neonctl connection-string "$NEON_PROD_BRANCH" --project-id "$NEON_PROJECT" --role-name neondb_owner | sed -E 's#^.*@([^/:?]+).*$#\1#' | cut -d. -f1 | sed 's/-pooler$//')
     [[ $ep =~ ^ep-[a-z0-9-]+$ ]] || die "could not read the endpoint of Neon branch $NEON_PROD_BRANCH"
     [ "$ep" = "$host" ] || die "prod connects to ${host:-unknown} but Neon branch $NEON_PROD_BRANCH serves $ep; fix NEON_PROD_BRANCH"
     be=$(rel .be.to)
