@@ -46,7 +46,8 @@ STANDING
   Run e2e, build, stack and perf work through
   `/Users/andresmartinez/thoven/agent-skills/enforcement/bin/thoven-load-gate -- <cmd>`, which waits
   for free memory and a free slot. Exit 75 means the wait ran out: rerun once, then send
-  NEEDS_CONTEXT. CI runs the full suite on
+  NEEDS_CONTEXT. `bin/verify` never goes through the gate: run it plain, it holds its own
+  machine lock, and a 20-minute Playwright run must not queue it. CI runs the full suite on
   the integration PR. Stop the servers you started after each step; a dev server runs for the parity capture and stops
   after it. Delete scratch you can regenerate. Route big logs and wide reads through a subagent and
   keep its summary.

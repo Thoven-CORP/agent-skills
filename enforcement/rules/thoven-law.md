@@ -64,8 +64,9 @@ names that issue beside the change.
 **Targeted tests.** The verify cadence lives in `skills/andres-mode/SKILL.md`, "Check your own work":
 targeted checks while editing, `bin/verify --base <integration branch>` once per slice before DONE, CI
 on the integration PR, nothing reruns on push. Heavy work (e2e, builds, stacks, perf) runs through
-`~/thoven/agent-skills/enforcement/bin/thoven-load-gate -- <cmd>`. Stop the servers you started after
-each step, and delete scratch you can regenerate.
+`~/thoven/agent-skills/enforcement/bin/thoven-load-gate -- <cmd>`. `bin/verify` runs plain, never
+through the gate: it holds its own machine lock. Stop the servers you started after each step, and
+delete scratch you can regenerate.
 
 **Local database.** `thoven-worktree create` sets `TEST_DATABASE_URL` to `neondb_test_<slug>`, drops
 a `DATABASE_URL` that names the shared `thoven_development`, and creates `thoven_dev_<slug>` when the
