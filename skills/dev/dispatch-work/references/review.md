@@ -43,11 +43,11 @@ run `bin/verify --base <integration branch>` yourself and paste the block.
 1. SPEC PARITY. Read the parent's "Decisions (canonical)". Trace every Acceptance line and every
    behaviour in the diff to a decision id. Name invented scope, a decision the diff missed or
    changed, and lexicon slips.
-2. DESIGN PARITY, on a UI ticket. Open the builder's parity captures and the board frames each
+2. DESIGN PARITY, on a UI ticket. Open the builder's `grid.html` first, then the board frames each
    decision cites. Compare every state yourself and recapture only a state that looks wrong. Run
    /better-ui and /thoven-designer over the built screens. A difference from a frame that Andres
    did not confirm is an important finding.
-3. Claims the receipt does not cover get a direct check. /verify-this covers those claims only.
+3. A SKIPPED `mutation` row on a diff touching `lib/`, a service or a model is a finding: run with `--mutation`. Claims the receipt does not cover get a direct check. /verify-this covers those claims only.
 4. /mattpocock-skills:code-review against <base>.
 5. /thermo-nuclear-code-quality-review when the diff crosses a module or passes ~300 lines.
 6. /deslop findings only.

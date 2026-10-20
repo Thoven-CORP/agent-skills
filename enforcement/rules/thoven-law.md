@@ -48,7 +48,7 @@ folders are scratch, deleted at close.
 **Spec parity.** A brief, a plan section or a review traces its work to parent decision ids and
 their frames. The verifier's report opens with SPEC PARITY.
 
-**Design parity.** A build that changes what a user sees captures every touched state at 1440 and
+**Design parity.** A build that changes what a user sees captures every touched state, through the `parity` row of bin/verify where the surface is mapped, at 1440 and
 390 beside its board frame, plus a short video. The images go to the Linear issue as a comment (the
 parent when the work has no issue) and onto the board beside their frames. A difference from a
 confirmed frame that Andres did not approve is a defect. A frame binds what shows (elements,

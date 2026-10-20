@@ -30,7 +30,7 @@ Thoven work spans a frontend and a backend repo, run by a main session that disp
 Both checks run twice: in the brief before dispatch and as the reviewer's first two sections. `dispatch-work/references/brief.md` and `review.md` carry the procedure.
 
 - **Spec parity by decision id.** Trace every acceptance line and every behaviour in the diff to a parent decision id. Quote the parent, never a sub-issue's paraphrase.
-- **Visual parity on the real page.** Capture every state at 1440 and 390 beside its frame, plus a short video, on the route a user reaches (agent-browser or Playwright today; the `parity` row of `bin/verify` once the live layer ships, see `audits/2026-10-18-skill-retro/proposal/verify-live-layer.md`). A `/dev` or lab route, a component without its parent panel, or a re-render of the board is not parity.
+- **Visual parity on the real page.** Capture every state at 1440 and 390 beside its frame, plus a short video, on the route a user reaches. The `parity` row of `bin/verify` makes the captures; the verify skill carries the unmapped-surface step. A `/dev` or lab route, a component without its parent panel, or a re-render of the board is not parity.
 - **An unconfirmed difference is a defect.** Fixed in the PR unless a Linear ruling or a chat line confirms it.
 - **The board frame beats written prose** on layout and flow. A frame binds what shows, not how it sizes.
 - **Fidelity means design-system tokens** through the shared component. Build a missing one with `building-components`.
@@ -49,7 +49,7 @@ The builder checks its own homework before DONE; the reviewer runs the same list
 - **Every behaviour in the diff has a decision line**: "decision Dn, frame Fn", quoting the parent. A behaviour with no line is scope, and comes out or goes to the user.
 - **Design is checked on the real page.** The route a user reaches, at 1440 and 390, beside its frame, looked at before DONE. Shared component where one exists; tokens, not values; the design scan suite green. A `/dev` route, a component without its panel, or a re-render of the board proves nothing.
 - **Red then green on the behaviour the ticket names**, in the file's own test. A test that passes with the change reverted is not a test.
-- **Other people's tests run once.** Lint and types whole-repo, direct importers once, mutation only on a logic hunk against its one test. Never per hunk over the suite.
+- **Other people's tests run once.** Lint on changed files, cached typecheck, direct importers once, `--mutation` on a logic hunk. Never per hunk over the suite.
 - **One cadence.** Targeted checks while editing; `bin/verify --base <integration branch>` once before DONE; CI on the integration PR; nothing on push. A FAIL row is fixed or raised by name, never described away.
 - **Show, then claim.** The receipt block, the grid, the red and green lines, in chat. Done means merged and a user can reach it.
 - Fix rounds count product fixes only. Gate repair, CI fixes and redesigns are a line to the user with a choice.
@@ -60,7 +60,7 @@ The builder checks its own homework before DONE; the reviewer runs the same list
 - Guard main's context: bulk reads go to subagents.
 - A brief quotes the user's words and states no preference the user did not say.
 - Name the merge direction in every merge line ("THV-1234 into scheduling/improvements") and ask before any merge that touches `main`.
-- Check disk and memory before any dispatch. Below 5 GB free or above load 10, prune first; never a worktree for a minor fix.
+- Check disk and memory before any dispatch. Below 5 GB free or above load 10, prune first; never a worktree for a minor fix. At most two build panes with browsers open at once; verify reads load and free memory itself and drops to one row when the box is busy.
 - Close a pane and prune its scratch when its work lands and the user has seen the evidence. Never remove unpushed work.
 
 ## Replies

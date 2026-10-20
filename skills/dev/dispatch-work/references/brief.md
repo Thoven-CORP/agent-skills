@@ -61,13 +61,11 @@ STANDING
 - Decide what you can and write the ruling into your report. Stop only for: an irreversible or
   destructive step, prod or a secret value, a product call, or a ticket so wrong every path is a
   guess.
-- Leave no files behind outside the repo. Parity captures go to a scratch folder
-  (`~/.thoven-artifacts/THV-<id>/evidence/`) that main uploads to the Linear issue and the board
+- Leave no files behind outside the repo. Parity captures land under
+  `~/.thoven-artifacts/<branch>/parity/`, which main uploads to the Linear issue and the board
   and then deletes. Other evidence goes in your report.
-- Parity, on a UI ticket, before DONE: capture every state the ticket touches with
-  agent-browser at 1440 and 390, waiting for content so no image is blank, each beside its
-  board frame, plus a short video of the flow, in the scratch folder above with the list of
-  differences from the board.
+- Parity, on a UI ticket, before DONE: the `parity` row of `bin/verify`, as the verify skill
+  says, plus a short video of the flow and the list of differences from the board.
 - Browser: drive agent-browser from this pane only, never from a subagent. Close it when you are
   done. Send Escape in-page (dispatchEvent of a keydown), never with agent-browser press Escape,
   which pins the renderer. A renderer near 100% CPU means start a fresh browser; it is not a
@@ -84,7 +82,7 @@ Then the ASCII block:
   Acceptance   one row per line: ✓/✗, evidence (file:line, command → result)
   Proof        command, red before, green after
   Commits      SHAs and git diff --stat against base
-  Parity       UI tickets: the scratch folder path, and each difference from a frame:
+  Parity       UI tickets: the `grid.html` path, and each difference from a frame:
                fixed, or confirmed with its ruling
   Rulings      what you decided and why
   Noticed      out of scope, not fixed
