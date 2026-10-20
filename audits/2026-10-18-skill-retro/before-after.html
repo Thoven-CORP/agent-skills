@@ -1,0 +1,100 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>THV-1334: verify before and after</title>
+<style>
+:root{--page:#f9f9f7;--card:#fcfcfb;--soft:#f1f1ee;--line:#e3e3df;--ink:#1c1c1a;--ink2:#5a5a55;--ink3:#8a8a84;--blue:#2a78d6;--orange:#eb6834;--green:#1baf7a;--red:#d64545}
+@media(prefers-color-scheme:dark){:root{--page:#0d0d0d;--card:#1a1a19;--soft:#242423;--line:#2e2e2c;--ink:#ededea;--ink2:#b4b4ae;--ink3:#7d7d77;--blue:#3987e5;--orange:#d95926;--green:#199e70;--red:#e05a5a}}
+*{box-sizing:border-box}body{margin:0;background:var(--page);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,Inter,sans-serif}
+main{max-width:980px;margin:0 auto;padding:40px 24px 90px}h1{font-size:32px;margin:0 0 6px;letter-spacing:-.015em}h2{font-size:21px;margin:44px 0 10px}h3{font-size:16px;margin:0 0 4px}
+p{margin:0 0 12px;color:var(--ink2)}.lede{font-size:18px;color:var(--ink);max-width:800px}.muted{color:var(--ink3);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px 16px;margin:12px 0}.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0}.tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}.tile .n{font-size:30px;font-weight:650;letter-spacing:-.02em}.tile .n small{font-size:13px;color:var(--ink3);font-weight:500}.tile .l{font-size:13px;color:var(--ink2);margin-top:4px}
+svg{display:block;width:100%;height:auto}table{width:100%;border-collapse:collapse;font-size:14.5px}th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}th{font-size:12px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.04em}td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ok{color:var(--green);font-weight:600}.bad{color:var(--red);font-weight:600}.warn{color:var(--orange);font-weight:600}.dim{color:var(--ink3)}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--ink2);margin:2px 0 8px}.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--c);margin-right:6px;vertical-align:-1px}
+@media(max-width:820px){.tiles{grid-template-columns:repeat(2,1fr)}.row{grid-template-columns:1fr}}
+</style></head><body><main>
+<h1>Verify, before and after</h1>
+<p class="muted">THV-1334 · measured 2026-10-19 on this Mac under load 11 to 31 from other sessions · same diff, old engine then new engine · logs in /tmp/thv-1334-*.log</p>
+<p class="lede">Two realistic changes, checked by the old gate and the new one. The new gate is faster on both, and on the UI change it catches a design-system defect the old gate never looked for.</p>
+
+<div class="tiles">
+<div class="tile"><div class="n">417 <small>→ 27 s</small></div><div class="l">backend: one service method</div></div>
+<div class="tile"><div class="n">133 <small>→ 78 s</small></div><div class="l">frontend: two buttons in a component</div></div>
+<div class="tile"><div class="n">7 s</div><div class="l">design scans, now selected on any component diff</div></div>
+<div class="tile"><div class="n">2.8 s</div><div class="l">backend pre-push, with bin/verify out of the hook</div></div>
+</div>
+
+<h2>Frontend: two buttons added to GhostMaterialCard</h2>
+<div class="row">
+<div class="card"><h3>Before <span class="dim">(engine at the merge base)</span></h3><div id="fe-before"></div><p class="muted">133 s of checks, PASS. The main checkout's older engine on the same diff: BLOCKED at the mutation row ("hunk not killed by assertion"), 89 s. Neither ran a design scan. Queue before the run: 25 min.</p></div>
+<div class="card"><h3>After <span class="dim">(new engine)</span></h3><div id="fe-after"></div><p class="muted">78 s, PASS. related dropped from 9 files to 1. No mutation on a component. design-scans ran in 7 s.</p></div>
+</div>
+<div class="card"><h3>Same change plus a raw hex colour (#ff8c1a, the retired orange)</h3><div id="fe-hex"></div><p class="muted"><span class="bad">FAIL</span> at design-scans in 7 s (dead-token-scan). The old gate passed this diff: no row looked at colours. Note: raw-color-scan's root list excludes components/teacher/library, so the catch came from dead-token-scan. Widening the roots is a separate decision.</p></div>
+
+<h2>Backend: one guard clause in a service</h2>
+<div class="row">
+<div class="card"><h3>Before</h3><div id="be-before"></div><p class="muted">417 s, PASS. bin/ci fast (Brakeman, bundler-audit, OpenAPI, manifest) ran 262 s for a change that touched none of those. Mutation ran every mapped spec.</p></div>
+<div class="card"><h3>After</h3><div id="be-after"></div><p class="muted">27 s, PASS. fast-ci not selected. Mutation ran the one mapped spec.</p></div>
+</div>
+
+<h2>What the WARN row caught on its first real run</h2>
+<div class="card"><p>The new backend engine's own receipt run reported <span class="warn">WARN</span> on two surviving hunks in <code>lib/thoven/verify.rb</code>: two <code>@mapped_specs = {}</code> resets that no spec noticed. One was dead code and was deleted. The other now has a spec that fails if the line is removed. The old engine would have reported this as BLOCKED and the run would have been waived in prose. The WARN row names the hunks and lets the run finish.</p></div>
+
+
+<h2>Why each change works</h2>
+<div class="card">
+<p><b>Selecting rows by path.</b> A check can only find a defect in code it reads. Brakeman reads controllers, bundler-audit reads the Gemfile, the OpenAPI diff reads routes and serializers. A service method touches none of those, so running them is 262 s that cannot fail. Picking rows by the paths in the diff drops the checks that have nothing to read.</p>
+<p><b>Direct importers, once.</b> <code>vitest related</code> follows the import graph outward with no limit, so one shared component pulls in every screen that renders it and every test of those screens. Nine files, 27 s, for two buttons. A bug in the component shows up in the component's own test or in the test of something that imports it directly. Two hops away you are mostly re-running the same assertions on a bigger page.</p>
+<p><b>Mutation only where it pays.</b> Mutation testing reverses a hunk and asks whether a test notices. That is worth the reruns when the hunk is logic with a mapped test: a service, a hook, a store. On a component, reversing a JSX hunk mostly removes a button, and the test that would notice is the one already in the related row. So the component case ran 68 s of reruns to learn what the 2 s test had already said. Scoping mutation to lib, hooks, contexts, store and models keeps the reruns where a silent logic change can hide.</p>
+<p><b>Mutation against the one mapped spec.</b> The backend reran every selected spec per hunk. The spec mapped to the changed file is the one whose assertions can notice that file's hunk; the others boot Rails and assert about other code. One spec per hunk is the same signal at a quarter of the time (92 s to 22 s).</p>
+<p><b>WARN instead of BLOCK.</b> BLOCKED stops the run and leaves no receipt, so the only way forward was a sentence in chat and a `--no-verify` push. WARN finishes the run, writes the receipt, and names the surviving hunks. The first real backend run showed why: two dead resets nobody asserted on, listed by hunk, one deleted and one covered within the hour. The old engine would have stopped at the first and been waived.</p>
+<p><b>The design-scans row.</b> The 19 scan suites open files with <code>fs</code> and read them as text, so they import nothing from <code>components/</code>. Vitest's import graph therefore never links them to a component change, and the related row never ran them. Selecting them by path, not by import, is the whole fix. They run in 7 s and they are the check for the defect class you flag most.</p>
+<p><b>Docs-only diffs.</b> A diff of only markdown has no test to run. The old frontend engine ended with "No test files found" and the old backend engine refused a plan with no rows. One <code>git diff --check</code> row gives the run something true to say, and the empty-diff refusal stays, because an empty diff is a sign the caller is in the wrong tree.</p>
+<p><b>bin/verify out of pre-push.</b> A push happens many times per slice and pre-push diffs against <code>origin/main</code>, which on an integration branch is the whole branch. That is why pushes took 7 to 20 minutes and 130 of them went <code>--no-verify</code>. Verification belongs once per slice, before DONE, against the integration branch, where the diff is the slice. CI on the integration PR is the full run.</p>
+</div>
+
+<h2>What is still slow, and the next cuts</h2>
+<div class="card">
+<p><b>Measured 2026-10-20 after the cuts below:</b> frontend 60.7 s wall for the two-button change (was 78 s serial, 133 s on the old engine), raw hex still caught in 40.9 s. Backend mutation 22 s → 13.4 s. The lock wait replaced the gate queue. Written before the cuts: quiet-machine floor for the two-button change, with rows run one after another: oxlint 8 + typecheck 9 + related 6 + knip 2 + scans 7 = about 32 s. Under load 31 it was 78 s. Two things ate more than the engine: the load-gate queue (25 min once, 1500 s given up once) and other sessions' processes (a dev server at 158% CPU for three hours, Playwright runs holding both gate slots).</p>
+<div id="timeline"></div>
+<table>
+<tr><th>Cut</th><th>Why it works</th><th>Saving</th><th>Status</th></tr>
+<tr><td>Run independent rows in parallel</td><td>oxlint, typecheck, related, knip and scans share no state. Wall time becomes the longest row, not the sum. The machine has 10 cores.</td><td class="num">FE: 78 s → 60.7 s wall (rows sum 155 s; typecheck 59 s is the floor). BE: rows run three at a time, one RSpec process at a time</td><td>measured 10-20, FE 372f5a635 at load 8, BE 485d4f944. The next cut is the typecheck row itself</td></tr>
+<tr><td>Skip the private snapshot when the tree is clean</td><td>The engine clones the repo and copies changed files so an edit mid-run cannot change what it checks. A clean committed tree cannot change under it, so the clone buys nothing there.</td><td class="num">FE: read-only rows skip it on a clean tree. BE: no row qualifies</td><td>landed FE with one exception: mutation always keeps its snapshot, so a killed run never leaves a reversed hunk in your files. BE fast-ci and migration write generated files, so they snapshot too</td></tr>
+<tr><td>Restore-green once, not per hunk</td><td>Mutation runs red (hunk reversed) then green (restored) for every hunk. Restoring is deterministic, so one green run at the end proves the same thing.</td><td class="num">BE: 2 hunks run 4 spec boots, was 5; mutation 22 s → 13.4 s on the one-method change</td><td>measured 10-20, BE 8f157a0cd (single sample, load 10 to 12). FE lands with 372f5a635</td></tr>
+<tr><td>Memoize rows by input hash</td><td>Store each row's input fingerprint in the receipt. A rerun after a small edit reruns only rows whose inputs changed. A copy fix after a green run becomes a 1 s run.</td><td class="num">most of a rerun</td><td>design; needs the receipt to carry per-row hashes</td></tr>
+<tr><td>Keep verify out of the e2e queue</td><td>The load gate queues verify behind Playwright and build jobs that run for 20 minutes. A separate slot class for verify, or verify first, removes the 25-minute waits that dwarf everything above.</td><td class="num">the 25-minute waits are gone: bin/verify no longer calls the gate at all</td><td>landed 10-20: agent-skills abc551b (policy), BE 67bb37dbb and FE 372f5a635 (wrappers hold one shared flock, THOVEN_VERIFY_LOCK, and say "waiting for verification lock" when the other repo is running)</td></tr>
+<tr><td>While editing, skip the engine</td><td>The verify skill's while-editing steps already run the file's own test (2 s) and the scans (7 s) directly. The engine is for before DONE. Agents who run bin/verify after every save are paying 32 s for a 9 s question.</td><td class="num">most runs</td><td>in the skill text; a habit</td></tr>
+</table>
+<p><b>Tried and dropped.</b> <code>tsc --incremental</code>: cold 101 s, warm 13.4 s against plain 15 s under the same load. Type-check with <code>noEmit</code> re-walks the program either way; the buildinfo barely helps. Vitest transform cache: cold 5.6 s, warm 5.7 s on one test. The time is import and environment setup, not transforms. Both measured on this Mac at load 13 to 15.</p>
+</div>
+<h2>What changed, in one table</h2>
+<div class="card"><table>
+<tr><th>Row</th><th>Before</th><th>After</th></tr>
+<tr><td>design-scans (FE)</td><td>never selected</td><td>any components/**, lib/*-tokens.ts, globals.css diff. 19 suites, 7 s</td></tr>
+<tr><td>related (FE)</td><td>transitive importers</td><td>the file's own tests plus direct importers, once</td></tr>
+<tr><td>mutation (FE)</td><td>every production hunk, all related tests, stop at first survivor, BLOCKED</td><td>lib, hooks, contexts, store only; comment hunks skipped; every hunk tested; survivors and unjudgeable type hunks one WARN row</td></tr>
+<tr><td>build (FE)</td><td>none</td><td>next build when next.config, middleware or an app page, layout or route changed</td></tr>
+<tr><td>fast-ci (BE)</td><td>any change</td><td>Gemfile*, db/**, routes.rb, ci.rb, app/controllers/**</td></tr>
+<tr><td>mutation (BE)</td><td>all mapped specs per hunk, BLOCKED on a survivor</td><td>that file's mapped spec per hunk; survivors one WARN row</td></tr>
+<tr><td>docs-only diff</td><td>FE: "No test files found"; BE: refused</td><td>PASS with one diff-check row; empty diff still refused</td></tr>
+<tr><td>pre-push hook</td><td>runs bin/verify against origin/main</td><td>cheap hooks only; bin/verify once before DONE against the integration branch</td></tr>
+</table></div>
+
+<h2>Where it landed</h2>
+<div class="card"><table>
+<tr><td>agent-skills</td><td>#66 andres-mode and verify rewrite, #67 dispatch-work</td><td class="ok">merged</td></tr>
+<tr><td>backend</td><td>PR #283, head 5a90548de</td><td class="warn">held</td></tr>
+<tr><td>frontend</td><td>PR #319, head 42a2d24bc</td><td class="warn">held</td></tr>
+</table><p class="muted">Receipts: backend 5a90548de PASS 1300 s (1274 s is the mutation row over the engine's own 16 hunks; a product diff takes seconds). Frontend engine tests 46/46, each new one red first.</p></div>
+</main>
+<script>
+const G='var(--green)',O='var(--orange)',R='var(--red)',B='var(--blue)',D='var(--ink3)';
+function bars(el,rows,{max,W=440,left=120}){const bar=20,gap=8,H=6+rows.length*(bar+gap)+6;const x=v=>left+(W-left-60)*v/max;let s=`<svg viewBox="0 0 ${W} ${H}">`;
+rows.forEach((r,i)=>{const y=6+i*(bar+gap);const v=r[1];s+=`<text x="${left-8}" y="${y+14}" text-anchor="end" font-size="12" fill="var(--ink2)">${r[0]}</text>`;if(v==null){s+=`<text x="${left}" y="${y+14}" font-size="12" fill="var(--ink3)">not selected</text>`}else{s+=`<rect x="${left}" y="${y}" width="${Math.max(2,x(v)-left)}" height="${bar}" rx="4" fill="${r[2]||B}"/><text x="${x(v)+6}" y="${y+14}" font-size="12" fill="var(--ink)">${v} s${r[3]?' · '+r[3]:''}</text>`}});el.innerHTML=s+'</svg>'}
+bars(document.getElementById('fe-before'),[['oxlint',13],['typecheck',21],['related (9 files)',27],['knip',2],['mutation',68,O],['design-scans',null]],{max:70});
+bars(document.getElementById('fe-after'),[['oxlint',15],['typecheck',35],['related (1 file)',15],['knip',2],['mutation',null],['design-scans',7,G]],{max:70});
+bars(document.getElementById('fe-hex'),[['oxlint',21],['typecheck',43],['related (1 file)',16],['knip',2],['design-scans',7,R,'FAIL: retired orange #ff8c1a']],{max:70,W:900,left:140});
+bars(document.getElementById('be-before'),[['fast-ci',262,O],['ruby-files',16],['focused-specs',44],['mutation (all specs)',92,O]],{max:270,left:140});
+(function(){const el=document.getElementById('timeline');const rows=[['oxlint',8,0],['typecheck',9,8],['related',6,17],['knip',2,23],['scans',7,25]];const W=900,L=90,sc=(W-L-20)/33;let s=`<svg viewBox="0 0 ${W} 150"><text x="0" y="14" font-size="12" fill="var(--ink3)">Today, one after another: 32 s</text>`;rows.forEach((r,i)=>{s+=`<rect x="${L+r[2]*sc}" y="22" width="${r[1]*sc-2}" height="18" rx="4" fill="var(--blue)"/><text x="${L+r[2]*sc+4}" y="35" font-size="11" fill="var(--card)">${r[0]} ${r[1]}</text>`});s+=`<text x="0" y="70" font-size="12" fill="var(--ink3)">In parallel: longest row, 9 s</text>`;rows.forEach((r,i)=>{s+=`<rect x="${L}" y="${78+i*13}" width="${r[1]*sc-2}" height="11" rx="3" fill="var(--green)"/><text x="${L+r[1]*sc+4}" y="${87+i*13}" font-size="10" fill="var(--ink2)">${r[0]} ${r[1]} s</text>`});el.innerHTML=s+'</svg>'})();
+bars(document.getElementById('be-after'),[['fast-ci',null],['ruby-files',2],['focused-specs',3],['mutation (1 spec)',22,G]],{max:270,left:140});
+</script></body></html>

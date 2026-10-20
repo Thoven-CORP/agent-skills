@@ -143,7 +143,7 @@ P2 — tighten `45fc301`:
 pointer in `CLAUDE.md` / `AGENTS.md`. Do not put the same sentence in
 all three.
 
-**Not this.** A lefthook `THV-<id>-` branch check. A personal mode skill.
+**Not this.** A lefthook `THV-<id>-` branch check.
 
 ---
 
@@ -351,7 +351,6 @@ Not yet in a per-skill LEARNINGS:
 
 ### What not to do with this list
 
-93. Retired 2026-10-19: `andres-mode` exists since 10-10 and loads in main (THV-1334).
 94. Do not add a lefthook `THV-<id>-` branch check.
 95. Do not put the same sentence in WORKFLOW.md, the skill, and
     CLAUDE.md. Law / step / one-line pointer.
@@ -462,5 +461,5 @@ W20. **`writing-plans` invented path** is a second source against
      `Writes to:`. Description and body: the issue names the path.
 
 Not this list: script fail-closed (17), DialKit-the-widget (68),
-lefthook branch names (94), `andres-mode` (93). Those are code or a
-mode skill, not writing-for-agents.
+lefthook branch names (94). Those are code,
+not writing-for-agents.

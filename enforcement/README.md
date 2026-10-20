@@ -64,7 +64,7 @@ tool calls 5228 to 0.
 
 `thoven-require-evidence` was retired on 2026-10-07 (THV-1153). It demanded a fresh `bin/verify`
 receipt for every edited repo at every `Stop`, which ran far too many checks and could never pass for
-files outside a repo. `bin/verify` still runs on every push through the pre-push hook.
+files outside a repo. `bin/verify` runs once per slice before DONE, and nothing reruns on push.
 
 `graph-session-reminder` runs at `SessionStart` and says nothing unless this
 repo's graph is more than seven days behind its last commit, in which case it

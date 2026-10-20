@@ -1,0 +1,107 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Verification, from first principles</title>
+<style>
+:root{--page:#f9f9f7;--card:#fcfcfb;--soft:#f1f1ee;--line:#e3e3df;--ink:#1c1c1a;--ink2:#5a5a55;--ink3:#8a8a84;--blue:#2a78d6;--orange:#eb6834;--green:#1baf7a;--red:#d64545}
+@media(prefers-color-scheme:dark){:root{--page:#0d0d0d;--card:#1a1a19;--soft:#242423;--line:#2e2e2c;--ink:#ededea;--ink2:#b4b4ae;--ink3:#7d7d77;--blue:#3987e5;--orange:#d95926;--green:#199e70;--red:#e05a5a}}
+*{box-sizing:border-box}body{margin:0;background:var(--page);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,Inter,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:40px 24px 90px}
+h1{font-size:34px;margin:0 0 6px;letter-spacing:-.015em}h2{font-size:22px;margin:52px 0 10px;letter-spacing:-.01em}h3{font-size:16px;margin:0 0 4px}
+p{margin:0 0 12px;color:var(--ink2)}.lede{font-size:19px;color:var(--ink);max-width:800px;line-height:1.45}.muted{color:var(--ink3);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px 16px;margin:12px 0}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+svg{display:block;width:100%;height:auto}
+table{width:100%;border-collapse:collapse;font-size:14.5px}th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.04em}td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--ink2);margin:2px 0 8px}.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--c);margin-right:6px;vertical-align:-1px}
+.step{display:grid;grid-template-columns:30px 1fr;gap:12px;padding:8px 0;border-top:1px solid var(--line)}.step:first-child{border-top:0}.step .n{width:26px;height:26px;border-radius:7px;background:var(--soft);display:grid;place-items:center;font-size:12px;font-weight:650;color:var(--ink2)}.step p{margin:0;font-size:15px;color:var(--ink)}.step small{color:var(--ink3)}
+.ok{color:var(--green);font-weight:600}.bad{color:var(--red);font-weight:600}.warn{color:var(--orange);font-weight:600}
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:14px}.ba div{background:var(--soft);border-radius:10px;padding:10px 12px;white-space:pre-wrap}.ba b{display:block;font-size:11px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px}.ba .b1 b{color:var(--red)}.ba .b2 b{color:var(--green)}
+@media(max-width:820px){.row,.ba{grid-template-columns:1fr}}
+</style></head><body><main>
+<h1>Verification, from first principles</h1>
+<p class="muted">2026-10-19 · what we build, what checking it costs, what slipped anyway, and the protocol that follows. Measured on this Mac today. Sources: AUDIT.md sections 3 to 9, bin/verify in both repos, git log since Oct 3 across all branches.</p>
+<p class="lede">The gate is tuned for defects we do not have. Lint and type errors almost never slipped; design-system misses, spec drift and wrong-surface proofs did. The cheap checks that catch those either never run inline or do not exist, while the expensive ones rerun other people's tests for 13 to 50 minutes.</p>
+
+<h2>1. What we build</h2>
+<div class="row">
+<div class="card"><h3>Frontend, 6,282 file touches</h3><div id="fe"></div></div>
+<div class="card"><h3>Backend, 3,804 file touches</h3><div id="be"></div></div>
+</div>
+
+<h2>2. What each check costs, and what it catches</h2>
+<div class="card"><div class="legend"><span style="--c:var(--green)">Runs inline today</span><span style="--c:var(--orange)">Never selected inline (CI only)</span><span style="--c:var(--red)">Blows the 180 s cap or gets waived</span></div><div id="cost"></div>
+<p class="muted">Log scale. The two whole-repo checks are fast. Time goes to running transitive dependants' tests, then rerunning them per production hunk for mutation.</p></div>
+
+<h2>3. What slipped, and the smallest check that catches it</h2>
+<div class="card"><table>
+<tr><th>Defect class</th><th>How often</th><th>Why the gate missed it</th><th>Smallest check</th></tr>
+<tr><td>Design-system miss (raw values, wrong component, 48 px radio, clipped icon, circle empty state)</td><td class="num">8+ slices</td><td>The 19 scan and token suites read files with fs, so <code>vitest related</code> never selects them. The builder never opened the page.</td><td>Run the scan suite on any component diff <b>(9 s)</b>. Look at the real route at 1440 and 390.</td></tr>
+<tr><td>Spec or scope miss (overscoped onboarding, label never landed, Session vs lesson, invented features)</td><td class="num">13 reports</td><td>Nothing traces the diff to a decision id. Briefs paraphrased the parent.</td><td>One line per behaviour: "decision Dn, frame Fn". No line, no behaviour. <b>(0 s)</b></td></tr>
+<tr><td>Wrong artifact (frame vs content, proto vs component, mock route vs page)</td><td class="num">19 reports</td><td>The check ran on what the builder made, not what a user reaches.</td><td>The proof names the user's route. A /dev or lab route is not a proof.</td></tr>
+<tr><td>Integration (stale callers, lint failure skipping CI type-check, <code>next build</code>)</td><td class="num">13 reports</td><td>Slices ran their own tests only; build never ran locally.</td><td>tsc project-wide already runs <b>(9 s)</b>. <code>next build</code> only when a route or config file changed.</td></tr>
+<tr><td>Test of the input (className asserts, fixtures no endpoint emits, "cannot fail" tokens)</td><td class="num">4 reports</td><td>Mutation would catch some at 13 to 50 min, so it was waived.</td><td>Red then green on the named behaviour in the file's own test <b>(2 s)</b>; reviewer reads the assertion.</td></tr>
+<tr><td>Lint or type error reaching review</td><td class="num">rare</td><td colspan="2">Already caught in 17 s. Keep as is.</td></tr>
+</table></div>
+
+<h2>4. Two changes, before and after</h2>
+<div class="row">
+<div class="card"><h3>Two buttons in a component</h3><div class="ba">
+<div class="b1"><b>Today, about 12 min or a bypass</b>oxlint 8 s
+tsc 9 s
+related: 17 files, 356 tests, 79 s
+mutation: 4 hunks × 2 × 79 s = 10 min
+→ BLOCKED on the new file, "known tool limit", push --no-verify
+Design scans: never ran. Page: never opened.</div>
+<div class="b2"><b>Protocol, about 30 s plus the look</b>oxlint 8 s
+tsc 9 s
+own test red → green 2 s
+design scans 9 s
+real route, 1440 and 390, beside frame F12
+decision D41 quoted
+No mutation on a component.</div></div></div>
+<div class="card"><h3>One service method, backend</h3><div class="ba">
+<div class="b1"><b>Today, 42 to 50 min</b>bin/ci fast on any change: Brakeman, bundler-audit, OpenAPI, manifest, structure.sql, tz-guard
+focused specs
+mutation: every mapped spec, red + restore, per hunk</div>
+<div class="b2"><b>Protocol, about 2 min</b>rubocop on the changed files
+the mapped spec file, red → green
+mutation: this hunk against that one spec, once
+bin/ci fast only when Gemfile, schema, routes or a controller changed</div></div></div>
+</div>
+
+<h2>5. The protocol</h2>
+<p>Verify the change you made, when you made it, with the smallest check that can fail it. No step runs other people's tests more than once.</p>
+<div class="row">
+<div class="card"><h3>While editing <small class="muted">seconds, every change</small></h3>
+<div class="step"><div class="n">1</div><p>oxlint and tsc, whole repo <small>17 s</small></p></div>
+<div class="step"><div class="n">2</div><p>The file's own test, red before, green after, on the behaviour the ticket names <small>2 s</small></p></div>
+<div class="step"><div class="n">3</div><p>Component or token touched: the design scan suite <small>9 s</small></p></div>
+<div class="step"><div class="n">4</div><p>Backend: rubocop on changed files, the mapped spec, the controller's request spec</p></div>
+</div>
+<div class="card"><h3>Before DONE <small class="muted">minutes, once per ticket. Check your own homework</small></h3>
+<div class="step"><div class="n">5</div><p>Every behaviour in the diff has a line "decision Dn, frame Fn", quoting the parent</p></div>
+<div class="step"><div class="n">6</div><p>Real route at 1440 and 390 beside the frame. Shared component, tokens. Look at it</p></div>
+<div class="step"><div class="n">7</div><p>Callers: tsc green; direct importers' tests once, not transitive, not per hunk</p></div>
+<div class="step"><div class="n">8</div><p>Mutation only on a logic hunk in lib, a service or a model, against its one test</p></div>
+<div class="step"><div class="n">9</div><p>Build only when it can break: routes, config, server files; Gemfile, schema, controllers</p></div>
+<div class="step"><div class="n">10</div><p>Show it: receipt block, grid, red and green lines. Then the question</p></div>
+</div>
+</div>
+<div class="card"><h3>Before merge</h3><p style="margin:0">CI on the integration PR is the full run. Nothing reruns on push. The reviewer applies steps 5 to 8 to the diff and reads the assertions; it does not rerun what the receipt covers.</p></div>
+
+<h2>6. What changes in the skills</h2>
+<div class="card"><table>
+<tr><th>Skill</th><th>Now</th><th>After</th></tr>
+<tr><td><b>verify</b></td><td>10 lines: run bin/verify, paste block, fix and rerun. One row set for every diff</td><td>The protocol: checks selected by what the diff touches; design scans on component diffs; related = direct importers once; mutation scoped to logic hunks and one test; build only when it can break. Selection changes to existing rows, no new tooling</td></tr>
+<tr><td><b>verify-this</b></td><td>Classify step, six-folder artifact tree, fallback surfaces</td><td>Claim → smallest surface → baseline only when the claim is a change → one verdict. 25 lines</td></tr>
+<tr><td><b>andres-mode</b></td><td>"Tests and verification": cadence contradicting the law, receipt cited, no spec or design step</td><td>"Check your own work": decision line per behaviour, real route at both widths, shared components and tokens, red then green, other people's tests once, show then claim. Same list is the reviewer's first two sections</td></tr>
+<tr><td><b>dispatch-work refs</b></td><td>brief.md and review.md restate capture rules; skills.md says "/verify-this over every Acceptance line"</td><td>Point at the protocol; "before DONE: verify steps 5 to 10"</td></tr>
+</table><p class="muted">Drafts: proposal/verify.SKILL.md, proposal/verify-this.SKILL.md, proposal/andres-mode.SKILL.md. Analysis: VERIFICATION.md.</p></div>
+</main>
+<script>
+function bars(el,rows,{max,W=460,left=150,color='var(--blue)',fmt=v=>v,log=false}){const bar=20,gap=9,H=6+rows.length*(bar+gap)+6;const sc=v=>log?Math.log10(v+1)/Math.log10(max+1):v/max;const x=v=>left+(W-left-70)*sc(v);let s=`<svg viewBox="0 0 ${W} ${H}">`;
+rows.forEach((r,i)=>{const y=6+i*(bar+gap);s+=`<text x="${left-8}" y="${y+14}" text-anchor="end" font-size="12" fill="var(--ink2)">${r[0]}</text><rect x="${left}" y="${y}" width="${Math.max(2,x(r[1])-left)}" height="${bar}" rx="4" fill="${r[2]||color}"/><text x="${x(r[1])+6}" y="${y+14}" font-size="12" fill="var(--ink)">${fmt(r[1])}</text>`});el.innerHTML=s+'</svg>'}
+bars(document.getElementById('fe'),[['components (UI)',41],['lib (logic, api)',19],['design tokens, docs',8],['tests',6],['protos',5],['tooling, CI',4],['app routes',3],['docs',3],['types, contract',2]],{max:45,fmt:v=>v+'%'});
+bars(document.getElementById('be'),[['specs',41],['app code',34],['migrations, schema',5],['lib',3],['docs',2],['tooling, CI',1]],{max:45,fmt:v=>v+'%'});
+const G='var(--green)',O='var(--orange)',R='var(--red)';
+bars(document.getElementById('cost'),[['own test file (1 component)',2.4,G],['oxlint, whole repo',8,G],['tsc, whole repo',9,G],['design scans + token tests (19 files)',9,O],['vitest related, 1 component (17 files)',79,G],['mutation FE, per hunk × 2 × related',807,R],['bin/ci fast (backend, any change)',300,G],['mutation BE, all mapped specs per hunk',2520,R]],{max:3000,W:960,left:290,log:true,fmt:v=>v>=60?Math.round(v/60)+' min':v+' s'});
+</script></body></html>

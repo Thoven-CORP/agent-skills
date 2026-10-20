@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skill retro audit, Oct 3 to 19 2026</title>
+<style>
+  .viz-root {
+    color-scheme: light;
+    --page: #f9f9f7; --surface-1: #fcfcfb;
+    --text-primary: #0b0b0b; --text-secondary: #52514e; --muted: #898781;
+    --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a;
+    --deemph: #c3c2b7; --critical: #d03b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --page: #0d0d0d; --surface-1: #1a1a19;
+      --text-primary: #f0efec; --text-secondary: #c3c2b7; --muted: #898781;
+      --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+      --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70;
+      --deemph: #383835; --critical: #d03b3b;
+    }
+  }
+  :root[data-theme="dark"] .viz-root {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface-1: #1a1a19;
+    --text-primary: #f0efec; --text-secondary: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70;
+    --deemph: #383835; --critical: #d03b3b;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .viz-root { background: var(--page); color: var(--text-primary); min-height: 100vh; padding: 32px 40px 64px; }
+  h1 { font-size: 24px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: var(--text-secondary); font-size: 14px; margin: 0 0 24px; max-width: 72ch; }
+  .toolbar { display: flex; gap: 8px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+  .toolbar button { font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-1); color: var(--text-primary); cursor: pointer; }
+  .toolbar button[aria-pressed="true"] { outline: 2px solid var(--series-1); outline-offset: -1px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .tile { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .tile .label { font-size: 12px; color: var(--text-secondary); }
+  .tile .value { font-size: 30px; font-weight: 600; line-height: 1.15; margin-top: 4px; }
+  .tile .value small { font-size: 14px; font-weight: 500; color: var(--text-secondary); margin-left: 4px; }
+  .tile .note { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 16px; }
+  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px 12px; position: relative; }
+  .card h2 { font-size: 15px; font-weight: 600; margin: 0 0 2px; }
+  .card .desc { font-size: 12.5px; color: var(--text-secondary); margin: 0 0 12px; }
+  .legend { display: flex; gap: 14px; font-size: 12px; color: var(--text-secondary); margin: 0 0 8px; flex-wrap: wrap; }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; background: var(--c); }
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  svg text { font-family: inherit; fill: var(--text-secondary); font-size: 12px; }
+  svg text.val { fill: var(--text-primary); font-variant-numeric: tabular-nums; }
+  svg text.tick { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  svg line.grid { stroke: var(--grid); stroke-width: 1; }
+  svg line.axis { stroke: var(--axis); stroke-width: 1; }
+  svg line.ref { stroke: var(--critical); stroke-width: 1.5; }
+  svg text.reflabel { fill: var(--critical); font-size: 11px; font-weight: 600; }
+  svg rect.hit { fill: transparent; }
+  svg rect.hit:hover + rect, svg g.row:hover rect.bar { filter: brightness(0.9); }
+  .tip { position: fixed; pointer-events: none; background: var(--text-primary); color: var(--surface-1); font-size: 12px; padding: 6px 9px; border-radius: 6px; opacity: 0; transition: opacity .08s; z-index: 10; max-width: 320px; line-height: 1.35; }
+  .tip b { font-weight: 600; }
+  .meter { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; font-size: 13px; margin: 0 0 10px; }
+  .meter .track { grid-column: 1 / -1; height: 8px; background: var(--deemph); border-radius: 4px; overflow: hidden; }
+  .meter .fill { height: 100%; background: var(--series-1); border-radius: 4px; min-width: 2px; }
+  .meter .n { color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 8px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--grid); }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .tables { display: none; }
+  .viz-root[data-view="table"] .tables { display: block; }
+  .viz-root[data-view="table"] .charts { display: none; }
+  .foot { color: var(--muted); font-size: 12px; margin-top: 24px; max-width: 80ch; }
+  @media (forced-colors: active) { svg rect.bar { forced-color-adjust: none; } }
+</style>
+</head>
+<body>
+<div class="viz-root" id="root" data-view="chart">
+  <h1>Skill retro audit: dispatch-work, andres-mode, verify</h1>
+  <p class="sub">24 main-session slices, 2026-10-03 to 10-19, Private Lessons, Scheduling and Live Lessons plus tooling and release sessions. Counts are miner approximations from trimmed transcripts. Source: <code>AUDIT.md</code>, sections 2 to 6.</p>
+  <div class="toolbar">
+    <button id="btnChart" aria-pressed="true">Charts</button>
+    <button id="btnTable" aria-pressed="false">Table view</button>
+    <button id="btnTheme" aria-pressed="false">Dark</button>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="charts">
+    <div class="grid2">
+      <div class="card" id="cReceipts">
+        <h2>Where the verify receipt actually landed</h2>
+        <p class="desc">The skill says paste the full block every time. Share of each population that carried one.</p>
+        <div id="meters"></div>
+      </div>
+      <div class="card" id="cRounds">
+        <h2>Fix rounds per ticket against the cap of 3</h2>
+        <p class="desc">Tickets with the most rounds. Rounds include fix, CI-fix and quality rounds as the miners counted them.</p>
+        <div id="rounds"></div>
+      </div>
+      <div class="card" id="cFrustration">
+        <h2>Frustration patterns, by number of slices they recur in</h2>
+        <p class="desc">One pattern can appear several times inside a slice; this counts slices, not utterances.</p>
+        <div id="frustration"></div>
+      </div>
+      <div class="card" id="cAsk">
+        <h2>Questions asked versus corrections received, per slice</h2>
+        <p class="desc">AskUserQuestion calls by Claude beside corrections typed by Andres. Design-phase slices sit at the top.</p>
+        <div class="legend"><span style="--c: var(--series-1)">AskUserQuestion calls</span><span style="--c: var(--series-2)">Corrections from Andres</span></div>
+        <div id="ask"></div>
+      </div>
+      <div class="card" id="cSlices" style="grid-column: 1 / -1">
+        <h2>Per slice: fix rounds and bin/verify runs</h2>
+        <p class="desc">Slices in date order. A receipt reached Andres in two slices, marked with a dot.</p>
+        <div class="legend"><span style="--c: var(--series-1)">Fix rounds</span><span style="--c: var(--series-2)">bin/verify runs</span><span style="--c: var(--series-3)">Clean receipt shown</span></div>
+        <div id="slices"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tables" id="tables"></div>
+  <p class="foot">Method: 27 Sonnet miners over trimmed transcripts, one slice each, same schema; PR and Linear figures from <code>prior-audits-and-enforcement.md</code>. Cap of 3 is the dispatch-work rule since 2026-10-11; before that the brief said 5.</p>
+</div>
+<div class="tip" id="tip"></div>
+
+<script>
+const slices = [
+  // name, area, andres turns, dispatched, fix rounds, verify runs, receipt shown, corrections, ask calls
+  ["09157873 p0","Compliance",65,12,19,0,0,8,2],
+  ["20f25864","PL design",100,2,4,0,0,14,45],
+  ["5ea4f196","Testing frameworks",66,5,8,0,0,11,17],
+  ["09157873 p1","Compliance, publish",50,6,5,14,0,10,12],
+  ["11148b8e","Cockpit mod",30,0,0,0,0,11,11],
+  ["39a12a43 p0","PL build PL0",95,8,3,12,0,14,43],
+  ["889d1f76 p0","Scheduling",50,8,26,16,0,11,20],
+  ["a010cb0c","LLP",55,7,7,14,0,14,15],
+  ["39a12a43 p1","PL PL0 wave 2",20,9,19,28,0,6,8],
+  ["b25b5fe5","Intro-call design",120,0,0,0,0,22,17],
+  ["39a12a43 p2","PL PL1 Codex wave",24,14,11,2,0,12,6],
+  ["889d1f76 p1","Scheduling",35,9,12,8,0,9,17],
+  ["d9f3ef92 p0","LLP",45,10,14,3,0,11,16],
+  ["39a12a43 p3","PL hardening",36,16,12,8,0,10,9],
+  ["19da0b54","Hex, release",70,3,3,0,0,10,14],
+  ["70ed8bbd","Load crisis",30,0,2,0,0,6,22],
+  ["889d1f76 p2","Scheduling QA gate",29,24,10,9,0,9,19],
+  ["39a12a43 p4","PL PL3/PL4 wave 1",28,10,23,0,0,9,18],
+  ["d9f3ef92 p1","LLP",64,7,29,20,0,14,13],
+  ["39a12a43 p5","PL follow-ups",35,12,12,1,0,7,27],
+  ["889d1f76 p3","Scheduling merge gate",35,17,6,8,0,6,47],
+  ["d0d40add","Email, release",42,5,7,11,1,4,3],
+  ["d9f3ef92 p2","LLP",35,4,10,6,0,7,15],
+  ["889d1f76 p4","Scheduling post-merge",11,5,7,12,1,1,7],
+];
+const tickets = [
+  ["THV-1188 reserved-time backend",13],["THV-1287 Practice",9],["THV-1285 iPad/phone fit",8],
+  ["THV-1303 View in live lesson",8],["THV-1289 End landing",8],["THV-1189 test teachers",7],
+  ["THV-1190",6],["THV-1288 Materials tab",6],["THV-1229 triage fixes",5],["THV-1043 erasure scrub",5],
+  ["THV-1215 video on stage",4],["THV-1227 final review",3],
+];
+const frustration = [
+  ["Silence, Andres polls for status",20],["Jargon, cannot follow the status",12],
+  ["Process instead of product",10],["Decisions asked in prose, not the tool",9],
+  ["Re-asking settled decisions",8],["Design-system miss",8],["Wrong artifact or layer changed",8],
+  ["Invented or overscoped features",6],["Hooks firing",6],["Show me, do not tell me",6],
+  ["Wrong scope of a triage or audit",4],["Debt tickets filed",4],
+];
+const meters = [
+  ["PRs since Oct 1 with a receipt block",5,330],
+  ["Integration-branch PRs with a receipt",0,160],
+  ["Done issues (sample) quoting a receipt",1,15],
+  ["bin/verify runs whose block reached Andres",2,180],
+];
+const sum = i => slices.reduce((a,s)=>a+s[i],0);
+const kpis = [
+  ["Andres turns", sum(2).toLocaleString(), "typed, not pasted"],
+  ["Pane dispatches", "≈"+sum(3), "tickets or panes"],
+  ["Fix rounds", "≈"+sum(4), "cap is 3"],
+  ["bin/verify runs", "≈"+sum(5), "main plus panes"],
+  ["Clean receipts shown", String(sum(6)), "of ≈"+sum(5)+" runs"],
+  ["AskUserQuestion calls", "≈"+sum(8), "max 47 in one slice"],
+  ["Corrections from Andres", "≈"+sum(7), "about 1 per 5 turns"],
+];
+
+const tip = document.getElementById('tip');
+function showTip(e, html){ tip.innerHTML = html; tip.style.opacity = 1; moveTip(e); }
+function moveTip(e){ const x = Math.min(e.clientX + 14, window.innerWidth - 340); tip.style.left = x+'px'; tip.style.top = (e.clientY + 14)+'px'; }
+function hideTip(){ tip.style.opacity = 0; }
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+document.getElementById('kpis').innerHTML = kpis.map(([l,v,n]) =>
+  `<div class="tile"><div class="label">${l}</div><div class="value">${v}</div><div class="note">${n}</div></div>`).join('');
+
+document.getElementById('meters').innerHTML = meters.map(([l,n,d]) =>
+  `<div class="meter" title="${l}: ${n} of ${d}"><span>${l}</span><span class="n">${n} / ${d} (${(100*n/d).toFixed(n&&100*n/d<1?1:0)}%)</span><div class="track"><div class="fill" style="width:${Math.max(0.6,100*n/d)}%"></div></div></div>`).join('');
+
+// horizontal bars, single series, optional reference line
+function hbars(el, rows, {max, ref, refLabel, color='var(--series-1)', fmt=v=>v, tipFn}){
+  const W=560, left=250, right=40, rowH=26, bar=18, top=ref!=null?22:8;
+  const H = top + rows.length*rowH + 24;
+  const x = v => left + (W-left-right)*v/max;
+  const ticks = []; const step = max<=15?3:5; for(let t=0;t<=max;t+=step) ticks.push(t);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="bar chart">`;
+  ticks.forEach(t => s += `<line class="grid" x1="${x(t)}" x2="${x(t)}" y1="${top}" y2="${H-20}"/><text class="tick" x="${x(t)}" y="${H-6}" text-anchor="middle">${t}</text>`);
+  s += `<line class="axis" x1="${left}" x2="${left}" y1="${top}" y2="${H-20}"/>`;
+  rows.forEach(([name,v],i) => {
+    const y = top + i*rowH + (rowH-bar)/2;
+    const w = Math.max(0, x(v)-left);
+    const r = Math.min(4, w);
+    const path = `M${left},${y} h${w-r} a${r},${r} 0 0 1 ${r},${r} v${bar-2*r} a${r},${r} 0 0 1 ${-r},${r} h${-(w-r)} z`;
+    s += `<g class="row" data-tip="${esc(tipFn?tipFn(name,v):`<b>${name}</b><br>${fmt(v)}`)}">
+      <text x="${left-8}" y="${y+bar/2+4}" text-anchor="end">${esc(name)}</text>
+      <path class="bar" d="${path}" fill="${color}"/>
+      <text class="val" x="${x(v)+6}" y="${y+bar/2+4}">${fmt(v)}</text>
+      <rect class="hit" x="0" y="${y-4}" width="${W}" height="${bar+8}"/></g>`;
+  });
+  if(ref!=null){ s += `<line class="ref" x1="${x(ref)}" x2="${x(ref)}" y1="${top-4}" y2="${H-20}"/><text class="reflabel" x="${x(ref)}" y="${top-8}" text-anchor="middle">${refLabel}</text>`; }
+  s += `</svg>`;
+  el.innerHTML = s;
+}
+hbars(document.getElementById('rounds'), tickets, {max:15, ref:3, refLabel:'cap 3'});
+hbars(document.getElementById('frustration'), frustration, {max:20, fmt:v=>v+' slices'});
+
+// grouped horizontal bars, two series
+function grouped(el, rows, {max, colors, labels, left=250, W=560}){
+  const right=40, rowH=34, bar=12, gap=2, top=8;
+  const H = top + rows.length*rowH + 24;
+  const x = v => left + (W-left-right)*v/max;
+  const ticks=[]; const step = max<=30?5:10; for(let t=0;t<=max;t+=step) ticks.push(t);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="grouped bar chart">`;
+  ticks.forEach(t => s += `<line class="grid" x1="${x(t)}" x2="${x(t)}" y1="${top}" y2="${H-20}"/><text class="tick" x="${x(t)}" y="${H-6}" text-anchor="middle">${t}</text>`);
+  s += `<line class="axis" x1="${left}" x2="${left}" y1="${top}" y2="${H-20}"/>`;
+  rows.forEach(r => {
+    const [name, sub, a, b, dot] = r; const i = rows.indexOf(r);
+    const y0 = top + i*rowH + (rowH - (2*bar+gap))/2;
+    const mk = (v,y,c) => { const w=Math.max(0,x(v)-left); const rr=Math.min(4,w); return `<path class="bar" fill="${c}" d="M${left},${y} h${w-rr} a${rr},${rr} 0 0 1 ${rr},${rr} v${bar-2*rr} a${rr},${rr} 0 0 1 ${-rr},${rr} h${-(w-rr)} z"/>`; };
+    s += `<g class="row" data-tip="${esc(`<b>${name}</b> · ${sub}<br>${labels[0]}: ${a}<br>${labels[1]}: ${b}${dot?'<br>Clean receipt shown: yes':''}`)}">
+      <text x="${left-8}" y="${y0+bar+gap/2+4}" text-anchor="end">${esc(name)} <tspan fill="var(--muted)">${esc(sub)}</tspan></text>
+      ${mk(a,y0,colors[0])}${mk(b,y0+bar+gap,colors[1])}
+      <text class="val" x="${x(a)+5}" y="${y0+bar-2}" font-size="11">${a}</text>
+      <text class="val" x="${x(b)+5}" y="${y0+2*bar+gap-2}" font-size="11">${b}</text>
+      ${dot?`<circle cx="${left-(W>600?290:230)}" cy="${y0+bar+gap/2}" r="5" fill="var(--series-3)" stroke="var(--surface-1)" stroke-width="2"/>`:''}
+      <rect class="hit" x="0" y="${y0-6}" width="${W}" height="${2*bar+gap+12}"/></g>`;
+  });
+  s += `</svg>`;
+  el.innerHTML = s;
+}
+grouped(document.getElementById('slices'), slices.map(s=>[s[0],s[1],s[4],s[5],s[6]]), {max:30, colors:['var(--series-1)','var(--series-2)'], labels:['Fix rounds','bin/verify runs'], W:1160, left:300});
+const askRows = [...slices].sort((a,b)=>b[8]-a[8]).map(s=>[s[0],s[1],s[8],s[7],0]);
+grouped(document.getElementById('ask'), askRows, {max:50, colors:['var(--series-1)','var(--series-2)'], labels:['AskUserQuestion calls','Corrections']});
+
+// tooltips
+document.querySelectorAll('g.row').forEach(g => {
+  g.addEventListener('mousemove', e => showTip(e, g.dataset.tip));
+  g.addEventListener('mouseleave', hideTip);
+});
+
+// table view
+const th = (cols) => '<tr>'+cols.map((c,i)=>`<th class="${i?'n':''}">${c}</th>`).join('')+'</tr>';
+document.getElementById('tables').innerHTML = `
+  <div class="card"><h2>Per slice</h2><table>${th(['Slice','Area','Andres turns','Dispatched','Fix rounds','bin/verify runs','Receipt shown','Corrections','AskUserQuestion'])}
+  ${slices.map(s=>`<tr><td>${s[0]}</td><td>${s[1]}</td>${s.slice(2).map(v=>`<td class="n">${v}</td>`).join('')}</tr>`).join('')}</table></div>
+  <div class="card" style="margin-top:16px"><h2>Fix rounds per ticket</h2><table>${th(['Ticket','Rounds'])}${tickets.map(t=>`<tr><td>${t[0]}</td><td class="n">${t[1]}</td></tr>`).join('')}</table></div>
+  <div class="card" style="margin-top:16px"><h2>Frustration patterns</h2><table>${th(['Pattern','Slices'])}${frustration.map(t=>`<tr><td>${t[0]}</td><td class="n">${t[1]}</td></tr>`).join('')}</table></div>
+  <div class="card" style="margin-top:16px"><h2>Receipt coverage</h2><table>${th(['Population','With receipt','Total'])}${meters.map(m=>`<tr><td>${m[0]}</td><td class="n">${m[1]}</td><td class="n">${m[2]}</td></tr>`).join('')}</table></div>`;
+
+const root = document.getElementById('root');
+const bC = document.getElementById('btnChart'), bT = document.getElementById('btnTable'), bD = document.getElementById('btnTheme');
+bC.onclick = () => { root.dataset.view='chart'; bC.setAttribute('aria-pressed','true'); bT.setAttribute('aria-pressed','false'); };
+bT.onclick = () => { root.dataset.view='table'; bT.setAttribute('aria-pressed','true'); bC.setAttribute('aria-pressed','false'); };
+bD.onclick = () => { const d = document.documentElement.dataset.theme==='dark'; document.documentElement.dataset.theme = d?'light':'dark'; bD.setAttribute('aria-pressed', String(!d)); };
+</script>
+</body>
+</html>
