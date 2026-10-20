@@ -10,7 +10,7 @@ work is reviewed by a Sonnet subagent of main with the same brief.
 2. On a UI ticket, open every parity image and show Andres. `SKILL.md` close step 6.1 uploads them
    after he confirms.
 3. Merge backend before the frontend that reads it. UI merges after Andres sees the evidence.
-4. Run `bin/verify` once per diff, before the push, and cite its receipt. CI runs on the integration PR.
+4. The verify cadence is andres-mode "Check your own work": `bin/verify --base <integration branch>` once before DONE, CI on the integration PR.
 
 ## Working if
 
@@ -38,7 +38,8 @@ only; leave the code as it is.
 Evidence first. Read the builder's pane with
 `herdr agent read <builder pane> --source recent-unwrapped --lines 120`, and read the receipt for
 the head SHA at `git rev-parse --git-path thoven-verify.json`. A fresh receipt for the same
-fingerprint proves its tests: re-run nothing it covers.
+fingerprint proves its tests: re-run nothing it covers. No receipt means the run did not pass:
+run `bin/verify --base <integration branch>` yourself and paste the block.
 1. SPEC PARITY. Read the parent's "Decisions (canonical)". Trace every Acceptance line and every
    behaviour in the diff to a decision id. Name invented scope, a decision the diff missed or
    changed, and lexicon slips.

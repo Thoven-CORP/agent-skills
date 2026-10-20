@@ -1,10 +1,29 @@
 ---
 name: verify
-description: Use when claiming work is done, before committing, after fixing bugs, or when asked to verify. Run each changed repository's bin/verify and provide its fresh local evidence block.
+description: Use while building and before claiming done. Verify the change you made, when you made it, with the smallest check that can fail it. Selects checks by what the diff touches; runs other people's tests once, not per hunk.
 ---
 
 # Verify
 
-1. In every changed repository, run `bin/verify` and let it select the focused checks for the current diff.
-2. Include the complete `THOVEN_VERIFY_BEGIN` block, including its single-line JSON and `THOVEN_VERIFY_END`, for each changed repository.
-3. If any row fails, fix the cause, rerun `bin/verify`, and replace the old block with the fresh result.
+Shape of the check follows the shape of the change. Whole-repo lint and types are cheap (17 s); other people's tests are not. The design scans are the check most often missed, so they run on any component diff.
+
+## While editing
+
+1. `pnpm run lint:oxlint` and `pnpm run type-check` (whole repo, 17 s). Backend: `bin/rubocop -- <changed files>`.
+2. The file's own test, red before the change and green after, on the behaviour the ticket names. Backend: the mapped spec file, plus the request spec of any controller touched.
+3. A component, token module or `globals.css` touched: `pnpm exec vitest run __tests__/*-scan.test.ts __tests__/*-tokens.test.ts __tests__/ledge-sweep.test.ts __tests__/type-roles.test.ts __tests__/palette.test.ts` (9 s).
+
+## Before DONE, once per ticket
+
+4. Callers: tsc green project-wide, and the direct importers' test files once (`vitest related <changed files>` capped to direct importers, not transitive, not per hunk).
+5. Mutation only where it pays: a logic hunk in `lib/`, a service or a model, reversed once against its one mapped test file, red then restored green. Never on components, new files, comment or type hunks.
+6. Build only when it can break: `next build` when `app/**`, `next.config.*`, middleware or a server file changed. `bin/ci fast` when Gemfile, schema, routes or a controller changed.
+7. Run `bin/verify --base <integration branch>` once and paste its `THOVEN_VERIFY` block in the DONE report. A FAIL row is fixed or raised to the user by name, never described away.
+
+## Before merge
+
+8. CI on the integration PR is the full run. Do not run bin/verify again on push.
+
+## Shared with andres-mode ("Check your own work")
+
+Spec line per behaviour, real route at 1440 and 390 beside the frame, shared components and tokens, show before asking. That list is the reviewer's first two sections too.
