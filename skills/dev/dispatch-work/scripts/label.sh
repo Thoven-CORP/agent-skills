@@ -6,7 +6,7 @@
 set -euo pipefail
 
 herdr="${HERDR_BIN:-$HOME/.local/bin/herdr}"
-KINDS=(Meta Plan Design Build Review Research Audit Fix)
+KINDS=(Meta Plan Design Build Review Research Audit Fix Verify)
 
 usage() { echo 'usage: label.sh <pane> <Kind> "<title>" [THV-n] [--tab] | label.sh --kinds' >&2; exit 2; }
 

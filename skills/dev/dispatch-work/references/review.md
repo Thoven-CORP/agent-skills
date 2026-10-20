@@ -64,14 +64,15 @@ severity: critical, important or minor.
 
 ## Handling findings
 
+- **Gate repair, CI fixes and redesigns are not fix rounds.** They are one line to Andres with a choice.
 - **Critical or important:** a fix round (`brief.md`, fix-round brief) into the builder's pane,
   then a verifier re-run scoped to the fix diff. There are 3 fix rounds. Rounds 1 and 2 go to the
   builder's pane. Round 3 goes to a fresh pane one tier up. The ticket stays **Ready** throughout.
 - **After round 3:** main rules on each open finding. Wrong or contestable: park it with the
-  reason. Real but nothing builds on it: park it and file a follow-up. Real and something builds
+  reason. Real but nothing builds on it: park it with the reason in the comment. Real and something builds
   on it: rule the smallest change and send it as one more fix round. Record each ruling in the
   Linear comment.
-- **Minor:** a follow-up ticket at close. Minor findings never start a fix round.
+- **Minor:** fixed on the branch before Done, or dropped with the reason in the close comment. Minor findings never start a fix round and never become tickets.
 
 **Done when:** the verifier replied VERIFIED, or every finding is fixed or parked with a ruling,
 and Andres has the evidence table.

@@ -125,7 +125,8 @@ A status line from the pane arrives as a message in main's own pane:
 
 | Status | Main does |
 | -- | -- |
-| `DONE THV-x` | Move the ticket to **Ready**. Go to step 5. |
+| `DONE THV-x` with its `THOVEN_VERIFY` block | Move the ticket to **Ready**. Go to step 5. |
+| `DONE THV-x` without the block | Not done. Reply `Paste the bin/verify block for this diff.` The ticket stays In Progress. |
 | `DONE_WITH_CONCERNS THV-x` | Read the concerns. Correctness or scope concerns get a fix round first. Observations go to step 5. |
 | `NEEDS_CONTEXT THV-x` | Answer with `send.sh`. Re-arm. |
 | `BLOCKED THV-x` | Context gap: answer and re-send. Too hard: fresh pane one tier up. Too big: split the ticket. Product call: ask Andres, word for word. |
@@ -139,15 +140,18 @@ else. Read `herdr agent read <pane> --source recent-unwrapped --lines 80` and na
 | Provider, rate-limit or network error | Wait two minutes and send `continue`. Still failing: restart the agent in the same pane with the brief and its last commit. |
 | Turn ended without a status line | Send: `Reply with your status line now: DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT or BLOCKED.` |
 | Shell prompt, agent gone (`GONE`) | Restart the agent in the same pane. Send the brief plus `Resume from <last commit>.` |
-| `working` with a frozen screen (`FROZEN`) | Read further back. A long test run is fine: re-arm. A hung tool: `herdr agent send-keys <pane> esc`, then ask for status. |
+| `working` with a frozen screen (`FROZEN`) | Read further back. A long test run or `waiting for verification lock` is fine: re-arm. A hung tool: `herdr agent send-keys <pane> esc`, then ask for status. |
 
 **Done when:** every pane has sent a status line that main has handled, or its stale cause is
 reported to Andres. Main ends a turn only while a watcher is armed on every live pane.
 
 ### 5. Verify
 
-Follow [references/review.md](references/review.md): main's pass, then the verifier. The verifier runs in its own fresh pane, on
-the model [references/agents.md](references/agents.md) names, against the base SHA.
+Follow [references/review.md](references/review.md): main's pass, then the review. A feature slice
+gets a verifier in its own fresh pane, on the model [references/agents.md](references/agents.md)
+names, against the base SHA. Cleanup and hardening get a review subagent of main with the same brief.
+Both apply andres-mode "Check your own work" to the diff and read the assertions; neither reruns
+what the receipt covers.
 
 **Done when:** every Acceptance line has a verdict with evidence, and every item in the review's
 "working if" list is checked.
@@ -156,12 +160,14 @@ the model [references/agents.md](references/agents.md) names, against the base S
 
 After the verifier passes, show Andres the evidence table and, on a UI ticket, the parity images. On his confirmation:
 
-1. Move the ticket to **Done** with one comment: the evidence table and the commit SHAs. On a UI
-   ticket, upload the parity images to the issue and place them on the board beside their frames.
-2. File each minor finding as a follow-up ticket, linked to this one.
+1. Move the ticket to **Done** with one comment: the evidence table, the `THOVEN_VERIFY` block and
+   the merged SHA. Done means merged and a user can reach it. On a UI ticket, upload the parity
+   images to the issue and place them on the board beside their frames.
+2. Minor findings are fixed on the branch before Done, or dropped with the reason in that comment.
+   No follow-up tickets.
 3. `herdr pane close` every pane this dispatch opened. Close the tab when it is empty.
-4. Delete `$TMPDIR/dispatch/<THV-x>.md`, `~/.thoven-artifacts/THV-x/evidence/` and any file the
-   dispatch wrote outside the repo.
+4. After Andres has looked at the evidence, delete `$TMPDIR/dispatch/<THV-x>.md`,
+   `~/.thoven-artifacts/THV-x/evidence/` and any file the dispatch wrote outside the repo.
 
 **Done when:** `herdr pane list` no longer shows the dispatch's panes, its brief file is gone, and
 the ticket reads Done.

@@ -36,7 +36,7 @@ usage: thoven-worktree create <fe|be> <area> <n> [--project <name>] [--kind <kin
                                        (git post-checkout; warns when a checkout lands behind origin/main)
 
 create decides by the ticket's Linear Project and Kind. One tree serves a Project's integration branch.
-  --kind review|audit|research|verify   no tree: exit 3, with where to read
+  --kind meta|review|audit|research|verify   no tree: exit 3, with where to read
   --kind design|plan                    no tree: exit 3, write at the "Writes to:" path of the issue
   --kind build|fix (the default) with --project:
       the Project's tree exists       exit 4, its path is the last stdout line. Work there and end
@@ -427,8 +427,8 @@ create() {
   if [ -n "${project:-}" ]; then plain_arg "--project" "$project"; fi
   tkind="$(printf '%s' "$tkind" | tr '[:upper:]' '[:lower:]')"
   case "$tkind" in
-    "" | build | fix | review | audit | research | verify | design | plan) ;;
-    *) die 2 "kind must be build, fix, review, audit, research, verify, design or plan, got '$tkind'" ;;
+    "" | meta | build | fix | review | audit | research | verify | design | plan) ;;
+    *) die 2 "kind must be meta, build, fix, review, audit, research, verify, design or plan, got '$tkind'" ;;
   esac
 
   local repo="${row%% *}"
@@ -448,7 +448,7 @@ create() {
 
   # Rows 1 and 2: read-only and docs-only work gets no tree, and --new does not change that.
   case "$tkind" in
-    review | audit | research | verify)
+    meta | review | audit | research | verify)
       log "refused: a $tkind ticket needs no worktree of its own."
       [ "$new" = 1 ] && log "--new does not apply to a $tkind ticket"
       read_recipe "$main" "$([ "$known" = 1 ] && [ "$TREE_STATE" = ok ] && printf '%s' "$TREE_PATH")"
