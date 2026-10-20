@@ -9,16 +9,18 @@ Shape of the check follows the shape of the change. Whole-repo lint and types ar
 
 ## While editing
 
-1. `pnpm run lint:oxlint` and `pnpm run type-check` (whole repo, 17 s). Backend: `bin/rubocop -- <changed files>`.
+1. `pnpm run type-check` and oxlint on your changed files (`bin/verify` lints changed files only; whole-repo lint is CI's). Backend: `bin/rubocop -- <changed files>`.
 2. The file's own test, red before the change and green after, on the behaviour the ticket names. Backend: the mapped spec file, plus the request spec of any controller touched.
 3. A component, token module or `globals.css` touched: `pnpm exec vitest run __tests__/*-scan.test.ts __tests__/*-tokens.test.ts __tests__/ledge-sweep.test.ts __tests__/type-roles.test.ts __tests__/palette.test.ts` (9 s).
 
 ## Before DONE, once per ticket
 
 4. Callers: tsc green project-wide, and the direct importers' test files once (`vitest related <changed files>` capped to direct importers, not transitive, not per hunk).
-5. Mutation only where it pays: a logic hunk in `lib/`, a service or a model, reversed once against its one mapped test file, red then restored green. Never on components, new files, comment or type hunks.
+5. Pass `--mutation` on a logic hunk in `lib/`, a service or a model; otherwise the `mutation` row reads SKIPPED "opt-in: --mutation" and that is expected. A reviewer who sees SKIPPED on a logic diff asks for the flag.
 6. Build only when it can break: `next build` when `app/**`, `next.config.*`, middleware or a server file changed. `bin/ci fast` when Gemfile, schema, routes or a controller changed.
-7. Run `bin/verify --base <integration branch>` once, plain (never through thoven-load-gate; it holds its own lock), and paste its `THOVEN_VERIFY` block in the DONE report. A FAIL row is fixed or raised to the user by name, never described away.
+7. Run `bin/verify --base <integration branch>` once, plain (never through thoven-load-gate; it holds its own lock), and paste its `THOVEN_VERIFY` block in the DONE report, including `wall`, `concurrency` and `load`; a run at concurrency 1 is a loaded machine, not a slow engine. A FAIL row is fixed or raised to the user by name, never described away.
+
+On a mapped UI surface the `parity` row produces the grid: open `grid.html` in the DONE message. On an unmapped surface, add the both-width spec to `scripts/verify/parity-surfaces.json` before DONE, or say SKIPPED and why.
 
 ## Before merge
 

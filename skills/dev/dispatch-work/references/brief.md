@@ -36,7 +36,7 @@ DONE WHEN  <the ticket's Done when, verbatim or by pointer>
            Seams: <where the tests sit>. Proof goes red before your change and green after it.
            Verify per `~/.agents/skills/verify/SKILL.md`: lint and types, the touched test files
            one per run, the design scan suite on any component or token diff, and
-           `bin/verify --base <integration branch>` once before DONE with its block in the report.
+           `bin/verify --base <integration branch>` once before DONE with its block in the report, `wall`, `concurrency` and `load` included.
 
 STANDING
 - You and main run side by side. Main owns Linear, product calls and your review. You own
@@ -64,9 +64,9 @@ STANDING
 - Leave no files behind outside the repo. Parity captures go to a scratch folder
   (`~/.thoven-artifacts/THV-<id>/evidence/`) that main uploads to the Linear issue and the board
   and then deletes. Other evidence goes in your report.
-- Parity, on a UI ticket, before DONE: capture every state the ticket touches with
-  agent-browser at 1440 and 390, waiting for content so no image is blank, each beside its
-  board frame, plus a short video of the flow, in the scratch folder above with the list of
+- Parity, on a UI ticket, before DONE: the `parity` row of `bin/verify` writes the captures at
+  1440 and 390 and `grid.html`; when the surface is unmapped, add a spec to
+  `scripts/verify/parity-surfaces.json` first. Add a short video of the flow and the list of
   differences from the board.
 - Browser: drive agent-browser from this pane only, never from a subagent. Close it when you are
   done. Send Escape in-page (dispatchEvent of a keydown), never with agent-browser press Escape,
@@ -84,7 +84,7 @@ Then the ASCII block:
   Acceptance   one row per line: ✓/✗, evidence (file:line, command → result)
   Proof        command, red before, green after
   Commits      SHAs and git diff --stat against base
-  Parity       UI tickets: the scratch folder path, and each difference from a frame:
+  Parity       UI tickets: the `grid.html` path, and each difference from a frame:
                fixed, or confirmed with its ruling
   Rulings      what you decided and why
   Noticed      out of scope, not fixed
