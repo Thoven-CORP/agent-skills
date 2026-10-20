@@ -18,7 +18,7 @@ Shape of the check follows the shape of the change. Whole-repo lint and types ar
 4. Callers: tsc green project-wide, and the direct importers' test files once (`vitest related <changed files>` capped to direct importers, not transitive, not per hunk).
 5. Mutation only where it pays: a logic hunk in `lib/`, a service or a model, reversed once against its one mapped test file, red then restored green. Never on components, new files, comment or type hunks.
 6. Build only when it can break: `next build` when `app/**`, `next.config.*`, middleware or a server file changed. `bin/ci fast` when Gemfile, schema, routes or a controller changed.
-7. Run `bin/verify --base <integration branch>` once and paste its `THOVEN_VERIFY` block in the DONE report. A FAIL row is fixed or raised to the user by name, never described away.
+7. Run `bin/verify --base <integration branch>` once, plain (never through thoven-load-gate; it holds its own lock), and paste its `THOVEN_VERIFY` block in the DONE report. A FAIL row is fixed or raised to the user by name, never described away.
 
 ## Before merge
 
