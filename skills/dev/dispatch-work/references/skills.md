@@ -30,7 +30,7 @@ pick the Thoven lines below that this ticket reaches.
 | A mailer or email template | `/thoven-email-system` |
 | Render services, env vars or deploys | `/render-cli` and the matching `render-*` skill |
 | Why the code is this way before changing it | `/why` |
-| Before sending DONE | `/verify-this` over every Acceptance line |
+| Before sending DONE | `/verify` "Before DONE" steps; `/verify-this` for one disputed claim |
 
 ## Skills the agent cannot load
 

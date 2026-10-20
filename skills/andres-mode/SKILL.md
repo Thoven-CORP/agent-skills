@@ -1,71 +1,74 @@
 ---
 name: andres-mode
-description: Andres's working style for Thoven: Linear and the tldraw board as the only records, spec parity by decision id, visual parity against board frames, hardening that keeps the product design, targeted tests. Use for /andres-mode or "work in my style".
-disable-model-invocation: true
+description: Andres's working style for Thoven. Main loads it at session start; it also answers /andres-mode or "work in my style". Linear and the tldraw board are the only records, spec parity by decision id, visual parity against board frames, show before ask, one verify cadence.
 ---
 
 # Andres mode
 
-Thoven work spans a frontend and a backend repo, and is run by a main session that dispatches panes. These rules sit on top of `~/thoven/CLAUDE.md` and each repo's `CLAUDE.md`. Where a rule here is stricter, it wins.
+Thoven work spans a frontend and a backend repo, run by a main session that dispatches panes. These rules sit on top of `~/thoven/CLAUDE.md` and each repo's `CLAUDE.md`. Where a rule here is stricter, it wins. Revised 2026-10-19 (THV-1334) from `audits/2026-10-18-skill-retro/VERIFICATION.md`.
 
 ## Records
 
-- **Linear and the tldraw board are the only records.** Specs, decisions, rulings, evidence and status live in Linear. Designs live on the Project's `.tldraw` board. Local files are scratch: briefs, receipts, evidence folders and plans in `$TMPDIR` or `~/.thoven-artifacts/` are deleted when the work lands.
-- **The Linear parent holds the canonical decisions.** Each decision has an id and cites its board frame ("Frame: <frame name>"). Slice tickets cite decision ids and never restate them.
-- **A ruling changes the ticket description**, with a dated marker. Comments carry evidence: parity images, test results, PR links.
-- **After a Linear write, read it back** and report it in chat in one line. Write no local receipt.
-- **The board is one living spec.** Edit it in place and change only the layer or frame the user named. Once an option is picked, delete the superseded iterations. Place evidence images beside the frames they prove.
+- **Linear and the tldraw board are the only records.** Specs, decisions, rulings, evidence and status live in Linear. Designs live on the Project's `.tldraw` board.
+- **Local evidence stays until the user has seen it.** Upload to Linear, show it in chat, and delete the local copy only after the user says they have looked. (E1: seven "show me" asks in one slice after a close step deleted the folder.)
+- **The Linear parent holds the canonical decisions**, each with an id, a date and its board frame. Slice tickets cite ids and never restate them.
+- **A ruling changes the ticket description** with a dated marker, in the same turn it is given. A ruling that lives only in chat is not yet a ruling. (H6: panes re-asked rulings that were in chat and not in the parent.)
+- **After a Linear write, read it back** and report it in one line. Write no local receipt.
+- **The board is one living spec.** Edit it in place and change only the layer or frame the user named. Delete superseded iterations once an option is picked.
 
 ## Spec writing
 
-- Before asking or grilling, search the Linear parents, the Project description and Mem0 for an existing ruling. A settled ruling gets applied, not re-asked.
-- A product grill stays at product and flow level. Park design details and undefined features as "Open for design".
-- A decision row records what looking at the board cannot tell you: rules, thresholds, data shape, timing, and what was rejected and why. Layout, colour, copy and motion point at the frame.
+- Before asking, search the Linear parents, the Project description and Mem0. A settled ruling gets applied, not re-asked. (F5: eight re-asks.)
+- A product grill stays at product and flow level. Park design details as "Open for design".
+- A decision row records what looking at the board cannot tell you. Layout, colour, copy and motion point at the frame.
 - Every Private Lessons ticket opens with `Writes to:` the board path.
-- Lexicon: a "Session" is the unit, and "Lessons" is the arrangement. Name the audience as the student dashboard, the parent side or the adult student. Demo data uses Andres Martinez.
-- Group findings into the existing unit-of-work tickets. Keep the ticket count low, and give each ticket a clear unit of done.
-- Write tickets, ADRs and handoffs with `~/.agents/skills/technical-writing` and `~/.agents/skills/writing-for-agents`. A handoff ends with an invocation prompt of five sentences or fewer.
+- Lexicon: a "Session" is the unit, "Lessons" is the arrangement. Audiences are the student dashboard, the parent side, the adult student. Demo data uses Andres Martinez.
+- Group findings into the existing unit-of-work tickets. Keep the ticket count low. Debt and bugs found in a build are fixed on the owning branch, never filed.
 
 ## Parity
 
-Both checks run twice: in the brief before dispatch, and as the reviewer's first two sections. `~/.agents/skills/dispatch-work/references/brief.md` and `review.md` carry the procedure.
+Both checks run twice: in the brief before dispatch and as the reviewer's first two sections. `dispatch-work/references/brief.md` and `review.md` carry the procedure.
 
-- **Spec parity by decision id.** Trace every acceptance line, and every behaviour in the diff, to a parent decision id. Report invented scope and missed decisions. Quote the parent, never a sub-issue's paraphrase.
-- **Visual parity against board frames.** Capture every screen and state the work built at 1440 and 390, beside its frame, plus a short video of the flow. Upload the images and the difference list once, at close after the user confirms (dispatch-work `SKILL.md` step 6.1).
-- **An unconfirmed difference is a defect.** A difference the user did not confirm in a Linear ruling or in chat is fixed in the PR. A confirmed one cites its ruling. Only fully confirmed board states bind. A small exploratory prototype, or a state the user waived, is listed as "not binding" with the reason.
-- **The board frame beats written prose** on layout and flow. Update the ruling and the ticket to match the frame. Rulings still govern what a frame cannot show.
-- **A frame binds what shows, not how it sizes.** A frame is one static sample at one width. It binds which elements are present, their states, order, hierarchy and tokens. Fill or hug, stretch and reflow at other widths follow component best practice: match the frame at its own width, and give the reason in one line.
-- **Fidelity means visual parity on design-system tokens.** Use the shared component where one exists. Build a missing one with `~/.agents/skills/building-components`, which is normal work, not a defect. Check against `~/.agents/skills/better-ui` and `~/.agents/skills/thoven-designer`.
+- **Spec parity by decision id.** Trace every acceptance line and every behaviour in the diff to a parent decision id. Quote the parent, never a sub-issue's paraphrase.
+- **Visual parity on the real page.** The `parity` row of `bin/verify` (the live layer of `/verify`) captures every state at 1440 and 390 beside its frame, plus a short video, on the route a user reaches. A `/dev` or lab route, a component without its parent panel, or a re-render of the board is not parity.
+- **An unconfirmed difference is a defect.** Fixed in the PR unless a Linear ruling or a chat line confirms it.
+- **The board frame beats written prose** on layout and flow. A frame binds what shows, not how it sizes.
+- **Fidelity means design-system tokens** through the shared component. Build a missing one with `building-components`.
 - The boards are approved. Read the board and build to it.
 
 ## Hardening
 
-- **Hardening keeps the product design.** Improve the architecture, data flow, concurrency and performance underneath. Change visuals only to fix a defect found at another viewport, in motion, or in a perf measurement, and say which.
-- Audit with numbers. Measure on local databases, report the baseline with n and percentiles, and rank fixes by gain over size.
-- A finding whose premise turns out false gets dropped with the evidence, not built.
-- Fix bugs and debt found during the work on the owning branch. File only a genuine product decision. Fix rounds follow dispatch-work `references/review.md`, "Handling findings".
+- **Hardening keeps the product design.** Change visuals only to fix a defect found at another viewport, in motion, or in a measurement, and say which.
+- Audit with numbers: baseline with n and percentiles, fixes ranked by gain over size.
+- A finding whose premise is false gets dropped with the evidence.
 
-## Tests and verification
+## Check your own work
 
-- **Targeted tests only.** Full suites, builds and e2e run only when the user asks. The machine and database rules live in dispatch-work `references/brief.md` (STANDING) and `enforcement/rules/thoven-law.md`. Production is read-only.
-- "Done" means the touched tests ran green and you read the output. Name anything not run.
-- Show the evidence, then merge. Merge the SHA you tested: the tested commit, the PR head and the report must name the same SHA.
-- Run `bin/verify` once per diff, before the push, and cite its receipt. Integration-branch slices rely on targeted specs and CI.
-- A feature slice gets a verifier pane. Cleanup and hardening get a review subagent (tiers: see dispatch-work `references/agents.md`). Run the review skill the user named, and say which one ran.
+The builder checks its own homework before DONE; the reviewer runs the same list over the diff. The commands and their costs live in `~/.agents/skills/verify/SKILL.md`.
+
+- **Every behaviour in the diff has a decision line**: "decision Dn, frame Fn", quoting the parent. A behaviour with no line is scope, and comes out or goes to the user.
+- **Design is checked on the real page.** The route a user reaches, at 1440 and 390, beside its frame, looked at before DONE. Shared component where one exists; tokens, not values; the design scan suite green. A `/dev` route, a component without its panel, or a re-render of the board proves nothing.
+- **Red then green on the behaviour the ticket names**, in the file's own test. A test that passes with the change reverted is not a test.
+- **Other people's tests run once.** Lint and types whole-repo, direct importers once, mutation only on a logic hunk against its one test. Never per hunk over the suite.
+- **One cadence.** Targeted checks while editing; `bin/verify --base <integration branch>` once before DONE; CI on the integration PR; nothing on push. A FAIL row is fixed or raised by name, never described away.
+- **Show, then claim.** The receipt block, the grid, the red and green lines, in chat. Done means merged and a user can reach it.
+- Fix rounds count product fixes only. Gate repair, CI fixes and redesigns are a line to the user with a choice.
 
 ## Delegation
 
-- Roles: see dispatch-work (Roles table).
-- Panes run under `/poteto-mode`, which picks its own skills. Codex panes run only when the user asks. Tiers: see dispatch-work `references/agents.md`.
-- Guard main's context: route bulk reads to subagents and keep their summaries.
-- A brief quotes the user's words. It states no preference the user did not say.
-- Cutting a lane, dropping a gate or swapping a planned check is a plan edit plus one chat line, in the same turn.
-- Close a pane and prune its scratch as soon as its work lands. Never remove unpushed work.
+- Roles: dispatch-work (Roles table). Panes run Claude Code under `/poteto-mode`; Codex only when the user asks for it by name in this session.
+- Guard main's context: bulk reads go to subagents.
+- A brief quotes the user's words and states no preference the user did not say.
+- Name the merge direction in every merge line ("THV-1234 into scheduling/improvements") and ask before any merge that touches `main`.
+- Check disk and memory before any dispatch. Below 5 GB free or above load 10, prune first; never a worktree for a minor fix.
+- Close a pane and prune its scratch when its work lands and the user has seen the evidence. Never remove unpushed work.
 
 ## Replies
 
-- Lead with the finding or the next step. A status reply is eight lines or fewer. Plain English, short sentences, tables for comparisons. An open question for the user goes first, never at the end of a long message. Diagrams are ASCII in chat, or a visual HTML page for data models and evidence.
-- Explain at beginner level when asked, as you would to a product person.
-- Stay in the current mode. In design mode, nothing gets built. In build mode, raise no publish or deploy gates and no legacy-screen framing.
-- Do the exact instruction. When the user corrects one thing, change that one thing.
-- Do reversible in-scope work without asking. Ask only for a genuine product decision, through the ask-question tool, leading with your recommendation.
+- **Show, then ask.** Open the screenshot, grid or receipt in chat before any question about it. A question about something the user cannot see is a wasted turn.
+- Lead with the finding or the next step. Eight lines or fewer for status. Plain English, no skill or hook names unless the user must act on them.
+- **Status is pushed, not polled.** When a pane reports, a verify finishes or a watcher fires with something to act on, one line reaches the user in that turn. Silence while something runs is a defect. (F1: 20+ polls.)
+- **Standing or this time.** When the user waives or changes a rule, the reply names which it is in four words ("this slice only" or "standing from now"). Default is this time.
+- Stay in the current mode. Build mode raises no publish gates.
+- Do reversible in-scope work without asking. Ask only for a product decision or a merge into `main`, through the ask tool, with the recommendation first and its consequence in one line. No "want me to" at the end of a turn.
+- When the user corrects one thing, change that one thing.

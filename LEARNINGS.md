@@ -104,7 +104,6 @@ as no script. WORKFLOW.md is definitions, not a procedure. Frontend
 shipped product out. That wrong bound is the one the popup-delete
 session obeyed.
 
-Do not create `andres-mode`. Skills are not executing written law.
 
 **Still open.**
 
@@ -352,8 +351,7 @@ Not yet in a per-skill LEARNINGS:
 
 ### What not to do with this list
 
-93. Do not create `andres-mode`. One personal-mode candidate (gate
-    first; tooling-repo done = pushed). Both are team skill/script.
+93. Retired 2026-10-19: `andres-mode` exists since 10-10 and loads in main (THV-1334).
 94. Do not add a lefthook `THV-<id>-` branch check.
 95. Do not put the same sentence in WORKFLOW.md, the skill, and
     CLAUDE.md. Law / step / one-line pointer.
@@ -369,7 +367,6 @@ Filter on the catalog: only edits whose lever is a pointer, a step, a
 leading word, a completion criterion, a prune, or an invocation cut.
 Script fail-closed and DialKit-the-widget are out of this list.
 
-Do not create `andres-mode`. These are team docs.
 
 ### Pointer (description / always-loaded line)
 

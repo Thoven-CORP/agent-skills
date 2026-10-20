@@ -26,7 +26,7 @@ harness that was not running it.
 
 ## Verification contract
 
-The Stop hook validates evidence; it does not launch checks. After a code or gate-config edit, a done-claim needs a fresh PASS block from each changed repository's `bin/verify`. Empty, failing, stale or incomplete evidence refuses the claim. Read-only evidence validation does not acquire the machine verification lock.
+No Stop hook validates evidence (retired 2026-10-07, below). A done-claim carries the fresh `bin/verify` block per `skills/andres-mode/SKILL.md`, "Check your own work".
 
 JSON reports under the workspace's exact `~/thoven/archive/` document boundary do not count as code edits. Application JSON, workspace configuration, archived scripts and symlinks crossing that boundary still require verification.
 
