@@ -24,6 +24,10 @@ Shape of the check follows the shape of the change. Whole-repo lint and types ar
 
 8. CI on the integration PR is the full run. Do not run bin/verify again on push.
 
+## Keep it honest, once a sprint
+
+Run `/maintain-verification-skill` against this file: time each check on this machine, list the defect classes that slipped since the last pass (review findings, Andres's corrections), and move checks between the while-editing and before-DONE tiers by those numbers. Under 10 s moves into editing; a check that caught nothing in a sprint moves out of before-DONE. Last measured 2026-10-20 (`audits/2026-10-18-skill-retro/before-after.html`).
+
 ## Shared with andres-mode ("Check your own work")
 
 Spec line per behaviour, real route at 1440 and 390 beside the frame, shared components and tokens, show before asking. That list is the reviewer's first two sections too.
