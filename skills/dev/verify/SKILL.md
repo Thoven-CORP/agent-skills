@@ -5,7 +5,7 @@ description: Use while building and before claiming done. Verify the change you 
 
 # Verify
 
-Shape of the check follows the shape of the change. Whole-repo lint and types are cheap (17 s); other people's tests are not. The design scans are the check most often missed, so they run on any component diff.
+Shape of the check follows the shape of the change. Lint on the changed files and a cached typecheck are seconds; other people's tests are not. The design scans are the check most often missed, so they run on any component diff.
 
 ## While editing
 
