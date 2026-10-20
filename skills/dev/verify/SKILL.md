@@ -16,9 +16,9 @@ Shape of the check follows the shape of the change. Lint on the changed files an
 ## Before DONE, once per ticket
 
 4. Callers: tsc green project-wide, and the direct importers' test files once (`vitest related <changed files>` capped to direct importers, not transitive, not per hunk).
-5. Pass `--mutation` on a logic hunk in `lib/`, a service or a model; otherwise the `mutation` row reads SKIPPED "opt-in: --mutation" and that is expected. A reviewer who sees SKIPPED on a logic diff asks for the flag.
+5. Pass `--mutation` on a logic hunk in `lib/`, a service or a model. On any other diff the `mutation` row reads SKIPPED "opt-in: --mutation".
 6. Build only when it can break: `next build` when `app/**`, `next.config.*`, middleware or a server file changed. `bin/ci fast` when Gemfile, schema, routes or a controller changed.
-7. Run `bin/verify --base <integration branch>` once, plain (never through thoven-load-gate; it holds its own lock), and paste its `THOVEN_VERIFY` block in the DONE report, including `wall`, `concurrency` and `load`; a run at concurrency 1 is a loaded machine, not a slow engine. A FAIL row is fixed or raised to the user by name, never described away.
+7. Run `bin/verify --base <integration branch>` once, plain (never through thoven-load-gate; it holds its own lock), and paste its `THOVEN_VERIFY` block in the DONE report. `concurrency: 1` in the block means the machine was busy. A FAIL row is fixed or raised to the user by name, never described away.
 
 On a mapped UI surface the `parity` row produces the grid: open `grid.html` in the DONE message. On an unmapped surface, add the both-width spec to `scripts/verify/parity-surfaces.json` before DONE, or say SKIPPED and why.
 

@@ -30,7 +30,7 @@ Thoven work spans a frontend and a backend repo, run by a main session that disp
 Both checks run twice: in the brief before dispatch and as the reviewer's first two sections. `dispatch-work/references/brief.md` and `review.md` carry the procedure.
 
 - **Spec parity by decision id.** Trace every acceptance line and every behaviour in the diff to a parent decision id. Quote the parent, never a sub-issue's paraphrase.
-- **Visual parity on the real page.** Capture every state at 1440 and 390 beside its frame, plus a short video, on the route a user reaches (the `parity` row of `bin/verify` captures mapped surfaces; agent-browser or Playwright by hand only for unmapped ones, and then the spec gets added to the map). A `/dev` or lab route, a component without its parent panel, or a re-render of the board is not parity.
+- **Visual parity on the real page.** Capture every state at 1440 and 390 beside its frame, plus a short video, on the route a user reaches. The `parity` row of `bin/verify` makes the captures; the verify skill carries the unmapped-surface step. A `/dev` or lab route, a component without its parent panel, or a re-render of the board is not parity.
 - **An unconfirmed difference is a defect.** Fixed in the PR unless a Linear ruling or a chat line confirms it.
 - **The board frame beats written prose** on layout and flow. A frame binds what shows, not how it sizes.
 - **Fidelity means design-system tokens** through the shared component. Build a missing one with `building-components`.

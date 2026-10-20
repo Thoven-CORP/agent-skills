@@ -36,7 +36,7 @@ DONE WHEN  <the ticket's Done when, verbatim or by pointer>
            Seams: <where the tests sit>. Proof goes red before your change and green after it.
            Verify per `~/.agents/skills/verify/SKILL.md`: lint and types, the touched test files
            one per run, the design scan suite on any component or token diff, and
-           `bin/verify --base <integration branch>` once before DONE with its block in the report, `wall`, `concurrency` and `load` included.
+           `bin/verify --base <integration branch>` once before DONE with its block in the report.
 
 STANDING
 - You and main run side by side. Main owns Linear, product calls and your review. You own
@@ -61,13 +61,11 @@ STANDING
 - Decide what you can and write the ruling into your report. Stop only for: an irreversible or
   destructive step, prod or a secret value, a product call, or a ticket so wrong every path is a
   guess.
-- Leave no files behind outside the repo. Parity captures go to a scratch folder
-  (`~/.thoven-artifacts/THV-<id>/evidence/`) that main uploads to the Linear issue and the board
+- Leave no files behind outside the repo. Parity captures land under
+  `~/.thoven-artifacts/<branch>/parity/`, which main uploads to the Linear issue and the board
   and then deletes. Other evidence goes in your report.
-- Parity, on a UI ticket, before DONE: the `parity` row of `bin/verify` writes the captures at
-  1440 and 390 and `grid.html`; when the surface is unmapped, add a spec to
-  `scripts/verify/parity-surfaces.json` first. Add a short video of the flow and the list of
-  differences from the board.
+- Parity, on a UI ticket, before DONE: the `parity` row of `bin/verify`, as the verify skill
+  says, plus a short video of the flow and the list of differences from the board.
 - Browser: drive agent-browser from this pane only, never from a subagent. Close it when you are
   done. Send Escape in-page (dispatchEvent of a keydown), never with agent-browser press Escape,
   which pins the renderer. A renderer near 100% CPU means start a fresh browser; it is not a
