@@ -1,0 +1,331 @@
+repo,pr,created,merged,state,base,head,title,body_lines,verify_block,receipt_json,images,parity_word,linear_url,thv_in_body,thv_in_title,evidence_lines
+backend,114,2026-10-01,2026-10-01,MERGED,main,tooling/thv-464,fix(worktree-db-guard): refuse a feature branch on the shared test dat,18,False,False,0,False,False,True,True,2
+backend,115,2026-10-01,2026-10-11,MERGED,main,deps/thv-986,"deps: patch puma, rack, jwt and other bundle-audit advisories (THV-986",49,False,False,0,False,False,True,True,4
+backend,116,2026-10-01,,CLOSED,main,coppa/thv-397,"fix(deletion): keep another teacher's 1:1 class, delete learner-assign",23,False,False,0,False,False,True,True,4
+backend,127,2026-10-01,2026-10-01,MERGED,main,replit/thv-711,Delete the Replit-only backend code (THV-711),8,False,False,0,False,False,True,True,0
+backend,128,2026-10-01,2026-10-01,MERGED,main,media/thv-996,Video and audio redirect to signed GCS URLs instead of streaming throu,12,False,False,0,False,False,True,True,0
+backend,129,2026-10-01,2026-10-01,MERGED,main,coppa/thv-397-option-a,"Full erasure completes for a family with lesson history, option A (THV",12,False,False,0,False,False,True,True,0
+backend,130,2026-10-01,2026-10-01,MERGED,main,tests/thv-1008,Remove tests that cannot catch a regression (THV-1008),14,False,False,0,False,False,True,True,0
+backend,141,2026-10-02,2026-10-02,MERGED,main,docs/thv-1028,Docs catch up with prod/2026-10-02-1 (THV-1028),10,False,False,0,False,False,True,True,1
+backend,142,2026-10-03,2026-10-03,MERGED,main,legal/thv-1003,New parents consent to the privacy policy that discloses homework reco,9,False,False,0,False,False,True,True,0
+backend,143,2026-10-03,2026-10-03,MERGED,main,coppa/thv-1041,The 30-day purge erases a child who has lesson history (THV-1041),10,False,False,0,False,False,True,True,1
+backend,144,2026-10-03,2026-10-03,MERGED,main,docs/thv-1038,Backend ledgers move out of thoven2.0 (THV-1038),7,False,False,0,False,False,True,True,1
+backend,145,2026-10-03,2026-10-03,MERGED,main,sentry-error,FreeBusy stops reading the Thoven Lessons calendar so a lesson can mov,22,False,False,0,False,False,False,False,0
+backend,146,2026-10-03,2026-10-03,MERGED,main,docs/thv-908,"Docs catch up with THV-1003, THV-1041 and THV-1038 (THV-908)",7,False,False,0,False,False,True,True,0
+backend,147,2026-10-03,2026-10-03,MERGED,main,coppa/thv-1042,An erased child's booking notes leave PaperTrail history (THV-1042),9,False,False,0,False,False,True,True,1
+backend,148,2026-10-03,2026-10-03,MERGED,main,legal/thv-1045,Consent evidence holds and Terms match what parents read (THV-1045),14,False,False,0,False,False,True,True,0
+backend,149,2026-10-03,2026-10-03,MERGED,main,media/thv-1004,Children's media links expire after 15 minutes (THV-1004),7,False,False,0,False,False,True,True,0
+backend,150,2026-10-03,2026-10-03,MERGED,main,dev/thv-1068,Run rubocop on staged Ruby files before each commit (THV-1068),12,False,False,0,False,False,True,True,4
+backend,151,2026-10-03,2026-10-03,MERGED,main,coppa/thv-1048,Backfill clears child text that erasures before THV-1042 left in Paper,15,False,False,0,False,False,True,True,2
+backend,152,2026-10-03,2026-10-03,MERGED,main,after-cutover/thv-981,"Old live lessons can be settled once, and deploy:verify shows the Dail",22,False,False,0,False,False,True,True,1
+backend,153,2026-10-03,2026-10-03,MERGED,main,coppa/thv-1043,"An erased child's name is replaced in messages, notifications and SMS ",17,False,False,0,False,False,True,True,2
+backend,154,2026-10-03,2026-10-03,MERGED,main,after-cutover/thv-995,"Teachers can upload 1 GB videos and students 500 MB (THV-995, THV-997)",12,False,False,0,True,False,True,True,0
+backend,155,2026-10-03,2026-10-03,MERGED,main,after-cutover/thv-946,"Nothing migrates at boot, and the walkthrough reset deletes only this ",6,False,False,0,False,False,True,True,2
+backend,156,2026-10-03,2026-10-03,MERGED,main,marketplace/thv-1090,Marketplace reviews break near-ties and stop rewarding volume (THV-109,18,False,False,0,False,False,True,True,3
+backend,157,2026-10-04,2026-10-04,MERGED,main,media/thv-1050,A child's files get no link that outlives 15 minutes (THV-1050),14,False,False,0,False,False,True,True,1
+backend,158,2026-10-04,2026-10-04,MERGED,main,retention/thv-910,"Erase a child's data 12 months after the family's last activity, with ",30,False,False,0,False,False,True,True,2
+backend,159,2026-10-04,2026-10-04,MERGED,main,changelog/thv-908,CHANGELOG: COPPA work merged 2026-10-03 (THV-908),3,False,False,0,False,False,True,True,0
+backend,160,2026-10-04,2026-10-04,MERGED,main,dogfood/thv-1050,dogfood-staging checks an upload id is not a download link (THV-1050),4,False,False,0,False,False,True,True,1
+backend,161,2026-10-04,2026-10-04,MERGED,main,release/thv-908,CHANGELOG: one section per prod release through prod/2026-10-04-1 (THV,4,False,False,0,False,False,True,True,0
+backend,162,2026-10-04,2026-10-04,MERGED,main,legal/thv-1108,Every parent signup attests adulthood and consents only to the version,20,False,False,0,False,False,True,True,1
+backend,163,2026-10-04,2026-10-04,MERGED,main,ci/thv-1109,"ci: fix booking race flake, pin connection_pool, test every main push,",25,False,False,0,False,False,True,True,6
+backend,168,2026-10-04,2026-10-04,MERGED,main,tooling/thv-1007,Prune redundant specs; TESTING.md layers and gates; route spec work to,11,False,False,0,False,False,True,True,2
+backend,169,2026-10-05,2026-10-05,MERGED,main,tests/thv-1115,"Homework + Materials spec campaign: repair weak assertions, consolidat",21,False,False,0,True,True,True,True,2
+backend,170,2026-10-05,2026-10-06,MERGED,main,coppa/thv-1111,Retention policy records the 30-day backup expiry (THV-1111),5,False,False,0,False,False,True,True,0
+backend,171,2026-10-05,2026-10-06,MERGED,main,feature/teacher-unread-message-email,feat(messaging): remind teachers about unread parent messages,16,False,False,0,False,False,False,False,2
+backend,172,2026-10-06,2026-10-06,MERGED,main,docs/teacher-unread-message-changelog,docs(changelog): record teacher unread-message reminders,3,False,False,0,False,False,False,False,1
+backend,173,2026-10-06,2026-10-06,MERGED,main,coppa/thv-1112,Terms and Privacy 2026-10-08 say what the ad tools receive (THV-1112),22,False,False,0,False,False,True,True,1
+backend,174,2026-10-06,2026-10-06,MERGED,main,docs/thv-908,CHANGELOG: prod/2026-10-05-1 section; Unreleased holds only what is no,3,False,False,0,False,False,True,True,0
+backend,175,2026-10-06,2026-10-06,MERGED,main,ci-testing/thv-1125-backend-review,chore(testing): enforce schema and raw-id gates,14,False,False,0,False,False,True,False,4
+backend,176,2026-10-07,2026-10-07,MERGED,main,testing/thv1125-local-verify-20261007,Reject widening lookup chains and require scorecard causality (THV-114,3,False,False,0,False,False,True,True,2
+backend,177,2026-10-07,2026-10-07,MERGED,main,testing/thv-1131,Add diff-selected native verification and fresh evidence (THV-1131),4,False,False,0,False,False,False,True,3
+backend,178,2026-10-07,2026-10-07,MERGED,main,testing/thv-1133,Complete learner and guardian erasure schema contracts (THV-1133),3,False,False,0,False,False,True,True,1
+backend,179,2026-10-07,,OPEN,main,privacy/thv-1152,"Erase departing-account invite and SMS transport data (THV-1152, THV-1",28,False,False,0,False,True,True,True,4
+backend,180,2026-10-08,2026-10-08,MERGED,sessions/thv-1159,sessions/thv-1179,PL0.1 Dry run: match today's notes to their lessons (THV-1179),7,False,False,0,False,False,True,True,1
+backend,181,2026-10-08,2026-10-08,MERGED,sessions/thv-1159,sessions/thv-1180,PL0.2 Bookings keep their enrollment (THV-1180),8,False,False,0,False,False,True,True,1
+backend,182,2026-10-08,2026-10-08,MERGED,feature/private-lessons-rework,sessions/thv-1217,"PL0 cleanup: class-less bookings skip the backfill, named fields (THV-",12,False,False,0,False,False,True,True,3
+backend,183,2026-10-08,2026-10-08,MERGED,feature/private-lessons-rework,sessions/thv-1183,PL0.5 One owner for Daily meetings (THV-1183),15,False,False,0,False,False,True,True,4
+backend,184,2026-10-09,2026-10-09,MERGED,feature/private-lessons-rework,sessions/thv-1181,PL0.3 Lesson record tables (THV-1181),17,False,False,0,False,False,True,True,2
+backend,185,2026-10-09,,OPEN,main,feature/private-lessons-rework,"PL0 Lesson record integration (THV-1159), held",9,False,False,0,False,False,True,True,0
+backend,186,2026-10-09,2026-10-09,MERGED,feature/private-lessons-rework,ci/thv-1183,CI: account deletion keeps daily_meetings ids (THV-1183),4,False,False,0,False,False,False,True,1
+backend,187,2026-10-09,2026-10-09,MERGED,feature/private-lessons-rework,sessions/thv-1182,"PL0.4 Send, drafts, and today's Classroom on one owner (THV-1182)",22,False,False,0,False,False,True,True,2
+backend,188,2026-10-09,2026-10-09,MERGED,feature/private-lessons-rework,ci/thv-1182,CI: analytics spec counts a sent Session (THV-1182),4,False,False,0,False,False,False,True,1
+backend,189,2026-10-09,2026-10-09,MERGED,feature/private-lessons-rework,sessions/thv-1185,PL0.7 Move old notes onto their lessons (THV-1185),16,False,False,0,False,False,True,True,2
+backend,190,2026-10-09,2026-10-09,MERGED,feature/private-lessons-rework,sessions/thv-1184,PL0.6 A Session for every ended lesson (THV-1184),14,False,False,0,False,False,True,True,2
+backend,191,2026-10-09,2026-10-09,MERGED,feature/private-lessons-rework,sessions/thv-1227,PL0 final review fixes (THV-1227),17,False,False,0,False,False,True,True,2
+backend,192,2026-10-09,2026-10-09,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1200,Seats tell every lesson participant apart by the identity Rails mints ,10,False,False,0,False,False,True,True,1
+backend,193,2026-10-09,2026-10-09,MERGED,feature/private-lessons-rework,sessions/thv-1233,"PL0 test audit: hollow audit-job test fixed, duplicate checks folded i",10,False,False,0,False,False,True,True,3
+backend,194,2026-10-09,2026-10-09,MERGED,feature/private-lessons-rework,sessions/relationship-spec-clock,Stop the relationship spec depending on today's date (THV-1230 cherry-,4,False,False,0,False,False,True,True,1
+backend,195,2026-10-09,,CLOSED,main,scheduling/thv-1189,"Reserved times: teachers save a reserved time, other learners can't bo",4,False,False,0,False,False,True,True,1
+backend,196,2026-10-09,2026-10-09,MERGED,feature/private-lessons-rework,sessions/thv-1234,"THV-1234 PL0 Thermos follow-ups: one lock order, deadlock fixes",8,False,False,0,False,False,True,True,1
+backend,197,2026-10-09,2026-10-09,MERGED,main,booking/thv-1230,THV-1230 Intro calls past UTC midnight: check slot order on instants,17,False,False,0,False,False,True,True,1
+backend,198,2026-10-09,,CLOSED,main,scheduling/thv-1188,"Intro confirmation reports the confirmed enrollment, verify gate fixes",4,False,False,0,False,False,True,True,1
+backend,199,2026-10-09,2026-10-09,MERGED,feature/private-lessons-rework,sessions/thv-1229,THV-1229 Erasure keeps only lesson evidence; THV-1225 dead branches; T,24,False,False,0,False,False,True,True,1
+backend,200,2026-10-09,2026-10-09,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1201,THV-1201 Directive seam: one way for the teacher to set what the stude,4,False,False,0,False,False,True,True,0
+backend,201,2026-10-09,2026-10-09,MERGED,feature/private-lessons-rework,sessions/thv-1228,THV-1228 One home for counted and shown; split the PL0 count migration,5,False,False,0,False,False,True,True,1
+backend,202,2026-10-09,2026-10-09,MERGED,feature/private-lessons-rework,sessions/thv-1159-ci,Fix integration CI after #199: boot never reaches the DB; real Sentry ,5,False,False,0,False,False,False,False,0
+backend,203,2026-10-09,2026-10-09,MERGED,feature/private-lessons-rework,sessions/thv-1159-ci2,Keep local test runs off the shared Redis; reset the SMTP breaker per ,5,False,False,0,False,False,False,False,2
+backend,204,2026-10-09,2026-10-09,MERGED,feature/private-lessons-rework,sessions/thv-1221,"THV-1221/1222/1224 Wipe on delete, Send always succeeds, sweep cap",8,False,False,0,False,False,True,True,1
+backend,205,2026-10-09,2026-10-09,MERGED,feature/private-lessons-rework,sessions/thv-1251,"THV-1251 Session rows: No notes yet, one blank-text rule, note preview",11,False,False,0,False,False,True,True,1
+backend,206,2026-10-09,2026-10-09,MERGED,feature/private-lessons-rework,sessions/thv-1252,THV-1252 Session rows carry practice marks and the recording,14,False,False,0,False,False,True,True,3
+backend,207,2026-10-09,2026-10-09,MERGED,feature/private-lessons-rework,sessions/thv-1255,"THV-1255 Session notes API: read one session, save draft and Internal,",19,False,False,0,False,False,True,True,2
+backend,208,2026-10-09,2026-10-09,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1205,Pair the teacher's phone as a second camera THV-1205,10,False,False,0,False,False,True,True,1
+backend,209,2026-10-09,2026-10-09,MERGED,feature/private-lessons-rework,sessions/thv-1262,Link practice to an optional Session (THV-1262),5,False,False,0,False,False,True,True,1
+backend,210,2026-10-10,2026-10-10,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1205-hardening,Harden phone camera pairing and pin the Daily token THV-1205,10,False,False,0,False,False,True,True,1
+backend,211,2026-10-10,2026-10-10,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1203,Practice room: a permanent practice room per teacher THV-1203,7,False,False,0,False,False,True,True,1
+backend,212,2026-10-10,2026-10-10,MERGED,feature/private-lessons-rework,sessions/thv-1259,THV-1259 Log session from scratch (backend),6,False,False,0,False,False,True,True,1
+backend,213,2026-10-10,2026-10-10,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1209,"Materials on the stage: stage items, durable copies and signed reads T",9,False,False,0,False,False,True,True,1
+backend,214,2026-10-10,2026-10-10,MERGED,feature/private-lessons-rework,sessions/thv-1259-thermos,"THV-1259 follow-up: live enrollment, idempotent scratch create (backen",10,False,False,0,False,False,True,True,1
+backend,215,2026-10-10,2026-10-10,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1213,"THV-1213: Marks on the stage, saved to the student's copy (backend)",13,False,False,0,False,False,True,True,1
+backend,216,2026-10-10,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/hardening-base-be,test(private-lessons): pin Session flows before hardening (BASE-BE),5,False,False,0,False,False,False,False,1
+backend,217,2026-10-10,2026-10-10,MERGED,feature/private-lessons-rework,private-lessons/hardening-be0,fix(private-lessons): turn integration CI green (BE-0),5,False,False,0,False,False,False,False,2
+backend,218,2026-10-11,2026-10-11,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1210,THV-1210: Invite the student's own phone as a second camera (backend),8,False,False,0,False,False,True,True,1
+backend,219,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/spec-clock,test(messaging): pin the P05 snapshot's enrollment end to the spec clo,5,False,False,0,False,False,False,False,2
+backend,220,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/hardening-be2,fix(private-lessons): make concurrent attendance writes whole (BE-2),16,False,False,0,False,False,False,False,1
+backend,221,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/hardening-be1,feat(private-lessons): guard Send with the draft revision the teacher ,14,False,False,0,False,False,False,False,1
+backend,222,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/hardening-be3,perf(private-lessons): load the roster and note previews once (BE-3),17,False,False,0,False,False,False,False,1
+backend,223,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/hardening-be4,Recover a notes email whose worker died after its claim (BE-4),10,False,False,0,False,False,True,False,4
+backend,224,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/hardening-parent-upcoming,"Order parent upcoming lessons by instant and page by (slot_at, id)",4,False,False,0,False,False,True,False,2
+backend,225,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/attendance-keeps-note,Keep the saved attendance note on a state-only update,10,False,False,0,False,False,True,False,2
+backend,226,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/process-law,"docs(process): Linear parent holds decisions, targeted tests, one veri",6,False,False,0,False,False,False,False,1
+backend,227,2026-10-11,2026-10-11,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1216,Pair a phone as the practice student in the practice room THV-1216,11,False,False,0,False,False,True,True,1
+backend,228,2026-10-11,2026-10-11,MERGED,main,analytics/thv-1272,THV-1272 Add the bi schema views Hex reads,11,False,False,0,False,False,False,True,2
+backend,229,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/hardening-close,Lower the raw-id baseline for teachers/classes_controller to zero,3,False,False,0,False,False,False,False,1
+backend,230,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/hardening-close-2,Permit BE-4's claimed_at migration in the controlled-migrate policy,4,False,False,0,False,False,False,False,1
+backend,231,2026-10-11,2026-10-11,MERGED,main,platform/load-guard,"Load guard: one shared verify slot, once-per-diff wording",8,False,False,0,False,False,False,False,3
+backend,232,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/hardening-close-mail-routes,List the Session page in the mail-link routes,3,False,False,0,False,False,False,False,1
+backend,233,2026-10-11,2026-10-11,MERGED,live-lesson-portal/workstream,live-lesson-portal/sync-main-1011,Merge main into the Live Lesson Portal workstream (2026-10-11),6,False,False,0,False,False,True,False,1
+backend,234,2026-10-11,2026-10-12,MERGED,main,fix/thv-1235,Send the student's first name on the teacher's lesson room access THV-,7,False,False,0,False,False,True,True,1
+backend,235,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/hardening-close-fix,Fix the hardening review's backend findings and date scratch Sessions,10,False,False,0,False,False,True,False,2
+backend,236,2026-10-12,2026-10-12,MERGED,main,fix/dogfood-load-expect-host,Fix main's red dogfood-load spec: keep credentials when the spec rewri,7,False,False,0,False,False,True,False,4
+backend,237,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/close-regen-manifest,Regenerate the contract manifest after the Session 409 moved to rescue,3,False,False,0,False,False,False,False,0
+backend,238,2026-10-12,2026-10-16,MERGED,main,scheduling/improvements,Reserved lesson time: scheduling improvements (THV-1187),13,False,False,0,False,False,True,True,1
+backend,239,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/close-ci-fix,Date the earned-XP scratch spec's prior Session on the teacher's yeste,3,False,False,0,False,False,False,False,2
+backend,240,2026-10-12,2026-10-12,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1215,THV-1215: video materials can be stage items,8,False,False,0,False,False,True,True,1
+backend,241,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/thv-1289,"Lesson end lands on the note, the notes reminder, and linking a scratc",19,False,False,0,False,False,True,True,1
+backend,242,2026-10-12,2026-10-12,MERGED,main,analytics/thv-1293,Add the granular bi views Hex reads THV-1293,18,False,False,0,False,False,False,True,2
+backend,243,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/thv-1289-ci,"Repeat link checks the teacher's own Sessions, clearing Brakeman (THV-",3,False,False,0,False,False,False,True,2
+backend,244,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/thv-1289-quality,"THV-1289: lesson end cleanup, zoneless link fix, slot lock",9,False,False,0,False,False,True,True,2
+backend,245,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/thv-1288,THV-1288: student Materials tab and material drawer (backend),8,False,False,0,False,False,True,True,1
+backend,246,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/thv-1287,THV-1287: Practice in the Session note (backend),8,False,False,0,False,False,True,True,1
+backend,247,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/thv-1289-ci3,THV-1289: End response schema the breaking-change check can read,4,False,False,0,False,False,True,True,1
+backend,248,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/thv-1289-ci4,THV-1289: sweep race spec waits on the slot lock,4,False,False,0,False,False,True,True,1
+backend,249,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/thv-1288-ci1,THV-1288: controlled-migrate spec permits the Materials migrations,2,False,False,0,False,False,True,True,0
+backend,250,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/thv-1288-quality,THV-1288: Materials quality pass and migration renumber (backend),10,False,False,0,False,False,True,True,2
+backend,251,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/thv-1287-ci1,THV-1287: drop the raw-id baseline entry that reached zero,2,False,False,0,False,False,True,True,1
+backend,252,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/pl-ci2-practice,PL integration CI: write-route inventory reader and oasdiff in full sh,4,False,False,0,False,False,True,False,1
+backend,253,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/pl-followup-b,"PL follow-up B: backfill resilience, one End shape (backend)",8,False,False,0,False,False,True,False,2
+backend,254,2026-10-12,2026-10-13,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1286,THV-1286 Clear the workstream's ratchet and schema debt (backend),9,False,False,0,False,False,True,True,4
+backend,255,2026-10-12,2026-10-13,MERGED,feature/private-lessons-rework,private-lessons/pl-followup-b2,"PL follow-up B2: activation 404 on a deleted material, backfill errors",5,False,False,0,False,False,False,True,1
+backend,256,2026-10-13,2026-10-13,MERGED,feature/private-lessons-rework,private-lessons/pl-followup-a,"PL follow-up A backend: home list age-out, idempotent practice create,",5,False,False,0,False,False,True,True,0
+backend,257,2026-10-13,2026-10-13,MERGED,feature/private-lessons-rework,private-lessons/pl-followup-a-ci1,PL follow-up A CI fix: accept the intended practice API breaks (THV-12,3,False,False,0,False,False,False,True,1
+backend,258,2026-10-13,2026-10-13,MERGED,feature/private-lessons-rework,private-lessons/thv-1290,"Practice tab: list with counts, attach tab practice to a Session later",6,False,False,0,False,False,True,True,0
+backend,259,2026-10-13,2026-10-14,MERGED,main,mail/thv-1296,Record every email we send and attach SendGrid delivery events THV-129,23,False,False,0,False,False,True,True,2
+backend,260,2026-10-13,2026-10-13,MERGED,feature/private-lessons-rework,private-lessons/thv-1290-ci1,THV-1290 CI fix: backend mail link routes match the frontend,3,False,False,0,False,False,False,True,0
+backend,261,2026-10-13,2026-10-14,MERGED,main,reminders/thv-1295,Fix 1-hour lesson reminders for evening and moved lessons THV-1295,26,False,False,0,False,False,True,True,3
+backend,262,2026-10-14,2026-10-15,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1214,THV-1214 Upload a file to the stage (backend),8,False,False,0,False,False,True,True,1
+backend,263,2026-10-14,2026-10-14,MERGED,feature/private-lessons-rework,private-lessons/thv-1291,THV-1291 Materials in Sessions (backend),10,False,False,0,False,False,True,True,1
+backend,264,2026-10-14,2026-10-14,MERGED,feature/private-lessons-rework,private-lessons/thv-1291-followup,"THV-1291 follow-up: route params, auth specs and picker alignment (be)",7,False,False,0,False,False,True,True,1
+backend,265,2026-10-14,2026-10-14,MERGED,feature/private-lessons-rework,private-lessons/thv-1291-manifest,THV-1291 contract manifest after the strong-params change (be),5,False,False,0,False,False,False,True,1
+backend,266,2026-10-14,2026-10-14,MERGED,feature/private-lessons-rework,private-lessons/thv-1291-generator,Contract manifest lists permitted params per action (be),10,False,False,0,False,False,True,False,1
+backend,267,2026-10-14,2026-10-14,MERGED,feature/private-lessons-rework,private-lessons/thv-1292,"THV-1292 Review, Status History and the tray marks (be)",9,False,False,0,False,False,True,True,1
+backend,268,2026-10-15,2026-10-15,MERGED,main,mail/thv-1302,Update Keri's teacher approval email copy and the Welcome Guide PDF TH,13,False,False,0,False,False,True,True,2
+backend,269,2026-10-15,,OPEN,main,docs/thv-1311,CHANGELOG: sections for prod/2026-10-11-1 and prod/2026-10-15-1 THV-13,12,False,False,0,False,False,True,True,1
+backend,274,2026-10-16,2026-10-16,MERGED,main,scheduling/thv-1187-week-ahead,"Week-ahead email follows rulings 71-74, and the reserved-time seed and",10,False,False,0,False,False,True,True,2
+backend,275,2026-10-16,2026-10-16,MERGED,main,scheduling/thv-1187-seed-live-lessons,The reserved-time seed resets after an approved lesson by deleting the,3,False,False,0,False,False,True,True,1
+backend,276,2026-10-17,2026-10-17,MERGED,main,scheduling/thv-1187-week-ahead-lines,Week-ahead email shows a booked reserved time as the lesson alone (THV,11,True,True,0,False,False,True,True,1
+backend,277,2026-10-19,2026-10-19,MERGED,main,scheduling/thv-1187-lesson-overlaps,Week-ahead email lists each lesson's overlaps (THV-1187 ruling 81),14,True,False,0,False,False,True,True,4
+frontend,113,2026-10-01,2026-10-01,MERGED,main,tooling/thv-973,"build: the frontend installs with pnpm 11, not npm (THV-973)",67,False,False,0,False,False,True,True,7
+frontend,114,2026-10-01,2026-10-01,MERGED,main,live-lessons/thv-945,fix(live-lesson): End fires once; NOT_IN_PROGRESS has its own copy,8,False,False,0,False,False,True,False,0
+frontend,115,2026-10-01,2026-10-01,MERGED,main,marketing/thv-980,"Public copy matches the product: no recording claims, Daily not Zoom (",8,False,False,0,False,False,True,True,1
+frontend,116,2026-10-01,2026-10-01,MERGED,main,docs/thv-982,docs: main takes changes only through a PR with green CI (THV-982),2,False,False,0,False,False,True,True,0
+frontend,117,2026-10-01,2026-10-01,MERGED,main,prettier/thv-984,Adopt prettier; the edit hook formats only changed files (THV-984),25,False,False,0,False,False,False,True,1
+frontend,118,2026-10-01,2026-10-01,MERGED,main,feature/ui-polish,"Marketplace teacher card, rebuilt and promoted into the design system ",12,False,False,0,True,False,True,True,1
+frontend,119,2026-10-01,2026-10-01,MERGED,main,live-lessons/thv-979,Live Sessions: lesson_joined counts the teacher's Daily join; a parent,19,False,False,0,False,False,True,True,1
+frontend,120,2026-10-01,2026-10-01,MERGED,main,coppa/thv-1001,The student-privacy test runs in CI and covers every /student route (T,6,False,False,0,False,False,True,True,1
+frontend,121,2026-10-01,2026-10-01,MERGED,main,coppa/thv-1000,No Sentry session replay on /student pages (THV-1000),7,False,False,0,False,False,True,True,0
+frontend,122,2026-10-01,2026-10-01,MERGED,main,coppa/thv-999,"Public notices disclose student homework audio, video and photos (THV-",7,False,False,0,False,False,True,True,0
+frontend,123,2026-10-01,2026-10-01,MERGED,main,replit/thv-711,Delete the Replit-only frontend code (THV-711),7,False,False,0,False,False,True,True,0
+frontend,124,2026-10-01,2026-10-01,MERGED,main,media/thv-996,Media Download follows the signed-URL redirect (THV-996),7,False,False,0,False,False,True,True,0
+frontend,125,2026-10-01,2026-10-02,MERGED,main,live-lessons/thv-978,The client stops starting lessons; Daily's teacher join does it (THV-9,7,False,False,0,False,False,True,True,0
+frontend,126,2026-10-01,2026-10-01,MERGED,main,tests/thv-1008,Remove tests that cannot catch a regression (THV-1008),19,False,False,0,False,False,True,True,5
+frontend,127,2026-10-01,2026-10-01,MERGED,main,feature/ui-polish,"Marketplace page chrome: one-edge header, chip filter row, ThovenButto",16,False,False,0,False,False,True,True,1
+frontend,128,2026-10-01,2026-10-01,MERGED,main,legal/thv-1005,Privacy notice: teacher-written class content stays with the teacher (,4,False,False,0,False,False,True,True,1
+frontend,129,2026-10-01,2026-10-01,MERGED,main,ui/thv-1014,Compiled-CSS tests can fail: keep test files out of Tailwind's content,13,False,False,0,False,False,True,True,4
+frontend,130,2026-10-01,2026-10-02,MERGED,main,ui/thv-843,"Book Lessons follow-ups: SegmentedControl focus, lead-time e2e, focusa",7,False,False,0,False,False,True,True,2
+frontend,131,2026-10-02,2026-10-02,MERGED,main,ui/thv-1015,Design-system page builder reads the real button tokens (THV-1015),10,False,False,0,False,False,True,True,1
+frontend,132,2026-10-02,2026-10-02,MERGED,main,ui/thv-1016,"Marketplace search tracking reports age, genre and subject filters (TH",8,False,False,0,False,False,True,True,1
+frontend,133,2026-10-02,2026-10-02,MERGED,main,docs/thv-1028,Docs catch up with prod/2026-10-02-1 (THV-1028),9,False,False,0,False,False,True,True,0
+frontend,134,2026-10-02,2026-10-02,MERGED,main,bug/alicen-ui-investigation,Teacher Application popup fits phones: address suggestions open above ,22,False,False,0,True,False,True,True,4
+frontend,135,2026-10-02,2026-10-02,MERGED,main,lander/thv-1029,Soft-ship /new-hampshire EFA lander (THV-1029),18,False,False,0,False,False,True,True,4
+frontend,136,2026-10-03,2026-10-03,MERGED,main,ui/thv-481,"Getting Started stepper: ThovenButton CTA, no hover tile pop (THV-481)",10,False,False,1,True,False,False,True,2
+frontend,137,2026-10-03,2026-10-03,MERGED,main,legal/thv-1003,Parents can read the privacy policy they consent to at signup (THV-100,8,False,False,0,False,False,True,True,1
+frontend,138,2026-10-03,2026-10-03,MERGED,main,docs/thv-1038,Design system and specs move out of thoven2.0 (THV-1038),9,False,False,0,False,False,True,True,1
+frontend,139,2026-10-03,2026-10-03,MERGED,main,docs/thv-908,"Docs catch up with THV-1003, THV-1041 and THV-1038 (THV-908)",5,False,False,0,False,False,True,True,0
+frontend,140,2026-10-03,2026-10-03,MERGED,main,media/thv-1004,Media players and downloads refetch an expired file link (THV-1004),8,False,False,0,False,False,True,True,1
+frontend,141,2026-10-03,2026-10-03,MERGED,main,legal/thv-1045,Parent signup records the Terms and Privacy versions it showed (THV-10,7,False,False,0,False,False,True,True,1
+frontend,142,2026-10-03,2026-10-03,MERGED,main,media/thv-1004-signup-font,Signup dialog stops requesting its own Figtree from Google (THV-1004),5,False,False,0,False,False,False,True,1
+frontend,143,2026-10-03,2026-10-03,MERGED,main,docs/thv-981,Hosting docs record the Daily webhook check and the deleted flags (THV,6,False,False,0,False,False,True,True,0
+frontend,144,2026-10-03,2026-10-03,MERGED,main,dev/thv-1069,"Frontend guardrails: route-list in pre-commit, ESLint for demo names a",22,False,False,0,False,False,True,True,4
+frontend,145,2026-10-03,,CLOSED,main,ui/thv-1039,"Teacher profile lab, locked: header A, credentials opening in place, W",5,False,False,0,False,False,True,True,1
+frontend,146,2026-10-03,,CLOSED,main,ui/thv-1040,"Homepage polish lab: carousel card, How It Works and CTA variants (THV",4,False,False,0,False,False,True,True,0
+frontend,147,2026-10-03,2026-10-03,MERGED,main,build/thv-1073,"Fonts load from the repo, so production builds stop asking Google (THV",19,False,False,0,False,False,True,True,2
+frontend,148,2026-10-03,2026-10-03,MERGED,main,ui/thv-1072,"ThovenButton: every variant is primary's height, and the dashboard lin",6,False,False,0,False,False,False,True,2
+frontend,149,2026-10-03,2026-10-03,MERGED,main,ui/thv-1070,"Teacher profile: Header A, credentials that open in place, What I teac",10,False,False,0,False,False,True,True,1
+frontend,150,2026-10-03,2026-10-03,MERGED,main,ui/thv-1071,"Homepage: P1 hero CTA, C3 teacher card carousel, How It Works H3, clos",9,False,False,0,False,False,True,True,0
+frontend,151,2026-10-03,2026-10-03,MERGED,main,after-cutover/thv-995,"Teachers can upload 1 GB videos and students 500 MB (THV-995, THV-997)",10,False,False,0,True,False,True,True,1
+frontend,152,2026-10-03,2026-10-03,MERGED,main,ui/thv-1081,"ThovenButton: asChild keeps its icons, sizeParts takes one named box (",7,False,False,0,True,False,True,True,2
+frontend,153,2026-10-03,2026-10-03,MERGED,main,ui/thv-1082,"Teacher profile cleanup: reduced-motion ghost fixed, header imports th",12,False,False,0,False,False,True,True,1
+frontend,154,2026-10-03,2026-10-03,MERGED,main,ui/thv-1083,"Homepage cleanup: hero chips are outline ThovenButtons, two columns on",15,False,False,0,True,False,True,True,1
+frontend,155,2026-10-03,2026-10-03,MERGED,main,docs/thv-481,"CHANGELOG: today's homepage, hero chip and ThovenButton entries (THV-4",4,False,False,0,False,False,True,True,0
+frontend,156,2026-10-03,2026-10-03,MERGED,main,after-cutover/thv-946,Sentry events carry the deployed commit SHA on Vercel (THV-946),6,False,False,0,False,False,True,True,2
+frontend,157,2026-10-03,2026-10-04,MERGED,main,privacy/thv-1091,"Stop sending children's ids and names to analytics, ad and error vendo",14,False,False,0,False,False,True,True,1
+frontend,158,2026-10-03,2026-10-04,MERGED,main,cache/thv-905,A warm build no longer ships stale Tailwind CSS (THV-905),17,False,False,0,False,False,True,True,3
+frontend,159,2026-10-04,2026-10-04,MERGED,main,ui/thv-1018,ThovenTile settled hover as literals; design-system page gains the lin,8,False,False,0,False,False,True,True,2
+frontend,160,2026-10-04,2026-10-04,MERGED,main,ui/thv-1027,"Tracking derives filter names, Tooltip takes the overlay rung, signup ",9,False,False,0,False,False,True,True,1
+frontend,161,2026-10-04,2026-10-04,MERGED,main,ui/thv-1023,"Book Lessons: true soonest slot on the DST fall-back day, 44px Use thi",14,False,False,0,False,False,True,True,3
+frontend,162,2026-10-04,2026-10-04,MERGED,main,legal/thv-1049,"Privacy policy names every data recipient, one retention rule, and CI ",34,False,False,0,False,False,True,True,3
+frontend,163,2026-10-04,2026-10-04,MERGED,main,ui/thv-1017,"Mechanical batch: ThovenButton xs ledges in one place, focus tests res",8,False,False,0,False,False,True,True,2
+frontend,164,2026-10-04,2026-10-04,MERGED,main,ads/thv-1106,Remove the OpenAI ad pixel and server relay (THV-1106),18,False,False,0,False,False,True,True,2
+frontend,165,2026-10-04,2026-10-04,MERGED,main,changelog/thv-908,CHANGELOG: COPPA work merged 2026-10-03 (THV-908),3,False,False,0,False,False,True,True,0
+frontend,166,2026-10-04,2026-10-04,MERGED,main,docs/thv-481,CHANGELOG: Design System wave 1 (THV-481),2,False,False,0,False,False,False,True,0
+frontend,167,2026-10-04,2026-10-04,MERGED,main,release/thv-908,CHANGELOG: one section per prod release through prod/2026-10-04-1 (THV,4,False,False,0,False,False,True,True,0
+frontend,168,2026-10-04,2026-10-04,MERGED,main,privacy/thv-1107,"Meta's pixel runs only on marketing pages, and goes silent while a chi",16,False,False,0,False,False,True,True,1
+frontend,169,2026-10-04,2026-10-04,MERGED,main,legal/thv-1108,Signup always sends the legal versions it showed; two unmounted signup,7,False,False,0,False,False,True,True,1
+frontend,170,2026-10-04,2026-10-04,MERGED,main,ci/thv-1109,ci: one changed-file eslint script for CI and pre-push (THV-1109),14,False,False,0,False,False,True,True,2
+frontend,171,2026-10-04,2026-10-05,MERGED,main,tooling/thv-1007,Prune redundant tests; TESTING.md layers and gates; route test work to,11,False,False,0,False,False,True,True,3
+frontend,172,2026-10-05,2026-10-06,MERGED,main,design/thv-1116,SegmentedControl: the 3D track pads its bottom by the ledge depth (THV,13,False,False,0,True,True,True,True,2
+frontend,173,2026-10-05,2026-10-06,MERGED,main,design/thv-1117,Icon tokens: named duotone recipes and the Private Lessons glyph map (,15,False,False,0,False,True,True,True,2
+frontend,174,2026-10-05,2026-10-05,MERGED,main,tests/thv-1115,"Homework + Materials test campaign: repair weak assertions, consolidat",29,False,False,0,True,True,True,True,4
+frontend,175,2026-10-06,2026-10-06,MERGED,main,coppa/thv-1112,Terms and Privacy 2026-10-08 say what the ad tools receive; origin-onl,26,False,False,0,False,False,True,True,4
+frontend,176,2026-10-06,2026-10-06,MERGED,main,docs/thv-908,CHANGELOG: prod/2026-10-05-1 section; Unreleased holds only what is no,3,False,False,0,False,False,True,True,0
+frontend,177,2026-10-06,2026-10-06,MERGED,main,design/thv-1118,Design-system generator keeps the XS button ledges on rebuild (THV-111,12,False,False,0,False,False,True,True,3
+frontend,178,2026-10-06,2026-10-07,MERGED,main,design/thv-1137,StatusMark: the K2 practice status marks as a shared component (THV-11,15,False,False,0,False,False,True,True,1
+frontend,179,2026-10-06,2026-10-07,MERGED,main,design/thv-1119,ThovenButton: the outline-emerald variant (THV-1119),16,False,False,0,True,False,True,True,3
+frontend,180,2026-10-06,2026-10-07,MERGED,main,design/thv-1135,Migrate six approved pickers to shared neutral controls (THV-1135),8,False,False,0,False,False,True,True,5
+frontend,181,2026-10-06,2026-10-07,MERGED,main,design/thv-1120,Tray: the MessageTray frame as a shared component (THV-1120),3,False,False,0,False,False,False,True,1
+frontend,182,2026-10-06,2026-10-06,MERGED,main,design/thv-1141,feat(colors): adopt neutral dark gray ramp (THV-1141),17,False,False,0,False,True,True,True,5
+frontend,183,2026-10-06,2026-10-06,MERGED,main,teacher/thv-1142,fix(teacher): prevent dashboard reads before password setup (THV-1142),10,False,False,0,False,False,True,True,5
+frontend,184,2026-10-06,2026-10-06,MERGED,main,changelog/thv-1142,docs(changelog): record first-run teacher fix (THV-1142),9,False,False,0,False,False,True,True,4
+frontend,185,2026-10-06,2026-10-06,MERGED,main,design/thv-579,"Refine dropdown motion, selection and layered elevation (THV-579)",10,False,False,0,True,True,True,True,3
+frontend,186,2026-10-06,,CLOSED,main,ci-testing/thv-1125-integration-review,"chore(testing): enforce browser, lint and response type gates",14,False,False,0,True,False,True,False,7
+frontend,187,2026-10-06,,CLOSED,main,ci-testing/thv-1125-adoption-review,"chore(testing): enforce browser, lint and response type gates",14,False,False,0,True,False,True,False,8
+frontend,188,2026-10-06,2026-10-06,MERGED,main,ci-testing/thv-1125-final-adoption,Adopt testing gates against current frontend main (THV-1125),15,False,False,0,True,False,True,True,9
+frontend,189,2026-10-06,2026-10-06,MERGED,main,test/thv-1132-integrated,test: run deterministic profile checks with TesterArmy (THV-1132),3,False,False,0,False,False,False,True,2
+frontend,190,2026-10-07,2026-10-07,MERGED,main,testing/thv1125-local-verify-20261007,Retain assertion controls and harden synthetic profile proof (THV-1148,3,False,False,0,False,False,True,True,1
+frontend,191,2026-10-07,2026-10-11,MERGED,main,teacher/thv-1151,Teacher sidebar logo links to the public homepage (THV-1151),18,False,False,0,False,True,True,True,8
+frontend,192,2026-10-07,2026-10-07,MERGED,main,testing/thv-1131,Select native verification from the diff and bind fresh evidence (THV-,5,False,False,0,False,False,False,True,2
+frontend,193,2026-10-07,2026-10-07,MERGED,main,coppa/thv-1124,Trust Center no longer names OpenAI and states Meta's real scope (THV-,12,False,False,0,False,False,True,True,3
+frontend,194,2026-10-07,2026-10-07,MERGED,main,coppa/thv-1123,Book intro call opens /marketplace without the student id (THV-1123),15,False,False,0,False,False,True,True,3
+frontend,195,2026-10-07,2026-10-07,MERGED,main,pixel/thv-1122,Meta PageView on first landing of every marketing route (THV-1122),15,False,False,0,False,False,True,True,2
+frontend,196,2026-10-07,2026-10-07,MERGED,main,design-system/thv-1144,Lock dropdown typeahead and Dialog interaction regressions (THV-1144),4,False,False,0,False,False,True,True,1
+frontend,197,2026-10-07,2026-10-07,MERGED,main,design-system/thv-1145,Audit remaining color tokens and consumer migration scope (THV-1145),4,False,False,0,False,False,True,True,1
+frontend,198,2026-10-07,2026-10-07,MERGED,main,design-system/thv-651,Use shared scroll masks in teacher sections (THV-651),3,False,False,0,False,False,True,True,2
+frontend,199,2026-10-07,2026-10-07,MERGED,main,design-system/thv-837,Remove metadata middle-dot separators (THV-837),3,False,False,0,False,False,True,True,2
+frontend,200,2026-10-09,2026-10-09,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1200,Seats tell every lesson participant apart by the identity Rails mints ,10,False,False,0,False,False,True,True,3
+frontend,201,2026-10-09,,CLOSED,main,scheduling/thv-1189,"Reserved times: teachers save a reserved time, other learners can't bo",4,False,False,0,False,False,True,True,1
+frontend,202,2026-10-09,,CLOSED,main,scheduling/thv-1188,"Intro confirmation reports the confirmed enrollment, verify gate fixes",4,False,False,0,False,False,True,True,1
+frontend,203,2026-10-09,2026-10-09,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1201,THV-1201 Directive seam: one way for the teacher to set what the stude,5,False,False,0,False,False,True,True,0
+frontend,204,2026-10-09,2026-10-09,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1202,THV-1202 Activity timer both screens see in sync,5,False,False,0,False,False,True,True,1
+frontend,205,2026-10-09,2026-10-09,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1204,THV-1204 Leader mode: lock and unlock the student's controls,5,False,False,0,False,False,True,True,1
+frontend,206,2026-10-09,2026-10-09,MERGED,live-lesson-portal/workstream,live-lesson-portal/visual-pass,Visual pass: timer start panel and Leader mode on their designs and th,7,False,False,0,False,False,True,True,1
+frontend,207,2026-10-09,2026-10-09,MERGED,feature/private-lessons-rework,private-lessons/thv-1248,"THV-1248 Private lessons opens on a student's Sessions, behind the rew",18,False,False,0,False,False,True,True,3
+frontend,208,2026-10-09,2026-10-09,MERGED,feature/private-lessons-rework,private-lessons/thv-1250,THV-1250 Tabs under the student's name,19,False,False,0,False,False,True,True,3
+frontend,209,2026-10-09,2026-10-09,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1205,Pair the teacher's phone as a second camera THV-1205,11,False,False,0,False,False,True,True,1
+frontend,210,2026-10-09,2026-10-09,MERGED,feature/private-lessons-rework,private-lessons/thv-1249,THV-1249 Switch students opens the student tray,22,False,False,0,True,False,True,True,3
+frontend,211,2026-10-10,2026-10-10,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1205-hardening,"Harden phone camera pairing, test it against Daily, match the Thumb Ra",16,False,False,0,False,False,True,True,5
+frontend,212,2026-10-10,2026-10-10,MERGED,feature/private-lessons-rework,private-lessons/thv-1253,THV-1253 Sessions list with complete cards,9,False,False,0,False,False,True,True,1
+frontend,213,2026-10-10,2026-10-10,MERGED,feature/private-lessons-rework,private-lessons/thv-1256,THV-1256 The session page (read-only),10,False,False,0,False,False,True,True,1
+frontend,214,2026-10-10,2026-10-10,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1203,Practice room in Settings with a stand-in student THV-1203,8,False,False,0,False,False,True,True,1
+frontend,215,2026-10-10,2026-10-10,MERGED,feature/private-lessons-rework,private-lessons/thv-1258,THV-1258 Attendance dropdown on the Session page,6,False,False,0,True,False,True,True,1
+frontend,216,2026-10-10,2026-10-10,MERGED,feature/private-lessons-rework,private-lessons/thv-1259,THV-1259 Log session from scratch (frontend),5,False,False,0,False,False,True,True,1
+frontend,217,2026-10-10,2026-10-10,MERGED,feature/private-lessons-rework,private-lessons/thv-1254,THV-1254 Expanded and Compact Session list views,10,False,False,0,False,False,True,True,1
+frontend,218,2026-10-10,2026-10-10,MERGED,feature/private-lessons-rework,private-lessons/thv-1257-merge,THV-1257 Log notes and Edit on the Session page,8,False,False,0,False,False,True,True,1
+frontend,219,2026-10-10,2026-10-10,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1209,"Put a material on the stage: Sidecar, shared paging and locks THV-1209",10,False,False,0,False,False,True,True,1
+frontend,220,2026-10-10,2026-10-10,MERGED,feature/private-lessons-rework,private-lessons/thv-1259-thermos,THV-1259 follow-up: Log session request handling and API cleanup (fron,12,False,False,0,False,False,True,True,1
+frontend,221,2026-10-10,2026-10-10,MERGED,feature/private-lessons-rework,private-lessons/thv-1260,THV-1260 Send and the send moment,8,False,False,0,True,False,True,True,1
+frontend,222,2026-10-10,2026-10-10,MERGED,feature/private-lessons-rework,private-lessons/thv-1257-thermos,"THV-1257/1258 thermos cleanup: note recovery, attendance, one owner",12,False,False,0,False,False,True,True,4
+frontend,223,2026-10-10,2026-10-10,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1213,"THV-1213: Marks on the stage, saved to the student's copy (frontend)",13,False,False,0,False,False,True,True,1
+frontend,224,2026-10-10,2026-10-10,MERGED,feature/private-lessons-rework,private-lessons/thv-1261,THV-1261 The card's buttons,12,False,False,0,False,False,True,True,3
+frontend,225,2026-10-10,2026-10-10,MERGED,feature/private-lessons-rework,private-lessons/thv-1254-thermos,THV-1254 thermos cleanup: Session list views,15,False,False,0,True,False,True,True,4
+frontend,226,2026-10-10,2026-10-10,MERGED,feature/private-lessons-rework,private-lessons/thv-1261-thermos,"THV-1260/1261 thermos fixes: Send owns the list row, one Send surface",22,False,False,0,False,False,True,True,5
+frontend,227,2026-10-10,2026-10-11,MERGED,main,platform/thv-1266,THV-1266 Stop Vercel deployments on branch pushes,11,False,False,0,False,False,True,True,2
+frontend,228,2026-10-10,2026-10-10,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1206,"THV-1206: Spotlight the camera angle, with Face fallback",16,False,False,0,False,False,True,True,1
+frontend,229,2026-10-10,2026-10-11,MERGED,main,schedule/thv-1267,fix(lessons): stop reporting a caller-aborted fetch to Sentry (THV-126,18,False,False,0,False,False,False,True,4
+frontend,230,2026-10-10,2026-10-11,MERGED,main,sentry/thv-1269,Drop Sentry errors thrown from injected <anonymous> scripts (THV-1269),22,False,False,0,False,True,True,True,4
+frontend,231,2026-10-11,2026-10-11,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1210,THV-1210: Invite the student's own phone as a second camera (frontend),10,False,False,0,False,False,True,True,1
+frontend,232,2026-10-11,2026-10-11,MERGED,main,ci-testing/thv-1281,Fix main's red vitest shards (THV-1281),19,False,False,0,False,True,True,True,7
+frontend,233,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/hardening-fe2,Route every Session write through one module (FE-2),14,False,False,0,True,False,True,False,2
+frontend,234,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/hardening-fe4,Present a Session the same way on card and page (FE-4),13,False,False,0,True,False,True,False,3
+frontend,235,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/hardening-fe4-parity,"Match the board for Internal, the empty no-show card, the phone previe",15,False,False,0,True,False,True,False,1
+frontend,236,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/process-law,"docs(process): Linear parent holds decisions, targeted tests, one veri",6,False,False,0,False,False,False,False,1
+frontend,237,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/hardening-fe3,Send only the note the teacher saw (FE-3),20,False,False,0,True,False,True,False,3
+frontend,238,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/icon-scan-licences,License the Private Lessons icon sizes and the standalone No recording,9,False,False,0,False,False,True,False,2
+frontend,239,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/hardening-fe5-render,Stop one change re-rendering every card (FE-5),11,False,False,0,True,False,True,False,2
+frontend,240,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/hardening-base-fe,Pin Session flows and record real payloads (BASE-FE),9,False,False,0,False,False,True,False,3
+frontend,241,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/hardening-fe1,Parse every Session payload at the seam (FE-1),12,False,False,0,True,False,True,False,4
+frontend,242,2026-10-11,2026-10-11,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1216,"Practice room on the v4 board and the design system, phone pairing and",12,False,False,0,True,False,True,True,2
+frontend,243,2026-10-11,2026-10-11,MERGED,main,analytics/thv-1272,"THV-1272 Analytics in Hex: plan, mockup and bi metric definitions",5,False,False,0,False,False,False,True,0
+frontend,244,2026-10-11,2026-10-11,MERGED,live-lesson-portal/workstream,live-lesson-portal/timer-hit-area,Give the timer plate's actions a 44px tap area THV-1202,6,False,False,0,False,False,False,True,0
+frontend,245,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/hardening-close-lint,Clear the CI lint warnings in the Private Lessons hardening files,14,False,False,0,False,False,False,False,3
+frontend,246,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/hardening-close-types,Check API types against the paired backend branch,5,False,False,0,False,False,False,False,2
+frontend,247,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/hardening-close-knip,Clear the Knip findings the types check was hiding,8,False,False,0,False,False,False,False,1
+frontend,248,2026-10-11,2026-10-11,MERGED,main,platform/load-guard,"Load guard: cap local test parallelism, shared verify slot, per-worktr",8,False,False,0,False,False,False,False,4
+frontend,249,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/hardening-close-tests,Catch the integration branch up with main and fix two PL tests,6,False,False,0,False,False,True,False,3
+frontend,250,2026-10-11,2026-10-11,MERGED,live-lesson-portal/workstream,live-lesson-portal/sync-main-1011,Merge main into the Live Lesson Portal workstream (2026-10-11),5,False,False,0,False,False,True,False,2
+frontend,251,2026-10-11,2026-10-11,MERGED,main,fix/thv-1235,Teacher waiting label and remote tile show the student's first name TH,5,False,False,0,False,False,True,True,1
+frontend,252,2026-10-11,2026-10-11,MERGED,feature/private-lessons-rework,private-lessons/hardening-close-fix,Fix the hardening review's frontend findings and board gaps,27,False,False,0,True,False,True,False,2
+frontend,253,2026-10-12,2026-10-12,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1283,Practice room guide step 3 puts Minuet in G on both stages THV-1283,13,False,False,0,True,False,True,True,1
+frontend,254,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/close-regen-openapi,Regenerate the OpenAPI types for the R3 Log session description,3,False,False,0,False,False,False,False,0
+frontend,255,2026-10-12,2026-10-12,MERGED,main,analytics/thv-1279,THV-1279 Thoven Analytics Hex project file,10,False,False,0,False,False,True,True,0
+frontend,256,2026-10-12,2026-10-16,MERGED,main,scheduling/improvements,Reserved lesson time: scheduling improvements (THV-1187),10,False,False,0,False,False,True,True,1
+frontend,257,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/close-ci-fix,Fix the tests that pinned shapes the close-out replaced,6,False,False,0,False,False,False,False,2
+frontend,258,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/thovenbutton-width,ThovenButton grows smoothly to fit a longer label and holds it mid-act,9,False,False,0,True,False,True,False,1
+frontend,259,2026-10-12,2026-10-12,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1215,THV-1215: video on the stage plays in sync,7,False,False,0,True,False,True,True,1
+frontend,260,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/thv-1289,"Lesson end lands on the note, the notes reminder, and linking a scratc",12,False,False,0,True,False,True,True,1
+frontend,261,2026-10-12,2026-10-12,MERGED,main,analytics/thv-1293,Add the Thoven granular Hex project and its decisions THV-1293,12,False,False,0,False,False,True,True,0
+frontend,262,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/thv-1289-ci,Clear the lint errors THV-1289 left on the integration branch (THV-128,7,False,False,0,False,False,True,True,3
+frontend,263,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/thv-1289-ci2,"Knip parses SessionPortal and ThovenButton, so their imports count (TH",6,False,False,0,False,False,False,True,2
+frontend,264,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/thv-1289-quality,THV-1289: lesson end and notification row cleanup,9,False,False,0,False,False,True,True,2
+frontend,265,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/thv-1288,THV-1288: student Materials tab and material drawer,8,False,False,0,True,False,True,True,1
+frontend,266,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/thv-1287,THV-1287: Practice in the Session note,8,False,False,0,False,False,True,True,1
+frontend,267,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/thv-1289-ci3,THV-1289: regenerate API types for the flat End response,2,False,False,0,False,False,True,True,1
+frontend,268,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/thv-1288-quality,THV-1288: Materials quality pass,10,False,False,0,False,False,True,True,4
+frontend,269,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/thv-1287-ci1,THV-1287: keep test-only exports private for knip,2,False,False,0,False,False,True,True,1
+frontend,270,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/pl-ci2-materials,PL integration CI: Materials-side test updates,7,False,False,0,True,False,True,False,1
+frontend,271,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/pl-ci2-practice,PL integration CI: Practice-side test and fixture updates,7,False,False,0,False,False,True,False,1
+frontend,272,2026-10-12,2026-10-12,MERGED,feature/private-lessons-rework,private-lessons/pl-followup-b,"PL follow-up B: flag cache, Active toggle, notification rows",8,False,False,0,False,False,False,False,1
+frontend,273,2026-10-12,2026-10-13,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1286,THV-1286 Clear the workstream's lint debt (frontend),11,False,False,0,False,False,True,True,6
+frontend,274,2026-10-12,2026-10-12,MERGED,main,fix/thv-1294,Stop reporting expected signed-out and blocked-storage errors to Sentr,14,False,False,0,False,False,True,True,4
+frontend,275,2026-10-12,2026-10-13,MERGED,feature/private-lessons-rework,private-lessons/pl-followup-b2,"PL follow-up B2: opener assertNever, notification-row header (THV-1288",6,False,False,0,False,False,False,True,0
+frontend,276,2026-10-13,2026-10-13,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1284,THV-1284 The materials stage on a phone,6,False,False,0,True,False,True,True,2
+frontend,277,2026-10-13,2026-10-13,MERGED,feature/private-lessons-rework,private-lessons/pl-followup-a,"PL follow-up A frontend: tray guard, caret exit, practice writes (THV-",5,False,False,0,False,False,True,True,1
+frontend,278,2026-10-13,2026-10-13,MERGED,feature/private-lessons-rework,private-lessons/pl-followup-a-ci1,PL follow-up A CI fix: practice token browser test passes onBusyChange,2,False,False,0,False,False,False,True,1
+frontend,279,2026-10-13,2026-10-13,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1284-board,THV-1284 Built phone row on the THV-1173 board frame,2,False,False,0,False,False,True,True,0
+frontend,280,2026-10-13,2026-10-13,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1286-lint,THV-1286 Clear the live-lesson jsx-a11y oxlint,5,False,False,0,False,False,True,True,1
+frontend,281,2026-10-13,2026-10-13,MERGED,feature/private-lessons-rework,private-lessons/thv-1290,"Practice tab: Open, Needs review and Done, Assign, attach later (THV-1",6,False,False,0,True,False,True,True,0
+frontend,282,2026-10-13,2026-10-13,MERGED,feature/private-lessons-rework,private-lessons/thv-1290-ci1,"THV-1290 CI fix: icon tiers, mail link route, student tabs test",7,False,False,0,False,False,False,True,1
+frontend,283,2026-10-14,2026-10-15,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1214,THV-1214 Upload a file to the stage from the lesson,9,False,False,0,True,False,True,True,3
+frontend,284,2026-10-14,2026-10-14,MERGED,feature/private-lessons-rework,private-lessons/thv-1291,THV-1291 Materials in Sessions (frontend),10,False,False,0,True,False,True,True,1
+frontend,285,2026-10-14,2026-10-14,MERGED,feature/private-lessons-rework,private-lessons/thv-1290-fade,THV-1290 Practice list ends above the edge and fades,6,False,False,0,True,False,True,True,1
+frontend,286,2026-10-14,2026-10-14,MERGED,feature/private-lessons-rework,private-lessons/thv-1290-sessions-fade,THV-1290 Sessions list ends above the edge and fades,6,False,False,0,True,False,True,True,1
+frontend,287,2026-10-14,2026-10-14,MERGED,feature/private-lessons-rework,private-lessons/thv-1291-followup,"THV-1291 follow-up: route params, auth specs and picker alignment (fe)",6,False,False,0,False,False,True,True,1
+frontend,288,2026-10-14,2026-10-14,MERGED,feature/private-lessons-rework,private-lessons/thv-1291-manifest,THV-1291 contract manifest after the strong-params change (fe),5,False,False,0,False,False,False,True,1
+frontend,289,2026-10-14,2026-10-15,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1285,THV-1285: iPad and phone fit for the live lesson,22,False,False,0,False,False,True,True,3
+frontend,290,2026-10-14,2026-10-14,MERGED,feature/private-lessons-rework,private-lessons/thv-1291-generator,Contract manifest lists permitted params per action (fe),10,False,False,0,False,False,True,False,1
+frontend,291,2026-10-14,2026-10-14,MERGED,main,fix/thv-1299,"Signed-out errors from every teacher feed, and blocked-storage startup",30,False,False,0,False,True,True,True,2
+frontend,292,2026-10-14,2026-10-14,MERGED,feature/private-lessons-rework,private-lessons/thv-1292,"THV-1292 Review, Status History and the tray marks (fe)",10,False,False,0,True,False,True,True,1
+frontend,293,2026-10-14,2026-10-14,MERGED,feature/private-lessons-rework,private-lessons/session-card-polish,Session cards keep one height per view; Materials paperclip draws whol,7,False,False,0,True,False,False,False,1
+frontend,294,2026-10-14,2026-10-14,MERGED,feature/private-lessons-rework,private-lessons/sheet-test-icon-overflow,Update ThovenSheet's pinned DOM for the icon overflow change,3,False,False,0,False,False,False,False,0
+frontend,295,2026-10-15,2026-10-15,MERGED,feature/private-lessons-rework,private-lessons/add-materials-tray,"Add materials tray in the Session note, full-shell Materials sheet, ph",9,False,False,0,True,False,True,True,1
+frontend,296,2026-10-15,2026-10-15,MERGED,feature/private-lessons-rework,private-lessons/oxlint-after-295,Clear oxlint after the Add materials tray merge,3,False,False,0,False,False,False,False,1
+frontend,297,2026-10-15,2026-10-15,MERGED,feature/private-lessons-rework,private-lessons/knip-after-295,Clear knip after the Add materials tray merge,3,False,False,0,False,False,False,False,1
+frontend,298,2026-10-15,2026-10-15,MERGED,feature/private-lessons-rework,private-lessons/tap-targets,"44px phone tap targets: menu rows grow below md, drawer fields get an ",5,False,False,0,True,False,False,False,1
+frontend,299,2026-10-16,,OPEN,main,verify/thv-1313,Frontend bin/verify accepts a markdown-only diff THV-1313,12,False,False,0,False,False,True,True,5
+frontend,300,2026-10-16,,CLOSED,main,tooling/thv-1314,bin/verify: mutate added files in place instead of deleting them (THV-,20,False,False,0,False,False,True,True,4
+frontend,301,2026-10-16,2026-10-16,MERGED,live-lesson-portal/workstream,live-lesson-portal/thv-1314,bin/verify: mutate added files in place instead of deleting them (THV-,16,False,False,0,False,False,True,True,5
+frontend,302,2026-10-16,2026-10-16,MERGED,main,scheduling/thv-1187-avatars,Initials avatars are gray-700 on gray-100 in the teacher sidebar and p,6,False,False,0,True,False,False,True,1
+frontend,303,2026-10-16,2026-10-17,MERGED,main,scheduling/thv-1187-staging-e2e,Staging TesterArmy target for the reserved-time journeys (THV-1187),15,True,True,0,True,False,True,True,2
+frontend,304,2026-10-17,2026-10-17,MERGED,main,scheduling/thv-1187-staging-findings,"Staging-run fixes: request header, phone cancel, archived-classes link",16,True,True,0,True,False,True,True,5
+frontend,305,2026-10-19,2026-10-19,MERGED,main,scheduling/thv-1187-thermo-cleanup,"Thermo cleanup of THV-1187's last PRs: calendar action state, Initials",23,True,False,0,True,False,True,True,7
+frontend,306,2026-10-19,2026-10-19,MERGED,main,docs/thv-1187-staging-credentials,TesterArmy staging README: where the Render and Vercel tokens come fro,9,False,False,0,False,False,False,True,2
