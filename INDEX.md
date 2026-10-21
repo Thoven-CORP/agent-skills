@@ -9,6 +9,7 @@ Bug-and-fix factory. Stations run in order. Every station skill checks its own o
 | Skill | Station | When to use |
 |---|---|---|
 | [thoven-verify](skills/factory/thoven-verify/SKILL.md) | all | Drive staging or a Vercel preview and keep evidence. |
+| [thoven-factory-formal](skills/factory/thoven-factory-formal/SKILL.md) | 7 | Verify the review's proof, not the factory loop. |
 
 Deferred folders (another agent supplies them later). Do not add plugin or index rows until those folders exist.
 
