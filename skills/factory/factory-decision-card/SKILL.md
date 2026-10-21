@@ -10,9 +10,9 @@ Station 5. Decide whether station 6 may run. The card is the brief. No card, no 
 ## Steps
 
 1. Read the batch tickets and the repro report.
-2. Run `factory-rules/scripts/enforce.sh` with current open and weekly counts.
+2. Run `~/thoven/agent-skills/skills/factory/factory-rules/scripts/enforce.sh --ci-failures <n>` with current open and weekly counts.
 3. Fill [references/card.md](references/card.md).
-4. Decision is `go`, `bounce`, or `ask Andres`.
+4. Decision is an explicit `Decision:` line: `go`, `bounce`, or `ask Andres`. The word go anywhere else does not count.
 5. Verify the card.
 
 ```bash

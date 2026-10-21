@@ -18,10 +18,11 @@ Bounce the report if any field is missing. The template is [references/ticket-te
 | What the user saw | One sentence, their words. |
 | Expected | One sentence. |
 | Steps | At least two. |
-| Severity | Exactly one of S1, S2, S3. |
+| Severity | A `Severity` field whose value is exactly one of S1, S2, S3. |
 | Found by | Exactly one. |
 | Repo | Exactly one (`frontend` or `backend`). |
 | Project | Exactly one Linear project. |
+| Forbidden | A `Forbidden` field (`none` or the rule that bounced). |
 
 ## Bounce
 

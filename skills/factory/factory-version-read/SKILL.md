@@ -11,14 +11,14 @@ This skill proves what is live. A merge, a green CI run or a finished deploy is 
 
 1. Get the expected full SHAs. For staging, read the head of `main` in Thoven-CORP/frontend-remote and Thoven-CORP/backend-remote through the cursor-github connector (`list_commits`, `sha: main`, `perPage: 1`). For prod, use the SHAs Andres tagged. Never type a SHA from memory.
 2. For prod only, build the tag files. Call cursor-github `list_tags` with `perPage: 100` for each repo and keep paging while the result has a `rel="next"` link. Save every tag as `{"name","sha"}` into one JSON array per repo. If no prod/YYYY-MM-DD-N tag exists, the script says so and fails. Do not make one up.
-3. Run the script. `VERCEL_AUTOMATION_BYPASS_SECRET` must be in the environment. The script never prints it.
+3. Run the script. `VERCEL_AUTOMATION_BYPASS_SECRET` is required for staging only. Prod reads never send it. The script never prints it.
 
    ```bash
    scripts/version-read.sh staging <FE_full_sha> <BE_full_sha>
    scripts/version-read.sh prod <FE_full_sha> <BE_full_sha> fe-tags.json be-tags.json
    ```
 
-4. Read the result. `RESULT: PASS` with exit 0 means every row passed. Any `FAIL` line and exit 1 means the stage has not passed. Report the failing line to Andres word for word.
+4. Read the result. `RESULT: PASS` with exit 0 means every row passed. Any `FAIL` line and exit 1 means the stage has not passed. Report the failing line to Andres word for word. The Vercel bypass secret is sent only on staging GETs. Prod reads never receive it.
 5. The worker line always says "unverified, inferred from prod tag" until Render read access exists (open decision 5). Never report the worker as verified.
 6. A loop ticket moves to Done only after a prod run prints `RESULT: PASS`. This skill never moves a ticket itself.
 7. Save the output under `evidence/` with the date in the file name.

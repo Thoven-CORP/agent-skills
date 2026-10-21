@@ -174,7 +174,7 @@ Retired bodies live in [`archive/`](./archive/README.md) as `SKILL.md.archived`.
 skills/dev/      engineering + personal-dev workflows
 skills/exec/     executive assistant, outreach, CFO, fundraising
 skills/factory/  bug-and-fix factory stations (catalog in skills/factory/INDEX.md)
-archive/         retired skills — SKILL.md.archived only, never installable
+archive/         retired skills: SKILL.md.archived only, never installable
 ```
 
 Each skill is `skills/<bucket>/<name>/SKILL.md` plus optional `references/`, `scripts/`, `templates/`.

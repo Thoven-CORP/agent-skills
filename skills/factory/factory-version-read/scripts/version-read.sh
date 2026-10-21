@@ -23,7 +23,8 @@ fetch() {
   local url="$1" body code attempt
   body="$(mktemp)"
   for attempt in 1 2 3 4; do
-    if [[ -n "${VERCEL_AUTOMATION_BYPASS_SECRET:-}" && "$url" == *thoven.co/api/version ]]; then
+    # Bypass is staging-only. Never send it to prod.
+    if [[ -n "${VERCEL_AUTOMATION_BYPASS_SECRET:-}" && "$ENV" == "staging" && "$url" == *staging.thoven.co/api/version ]]; then
       local s="${VERCEL_AUTOMATION_BYPASS_SECRET//\\/\\\\}"; s="${s//\"/\\\"}"
       code="$(printf 'header = "x-vercel-protection-bypass: %s"\n' "$s" \
         | curl -sS -m 20 -K - -o "$body" -w '%{http_code}' "$url" 2>/dev/null)"

@@ -1,6 +1,6 @@
 # Factory rules
 
-Source of truth for loop limits. `scripts/enforce.sh` reads the fenced `caps` block. Change a number here. Do not hard-code it in the script.
+Source of truth for loop limits. `scripts/enforce.sh` reads the fenced `caps` block from `origin/main`, not from the checkout. Change a number here on main. A loop PR cannot raise its own caps.
 
 ```caps
 open_pr_cap=5
@@ -31,11 +31,14 @@ A batch PR may close several linked tickets. Size and open counts are per batch 
 A loop PR must not change these. The list is not configurable.
 
 - Database migrations (db/migrate, db/schema.rb, db/structure.sql, Strong Migrations)
+- db/seeds
 - config/recurring.yml
-- Billing, credits, wallets, Stripe charges
-- Authentication, session, JWT, Devise, student-auth
-- Privacy policy, terms, legal wording
-- Customer-facing email templates and mailers
+- Billing, credits, wallets, Stripe charges, payment, invoice, subscription, checkout
+- Authentication, password, oauth, login, token, JWT, Devise, student-auth
+- session paths, except lesson-session files
+- Privacy policy, terms/, legal wording
+- Customer-facing email templates, mailers, frontend emails/ and templates/
+- skills/factory/** and any RULES.md
 
 ## Loop conduct
 

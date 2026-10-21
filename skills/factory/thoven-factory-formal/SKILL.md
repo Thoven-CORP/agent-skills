@@ -30,6 +30,8 @@ Tool choice lives in [references/property-tests.md](references/property-tests.md
 scripts/run-check.sh --pre-fix <rev> --fix <rev> --cmd "<check>"
 ```
 
+`run-check.sh` uses scratch worktrees and restores HEAD. Only a pre-fix test failure (exit 1) counts as red. Exit 127 or missing deps is not a proof.
+
 ## Reviewer sample
 
 On a sample of loop PRs, plant a known bug in a scratch copy and measure whether the reviewer names it.
@@ -37,6 +39,8 @@ On a sample of loop PRs, plant a known bug in a scratch copy and measure whether
 ```bash
 scripts/mutation-sample.sh --pr <url> --bug-file <path> --note "<what the reviewer must catch>"
 ```
+
+The script clones into a scratch tree and applies the planted patch there. Do not push that tree.
 
 Record hit or miss in the evidence dir. Do not merge the planted bug.
 

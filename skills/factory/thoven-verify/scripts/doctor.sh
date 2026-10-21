@@ -29,12 +29,16 @@ is_prod_host() {
   [[ "$h" == "thoven.co" || "$h" == "www.thoven.co" || "$h" == "api.thoven.co" ]]
 }
 
-is_allowed_host() {
+is_allowed_fe_host() {
   local h="$1"
   [[ "$h" == "staging.thoven.co" ]] && return 0
+  [[ "$h" == *thoven-staging*.vercel.app ]] && return 0
+  return 1
+}
+
+is_allowed_be_host() {
+  local h="$1"
   [[ "$h" == "thoven-api-staging.onrender.com" ]] && return 0
-  [[ "$h" == *.vercel.app ]] && return 0
-  [[ "$h" == localhost || "$h" == "127.0.0.1" ]] && return 0
   return 1
 }
 
@@ -53,12 +57,12 @@ if is_prod_host "$fe_host" || is_prod_host "$be_host"; then
   exit 2
 fi
 
-if ! is_allowed_host "$fe_host"; then
+if ! is_allowed_fe_host "$fe_host"; then
   echo "REFUSE unknown frontend host: $fe_host" >&2
   fail=1
 fi
-if ! is_allowed_host "$be_host"; then
-  echo "REFUSE unknown API host: $be_host" >&2
+if ! is_allowed_be_host "$be_host"; then
+  echo "REFUSE unknown API host: $be_host (need thoven-api-staging.onrender.com)" >&2
   fail=1
 fi
 

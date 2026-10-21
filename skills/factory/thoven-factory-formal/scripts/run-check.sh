@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Run one check on a pre-fix ref and a fix ref. Fail unless pre-fix is red and fix is green.
+# Run one check on a pre-fix ref and a fix ref in scratch worktrees.
+# Fail unless pre-fix is a real test failure (exit 1) and fix is green.
 set -euo pipefail
 
 pre=""
@@ -22,32 +23,85 @@ if [[ -z "$pre" || -z "$fix" || -z "$cmd" ]]; then
   exit 2
 fi
 
+repo="$(cd "$repo" && pwd)"
+head_sha="$(git -C "$repo" rev-parse HEAD)"
+head_ref="$(git -C "$repo" symbolic-ref -q --short HEAD || true)"
+scratch="$(mktemp -d "${TMPDIR:-/tmp}/thoven-formal-check-XXXXXX")"
+worktrees=()
+
+restore_head() {
+  local now
+  now="$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)"
+  if [[ -n "$now" && "$now" != "$head_sha" ]]; then
+    if [[ -n "$head_ref" ]]; then
+      git -C "$repo" checkout --quiet "$head_ref" || git -C "$repo" checkout --quiet "$head_sha"
+    else
+      git -C "$repo" checkout --quiet "$head_sha"
+    fi
+  fi
+}
+
+cleanup() {
+  local wt
+  if ((${#worktrees[@]})); then
+    for wt in "${worktrees[@]}"; do
+      git -C "$repo" worktree remove --force "$wt" >/dev/null 2>&1 || rm -rf "$wt"
+    done
+  fi
+  restore_head
+  rm -rf "$scratch"
+}
+trap cleanup EXIT
+
 run_on() {
   local ref="$1"
   local label="$2"
-  git -C "$repo" checkout --quiet "$ref"
+  local wt code
+  wt="$(mktemp -d "$scratch/wt-XXXXXX")"
+  if ! git -C "$repo" worktree add --detach -q "$wt" "$ref"; then
+    echo "FAIL  cannot create scratch worktree for $ref" >&2
+    return 2
+  fi
+  worktrees+=("$wt")
   set +e
-  (cd "$repo" && bash -lc "$cmd")
-  local code=$?
-  set -e
+  (cd "$wt" && bash -lc "$cmd")
+  code=$?
   echo "$label exit=$code ref=$ref"
-  return "$code"
+  printf '%s' "$code" >"$scratch/last-code"
+  return 0
 }
 
-head="$(git -C "$repo" rev-parse --abbrev-ref HEAD)"
-trap 'git -C "$repo" checkout --quiet "$head"' EXIT
-
-echo "Guarantee check on pre-fix must fail."
-if run_on "$pre" "pre-fix"; then
+echo "Guarantee check on pre-fix must fail as a test (exit 1), not missing deps."
+run_on "$pre" "pre-fix"
+pre_code="$(cat "$scratch/last-code")"
+if [[ "$pre_code" -eq 0 ]]; then
   echo "FAIL  pre-fix check passed. The check cannot see the bug." >&2
+  exit 1
+fi
+if [[ "$pre_code" -eq 126 || "$pre_code" -eq 127 ]]; then
+  echo "FAIL  pre-fix exit $pre_code is not a test failure (missing command or deps)" >&2
+  exit 1
+fi
+if [[ "$pre_code" -ne 1 ]]; then
+  echo "FAIL  pre-fix exit $pre_code is not a test failure" >&2
   exit 1
 fi
 echo "ok    pre-fix failed"
 
 echo "Guarantee check on fix must pass."
-if ! run_on "$fix" "fix"; then
-  echo "FAIL  fix check failed." >&2
+run_on "$fix" "fix"
+fix_code="$(cat "$scratch/last-code")"
+if [[ "$fix_code" -ne 0 ]]; then
+  echo "FAIL  fix check failed (exit $fix_code)." >&2
   exit 1
 fi
 echo "ok    fix passed"
+
+now="$(git -C "$repo" rev-parse HEAD)"
+if [[ "$now" != "$head_sha" ]]; then
+  echo "FAIL  repo HEAD moved; restoring" >&2
+  restore_head
+  exit 1
+fi
+echo "ok    HEAD restored"
 echo "red-then-green holds"

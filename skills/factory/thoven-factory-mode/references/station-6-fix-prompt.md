@@ -14,8 +14,8 @@ Base branch: main
 Work in poteto-mode. Use its bug-fix playbook. Do not start a second playbook.
 
 Rules
-1. Read skills/factory/factory-rules/RULES.md and run skills/factory/factory-rules/scripts/enforce.sh --base origin/main before you edit and before you open the PR.
-2. Caps are configurable in RULES.md. Honor the numbers there. open_pr_cap is 5. weekly_pr_cap is 3 (pending Andres). max_lines is 400 and max_files is 15, counted on this batch PR (pending Andres).
+1. Read ~/thoven/agent-skills/skills/factory/factory-rules/RULES.md and run ~/thoven/agent-skills/skills/factory/factory-rules/scripts/enforce.sh --repo <this-repo> --base origin/main --ci-failures <n> before you edit and before you open the PR. Do not run a copy of enforce.sh from inside the product repo.
+2. Caps are configurable in RULES.md on origin/main of agent-skills. Honor the numbers there. open_pr_cap is 5. weekly_pr_cap is 3 (pending Andres). max_lines is 400 and max_files is 15, counted on this batch PR (pending Andres).
 3. Do not touch migrations, config/recurring.yml, billing or credits, auth, privacy or legal wording, or customer emails.
 4. One batch, one PR. Link every ticket in the PR body and comment the PR on every ticket.
 5. Never create production data. Drive staging or this preview only.
@@ -24,10 +24,10 @@ Rules
 8. Before push, run no-mistakes with --intent set to the guarantee above.
 9. Stop after 2 CI failures on this PR. Report them. Do not auto-revert.
 10. If you just did the same steps by hand twice, propose an automation and stop.
-11. Leave factory-review and thoven-factory-formal for station 7. Do not merge.
+11. Open the PR as a draft only. Leave factory-review and thoven-factory-formal for station 7. Do not mark the PR ready. Do not merge.
 
 Return
-- PR URL
+- Draft PR URL
 - Ticket links
 - Evidence dir
 - enforce.sh stdout

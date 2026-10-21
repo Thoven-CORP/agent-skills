@@ -65,3 +65,65 @@ code=$?
 set -e
 [[ "$code" -ne 0 ]]
 echo "ok    short intake fails"
+
+cat >"$tmp/s2-prose.md" <<'EOF'
+## Duplicate check
+none
+## Evidence
+https://example.test/shot.png
+## What the user saw
+Saw an S2 banner.
+## Expected
+No banner.
+## Steps
+1. Open /parent
+2. Submit
+## Found by
+Sentry
+## Repo
+frontend
+## Project
+Factory
+## Batch
+Id: x
+## Forbidden
+none
+EOF
+set +e
+"$DIR/check-intake.sh" --file "$tmp/s2-prose.md" >"$tmp/out" 2>"$tmp/err"
+code=$?
+set -e
+[[ "$code" -ne 0 ]]
+grep -qE 'Severity|severity must be a field' "$tmp/err"
+echo "ok    S2 in prose is not a Severity field"
+
+cat >"$tmp/no-forbidden.md" <<'EOF'
+## Duplicate check
+none
+## Evidence
+https://example.test/shot.png
+## What the user saw
+broken
+## Expected
+works
+## Steps
+1. Open /parent
+2. Submit
+## Severity
+S2
+## Found by
+Sentry
+## Repo
+frontend
+## Project
+Factory
+## Batch
+Id: x
+EOF
+set +e
+"$DIR/check-intake.sh" --file "$tmp/no-forbidden.md" >"$tmp/out" 2>"$tmp/err"
+code=$?
+set -e
+[[ "$code" -ne 0 ]]
+grep -q 'Forbidden' "$tmp/err"
+echo "ok    Forbidden field is required"

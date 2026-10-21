@@ -22,4 +22,6 @@ scripts/write-repro.sh --out "$THOVEN_VERIFY_EVIDENCE_DIR/repro.md" \
 ../thoven-verify/scripts/check-station-output.sh --kind repro --file "$THOVEN_VERIFY_EVIDENCE_DIR/repro.md"
 ```
 
+`--reproduced` must be `yes`, `no`, or `partial`. Missing version JSON prints `unverified` for that sha. The report says doctor ran only when `doctor.txt` exists.
+
 Cannot reproduce is a result. Say what you tried. Do not invent a pass. Bounce back to intake if the steps were wrong.

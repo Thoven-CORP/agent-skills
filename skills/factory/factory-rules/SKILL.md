@@ -5,10 +5,10 @@ description: Enforce factory loop caps and the forbidden-area list before openin
 
 # Factory rules
 
-Read [RULES.md](RULES.md) first. Caps live there so Andres can change a number without editing the script.
+Caps come from `origin/main:skills/factory/factory-rules/RULES.md` in the agent-skills repo. A checkout copy is not enough.
 
 ```bash
-scripts/enforce.sh --repo <product-repo> --base origin/main
+~/thoven/agent-skills/skills/factory/factory-rules/scripts/enforce.sh --repo <product-repo> --base origin/main --ci-failures <n>
 ```
 
 Exit 0 only when every check passes. Print every violation. Do not auto-fix a forbidden path by reverting.

@@ -11,4 +11,15 @@ issue: <id or URL>
 ## Sha
 fe: <fe-version sha>
 be: <health revision sha>
+
+## Prod version
+RESULT: PASS
+<paste factory-version-read prod stdout>
+
+## Approval
+Andres approved resolve on <date>
+
+## Claim lock
+factory-claim-lock:<actor>
+assign-if-unassigned: <actor>
 ```

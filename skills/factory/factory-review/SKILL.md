@@ -29,4 +29,4 @@ scripts/check-review.sh --file "$THOVEN_VERIFY_EVIDENCE_DIR/review.md"
 ../thoven-verify/scripts/check-station-output.sh --kind review --file "$THOVEN_VERIFY_EVIDENCE_DIR/review.md"
 ```
 
-Verdict is `ready`, `fix`, or `bounce`. Never auto-revert.
+Verdict is an explicit `Verdict:` line (`ready`, `fix`, or `bounce`). The word fix inside Post-fix does not count. Never auto-revert.
