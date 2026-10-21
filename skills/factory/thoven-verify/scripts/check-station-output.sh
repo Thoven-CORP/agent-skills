@@ -30,7 +30,7 @@ required_for() {
     card) printf '%s\n' "Decision" "Guarantee" "Batch" "Forbidden" ;;
     review) printf '%s\n' "Guarantee" "Pre-fix" "Post-fix" "Findings" "Verdict" ;;
     claim) printf '%s\n' "Sentry" "Issue" "Sha" "Prod version" "Approval" "Claim lock" ;;
-    scorecard) printf '%s\n' "Week" "Tickets" "Replay" ;;
+    scorecard) printf '%s\n' "Week" "Tickets" "Replay" "Stations" "Reflect" "Proposed checks" ;;
     formal) printf '%s\n' "Guarantee" "Fails on pre-fix" "Passes on fix" "Scope" ;;
     classify) printf '%s\n' "Verdict" "Issue" "Reason" ;;
     ci-watch) printf '%s\n' "PR" "head" "Evidence" ;;

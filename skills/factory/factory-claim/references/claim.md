@@ -20,6 +20,7 @@ RESULT: PASS
 Andres approved resolve on <date>
 
 ## Claim lock
-factory-claim-lock:<actor>
+factory-claim-lock:<actor> <utc>
 assign-if-unassigned: <actor>
+ttl_hours: <from RULES.md claim_lock_hours>
 ```

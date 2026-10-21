@@ -10,6 +10,7 @@ max_lines=400
 max_files=15
 pr_size_status=pending-andres
 ci_failure_stop=2
+claim_lock_hours=24
 ```
 
 ## Caps
@@ -21,6 +22,7 @@ ci_failure_stop=2
 | `max_lines` | Max changed lines on one **batch PR**. **Pending Andres's decision.** Placeholder 400. |
 | `max_files` | Max changed files on one **batch PR**. **Pending Andres's decision.** Placeholder 15. |
 | `ci_failure_stop` | Stop the loop after this many CI failures on the same batch PR. |
+| `claim_lock_hours` | Hours before a `factory-claim-lock` goes stale and another bot may take it. Default 24. |
 
 A batch PR may close several linked tickets. Size and open counts are per batch PR, not per ticket.
 

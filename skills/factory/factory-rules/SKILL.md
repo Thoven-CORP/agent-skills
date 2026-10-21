@@ -21,6 +21,7 @@ Exit 0 only when every check passes. Print every violation. Do not auto-fix a fo
 - This batch PR's changed files vs `max_files`
 - Diff paths against the forbidden-area list
 - CI failure count on this PR vs `ci_failure_stop`
+- `claim_lock_hours` (default 24) for factory-claim stale locks
 
 It does not check file overlap between open PRs. Merge conflicts are handled at merge time.
 

@@ -37,6 +37,15 @@ data["assignee"] = actor
 json.dump(data, open(path, "w"))
 PY
     ;;
+  reassign)
+    python3 - "$state/$issue.json" "$actor" <<'PY'
+import json, sys
+path, actor = sys.argv[1], sys.argv[2]
+data = json.load(open(path))
+data["assignee"] = actor
+json.dump(data, open(path, "w"))
+PY
+    ;;
   add-comment)
     python3 - "$state/$issue.json" "$text" <<'PY'
 import json, sys
@@ -58,7 +67,8 @@ export FACTORY_SENTRY_STATE="$tmp/state"
 mkdir -p "$FACTORY_SENTRY_STATE"
 printf '%s\n' '{"assignee":"","comments":[]}' >"$FACTORY_SENTRY_STATE/123.json"
 
-"$DIR/claim-lock.sh" --issue 123 --actor bot-a --shim "$tmp/shim"
+"$DIR/claim-lock.sh" --issue 123 --actor bot-a --shim "$tmp/shim" \
+  --ttl-hours 24 --now 2026-10-21T12:00:00Z
 python3 - "$FACTORY_SENTRY_STATE/123.json" <<'PY'
 import json, sys
 data = json.load(open(sys.argv[1]))
@@ -68,16 +78,28 @@ print("ok    first bot took the lock")
 PY
 
 set +e
-"$DIR/claim-lock.sh" --issue 123 --actor bot-b --shim "$tmp/shim" >"$tmp/out" 2>"$tmp/err"
+"$DIR/claim-lock.sh" --issue 123 --actor bot-b --shim "$tmp/shim" \
+  --ttl-hours 24 --now 2026-10-21T18:00:00Z >"$tmp/out" 2>"$tmp/err"
 code=$?
 set -e
 [[ "$code" -ne 0 ]]
-grep -q 'already claimed by bot-a' "$tmp/err"
-echo "ok    second bot cannot take the same alert"
+grep -q 'already claimed by bot-a (fresh lock)' "$tmp/err"
+echo "ok    fresh lock cannot be retaken"
+
+"$DIR/claim-lock.sh" --issue 123 --actor bot-b --shim "$tmp/shim" \
+  --ttl-hours 24 --now 2026-10-22T13:00:00Z
+python3 - "$FACTORY_SENTRY_STATE/123.json" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1]))
+assert data["assignee"] == "bot-b", data
+assert any("factory-claim-lock:bot-b" in c["text"] for c in data["comments"]), data
+print("ok    expired lock can be retaken")
+PY
 
 printf '%s\n' '{"assignee":"human","comments":[]}' >"$FACTORY_SENTRY_STATE/9.json"
 set +e
-"$DIR/claim-lock.sh" --issue 9 --actor bot-a --shim "$tmp/shim" >"$tmp/out" 2>"$tmp/err"
+"$DIR/claim-lock.sh" --issue 9 --actor bot-a --shim "$tmp/shim" \
+  --ttl-hours 24 --now 2026-10-21T12:00:00Z >"$tmp/out" 2>"$tmp/err"
 code=$?
 set -e
 [[ "$code" -ne 0 ]]

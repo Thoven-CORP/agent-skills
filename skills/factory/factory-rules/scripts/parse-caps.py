@@ -15,6 +15,7 @@ INT_KEYS = {
     "max_lines",
     "max_files",
     "ci_failure_stop",
+    "claim_lock_hours",
 }
 STATUS_KEYS = {
     "weekly_pr_cap_status",

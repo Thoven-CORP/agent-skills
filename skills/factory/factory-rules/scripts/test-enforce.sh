@@ -81,8 +81,9 @@ expect_pass() {
   echo "ok    $name"
 }
 
-python3 "$DIR/parse-caps.py" --rules "$DIR/../RULES.md" --print open_pr_cap weekly_pr_cap max_lines max_files >"$tmp/caps"
+python3 "$DIR/parse-caps.py" --rules "$DIR/../RULES.md" --print open_pr_cap weekly_pr_cap max_lines max_files claim_lock_hours >"$tmp/caps"
 grep -qx 'open_pr_cap=5' "$tmp/caps"
+grep -qx 'claim_lock_hours=24' "$tmp/caps"
 echo "ok    caps parse"
 
 cat >"$tmp/bad-caps.md" <<'EOF'
@@ -92,6 +93,7 @@ weekly_pr_cap=3
 max_lines=400
 max_files=15
 ci_failure_stop=2
+claim_lock_hours=24
 ```
 EOF
 set +e

@@ -72,6 +72,7 @@ cap_weekly_pr_cap=""
 cap_max_lines=""
 cap_max_files=""
 cap_ci_failure_stop=""
+cap_claim_lock_hours=""
 cap_weekly_pr_cap_status=""
 cap_pr_size_status=""
 while IFS='=' read -r k v; do
@@ -81,6 +82,7 @@ while IFS='=' read -r k v; do
     max_lines) cap_max_lines="$v" ;;
     max_files) cap_max_files="$v" ;;
     ci_failure_stop) cap_ci_failure_stop="$v" ;;
+    claim_lock_hours) cap_claim_lock_hours="$v" ;;
     weekly_pr_cap_status) cap_weekly_pr_cap_status="$v" ;;
     pr_size_status) cap_pr_size_status="$v" ;;
     *) echo "FAIL  unknown cap $k" >&2; exit 1 ;;
@@ -91,7 +93,7 @@ while IFS='=' read -r k v; do
   fi
 done <<<"$caps_txt"
 
-for n in "$cap_open_pr_cap" "$cap_weekly_pr_cap" "$cap_max_lines" "$cap_max_files" "$cap_ci_failure_stop"; do
+for n in "$cap_open_pr_cap" "$cap_weekly_pr_cap" "$cap_max_lines" "$cap_max_files" "$cap_ci_failure_stop" "$cap_claim_lock_hours"; do
   if ! [[ "$n" =~ ^[0-9]+$ ]]; then
     echo "FAIL  cap value is not an int: $n" >&2
     exit 1

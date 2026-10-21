@@ -41,7 +41,10 @@ Group tickets that share area, surface, or root cause into **one batch**. That b
 - Size caps in `factory-rules/RULES.md` apply to the batch PR, not to each ticket. Placeholders are 400 lines and 15 files (pending Andres).
 - If the batch would blow the size cap, split by surface, not back into one-file tickets.
 
+When Evidence is a Sentry issue, search Linear for that id first. One alert, one DEP Triage ticket.
+
 ```bash
+../factory-claim/scripts/check-sentry-filing.sh --issue <sentry-id>
 scripts/check-intake.sh --file <ticket.md>
 ```
 
