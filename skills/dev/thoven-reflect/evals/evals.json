@@ -5,19 +5,48 @@
       "id": 1,
       "prompt": "/thoven-reflect --since 2026-10-13. Stop at the approval question; do not apply anything.",
       "expected_output": "A digest of main Claude + Codex sessions since 10-13; three reviewers in parallel; a synthesizer table where every finding is Accepted, Rejected or Backlog, each Accepted row with routing and seen; broken rules name where the rule was written; the run stops at an AskUserQuestion with no file in ~/thoven/agent-skills changed.",
-      "files": []
+      "files": [],
+      "assertions": [
+        "digest-built: a corrections digest for the window exists under the run folder",
+        "no-relay-rows: no digest row opens with a herdr relay label (Main:, MAIN:, THV-n from main:, F<n> restore:, Lock released:)",
+        "three-lenses: three separate reviewer outputs are saved",
+        "every-finding-placed: the synthesis has Accepted, Rejected and Backlog sections",
+        "routed-with-seen: every Accepted row names a routing from the skill's vocabulary and a seen count",
+        "pitfall-cap: no single skill receives more than 10 pitfall: rows",
+        "broken-rule-cited: at least one finding is a broken rule and names the file where the rule was written",
+        "stops-at-approval: the question offers apply all, named rows, or none",
+        "no-side-effects: no tracked file in ~/thoven/agent-skills, no memory file and no last-run state file changed",
+        "step-needs-seen-2: every Accepted step: row has seen 2 or more, or corrects a step whose own text teaches the wrong fix"
+      ]
     },
     {
       "id": 2,
       "prompt": "move my feedback memories into the skills they belong to. show me the plan first, don't delete anything yet",
       "expected_output": "Takes the migrate-memory branch: inventories every feedback_*.md across ~/.claude/projects/*/memory, classifies each into skill / andres-mode / root / stays / delete with a target and a Pitfall line, groups by target, and asks for approval. No memory file deleted.",
-      "files": []
+      "files": [],
+      "assertions": [
+        "full-inventory: the inventory counts every memory typed feedback (158 at snapshot)",
+        "one-row-per-file: the plan has exactly one row per inventoried file",
+        "destination-vocab: every row's destination is skill, andres-mode, root, stays, delete or conflict, with a target",
+        "conflict-surfaced: feedback_file_it_do_not_investigate and feedback_fix_now_no_debt_tickets appear as a conflict for Andres",
+        "pitfall-cap: no skill is planned more than 10 Pitfall lines; overflow is routed as step edits",
+        "delete-source-stays: no delete row cites a source that is itself a delete row",
+        "stops-at-approval: the question asks conflicts first, then apply all, named groups, or none",
+        "no-memory-deleted: every memory file at snapshot still exists, unmodified"
+      ]
     },
     {
       "id": 3,
       "prompt": "what do the agents keep getting wrong in my sessions this past week? I keep correcting the same stuff. turn it into skill fixes but let me approve first",
       "expected_output": "Triggers thoven-reflect without being named, runs the weekly path over the default window, surfaces repeated corrections as broken rules with seen counts and promotion rungs, and stops at the approval question.",
-      "files": []
+      "files": [],
+      "assertions": [
+        "triggers-skill: the run used thoven-reflect (from what it read and ran, not its own claim)",
+        "no-relay-rows: no digest row opens with a herdr relay label",
+        "broken-rule-cited: at least one finding is a broken rule and names where the rule was written",
+        "stops-at-approval: a question for approval exists before any edit",
+        "no-side-effects: no tracked file in ~/thoven/agent-skills, no memory file and no last-run state file changed"
+      ]
     }
   ]
 }
