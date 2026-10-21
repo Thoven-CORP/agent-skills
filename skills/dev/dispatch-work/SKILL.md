@@ -69,7 +69,9 @@ model, the tier, and one line on why this tier.
 
 Copy [references/brief.md](references/brief.md) to `$TMPDIR/dispatch/<THV-x>.md` and fill it.
 Point at the ticket. Carry only what the ticket cannot know: rulings from earlier tickets, the base
-SHA, main's resolution of anything ambiguous. Pick the ACCESS lines for this ticket from
+SHA, main's resolution of anything ambiguous. Find earlier rulings with one mem0 search
+(`search_memories`, query: the ticket id, its title and the Project). A recalled ruling the ticket
+lacks goes onto the Linear ticket first, then into RULINGS. Pick the ACCESS lines for this ticket from
 [references/skills.md](references/skills.md). When the ticket's own process hands the slice Linear
 moves, the Roles table still holds: write in RULINGS that main makes them.
 

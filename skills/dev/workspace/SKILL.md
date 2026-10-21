@@ -117,7 +117,9 @@ reconciliation ownership.
    fetch that was attempted and failed is `UNKNOWN`. Neither is ever inferred from local prose.
 5. For `orient` or bare invocation, print the snapshot unchanged: Project and fingerprint, ticket
    ledger including Done and Canceled history, mechanical findings, completion claim, and next
-   issue or skill invocation.
+   issue or skill invocation. Then run one mem0 search (`search_memories`, query: the Project name
+   and the next issue id). Print what comes back under **Recalled**, after the snapshot. It is
+   recall, not record: it never changes the fingerprint or a finding.
 6. For capture, close, or log, show one exact Project-scoped write set. Apply only after approval,
    serially. Re-run the snapshot and report its new fingerprint.
 
