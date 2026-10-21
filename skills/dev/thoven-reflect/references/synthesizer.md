@@ -16,11 +16,11 @@ For every finding, read the target skill's `SKILL.md` and `LEARNINGS.md` under `
 - **Decision-changing**: a future agent acts differently because of the edit.
 - **Convergent**: echoed by two reviewers or seen in two sessions; a singleton clears a higher bar.
 - **Existing home first**: a new skill only when nothing here is a real home and the pattern recurs.
-- **Already written down**: when the rule exists and was broken, the fix is placement or wording. Route `pitfall:` the first time and `step:` once `seen` reaches 2. Never add the same sentence a second time.
+- **Broken rule**: the rule was already written down, so the fix is placement or wording. Route `pitfall:` the first time and `step:` once `seen` reaches 2. A lesson with an existing entry raises that entry's `seen`.
 - **Mechanism**: when a script, lint or hook could enforce it, put it in Backlog for Andres to decide. He prefers skill steps to new scripts and hooks.
 - **Not a skill lesson**: a product ruling or defect goes to Backlog as `linear`; a fact about Andres or a project goes to `memory`.
 
-Output exactly this, one sentence per cell:
+Every finding lands in exactly one section. Output exactly this, one sentence per cell:
 
 ## Accepted
 

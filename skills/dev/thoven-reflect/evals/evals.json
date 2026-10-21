@@ -1,0 +1,23 @@
+{
+  "skill_name": "thoven-reflect",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "/thoven-reflect --since 2026-10-13. Stop at the approval question; do not apply anything.",
+      "expected_output": "A digest of main Claude + Codex sessions since 10-13; three reviewers in parallel; a synthesizer table where every finding is Accepted, Rejected or Backlog, each Accepted row with routing and seen; broken rules name where the rule was written; the run stops at an AskUserQuestion with no file in ~/thoven/agent-skills changed.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "move my feedback memories into the skills they belong to. show me the plan first, don't delete anything yet",
+      "expected_output": "Takes the migrate-memory branch: inventories every feedback_*.md across ~/.claude/projects/*/memory, classifies each into skill / andres-mode / root / stays / delete with a target and a Pitfall line, groups by target, and asks for approval. No memory file deleted.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "what do the agents keep getting wrong in my sessions this past week? I keep correcting the same stuff. turn it into skill fixes but let me approve first",
+      "expected_output": "Triggers thoven-reflect without being named, runs the weekly path over the default window, surfaces repeated corrections as broken rules with seen counts and promotion rungs, and stops at the approval question.",
+      "files": []
+    }
+  ]
+}
