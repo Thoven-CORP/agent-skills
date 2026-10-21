@@ -22,7 +22,7 @@ Split the list into batches of about 45 files. Dispatch one `Agent` per batch (`
 - `andres-mode`: how Andres works in general, or a lesson about a third-party skill.
 - `root`: spans several skills.
 - `stays`: a fact about Andres, a project, or a pointer to an external resource.
-- `delete`: stale, about a project that has shipped or been archived, or already a step in the target skill. Name the source that replaces it, and that source must itself stay.
+- `delete`: stale, about a project that has shipped or been archived, or already a step in the target skill. Name the skill or file that replaces it, never another memory row.
 - `conflict`: two memories give opposite rules and neither has clearly replaced the other. Name both files. Andres picks the winner at the approval step; the loser becomes `delete`.
 
 Done when every file has exactly one row.

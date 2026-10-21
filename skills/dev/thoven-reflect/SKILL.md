@@ -57,7 +57,7 @@ Work in `~/thoven/agent-skills`, one commit per run, as its README describes und
 |---|---|
 | `learnings: <skill>` | A new entry at the top of that skill's `LEARNINGS.md`. A skill without one gets the file, opening with the 4-line header of `skills/dev/thoven-designer/LEARNINGS.md`. |
 | `pitfall: <skill>` | One line in the skill's `## Pitfalls` section, positive and imperative, ending in `(LEARNINGS <date>)`. The section sits right after the opening paragraph, so a run reads it before the steps. It holds ten lines at most. When more lessons target one skill than the cap leaves room for, the most-violated ones get the lines and the rest become `step:` edits in the section each one governs. |
-| `step: <skill> § <section>` | A body edit that makes the lesson something the skill always does. This is for a broken rule with `seen` 2 or more. |
+| `step: <skill> § <section>` | A body edit that makes the lesson something the skill always does. This is for a lesson with `seen` 2 or more, or for a step whose own text teaches the wrong fix. |
 | `tune description: <skill>` | Rewrite the description so it fires on the branch it missed. |
 | `law` | Edit `enforcement/rules/thoven-law.md`, then run `enforcement/sync.sh --apply`. Cross-repo rules only. |
 | `memory` | A Claude memory file: a fact about Andres or a live project. |

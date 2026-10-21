@@ -5,6 +5,18 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-21 — one rung ladder for every kind of lesson
+
+> reflect · 2026-10-21 · 997fee44 · skill-gap · applied · seen 1
+
+**What happened.** In a blind A/B against round 1, the round-2 weekly synthesis lost on routing. It sent four first-time lessons (`seen` 1, corrections and skill gaps) to `step:` edits, and andres-mode took 12 edits. A migration deleted a memory and named another deleted row as the replacement.
+
+**Why.** The synthesizer gave a ladder to broken rules only. Every other kind had no rung, so it defaulted to a step. "The source must stay" left room for a chain of deleted rows.
+
+**What changed.** Every kind now climbs one ladder: `pitfall:` or `learnings:` at `seen` 1, `step:` from 2. The one exception is correcting a step whose own text teaches the wrong fix. A delete names a skill or file, never another memory row. Rerunning the synthesizer on the same reviewer output gave 25 rows with 0 `step:` rows at `seen` 1, down from 4 of 22.
+
+---
+
 ## 2026-10-21 — round 2 from the first eval
 
 > reflect · 2026-10-21 · 997fee44 · skill-gap · applied · seen 1
