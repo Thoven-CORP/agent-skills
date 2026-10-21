@@ -32,6 +32,9 @@ required_for() {
     claim) printf '%s\n' "Sentry" "Issue" "Sha" ;;
     scorecard) printf '%s\n' "Week" "Tickets" "Replay" ;;
     formal) printf '%s\n' "Guarantee" "Fails on pre-fix" "Passes on fix" "Scope" ;;
+    classify) printf '%s\n' "Verdict" "Issue" "Reason" ;;
+    ci-watch) printf '%s\n' "PR" "head" "Evidence" ;;
+    version-read) printf '%s\n' "RESULT" "frontend" "api" ;;
     *) echo "unknown kind: $1" >&2; return 2 ;;
   esac
 }

@@ -1,0 +1,14 @@
+# Rerun after review fixes
+Version read for staging at 2026-10-21 16:52 EDT
+PASS frontend: https://staging.thoven.co/api/version sha 189b2f30a0f3388e9036d78a93fe57b4002fd561 equals the expected full SHA.
+PASS api: https://thoven-api-staging.onrender.com/health revision.sha b99aa74 is a prefix of the expected b99aa74b8c1b8d61935e93f2ae57fba416034e2c.
+WORKER: unverified, inferred from prod tag. No Render read access exists yet (open decision 5).
+RESULT: PASS
+exit=0
+Version read for prod at 2026-10-21 16:52 EDT
+PASS tag: prod/2026-10-21-1 points at the expected FE and BE SHAs (13 FE and 13 BE prod tags read).
+PASS frontend: https://thoven.co/api/version sha b2b68d1f197405ed58d64214947846d5c97a1cb0 equals the expected full SHA.
+PASS api: https://api.thoven.co/health revision.sha 35e7911 is a prefix of the expected 35e79118aba9d87f0520ae2d72293c1c9938def2.
+WORKER: unverified, inferred from prod tag. No Render read access exists yet (open decision 5).
+RESULT: PASS
+exit=0
