@@ -54,6 +54,12 @@ path.
 Every pattern it matches is anchored at command position. A substring match
 denied this repo's own README, and then denied the edit that fixed it.
 
+`thoven-ticket-recall` runs on `UserPromptSubmit` in Claude and Codex. When a prompt names a
+THV ticket, it runs the mem0 plugin's own search for that ticket and injects what comes back. The
+plugin searches only on a session's first prompt, and a ticket named mid-session is where earlier
+rulings matter most. It reuses the plugin's scope and its per-session "already shown" record, so
+nothing is injected twice. It is silent on any failure: recall is a bonus, never a gate.
+
 `thoven-graph-first` runs before `Grep`, `Glob` and `Bash`. Once per session,
 when a search pattern is a bare symbol and the repo has a `graphify-out/` graph,
 it notes that the graph traces relationships a text search cannot follow. It is

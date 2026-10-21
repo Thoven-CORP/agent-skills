@@ -6,7 +6,7 @@ Digest: <DIGEST_PATH>. Each session block names its raw transcript; open it when
 
 **What counts.** A finding is a moment where Andres had to correct, re-explain, or redo something, and a change to a skill would make the next session get it right first time. One-offs, plain new instructions and fresh product rulings are not lessons; a ruling belongs in Linear.
 
-**Where it routes.** Findings point at a skill the session actually loaded (the digest's "Skills" line and "last skill loaded"), or at a skill that should have fired and did not (`tune description: <skill>`). Thoven skills live in `~/thoven/agent-skills/skills/`; a skill outside that tree is third-party, so its lesson routes to `andres-mode`.
+**Where it routes.** Findings point at a skill the session actually loaded (the row's "last skill loaded", or the session's rows in `<out>/skills.tsv`), or at a skill that should have fired and did not (`tune description: <skill>`). Thoven skills live in `~/thoven/agent-skills/skills/`; a skill outside that tree is third-party, so its lesson routes to `andres-mode`.
 
 **Broken rule.** Before writing a finding, grep for the rule in the target skill's `SKILL.md` and `LEARNINGS.md`, in `~/.claude/projects/*/memory/`, and in `~/thoven/CLAUDE.md`. When it is already there, the finding is a broken rule: say where it was written. A broken rule is the most valuable finding, because the wording or placement failed rather than the knowledge.
 

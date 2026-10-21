@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# Runs thoven-ticket-recall against a temp HOME holding a stub mem0 plugin, so no test reaches mem0.
+set -uo pipefail
+
+HOOK="$(cd "$(dirname "$0")/.." && pwd)/hooks/thoven-ticket-recall"
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+export HOME="$TMP"
+unset MEM0_CODE_DATA_DIR
+
+ok() { printf 'ok %s\n' "$1"; }
+fail() { printf 'FAIL %s: got %s\n' "$1" "$2"; failed=1; }
+failed=0
+run() { printf '%s' "$2" | "$HOOK" --harness "$1"; echo "rc=$?"; }
+
+expect_silent() {
+  local out; out="$(run "$1" "$3")"
+  if [ "$out" = "rc=0" ]; then ok "$2"; else fail "$2" "'$out'"; fi
+}
+
+expect_silent claude "empty input is silent" ""
+expect_silent claude "prompt without a ticket is silent" '{"prompt":"fix the header","session_id":"s1","cwd":"/tmp"}'
+expect_silent claude "ticket with no plugin installed is silent" '{"prompt":"status of THV-1326?","session_id":"s1","cwd":"/tmp"}'
+
+# Stub plugin: search_memories returns one memory unless STUB_MODE says otherwise.
+CORE="$TMP/.claude/plugins/cache/mem0-plugins/mem0/9.9.9/core"
+mkdir -p "$CORE" "$TMP/.claude/plugins/data/mem0-mem0-plugins"
+cat >"$CORE/telemetry.py" <<'PY'
+def init(**kw): pass
+PY
+cat >"$CORE/memory_core.py" <<'PY'
+import os
+class R:
+    def __init__(self, m): self.memories = m
+class EvidenceStore:
+    def repo_for_session(self, s, cwd): return "repo"
+def configure_harness(*a, **k): print("noise on stdout")
+def search_memories(store, repo, sid, query, **kw):
+    mode = os.environ.get("STUB_MODE", "hit")
+    if mode == "raise": raise RuntimeError("network")
+    if mode == "empty": return R([])
+    assert "THV-1326" in query
+    return R([{"memory": "Hour expiry ships in THV-1326, merged 10-19"}])
+def format_context(memories, heading):
+    return heading + "\n" + "\n".join(m["memory"] for m in memories)
+PY
+
+out="$(run claude '{"prompt":"did we not solve the hour expiry on thv-1326","session_id":"s1","cwd":"/tmp"}')"
+case "$out" in
+  *'"additionalContext"'*'THV-1326'*'Hour expiry ships'*'rc=0') ok "ticket recall injects the memory under its ticket id" ;;
+  *) fail "ticket recall injects the memory under its ticket id" "'$out'" ;;
+esac
+case "$out" in *"noise on stdout"*) fail "plugin stdout stays out of the hook output" "'$out'" ;; *) ok "plugin stdout stays out of the hook output" ;; esac
+
+STUB_MODE=empty expect_silent claude "no new memories is silent" '{"prompt":"THV-1326","session_id":"s1","cwd":"/tmp"}'
+STUB_MODE=raise expect_silent claude "a failing search is silent and exits 0" '{"prompt":"THV-1326","session_id":"s1","cwd":"/tmp"}'
+expect_silent claude "malformed JSON is silent" '{"prompt": THV-1'
+expect_silent codex "codex with no plugin installed is silent" '{"prompt":"THV-1326","session_id":"s1","cwd":"/tmp"}'
+
+exit "$failed"

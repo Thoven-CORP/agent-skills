@@ -16,6 +16,9 @@
 #   polling.tsv   per session, calls that only wait for something. Pure waste; see mine_claude.
 #   errors.tsv    failed tool results with the tool that failed
 #   tokens.tsv    per-session usage, deduped by message.id, with cache_read and cache_create split
+#   corrections.tsv  human turns that correct, re-explain or push back, from MAIN sessions only,
+#                 with the agent's text just before and the last skill loaded. thoven-reflect reads
+#                 corrections.md, the same rows grouped by session with each transcript's path.
 #
 # Validation: on a 0.8GB / 232-session corpus this agreed with an independent reimplementation
 # to within 0.4% on human turns and 3% on token totals. Treat that agreement as weak evidence:
@@ -45,7 +48,7 @@ done
 
 mkdir -p "$OUT"
 : > "$OUT/index.tsv"; : > "$OUT/prompts.tsv"; : > "$OUT/tools.tsv"
-: > "$OUT/skills.tsv"; : > "$OUT/repeats.tsv"; : > "$OUT/errors.tsv"; : > "$OUT/tokens.tsv"; : > "$OUT/polling.tsv"
+: > "$OUT/skills.tsv"; : > "$OUT/repeats.tsv"; : > "$OUT/errors.tsv"; : > "$OUT/tokens.tsv"; : > "$OUT/polling.tsv"; : > "$OUT/corrections.tsv"
 
 printf 'harness\tsession\tproject\tmtime\tbytes\tuser_turns\ttool_calls\terrors\n' >> "$OUT/index.tsv"
 printf 'harness\tsession\tturn\ttext\n'          >> "$OUT/prompts.tsv"
@@ -55,6 +58,7 @@ printf 'harness\tsession\ttool\tconsecutive\n'   >> "$OUT/repeats.tsv"
 printf 'harness\tsession\ttool\tmessage\n'       >> "$OUT/errors.tsv"
 printf 'harness\tsession\tinput\toutput\tcache_read\tcache_create\n' >> "$OUT/tokens.tsv"
 printf 'harness\tsession\tpolling_calls\n'  >> "$OUT/polling.tsv"
+printf 'harness\tsession\tpath\tts\tlast_skill\tagent_before\ttext\n' >> "$OUT/corrections.tsv"
 
 # A user turn is REAL only if a human typed it. Everything else arriving in the `user` slot is
 # machinery, and leaving it in is not a cosmetic problem: an unfiltered corpus attributes an
@@ -78,7 +82,7 @@ printf 'harness\tsession\tpolling_calls\n'  >> "$OUT/polling.tsv"
 # matching on the word "evidence", inflated a prescriptive:reactive ratio from 0.95:1 to 3.5:1.
 # Three separate classifiers agreed on that number because all three shared the same false
 # positive. Agreement between implementations is not evidence when they read the same dirty input.
-NOISE='^(<system-reminder>|<local-command-caveat>|<command-name>|<local-command-stdout>|<recommended_plugins>|<user-prompt-submit-hook>|<task-notification>|Caveat: The messages below|Base directory for this skill:|Another Claude session sent a message|<teammate-message|\{"type":"idle_notification|>>> (APPROVAL REQUEST|TRANSCRIPT)|Planned action JSON|Assess the exact planned action|The Codex agent has requested|The following is the Codex agent history|Reviewed Codex session id:|\\\\n\[[0-9]+\] |\[[0-9]+\] (user|assistant|tool)|<environment_context>|# AGENTS\.md instructions|<skill>|</?image>$|<subagent_notification>|\{.*"command":|This session is being continued|\\\\nSome conversation entries were omitted|Some conversation entries were omitted|(BUILT|FIXED|FIXED-[0-9]|BLOCKED|DONE) THV-[0-9]+ )'
+NOISE='^(<system-reminder>|<local-command-caveat>|<command-name>|<command-message>|<local-command-stdout>|<recommended_plugins>|<user-prompt-submit-hook>|<task-notification>|Caveat: The messages below|Base directory for this skill:|Another Claude session sent a message|<teammate-message|\{"type":"idle_notification|>>> (APPROVAL REQUEST|TRANSCRIPT)|Planned action JSON|Assess the exact planned action|The Codex agent has requested|The following is the Codex agent history|Reviewed Codex session id:|\\\\n\[[0-9]+\] |\[[0-9]+\] (user|assistant|tool)|<environment_context>|# AGENTS\.md instructions|<skill>|</?image>$|<subagent_notification>|\{.*"command":|This session is being continued|\\\\nSome conversation entries were omitted|Some conversation entries were omitted|(BUILT|FIXED|FIXED-[0-9]|BLOCKED|DONE|DONE_WITH_CONCERNS|NEEDS_CONTEXT|STATUS) THV-[0-9]+ )'
 
 # Prompts recorded under a session id beginning `agent-` were written BY an agent, not by the
 # human. Kept out of the human corpus unless --include-subagents is passed, because conflating
@@ -164,6 +168,7 @@ mine_claude() {
       "$turns" "$tools" "$errs" >> "$OUT/index.tsv"
 
     consecutive_repeats claude "$sid" < "$OUT/.tc"
+    [[ "$sid" =~ $AUTHOR_FILTER ]] || claude_turns "$sid" "$f" | flag_corrections claude
     cut -f1-3 "$OUT/.tc" | sort | uniq -c | awk '{print $2"\t"$3"\t"$4"\t"$1}' >> "$OUT/tools.tsv"
   done < <(find ~/.claude/projects -name '*.jsonl' -type f -newermt "$SINCE" 2>/dev/null)
 }
@@ -220,8 +225,67 @@ mine_codex() {
       "$(stat -f '%Sm' -t '%Y-%m-%d %H:%M' "$f")" "$(stat -f '%z' "$f")" "$turns" "$tools" >> "$OUT/index.tsv"
 
     consecutive_repeats codex "$sid" < "$OUT/.tc"
+    codex_turns "$sid" "$f" | flag_corrections codex
     cut -f1-3 "$OUT/.tc" | sort | uniq -c | awk '{print $2"\t"$3"\t"$4"\t"$1}' >> "$OUT/tools.tsv"
   done < <(find ~/.codex/sessions -name '*.jsonl' -type f -newermt "$SINCE" 2>/dev/null)
+}
+
+# Corrections are the thoven-reflect signal: a human turn that pushes back on what the agent just
+# did. Each row keeps the agent's text before it and the last skill loaded, because a correction
+# without its trigger cannot be routed to a skill. Main sessions only: subagents never reach here
+# (AUTHOR_FILTER), and a session whose first real turn is a pane brief is dropped whole, since its
+# "human" turns are main relaying to a pane. A bare "try again" is a retry, not a lesson. Only the
+# human's own words count: a pasted pane report inside <pasted_content> is transport (class 8).
+CORRECTION='(i told you|i said|i already|we already|already (told|said|decided|did)|as i (said|mentioned)|again|remember|forgot|we (talked|discussed|decided|agreed)|last time|how many times|you keep|keep (doing|asking)|stop (doing|asking)|not what i|wrong|why did you|i never said|settled|stale|re-?ask|same (mistake|thing)|confused|lost|instead of)'
+BRIEF='(DONE WHEN|REPORT TO|Writes to:|## Brief|herdr pane)'
+
+flag_corrections() {
+  awk -F'\t' -v OFS='\t' -v h="$1" -v since="$SINCE" -v noise="$NOISE" -v corr="(^|[^a-z])$CORRECTION([^a-z]|$)" -v brief="$BRIEF" '
+    { own = $6; gsub(/<pasted_content[^>]*>.*<\/pasted_content[^>]*>/, "", own); sub(/^(\\n|[ \t])+/, "", own) }
+    own ~ noise || own == "" {next}
+    !seen++ && length($6) > 1500 && $6 ~ brief {exit}
+    $3 >= since && tolower(own) ~ corr && split(own, w, " ") > 3 {$6 = own; print h"\t"$0}' >> "$OUT/corrections.tsv"
+}
+
+claude_turns() {
+  jq -rn --arg s "$1" --arg p "$2" '
+    foreach inputs as $e ({skill: "", before: "", out: null};
+      .out = null
+      | if $e.type == "assistant" then
+          reduce ($e.message.content[]?) as $c (.;
+            if $c.type == "text" then .before = $c.text
+            elif $c.type == "tool_use" and $c.name == "Skill" then .skill = (($c.input.skill // "") | split(":") | last)
+            elif $c.type == "tool_use" and (($c.input.file_path // "") | test("/SKILL\\.md$"))
+              then .skill = ($c.input.file_path | capture("(?<n>[^/]+)/SKILL\\.md$").n)
+            else . end)
+        elif $e.type == "user" and ($e.message.content | type) == "string" and ($e.isMeta | not) then
+          .out = [$s, $p, (($e.timestamp // "")[0:16]), .skill, (.before | .[-300:]), $e.message.content]
+        else . end;
+      .out // empty) | @tsv' "$2" 2>/dev/null
+}
+
+codex_turns() {
+  jq -rn --arg s "$1" --arg p "$2" '
+    foreach inputs as $e ({skill: "", before: "", out: null};
+      .out = null
+      | ($e.payload // {}) as $q
+      | if ($q.type == "function_call" or $q.type == "custom_tool_call") then
+          ((($q.arguments // $q.input // "") | tostring | (capture("(?<n>[A-Za-z0-9._-]+)/SKILL\\.md")? | .n)) // null) as $n
+          | if $n then .skill = $n else . end
+        elif $q.type == "message" and $q.role == "assistant" then
+          .before = ([$q.content[]? | .text? // empty] | join(" "))
+        elif $q.type == "message" and $q.role == "user" then
+          .out = [$s, $p, (($e.timestamp // "")[0:16]), .skill, (.before | .[-300:]),
+                  ([$q.content[]? | .text? // empty] | join(" "))]
+        else . end;
+      .out // empty) | @tsv' "$2" 2>/dev/null
+}
+
+corrections_md() {
+  awk -F'\t' 'NR > 1 {
+      if ($3 != path) { path = $3; printf "\n## %s · %s · %s\n\n", $1, $4, $3 }
+      printf "- **%s** (last skill loaded: %s)\n  - Agent before: %s\n  - Andres: %s\n", $4, ($5 == "" ? "none" : $5), $6, $7
+    }' "$OUT/corrections.tsv" > "$OUT/corrections.md"
 }
 
 # A run of 3+ identical back-to-back SIGNATURES (column 4) is the machine-visible form of "the
@@ -245,6 +309,7 @@ if [[ -f "$OUT/.sk" ]]; then
   sort "$OUT/.sk" | uniq -c | sort -rn | awk '{print $2"\t"$3"\t"$4"\t"$1}' >> "$OUT/skills.tsv"
 fi
 rm -f "$OUT/.tc" "$OUT/.sk"
+corrections_md
 
 echo "wrote $OUT"
 wc -l "$OUT"/*.tsv

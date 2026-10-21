@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+"""UserPromptSubmit: recall mem0 memories when a prompt names a THV ticket.
+
+The mem0 plugin searches once, on a session's first prompt. A ticket named later
+("did we not solve the hour expiry on THV-1326?") is where earlier decisions matter
+most and where nothing was recalled. This runs the plugin's own search, so the
+scope (user, repo) and the per-session "already shown" record are the plugin's,
+and a memory injected on the first prompt is not injected again.
+
+Silent unless a THV id is present and mem0 returns something new. Any failure
+(plugin missing or upgraded, network, auth) exits 0 with no output: recall is a
+bonus, never a gate.
+
+    thoven-ticket-recall --harness claude|codex   < hook payload JSON
+"""
+import argparse
+import glob
+import io
+import json
+import os
+import re
+import sys
+from contextlib import redirect_stdout
+
+TICKET = re.compile(r"\bTHV-\d+\b", re.I)
+HARNESSES = {
+    "claude": ("~/.claude/plugins", "claude-code", "claude-code-plugin", "claude_code_plugin", "CLAUDE_CODE_PLUGIN"),
+    "codex": ("~/.codex/plugins", "codex", "codex-plugin", "codex_plugin", "CODEX_PLUGIN"),
+}
+
+
+def version_key(path):
+    return [int(p) if p.isdigit() else 0 for p in os.path.basename(os.path.dirname(path)).split(".")]
+
+
+def recall(harness, payload):
+    prompt = payload.get("prompt") or ""
+    tickets = sorted({t.upper() for t in TICKET.findall(prompt)})
+    session_id = payload.get("session_id") or payload.get("sessionId") or ""
+    if not tickets or not session_id:
+        return None
+
+    root, name, data_dir_name, source_tag, telemetry_tag = HARNESSES[harness]
+    cores = sorted(glob.glob(os.path.expanduser(f"{root}/cache/mem0-plugins/mem0/*/core")), key=version_key)
+    data_dir = os.path.expanduser(f"{root}/data/mem0-mem0-plugins")
+    if not cores or not os.path.isdir(data_dir):
+        return None
+    os.environ.setdefault("MEM0_CODE_DATA_DIR", data_dir)
+    sys.path.insert(0, cores[-1])
+
+    import memory_core
+    import telemetry
+
+    memory_core.configure_harness(name, data_dir_name=data_dir_name, source_tag=source_tag)
+    telemetry.init(harness=name, source_tag=telemetry_tag)
+    store = memory_core.EvidenceStore()
+    repo = store.repo_for_session(session_id, payload.get("cwd"))
+    query = " ".join(tickets) + " " + prompt[:1500]
+    result = memory_core.search_memories(
+        store, repo, session_id, query, top_k=5, operation="ticket-search", timeout=3,
+    )
+    if not result.memories:
+        return None
+    context = memory_core.format_context(
+        result.memories, f"Mem0 recalled these memories for {', '.join(tickets)} (recall, not record; Linear is the record):",
+    )
+    return {"hookSpecificOutput": {"hookEventName": "UserPromptSubmit", "additionalContext": context}}
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--harness", choices=sorted(HARNESSES), required=True)
+    args = parser.parse_args()
+    try:
+        payload = json.loads(sys.stdin.read() or "{}")
+        with redirect_stdout(io.StringIO()):
+            output = recall(args.harness, payload)
+    except Exception:
+        return 0
+    if output:
+        print(json.dumps(output))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
