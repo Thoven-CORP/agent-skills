@@ -12,7 +12,6 @@ done
 [[ -n "$file" && -f "$file" ]] || { echo "usage: check-scorecard.sh --file scorecards/YYYY-MM-DD.md" >&2; exit 2; }
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-"$DIR/../../thoven-verify/scripts/check-station-output.sh" --kind scorecard --file "$file"
 
 base="$(basename "$file")"
 parent="$(basename "$(dirname "$file")")"
@@ -20,6 +19,8 @@ if [[ "$parent" != "scorecards" || ! "$base" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}\.md$
   echo "FAIL  scorecard must be scorecards/YYYY-MM-DD.md (got $parent/$base)" >&2
   exit 1
 fi
+
+"$DIR/../../thoven-verify/scripts/check-station-output.sh" --kind scorecard --file "$file"
 
 python3 - "$file" <<'PY'
 import re, sys

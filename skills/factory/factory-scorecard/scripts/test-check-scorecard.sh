@@ -88,4 +88,14 @@ set -e
 grep -q 'never merges' "$tmp/err"
 echo "ok    proposed checks must stay an unmerged draft"
 
+baseline="$DIR/../baseline/baseline-2026-10-21.md"
+[[ -f "$baseline" && -f "$DIR/../baseline/review.md" ]]
+set +e
+"$DIR/check-scorecard.sh" --file "$baseline" >"$tmp/out" 2>"$tmp/err"
+code=$?
+set -e
+[[ "$code" -ne 0 ]]
+grep -q 'scorecards/YYYY-MM-DD.md' "$tmp/err"
+echo "ok    DEP-10 baseline is present and is not a Friday scorecard"
+
 echo "all check-scorecard checks passed"
