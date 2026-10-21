@@ -17,6 +17,11 @@ PRs; optimize for confidence, not deletion count. Campaign mode prunes one
 whole area's test surface (every test file a feature or domain owns); before
 starting one, read [CAMPAIGN.md](CAMPAIGN.md).
 
+## Pitfalls
+
+- Run a Playwright design gate on the production route of a production build (`pnpm run build`, then `next start`), never `next dev` or a `/dev/*` route alone; keep e2e to what jsdom cannot express, and curl the served stylesheet to assert the class or custom property exists. (LEARNINGS 2026-08-28)
+- When two tests in one file fail, fix the earliest first, rerun the file alone, and drain leftover `...Once` queues with `vi.resetAllMocks()`, since `vi.clearAllMocks()` leaves them queued. (LEARNINGS 2026-08-14)
+
 ## Authoring gate
 
 Before adding any test, answer four questions; a missing answer means do not

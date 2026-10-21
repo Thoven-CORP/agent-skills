@@ -1,6 +1,6 @@
 # Execute & evaluate — drive the app, prove it, verdict
 
-The Execute + Review phases: detect the browser tool, log in through the real UI, run one check at a time against exact values across both layers, then return an evidence-based verdict backed by static gates.
+The Execute + Review phases: detect the browser tool, log in, run one check at a time against exact values across both layers, then return an evidence-based verdict backed by static gates.
 
 ## Detect the browser tool and optimize
 
@@ -8,21 +8,20 @@ Use the best tool actually available this session — don't assume:
 
 | Tool | Use when | Auth |
 |---|---|---|
-| **Claude in-app Chrome** (`mcp__claude-in-chrome__*` / `mcp__Claude_Browser__*`: `navigate`, `read_page`, `computer`, `form_input`, `find`) | **Primary.** DOM-aware, reads the accessibility tree, drives clicks/typing, captures network + console. | Real email + password through the login UI. |
-| **Playwright** (`mcp__plugin_playwright_playwright__*`) | Terminal-only run, or scripted/headless automation. | Real UI login for QA; token injection allowed only in pure automation specs, never in a QA walkthrough. |
-| **Human-driven (CEO walkthrough)** | A human must *see* the experience; ask one question at a time, wait for the answer. | Human types real email + password. Never auto-driven. |
+| **Claude in-app Chrome** (`mcp__claude-in-chrome__*` / `mcp__Claude_Browser__*`: `navigate`, `read_page`, `computer`, `form_input`, `find`) | **Primary.** DOM-aware, reads the accessibility tree, drives clicks/typing, captures network + console. | UI login or injected token, whichever is faster. |
+| **agent-browser** | Walkthroughs on ghost or staging. Records video plus screenshots as the run happens. | Token from the API login, injected. |
+| **Playwright** (`mcp__plugin_playwright_playwright__*`) | Terminal-only run, or scripted/headless automation. | UI login or injected token, whichever is faster. |
+| **Human-driven (CEO walkthrough)** | A human must *see* the experience; ask one question at a time, wait for the answer. | The human logs in. |
 
 Read the current page as the accessibility tree (`read_page`) to verify text and structure — prefer it over screenshots for asserting exact values; use a screenshot for visual ground truth (layout, styling, an animation frame).
 
-## Full-UI login, never token injection
+## Logging in
 
-QA and walkthroughs use the **real email + password login flow**. Never inject `localStorage.token` / `localStorage.student_token` to skip auth. The whole point is to exercise what the user sees end-to-end — injection bypasses the login-flow bugs, redirect/role-routing regressions, cold-start races, and onboarding gates that this QA exists to catch. If a run bounces to login, **pause and log in through the UI** (or ask the user to) — don't inject.
+Log in through the UI or by token injection, whichever is faster. An agent may drive a walkthrough end to end.
 
-A correct setup step: *"Open `localhost:3000` → click Login → enter `qa+...@qatest.thoven.test` / `QAtestPass123!` → land on dashboard."* If your L0 is "paste this into DevTools Console" or contains an `eyJhbGciOi...` JWT literal, the plan is wrong — rewrite it.
-
-Token injection is fine **only** in automation layers with no UI (Playwright specs, Vitest, curl smoke). Those are robots verifying contracts; QA is a human simulating a real user.
-
-**One refinement for multi-persona runs.** The rule above governs *first authentication of each account* — that is what exercises the login flow. It does not govern *switching between accounts a human has already logged in through the real UI*. In a four-persona run, capture each session in-page after its real login and switch between the captures; the login flow is still exercised once per account, and no password enters the agent's context. Recipe: **[flow-mapping-and-evidence.md §8](flow-mapping-and-evidence.md)**. What stays forbidden is what this section is about: injecting a token to *reach a surface without logging in at all*.
+- **Ghost or staging.** Get the token from the API login endpoint and inject it; type no password into a form. Emails the run sends to Keri's own test accounts (`keri@thoven.co`, `kerimanerten@icloud.com`) are expected; leave them out of the findings.
+- **The login path is under test.** When the change touches login, redirects, role routing or an onboarding gate, that path is a criterion, and injection skips it. Drive it through the UI on a local or harness account.
+- **Multi-persona runs.** Log each account in once, capture its session in-page, and switch between the captures. Recipe: **[flow-mapping-and-evidence.md §8](flow-mapping-and-evidence.md)**.
 
 ## One check at a time, exact values, both layers
 

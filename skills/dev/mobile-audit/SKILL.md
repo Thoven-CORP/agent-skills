@@ -7,6 +7,10 @@ description: "Use when the user asks to audit, review, or check mobile responsiv
 
 Run this checklist against the target component or page file.
 
+## Pitfalls
+
+- Before asking Andres any phone or narrow-width question, run this audit with a width budget computed from the surface's token module, bring its findings and a recommendation, and record his ruling in the parent issue and the owning ticket before dispatch. (LEARNINGS 2026-10-09)
+
 ## MANDATORY First Action
 
 Before ANY other action, you MUST create a todo checklist:

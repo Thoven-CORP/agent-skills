@@ -8,7 +8,11 @@ here, so change the source and let sync carry it.
 **Shared worktrees.** A worktree can hold several live sessions, and any dirty or untracked file
 may belong to one you cannot see. Commit is the safe path: stage the exact paths you mean and
 check `git diff --cached --name-only` before committing. Product files dirty on your branch are
-your branch's work, so stage them too. Leave scratch, probes and screenshots unstaged. To undo,
+your branch's work, so stage them too. To untrack or delete a file, run `git rm --cached`, check
+the staged list, commit with no pathspec and confirm with `git ls-files --error-unmatch`, because a
+pathspec commit takes the working-tree state and restores the file. Leave scratch, probes and
+screenshots unstaged. Unpack probes under `tmp/<name>/` and delete them by exact path, since a glob
+`rm` after a failed `cd` expands at the worktree root. To undo,
 name your own paths: `git restore <your paths>`, `git stash push -- <your paths>`. The
 `thoven-guard-bash` hook refuses the whole-tree forms (`git stash push` with no paths,
 `git clean`, `git reset --hard`) and a forced `git worktree remove` or `git branch -D` of work not
@@ -36,8 +40,10 @@ a rebase ate a day of the onboarding prototype.)
   files overlap another live tree's dirty files, or the work is risky and long. From Claude,
   `claude --worktree <area>-thv-<n>` runs the same script.
 - Open a held PR into `main`. Merging is `gh pr merge --auto --squash`, gated by the required `CI`
-  check. Commit and merge only on a branch in a tree, never in a `main` checkout: `co.thoven.sync`
-  fast-forwards the clean `main` checkouts every 30 minutes.
+  check. A catch-up PR of `main` into an integration branch merges with `--merge`, so `main` stays an
+  ancestor. An agent-skills PR is not held. It merges in the same pass, then `enforcement/sync.sh
+  --apply` runs until `sync.sh` reports every harness copy matches. Commit and merge only on a
+  branch in a tree, never in a `main` checkout: `co.thoven.sync` fast-forwards the clean `main` checkouts every 30 minutes.
 - Production moves only through `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh`.
 
 **Where records live.** Linear is the source of truth, and the tldraw board is the source of truth
@@ -78,5 +84,7 @@ subagent of main reviews cleanup and hardening work. Both open with spec parity.
 touched files and merges backend before the frontend that reads it. UI merges after Andres sees the
 evidence. Procedure: `dispatch-work/references/review.md`.
 
-**Scope.** Make the surgical edit the ticket asks for. Neighbouring problems go into a new Linear
-issue, and work bigger than the brief stops and reports back.
+**Scope.** Make the surgical edit the ticket asks for. Debt, bugs and smells in code the ticket or
+feature owns are fixed on its branch in the same round. A problem outside it gets one line in an
+existing grouped Linear issue, or a new issue only when none fits. A product call goes to Andres as
+a question. Work bigger than the brief stops and reports back.

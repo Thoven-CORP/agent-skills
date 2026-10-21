@@ -9,6 +9,11 @@ description: "Interface Craft by Josh Puckett — a toolkit for building polishe
 
 A toolkit for building polished, animated interfaces. Write animations you can read like a script, then tune them with live controls.
 
+## Pitfalls
+
+- When a page redesign has several open sections, build one lab route at `app/dev/<surface>-lab/` with a variant slot per section, a DialKit select per slot, spacing dials and a data picker, and leave the production component untouched until winners are picked. (LEARNINGS 2026-10-02)
+- Save each DialKit config Andres pastes as a named entry in a Version select; when he narrows to a pick, remove the other options from the dials too, and give each layer its own colour control that a global control retints once and never locks. (LEARNINGS 2026-10-09)
+
 ---
 
 ## Skills

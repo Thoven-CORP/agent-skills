@@ -26,7 +26,7 @@ reference only for intent and rationale.
 |---|---|---|
 | Colour, palette, status hues | `tools/build-palette.mjs` (`PALETTE`) generates the `GENERATED:palette` region of `app/globals.css`; `__tests__/palette.test.ts` | `docs/design/color.md` |
 | Type ramp, fonts, weights | `app/globals.css` `@theme` `--text-*`; `__tests__/theme-tokens.test.ts` | `docs/design/typography.md` |
-| Buttons, ledges, variants | `thovenButtonTokens` in `lib/live-lesson-tokens.ts:53`; `components/ui/thoven-button.tsx`; `__tests__/design-system-doc.test.ts` | `docs/design/buttons.md` |
+| Buttons, ledges, variants | `thovenButtonTokens` in `lib/live-lesson-tokens.ts:53`; `components/ui/thoven-button.tsx`; `__tests__/design-system-doc.test.ts` | `design/buttons.md` |
 | Icons, the two tiers, K2 | `lib/icon-tokens.ts`; `__tests__/icon-tier-scan.test.ts`, `__tests__/icon-tokens.test.ts`, `__tests__/openmoji-icon-map.test.ts` | `docs/design/icons.md` |
 | Motion, springs, reduced motion | `lib/motion-config.ts` | `docs/design/motion.md` |
 | Async loading, unavailable, degraded, action, field-error, and empty states | `lib/loading-tokens.ts`; `components/ui/shimmer-text.tsx`; `components/shared/RowSkeleton.tsx`; `components/ui/thoven-button.tsx`; the owning feature component listed below | `docs/design/async-states.md` |

@@ -5,6 +5,197 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-14 — an option the user cannot take is unselectable, not refused
+
+> reflect · 2026-10-14 · memory:feedback_unselectable_not_refused · correction · applied · seen 1
+
+**What happened.** On the reschedule panel a fix proposed refusal copy ("reserved for another
+learner") for a time the client already knew was off-limits. Andres: *"that time should not even be
+selectable... It is better UX to have it as a date that is not selectable similar to how we handle
+other unavailable times."* Recorded as THV-1187 ruling 59.
+**Why.** The fix reached for error handling and new copy instead of the picker's existing
+unavailable state. Copy that names another learner is also a privacy smell.
+**What changed.** A Pitfall line shows such an option as unselectable, like other unavailable
+options. A race the UI cannot prevent reads as an ordinary "just taken" and the options reload.
+
+---
+
+## 2026-10-10 — retrofit into the version he liked
+
+> reflect · 2026-10-10 · memory:feedback_retrofit_into_clean_version · correction · applied · seen 1
+
+**What happened.** The passport data page layouts were clean. Asked to add a goal and a stage name,
+the next version added a hero-sized name, an inline amber word that read as the logo, a large goal
+quote and orphan sticker boxes. Andres: it went *"from very clean to very messy… doesn't follow my
+typography sizing… you're missing the retrofitting part."*
+**Why.** The new items got new sizes, weights and treatments instead of the styles already on the
+page.
+**What changed.** A Pitfall line gives a new element one of the liked version's existing text
+styles and spacing. Read the computed styles of that version and list its text styles before
+adding, and stress-test growth (many stickers, long text). The passport surface itself may use
+other palette ramps and duotone icons beyond amber.
+
+---
+
+## 2026-10-09 — motion findings are checked against the press spec
+
+> reflect · 2026-10-09 · memory:feedback_motion_findings_check_button_spec · correction · applied · seen 1
+
+**What happened.** A verifier flagged two ThovenButton motion findings from generic animation
+rules, the press animating box-shadow and ghost and link presses using the release curve. They were
+relayed to Andres with a recommended Design System ticket. Andres: *"since when are those wrong, who
+said they are wrong"*. `design/buttons.md`, from the 2026-07-16 bake-off, animates the ledge shadow
+on purpose. He ruled the ghost press timing stays as built, with no ticket.
+**Why.** A general rule ("only animate transform and opacity") is not a Thoven decision. The house
+press grammar overrides it.
+**What changed.** A Pitfall line checks every motion finding against `design/buttons.md` and
+`lib/press-tokens.ts` before it is relayed, names who decided what, and puts the same read in every
+verifier brief's MOTION section.
+
+---
+
+## 2026-10-09 — design-system tokens beat proto values
+
+> reflect · 2026-10-09 · memory:feedback_design_system_beats_proto_values · correction · applied · seen 2
+
+**What happened.** In the Live Lesson Portal visual pass a subagent matched the timer panel to the
+proto with an arbitrary rem size that has no ramp role, slate gradients (slate is not a generated
+hue) and a raw rgb shadow. Asked whether to add a ramp role, Andres said *"fix it to follow the
+design system"*. The next day, on THV-1216, he asked *"why did you build the prototype… the built
+does not even follow the thoven design system for async states"* and named the practice room header.
+The briefs had said "match the prototype's layout and states", which sent builders to the proto for
+states.
+**Why.** The proto's exact values are a sketch. Token modules, the `--text-*` ramp, the generated
+palette and the elevation and icon tiers bind. The rem value had also slipped past the px scan.
+**What changed.** A Pitfall line takes layout, copy and flow from the proto, every state from
+`docs/design/async-states.md` and the shipped primitives, and every value from the nearest token.
+Adding a ramp role or hue to fit a proto value is a question for Andres.
+
+---
+
+## 2026-09-30 — stateful icons are duotone, ratings use StarRating
+
+> reflect · 2026-09-30 · memory:feedback_icons_duotone_and_starrating · correction · applied · seen 2
+
+**What happened.** On the marketplace card's second round a builder swapped the StarRating star for
+an outline Jelly star and used flat check and X glyphs. Andres: *"why did you change the star… idk
+why you keep not using duotone"*. `lib/icon-tokens.ts` already gave stars to StarRating. He ruled
+the match badge, check and X duotone, since each shows a state the parent set. On 2026-10-03
+THV-1069 made the star half a lint rule that refuses `faStar` and `faStarHalf` outside
+`components/reviews/StarRating.tsx`.
+**Why.** No import ban was precise enough to enforce the duotone half, so it lived in memory only.
+**What changed.** A Pitfall line renders every stateful icon as a duo glyph through
+`components/ui/icon.tsx` with a hue and counts two paths in the rendered SVG before the UI is called
+done. The star half gets no line, because the lint performs it.
+
+---
+
+## 2026-09-28 — one screen means no scroll
+
+> reflect · 2026-09-28 · memory:feedback_one_screen_means_no_scroll · correction · applied · seen 1
+
+**What happened.** On the THV-903 parent dashboard the agent wrote "at a short desktop window the
+right column scrolls" into the acceptance, the pane passed it, and Andres rejected it. *"This does
+not pass because your space is now clamped and needs to scroll."*
+**Why.** A one-screen layout shows every section whole. An inner scroll hides content just as
+clipping does, and the scroll clause was invented in the acceptance.
+**What changed.** A Pitfall line writes one-screen acceptance as "fits without scrolling at every
+desktop viewport" and shrinks the content (tiles shrink or go horizontal, padding tightens) until it
+fits. Phones scrolling the page is fine.
+
+---
+
+## 2026-09-25 — no middle-dot separators
+
+> reflect · 2026-09-25 · memory:feedback_no_middle_dot_separators · correction · applied · seen 1
+
+**What happened.** Reviewing the Materials v3 detail pane, metadata ran as one string joined by
+middle dots (composer, opus, duration). Andres: *"Do not do dots. I hate fucking dots."* He asked
+for it to go into the design system.
+**Why.** Each fact wants its own place. A joined string hides which fact is which.
+**What changed.** A Pitfall line puts metadata in labelled rows or separate lines. Pane metadata
+becomes one label and value table. A card subline carries one fact or goes to two lines. The shipped
+app already carries many middle-dot strings. Leave them unless asked, and add none.
+
+---
+
+## 2026-08-28 — enforced standards versus emergent primitives
+
+> reflect · 2026-08-28 · memory:feedback_design_system_enforced_vs_emergent · skill-gap · applied · seen 1
+
+**What happened.** Fork D205. A decision said resting destructive buttons are outline rose. The
+proto drew solid rose and AccountPanel shipped the proto's version. Andres ruled the proto stands.
+*"There is a difference between standards that exist and we can enforce (fredoka and figtree), vs
+things that can be created and changed as we implement... some primitives may shift. But in general
+we find and start consolidating into a system over time, and don't let sprawl happen for no
+reason."*
+**Why.** "The proto is the contract" and "a lock is only real if a test enforces it" read as if
+every value were equally frozen. Treating an emergent primitive's drift as a defect causes churn and
+blocks slices on rulings that were always provisional.
+**What changed.** A Pitfall line names the tier first. An enforced standard (the typefaces, the
+focus-ring lock, anything with a token module and test) is a code defect. An emergent primitive (a
+variant that does not exist yet, a rung, a radius on a surface still being designed) means amend the
+decision. Andres rules either way, and the outcome goes into the row so no one re-litigates it.
+
+---
+
+## 2026-08-17 — a newly created file can stay uncompiled through a restart
+
+> reflect · 2026-08-17 · memory:restart-before-concluding-no-css · tooling · applied · seen 1
+
+**What happened.** Three novel arbitrary values showed no CSS against a running server and appeared
+after a restart. The misread had already spread into this skill's silent-failure list, a design
+guide, an `app/globals.css` comment and a token module header, all retracted that day. The same day
+found a third level. Classes in a newly created source file emitted nothing through a full restart
+and a `touch`, the sheet byte-identical, and appeared only after `.next` was removed.
+**Why.** Next's webpack cache keys the Tailwind compile on the content of `app/globals.css`. A new
+file does not change that hash, so a restart and a `touch` reuse the stale compile.
+**What changed.** Step edit in Silent failures. The restart rule now reads "conclude no CSS only
+after a cold start with `.next` removed" and names the cache. A skill's silent-failure list gets
+read as measurement, so it has to be one.
+
+---
+
+## 2026-08-17 — the colour system is settled
+
+> reflect · 2026-08-17 · memory:design-system-colors-are-settled · correction · applied · seen 1
+
+**What happened.** During a sidebar component task, five turns went to colour tangents nobody asked
+for. They converted oklch to sRGB, compared with stock Tailwind, measured contrast, argued one step
+darker and built an audit route. Andres: *"This is the fifth time you go on this tangent."*
+**Why.** The palette was finished in oklch and generates from `tools/build-palette.mjs`. The ramps
+override the framework's, so a stock comparison measures nothing, and every step is already
+assigned.
+**What changed.** A Pitfall line uses the assigned colour step as is, without converting,
+re-measuring or comparing it to stock Tailwind. A real inconsistency in the system is its own ticket.
+
+---
+
+## 2026-08-16 — build or take, filed at the height it governs
+
+> reflect · 2026-08-16 · memory:build-or-take-could-a-user-name-it · correction · applied · seen 1
+
+**What happened.** Andres's "could a user name it?" rule arrived scoped to one library. He said at
+once that it extrapolates to every layer. It decides base-ui versus hand-rolled and a job library
+versus hand-rolled the same way. Locked in `design/STACK.md` rule 7.
+**Why.** A rule filed inside one decision gets re-derived at every other one. He also wanted two
+counterweights kept. Taking buys edge cases not yet hit, not hours. Copy-in code has no upstream, so
+the purchase covers past bugs only.
+**What changed.** No Pitfall line. Already performed by SKILL.md "After `components_ui` binds" and
+by "Does it already exist?" in `references/sources.md`.
+
+---
+
+## 2026-08-11 — depth marks what is actionable
+
+> reflect · 2026-08-11 · memory:feedback_depth_means_actionable_not_decorative · correction · applied · seen 1
+
+**What happened.** On the Student L4 homework list every row carried the ledge. Andres: "everything seems pressable when everything is not actionable, this competes with the messaging and makes animation and the component more decorative than actually functional."
+**Why.** The 3D press is Thoven's scarcest signal, and spending it on every row spends it on nothing. Sky means "act on this", so a waiting row must not wear it either.
+**What changed.** Pitfall line: the ledge goes only on rows that need action; every other row is flat, and a row shows the verb or the state pill, not both.
+
+---
+
 ## 2026-09-20 — D# rows and the design project are not a source
 
 **What happened.** Classify treated `feature_d_rows` as a first-class source: open the Feature's

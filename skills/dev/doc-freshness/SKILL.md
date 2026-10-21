@@ -5,6 +5,12 @@ description: Audit then fix stale docs against the live codebase. Detects Rails 
 
 # Doc Freshness
 
+## Pitfalls
+
+- Run the git-distance commands under `bash -c` (zsh passes a variable holding several paths as one pathspec and every count reads 0), and before reporting an all-clean audit, check the doc with the oldest git date by hand. (LEARNINGS 2026-08-17)
+
+## Steps
+
 1. Detect repo:
    - Backend if `Gemfile` exists in cwd/parents, or `git remote get-url origin` contains `backend-remote`.
    - Frontend if `package.json` exists and `app/` is Next App Router, or origin contains `frontend-remote`.

@@ -1,6 +1,6 @@
 # The brief
 
-Copy the block below to `$TMPDIR/dispatch/<THV-x>.md` and fill every `<…>`. `send.sh` fills
+Copy the block below to `$TMPDIR/dispatch/<THV-x>.md` and fill every `<…>`. `scripts/send.sh` fills
 `{{MAIN_PANE}}`. The ticket is the spec, so the brief points at it and adds only what the ticket
 cannot know. A brief that restates the ticket drifts from it. STANDING Machine and Database
 restate `enforcement/rules/thoven-law.md` for a pane that never reads it; change both together.
@@ -17,11 +17,13 @@ SPEC       Linear THV-<id>. Read it in full first with the Linear tools. It is t
 DECISIONS  <every parent decision id this ticket touches, each with the board frame the parent
            cites for it ("D4 -> A3. Send moment"), from the parent's "Decisions (canonical)".
            A brief whose spec is a plan section, not a ticket, lists them too. "none" if none.>
-DESIGN     <"no UI", or the board path and the frames above.> Bring each frame to life as the
-           decisions describe it, at visual parity and full fidelity: layout, spacing, type,
-           every state, and motion where the frame shows it. Values come from design-system
-           tokens; use the shared component where one exists, and build a missing one with
-           /building-components. A frame is one static sample at one width: it binds which
+DESIGN     <"no UI", or the board path, the frames above, and every screen and state they show,
+           async states included.> Bring each frame to life as the decisions describe it, at
+           visual parity and full fidelity: layout, spacing, type, every state, and motion where
+           the frame shows it. Values come from design-system tokens; use the shared component
+           where one exists, and build a missing one with /building-components. Loading, empty,
+           error and pressed states take their treatment from `docs/design/async-states.md` and
+           `design/buttons.md`. A frame is one static sample at one width: it binds which
            elements show, their states, order, hierarchy and tokens. Sizing behaviour (fill or
            hug, stretch, reflow at other widths) follows component best practice; match the
            frame at its own width and give the reason in one line. A difference from a frame
@@ -35,7 +37,8 @@ ACCESS     <the skill lines from skills.md this ticket reaches, each with its mo
 DONE WHEN  <the ticket's Done when, verbatim or by pointer>
            Seams: <where the tests sit>. Proof goes red before your change and green after it.
            Verify per `~/.agents/skills/verify/SKILL.md`: lint and types, the touched test files
-           one per run, the design scan suite on any component or token diff, and
+           one per run, the design scan suite on any component or token diff,
+           `__tests__/mail-link-routes.test.ts` on a diff that adds or moves a route, and
            `bin/verify --base <integration branch>` once before DONE with its block in the report.
 
 STANDING
@@ -48,9 +51,12 @@ STANDING
   for free memory and a free slot. Exit 75 means the wait ran out: rerun once, then send
   NEEDS_CONTEXT. `bin/verify` never goes through the gate: run it plain, it holds its own
   machine lock, and a 20-minute Playwright run must not queue it. CI runs the full suite on
-  the integration PR. Stop the servers you started after each step; a dev server runs for the parity capture and stops
-  after it. Delete scratch you can regenerate. Route big logs and wide reads through a subagent and
-  keep its summary.
+  the integration PR. Stop the servers you started after each step. Delete scratch you can
+  regenerate. Route big logs and wide reads through a subagent and keep its summary.
+- Dev server: it runs for the parity capture and stops after it. Start it and `rails s` plain, or
+  through the load gate with `--check-only`, because a gated server holds a slot for its whole life.
+  Use your own port, delete your `.next-*` folder when you stop, and leave uncommitted the
+  tsconfig.json include that `next dev` adds for a custom distDir.
 - Evidence: one folder per ticket, `~/.thoven-artifacts/THV-<id>/evidence/`. Overwrite your own
   earlier run of the same check so only the last green log of each check stays. Point at a board
   frame or screenshot that already exists instead of saving a second copy. Write no test or
@@ -58,6 +64,9 @@ STANDING
 - Database (backend ticket): export the pane's own `DATABASE_URL` and `TEST_DATABASE_URL` in the
   same line as every backend command, `git commit` included.
 - Budget: stop near 250k tokens and send your status with what is done and what is left.
+- Debt, bugs and smells in code this ticket or feature owns are fixed on this branch in the same
+  round. A problem outside it goes in Noticed as one line. A product call goes to Andres as a
+  question in your report.
 - Decide what you can and write the ruling into your report. Stop only for: an irreversible or
   destructive step, prod or a secret value, a product call, or a ticket so wrong every path is a
   guess.
@@ -82,20 +91,25 @@ Then the ASCII block:
   Acceptance   one row per line: ✓/✗, evidence (file:line, command → result)
   Proof        command, red before, green after
   Commits      SHAs and git diff --stat against base
-  Parity       UI tickets: the `grid.html` path, and each difference from a frame:
+  Parity       UI tickets: the `~/.thoven-artifacts/<branch>/parity/grid.html` path, and each
+               difference from a frame:
                fixed, or confirmed with its ruling
   Rulings      what you decided and why
-  Noticed      out of scope, not fixed
+  Noticed      one line per problem outside this ticket's code, for main's grouped Linear issue
 Label every claim measured, inferred or guess. Then print the same block in this pane and end
 with a line starting "result:".
 ```
 
 ## Fix-round brief
 
-Send into the builder's pane with `send.sh`:
+Carry about five findings per round. Split a larger set by concern into panes whose files do not
+overlap. Send into the builder's pane with `scripts/send.sh`:
 
 ```text
 FIX ROUND <n>/3 THV-<id>. Base for this round: <sha>.
 <each open finding, verbatim, with file:line>
-Fix these only. Re-run the tests that cover each fix and name them. Report as before.
+Fix these only. Re-run the tests that cover each fix and name them. Copy follows
+design/lexicon/LEXICON.md, and focus and accessibility fixes use the existing Thoven components.
+On a UI fix, capture each touched state at 1440 and 390 before and after; a change beyond the
+fixed element is a defect. Report as before.
 ```

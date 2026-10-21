@@ -4,6 +4,8 @@
 
 Skills route by tier number. What each tier runs today (CLI, model, effort) lives in
 `~/thoven/agent-skills/config/agents.toml`, the one place a model name is written (THV-1077).
+Every tier runs Claude Code. Codex, Devin, Cursor and Droid launch only when Andres names one in
+this session.
 
 | Tier | Work |
 | -- | -- |
@@ -40,10 +42,12 @@ lists: set a tier, wire a new CLI, or check the config. It merges the change and
 
 ## Launch lines
 
-Every pane launches with its permissions bypassed. `agents.py launch-line <tier>` prints the
-`herdr agent start` line, with the model, the effort and the bypass flag filled in from
-`agents.toml`. Confirm the model on the pane's first screen. A CLI herdr runs but `agents.toml`
-lacks shows as unwired in `agents.py clis`; it needs a `[cli.<name>]` block before it can launch.
+Every pane launches without approval prompts. A Claude pane uses `--permission-mode auto`, because
+the auto-mode classifier blocks `--dangerously-skip-permissions` when main starts the pane.
+`agents.py launch-line <tier>` prints the `herdr agent start` line, with the model, the effort and
+the permission flag filled in from `agents.toml`. Confirm the model on the pane's first screen. A
+CLI herdr runs but `agents.toml` lacks shows as unwired in `agents.py clis`; it needs a
+`[cli.<name>]` block before it can launch.
 
 ## Gotchas by CLI
 

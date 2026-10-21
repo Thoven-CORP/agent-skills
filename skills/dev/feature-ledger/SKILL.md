@@ -11,6 +11,13 @@ description: >-
 `$feature-ledger` consumes the same pure Project snapshot as `$workspace`, then performs semantic
 reconciliation. It does not invoke workspace or mutate shared state implicitly.
 
+## Pitfalls
+
+- Land a design in one commit that turns each ruled dial value into a constant, deletes the DialKit dial and the losing prototypes, and updates CONTINUE_HERE.md and STATE.md; delete a dial rather than bump a persisted DialKit store id. (LEARNINGS 2026-08-22)
+- Open every doc-editing subagent prompt with "ADDITIVE ONLY. Append new rows; do not rewrite, reword, reorder, reformat or delete any existing row", then compare row ids against `git show HEAD:<file>`, never the diff stat. (LEARNINGS 2026-08-26)
+- Write tracking docs as current state, roadmap position and pointers to the branch's own docs; leave task lists and triage of research out of them. (LEARNINGS 2026-08-17)
+- When ingesting a large design surface, upload every section first, park prose verbatim in IDEAS.md with a slot per screen for Andres's spoken notes, and write nothing into decisions/ until he rules. (LEARNINGS 2026-08-16)
+
 ## Recipe
 
 1. Read the shared [Project snapshot protocol](../workspace/references/PROJECT_SNAPSHOT.md) and

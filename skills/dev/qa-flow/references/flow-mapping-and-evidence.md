@@ -196,20 +196,14 @@ wiped. Commit it beside the findings, and decide deliberately whether the screen
 
 ## 8. Multi-persona runs: capture the session, don't re-log-in
 
-`execute-and-evaluate.md` requires full-UI login and forbids token injection. **That rule stands
-for first authentication of every account** — it is what exercises redirects, role routing,
-onboarding gates and cold-start races.
+Logging in again for every persona switch is slow; the reference run's plan called for six
+credential handoffs in a four-persona run.
 
-It does not fit *switching between accounts already authenticated that way*. A four-persona run
-with a naive reading needs a human at the keyboard for every switch; the reference run's plan
-called for six credential handoffs.
-
-The refinement: **a human logs in through the real UI once per account. You then stash that
-session in-page and switch between stashes.** The login flow is exercised, and no password ever
-enters the agent's context.
+**Log each account in once, by UI or injected token (`execute-and-evaluate.md` "Logging in"), then
+stash that session in-page and switch between stashes.**
 
 ```js
-// after the human logs in — capture
+// after the account logs in — capture
 const stash = JSON.parse(localStorage.getItem('__qa_sessions__') || '{}');
 stash['teacher'] = { token: localStorage.getItem('token'),
                      userData: localStorage.getItem('userData'),

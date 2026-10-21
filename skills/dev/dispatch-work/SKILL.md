@@ -14,6 +14,16 @@ owns its half, and the brief tells the pane which half is main's.
 
 **Source:** `~/thoven/agent-skills/skills/dev/dispatch-work/`. Home copies are installs.
 
+## Pitfalls
+
+- Dispatch multi-file feature builds only. Make a small visual correction from Andres outside a live dispatch yourself, exactly as worded, and measure its computed style and geometry before you report. (LEARNINGS 2026-10-01)
+- Compare the ticket's flow wording with the board frames it names before you dispatch. The frame wins on what it shows, so fix the ruling and the ticket in Linear to match it first. (LEARNINGS 2026-10-09)
+- Scope every size or gate rule in a brief to the code the pane writes, and exempt generated artifacts, manifests, routes.rb and files already over the limit. (LEARNINGS 2026-10-09)
+- Keep `{{MAIN_PANE}}` in the brief and check the reply address `scripts/send.sh` prints against `echo $HERDR_PANE_ID`. A pane id carried over from a summary goes stale. (LEARNINGS 2026-10-10)
+- Settle a proto sizing or layout edge case during a build by the rule Andres already set, write it into RULINGS and tell him in one line. Ask him only a product call no rule covers. (LEARNINGS 2026-09-27)
+- Give a minor fix, fix round or review pass a clean existing tree, and check `df -h /` and `memory_pressure` before you start heavy panes. (LEARNINGS 2026-10-11)
+- List the ticket's Linear comments right before `gh pr merge`. A ruling newer than the last commit holds the merge until the diff applies it. (LEARNINGS 2026-10-03)
+
 ## Roles
 
 | Main (this session) | Pane (the executor) |
@@ -27,7 +37,7 @@ owns its half, and the brief tells the pane which half is main's.
 The pane never writes to Linear, never pushes, and never decides a product question. Main never
 edits the pane's code. Fixes go back to a pane.
 
-**Linear and the cockpit.** Main moves status with `set-status.js`, cockpit open or not. The
+**Linear and the cockpit.** Main moves status with `~/.agents/skills/workspace/tools/set-status.js`, cockpit open or not. The
 cockpit's ↻ for `started`, `pr` and `merged` clears on its next Linear read, within 5 minutes. A
 `report` ↻ and a pane-gone row wait for Andres: his ↻ or `u` is his approval to post the report
 comment, and it clears the row. Main leaves both to him and does not run `/workspace update`.
@@ -101,7 +111,7 @@ you cannot fill means the ticket is not ready. Fix the ticket in Linear, then co
    moves with `herdr pane move <pane> --new-tab --workspace <main's space>`. herdr never creates the
    worktree: its own create (the new-worktree key or `herdr worktree create`) branches from the
    checkout's local HEAD, and herdr 0.9.1 has no setting for a default base.
-3. Start the agent with its bypass flag from `agents.md`. Wait for `idle` before prompting. A ticket
+3. Start the agent with the line `scripts/agents.py launch-line <tier>` prints. Wait for `idle` before prompting. A ticket
    that spans both repos gets one pane: open it in the frontend worktree and add the backend
    worktree with `--add-dir <path>` (Claude, Codex; Devin's dangerous mode already reaches it).
 4. `scripts/send.sh <pane> $TMPDIR/dispatch/<THV-x>.md`. It fills main's pane id and sends from a
@@ -130,7 +140,7 @@ A status line from the pane arrives as a message in main's own pane:
 | `DONE THV-x` with its `THOVEN_VERIFY` block | Move the ticket to **Ready**. Go to step 5. |
 | `DONE THV-x` without the block | Not done. Reply `Paste the bin/verify block for this diff.` The ticket stays In Progress. |
 | `DONE_WITH_CONCERNS THV-x` | Read the concerns. Correctness or scope concerns get a fix round first. Observations go to step 5. |
-| `NEEDS_CONTEXT THV-x` | Answer with `send.sh`. Re-arm. |
+| `NEEDS_CONTEXT THV-x` | Answer with `scripts/send.sh`. Re-arm. |
 | `BLOCKED THV-x` | Context gap: answer and re-send. Too hard: fresh pane one tier up. Too big: split the ticket. Product call: ask Andres, word for word. |
 
 A watcher exit with no status line means the pane went **stale**. Investigate before anything
@@ -166,10 +176,11 @@ After the verifier passes, show Andres the evidence table and, on a UI ticket, t
    the merged SHA. Done means merged and a user can reach it. On a UI ticket, upload the parity
    images to the issue and place them on the board beside their frames.
 2. Minor findings are fixed on the branch before Done, or dropped with the reason in that comment.
-   No follow-up tickets.
+   They never become tickets. Each `Noticed` line of the report, a problem outside the ticket's
+   code, goes as one line into an existing grouped Linear issue, or a new issue only when none fits.
 3. `herdr pane close` every pane this dispatch opened. Close the tab when it is empty.
 4. After Andres has looked at the evidence, delete `$TMPDIR/dispatch/<THV-x>.md`,
-   `~/.thoven-artifacts/THV-x/evidence/` and any file the dispatch wrote outside the repo.
+   `~/.thoven-artifacts/THV-<id>/evidence/` and any file the dispatch wrote outside the repo.
 
 **Done when:** `herdr pane list` no longer shows the dispatch's panes, its brief file is gone, and
 the ticket reads Done.

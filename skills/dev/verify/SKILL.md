@@ -7,6 +7,12 @@ description: Use while building and before claiming done. Verify the change you 
 
 Shape of the check follows the shape of the change. Lint on the changed files and a cached typecheck are seconds; other people's tests are not. The design scans are the check most often missed, so they run on any component diff.
 
+## Pitfalls
+
+- For a copy or small UI change, test only the changed components with DOM assertions, curl the local backend for any API-backed claim, and add a `/thoven-designer` sweep of the surface. (LEARNINGS 2026-09-23)
+- Verify a fix justified by one browser's behaviour in that browser, or name in the commit which browser the proof ran in. (LEARNINGS 2026-08-08)
+- Measure layout geometry from a headless Playwright script; when a visible browser is needed, restore its viewport in the same turn, and never report a measurement viewport as the user's screen. (LEARNINGS 2026-08-22)
+
 ## While editing
 
 1. `pnpm run type-check` and oxlint on your changed files (`bin/verify` lints changed files only; whole-repo lint is CI's). Backend: `bin/rubocop -- <changed files>`.

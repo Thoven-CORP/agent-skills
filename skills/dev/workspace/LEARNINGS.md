@@ -5,6 +5,46 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-10-03 — A spec with no Writes to path goes into the ticket
+
+> reflect · 2026-10-03 · memory:feedback_spec_writes_to_ticket · correction · applied · seen 1
+
+**What happened.** On THV-1007 a brainstorm spec needed a home and the issue had no `Writes to:` line. Andres rejected a file path halfway through choosing one: "Actually writes to into the ticket".
+**Why.** Brainstorming skills default to a spec file under docs/, which competes with the Linear issue as the record.
+**What changed.** Pitfall line: write the spec into the Linear description below his problem statement, add `Writes to: this ticket`, use `save_issue` patch ops so his text stays, then check the embeds survived (a patch dropped a linear-embed once).
+
+## 2026-10-03 — Close research tickets once they become build tickets
+
+> reflect · 2026-10-03 · memory:feedback_research_tickets_close · correction · applied · seen 1
+
+**What happened.** THV-909, a research ticket, was presented as a big ticket awaiting Andres's review, and THV-5, an August decision ticket built on dead docs, was treated as live. He was angry about both.
+**Why.** A research ticket exists to inform build tickets. Carrying it, or the tickets it made stale, makes the board read as more work than exists.
+**What changed.** Pitfall line: close a research ticket once its findings are build tickets, saying what it produced, and cancel the tickets the research made stale.
+
+## 2026-09-29 — Sweep the Project's open tickets after every merge
+
+> reflect · 2026-09-29 · memory:feedback_linear_sweep_on_merge · correction · applied · seen 1
+
+**What happened.** About 40 open tickets in the Launch project looked stale. Andres: "I have mentioned multiple times to update linear as you move along."
+**Why.** Main moved the ticket it was working on but never swept the follow-ups that verifiers and walks had filed, which later PRs fixed in passing under other ids.
+**What changed.** Pitfall line: after every merge or promote, check the open tickets against the merged diff by id and file path, put each fixed one into the write set with its SHA in the same turn, and say where each verifier follow-up lives. The cockpit `merged` row already lists the candidates.
+
+## 2026-09-29 — Group findings and close tickets; moving is not cleaning
+
+> reflect · 2026-09-29 · memory:feedback_linear_group_not_sprawl · correction · applied · seen 1
+
+**What happened.** Main moved about 30 tickets into a cleanup project and kept filing one ticket per verifier finding. Andres: "Having 60 issues is overwhelming... Our target for the after-cutover cleanup project should be at most 20 issues... you keep saying you update it while you're not actually writing or updating anything."
+**Why.** Moving a ticket looks like progress in chat and leaves the board as long. One ticket per finding makes the board impossible to audit.
+**What changed.** Pitfall line: add a finding to an existing grouped issue as a checklist line, keep a cleanup Project near 20 grouped issues by merging, and close a done or stale ticket with one evidence line (SHA, file:line or the superseding issue). Recipe step 6 now reports the before/after open-issue count per Project. Status meanings (Ready is "come look", not "merged, waiting on a promote") are already `references/WORKFLOW.md` "States".
+
+## 2026-09-03 — File a described problem; do not investigate it
+
+> reflect · 2026-09-03 · memory:feedback_file_it_do_not_investigate · correction · applied · seen 1
+
+**What happened.** While Andres was assembling a backlog he described a navigation complaint. Main spawned a fact-finding agent and queued four questions. He said "I was asking you to put that on a linear ticket not to do it now".
+**Why.** He was in board-building mode, closing a session and handing to the next pane. Investigating mid-flow cost him that work and pre-empted the pane that owns it.
+**What changed.** Pitfall line: file it with what is known, the candidates named as candidates, and what the owning session must measure; investigate or grill only when he says so. A fact that turns up anyway goes into the ticket. Where it is filed follows the grouping line.
+
 ## 2026-08-29 — two skills shared a subject but not a snapshot
 
 **What happened.** Workspace oriented from Linear and audience-level state while feature-ledger

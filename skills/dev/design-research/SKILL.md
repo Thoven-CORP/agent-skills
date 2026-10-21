@@ -7,6 +7,12 @@ description: Fetches external brand assets, UI patterns, and tagged screen flows
 
 Fetches structured brand data, UI patterns, and tagged screen flows from external sources, annotates them against Thoven's brand, and curates insights for your current design task.
 
+## Pitfalls
+
+- Start inspiration research from Andres's reference images and DESIGN.md "Brand atmosphere", put his picks on the board first, and open and judge every pulled image against them before keeping it. (LEARNINGS 2026-10-09)
+- Keep every variant of a surface in one hue, amber first; vary layering, contrast, layout, copy and details, and make hue a later pass. (LEARNINGS 2026-10-09)
+- When the design work is a dump of UI cuts and moves, skip research and edit the components directly, one commit per dump section, with no engineering steps added. (LEARNINGS 2026-09-03)
+
 ## Backends
 
 This skill has two backends. The agent picks one per query.

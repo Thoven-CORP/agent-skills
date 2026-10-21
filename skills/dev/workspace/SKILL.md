@@ -13,6 +13,14 @@ approval for one fixed write (see Update from the cockpit). It owns Project
 orientation, Linear lifecycle, capture, close, the derived Map, and the Project log. It does not
 perform semantic feature reconciliation.
 
+## Pitfalls
+
+- When Andres describes a problem while building a backlog, file it with what is known and the candidates named as candidates; investigate or grill only when he asks. (LEARNINGS 2026-09-03)
+- Add a finding to an existing grouped issue as a checklist line, keep a cleanup Project near 20 grouped issues by merging, and close a done or stale ticket with one evidence line instead of moving it. (LEARNINGS 2026-09-29)
+- After every merge or promote, check the Project's open tickets against the merged diff by id and file path, and put each one it fixed into the write set with its SHA in the same turn; say where each verifier follow-up lives. (LEARNINGS 2026-09-29)
+- Close a research ticket once its findings are build tickets, and cancel the tickets the research made stale. (LEARNINGS 2026-10-03)
+- When an issue has no `Writes to:` line, write the spec into its Linear description below Andres's text with `Writes to: this ticket`, through `save_issue` patch ops, then check its embeds survived. (LEARNINGS 2026-10-03)
+
 ## Project setup and live context
 
 For a new Project or a proposed change to its brief, approach or sources, use `$linear-project`.
@@ -121,7 +129,8 @@ reconciliation ownership.
    and the next issue id). Print what comes back under **Recalled**, after the snapshot. It is
    recall, not record: it never changes the fingerprint or a finding.
 6. For capture, close, or log, show one exact Project-scoped write set. Apply only after approval,
-   serially. Re-run the snapshot and report its new fingerprint.
+   serially. Re-run the snapshot and report its new fingerprint and the before/after open-issue
+   count per Project.
 
 ## Update from the cockpit
 

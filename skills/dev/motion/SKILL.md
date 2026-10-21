@@ -65,7 +65,7 @@ Full vocabulary (gates, three-lens taxonomy, emotion archetypes, easing matrix, 
 Answer as: **layer → preset/params → ~duration → one-line why.**
 
 ## Before deciding edge cases
-Check `references/learnings.md` for corrections logged from past mis-routes, and add new ones when you get it wrong.
+Check `LEARNINGS.md` for corrections logged from past mis-routes, and add new ones when you get it wrong.
 
 ## Related
 motion-react · gsap-core · gsap-scrolltrigger · gsap-timeline · gsap-react · orchestrate

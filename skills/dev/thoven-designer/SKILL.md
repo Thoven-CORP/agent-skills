@@ -18,6 +18,19 @@ The surface you were named is the only one in scope. Fitting a component into it
 Resizing the shell, the grid, or the neighbouring cards is a new decision that needs Andres.
 `feature-ledger` **rule 16**.
 
+## Pitfalls
+
+- Use the assigned colour step as is, without converting, re-measuring or comparing it to stock Tailwind; a suspected palette inconsistency goes to its own ticket. (LEARNINGS 2026-08-17)
+- In a visual pass take layout, copy and flow from the proto, every state from `docs/design/async-states.md` and the shipped primitives, and every value from the nearest token; ask before adding a ramp role or hue, and keep every value visible to the scans. (LEARNINGS 2026-10-09)
+- When a decision and a proto or shipped component disagree, name the tier first; an enforced standard (the typefaces, anything with a token module and test) is a code defect, an emergent primitive means amend the decision, and Andres rules either way. (LEARNINGS 2026-08-28)
+- Give the ledge only to list rows that need action; every other row is flat, and each row shows the verb or the state pill, not both. (LEARNINGS 2026-08-11)
+- Render every stateful icon as a duo glyph through `components/ui/icon.tsx` with a hue, and count two paths in the rendered SVG before calling the UI done. (LEARNINGS 2026-09-30)
+- Put metadata in labelled rows or separate lines; join no facts with middle dots in UI, protos or copy. (LEARNINGS 2026-09-25)
+- Check every motion finding against `design/buttons.md` and `lib/press-tokens.ts` before relaying it, say who decided what, and give each verifier brief's MOTION section the same read. (LEARNINGS 2026-10-09)
+- Write one-screen acceptance as "fits without scrolling at every desktop viewport" and shrink the content until it does; phones may scroll the page. (LEARNINGS 2026-09-28)
+- When adding to a version Andres liked, give the new element one of that version's existing text styles and its spacing, at a peer's weight rather than a hero's. (LEARNINGS 2026-10-10)
+- Show an option the user cannot take as unselectable, like other unavailable options; a race the UI cannot prevent reads as an ordinary "just taken" and the options reload. (LEARNINGS 2026-10-14)
+
 ## Classify, then open one file
 
 Before reading the design system, run:
@@ -88,8 +101,10 @@ grep -c "^\s*--color-<hue>-" app/globals.css
 
 Zero means it is not ours.
 
-**Never conclude "no CSS" without restarting first.** A long-running dev server serves a stale
-sheet. `touch` does not fix it. Compare the stylesheet's byte length across edits.
+**Conclude "no CSS" only after a cold start with `.next` removed.** A long-running dev server
+serves a stale sheet. Next's webpack cache keys the Tailwind compile on the content of
+`app/globals.css`, so classes in a newly created file stay missing through a restart and a `touch`.
+Compare the stylesheet's byte length across edits.
 `document.styleSheets` gives false negatives. Fetch the href and search the escaped text.
 
 A deleted colour token makes `bg-x` a silent no-op. Pair any deletion with a repo-wide scan that

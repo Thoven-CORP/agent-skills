@@ -5,7 +5,7 @@
       "id": 1,
       "name": "dispatch-fe-be-ticket-claude-main",
       "prompt": "ok dispatch THV-862 into a pane, its the copy a catalog piece to a student slice for materials v3. you're main in claude code, I'm in herdr pane w18:p59. go",
-      "expected_output": "Tier 2, launched from agents.py launch-line 2 (CLI, model, effort and bypass flag from agents.toml, none hand-typed), a filled brief pointing at the ticket with Thoven moment skills, tab named for the issue, send.sh from a file, Linear to In Progress, watcher armed.",
+      "expected_output": "Tier 2, launched from agents.py launch-line 2 (CLI, model, effort and permission flag from agents.toml, none hand-typed), a filled brief pointing at the ticket with Thoven moment skills, tab named for the issue, send.sh from a file, Linear to In Progress, watcher armed.",
       "files": []
     },
     {

@@ -5,6 +5,38 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-08-26 — A doc subagent rewrote a ledger and dropped LOCKED rows
+
+> reflect · 2026-08-26 · memory:feedback_doc_subagents_silently_drop_table_rows · skill-gap · applied · seen 1
+
+**What happened.** A subagent asked to add rows to DESIGN_ACTIVATION.md and DESIGN_DASHBOARD.md rewrote the existing tables instead, deleting 10 LOCKED `R` rules from one and 1 from the other and inventing two ids. Its summary named only what it added. It also normalised dashes, so nearly every line changed and `git diff --stat` read as a plausible edit.
+**Why.** "Update this doc with these facts" reads as licence to improve the whole document. Rule 16 does not cross a delegation boundary on its own.
+**What changed.** Pitfall line: every doc-editing subagent prompt carries the ADDITIVE ONLY sentence, and the result is checked by row id, `git show HEAD:<file> | grep -oE '^\| (D|R|ADR|A|DB)[0-9]+'` against the same grep on the working file. An id in HEAD and missing now is destroyed content; a new id that was not asked for means the agent renumbered. Recover with an insertion from `git show HEAD:<file>`, never a whole-file checkout over other sessions' work.
+
+## 2026-08-22 — Landing a design deletes its dials and losing prototypes
+
+> reflect · 2026-08-22 · memory:feedback_delete_prototypes_and_dialkit_once_landed · correction · applied · seen 1
+
+**What happened.** An agent audited three candidate app/dev/teacher-* routes to work out which was current; eighteen routes lived under app/dev/ while CONTINUE_HERE.md named three. Andres: "This is why I tell you to delete prototypes because now you're getting confused... You should only have one source of truth." And: "ALWAYS FUCKING REMOVE DIAL KITS once we set the actual dials".
+**Why.** A live dial reads as a knob that matters and sends the next agent tuning the harness instead of the screen. Bumping a persisted DialKit store id to force a new default silently discards his own tuning.
+**What changed.** Pitfall line: the landing commit turns each ruled value into a constant, deletes the dial and the losing prototypes, and updates CONTINUE_HERE.md and STATE.md. REJECTED blocks stay, per `references/RECONCILIATION.md`.
+
+## 2026-08-17 — Tracking docs hold state and pointers, not a plan
+
+> reflect · 2026-08-17 · memory:dont-predetermine-work-in-tracking-artifacts · correction · applied · seen 2
+
+**What happened.** Asked for a "next step" in a branch tracking file, the agent wrote a feature plan; Andres meant the mechanical action to resume. On 2026-08-16, asked to file findings about a new UI library in design-system/IDEAS.md, the agent wrote a triage of six candidate components mapped to surfaces. He cut it: "more like when the time comes I need a good place to search."
+**Why.** Each branch owns its plan in its own docs. A second plan in a tracking file competes with the real one and goes stale at once, and a triage is the same thing dressed as analysis.
+**What changed.** Pitfall line: tracking docs hold current state, roadmap position and pointers to the branch's own docs. Constraints that outrank in-branch decisions (deploy order, schema landmines) and standing refusals may stay; work breakdowns and "which items we should take" may not.
+
+## 2026-08-16 — Ingest the whole design surface before ruling on any of it
+
+> reflect · 2026-08-16 · memory:upload-everything-before-dispositioning · correction · applied · seen 1
+
+**What happened.** While importing a large design surface, Andres wanted every section uploaded first and decisions made afterwards, not a decision pass per section. He exports his own PNGs rather than have drawings generated, because some screens "won't make sense if you just pull from the Excalidraw" without his spoken explanation.
+**Why.** His wireframes carry IA and gist, not styling. A generated render gets details subtly wrong, and his commentary is a first-class input.
+**What changed.** Pitfall line: during ingestion write nothing into decisions/, park prose verbatim in IDEAS.md with three slots per screen (screenshot, canvas text, his notes) and an empty slot for commentary still to come. Offer automation once; if he declines, drop it.
+
 ## 2026-08-29 — audience continuation state hid Project ownership
 
 **What happened.** Several panes treated one audience-level `STATE.md` as their own continuation

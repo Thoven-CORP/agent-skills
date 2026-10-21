@@ -1,0 +1,212 @@
+# Learnings — dispatch-work
+
+Running log of what went wrong in real use and what changed. **Read before editing SKILL.md.**
+New entries on top. Each one: what happened, why, what changed.
+
+---
+
+## 2026-10-13 — a route change runs the repo-wide guard tests
+
+> reflect · 2026-10-13 · memory:feedback_briefs_run_repo_guard_tests · skill-gap · applied · seen 1
+
+**What happened.** THV-1290 (Practice tab) was green on every per-file run and on the checks job,
+then integration CI failed on the icon tier scan, the mail link routes test and the route list. A
+CI fix round followed.
+**Why.** Those tests read the whole repo, not the touched file, so per-file runs never select them.
+**What changed.** Since THV-1334, `bin/verify` runs the design scans (icon tier included) on a
+component or token diff, the route list on a new page, and the related browser tests. The one gap
+left was the mail link routes test. Step edit in `references/brief.md` DONE WHEN: run
+the frontend mail link routes test on a diff that adds or moves a route.
+
+---
+
+## 2026-10-13 — a fix keeps the viewports that already work
+
+> reflect · 2026-10-13 · memory:feedback_fixes_keep_working_viewports · skill-gap · applied · seen 1
+
+**What happened.** Scoping the THV-1187 Phase 3 S3 QA fixes, Andres asked that the hidden info
+"does not break the UI by causing typography resizing, component frames being painted and shaped
+differently especially in the viewports that it already works".
+**Why.** The fix-round brief named the findings and nothing about copy, components or the screens
+around the fix.
+**What changed.** Step edit in `references/brief.md` fix-round brief: copy follows the lexicon,
+focus and accessibility fixes use the existing Thoven components, and a UI fix captures each
+touched state at 1440 and 390 before and after. A change beyond the fixed element is a defect.
+
+---
+
+## 2026-10-12 — dev servers stay outside the load gate
+
+> reflect · 2026-10-12 · memory:feedback_dev_server_no_gate_slot · tooling · applied · seen 2
+
+**What happened.** In THV-1289 a gated `pnpm run dev` held a gate slot for its whole life, and
+another pane's type-check waited 1500 seconds and gave up. THV-1288 had two servers holding both
+slots for 35 minutes.
+**Why.** The gate is built for one-shot jobs. A server never exits, so it never frees its slot.
+**What changed.** Step edit in `references/brief.md` STANDING, a new Dev server line: start the dev
+server and `rails s` plain or through the load gate with `--check-only`.
+
+---
+
+## 2026-10-11 — minor fixes reuse a tree
+
+> reflect · 2026-10-11 · memory:feedback_no_worktrees_for_minor_fixes · correction · applied · seen 2
+
+**What happened.** After a reboot Andres said "be more careful about space and memory by not adding
+every single worktree for minor fixes for this specific branch". The scope was widened on 10-19 to
+fix rounds, CI fixes, review passes and UI fix passes.
+**Why.** Each frontend worktree carries about 1.5 GB of node_modules, and parity dev servers leave
+`.next-parity-*` folders of about 200 MB behind.
+**What changed.** A Pitfall line gives minor work a clean existing tree and checks disk and memory
+before heavy panes. Step edit in `references/brief.md` STANDING Dev server: own port, delete the
+`.next-*` folder on stop, never commit the tsconfig.json include `next dev` adds.
+
+---
+
+## 2026-10-10 — the reply address comes from the environment
+
+> reflect · 2026-10-10 · memory:feedback_reply_address_from_env · broken-rule · applied · seen 2
+
+**What happened.** The THV-1210 fix briefs hard-coded `w6F:p1`, a pane id carried over from a
+compaction summary. That pane belonged to another live session, the reports went there, and Andres
+pasted them into main by hand. The same day a THV-1216 brief named a pane that no longer existed.
+**Why.** The brief bypassed the `{{MAIN_PANE}}` placeholder that `scripts/send.sh` fills from
+`$HERDR_PANE_ID`.
+**What changed.** A Pitfall line keeps the placeholder and checks the reply address `scripts/send.sh`
+prints against `echo $HERDR_PANE_ID`.
+
+---
+
+## 2026-10-10 — panes run Claude Code with auto permission mode
+
+> reflect · 2026-10-10 · memory:feedback_claude_panes_not_droid · correction · applied · seen 1
+
+**What happened.** Droid hit its 5-hour usage limit partway through the THV-1210 fix round and left
+35 files uncommitted. A Claude pane finished it cleanly. Andres: "lets run the panes using claude
+code again instead of droid". Starting a pane with `--dangerously-skip-permissions` from main is
+blocked by the auto-mode classifier.
+**Why.** `config/agents.toml` still launched Claude with the bypass flag, and tiers 1, 3 and 5 ran
+Codex and tier 4 ran Droid. andres-mode says Codex runs only when Andres asks for it by name.
+**What changed.** `config/agents.toml` `[cli.claude]` launches with `--permission-mode auto`, and
+every tier runs Claude Code on Opus 5.5 (tier 1 xhigh, tiers 2 and 3 high, tiers 4 and 5 medium).
+The Codex, Devin, Cursor and Droid blocks stay as named opt-ins. `references/agents.md` Tiers and
+Launch lines say so, and SKILL.md step 3.3 starts the agent from `agents.py launch-line`.
+
+---
+
+## 2026-10-10 — the brief lists every screen and state, async ones included
+
+> reflect · 2026-10-10 · memory:feedback_ui_parity_gate · skill-gap · applied · seen 1
+
+**What happened.** THV-1216 shipped a practice room whose header and async states copied the
+prototype instead of the design system. Andres: "the built does not even follow the thoven design
+system for async states".
+**Why.** The brief said "match the prototype's states", so the pane took state treatments from the
+prototype. The review compared only the slice's own card.
+**What changed.** Step edit in `references/brief.md` DESIGN: main lists every screen and state the
+frames show, async states included, and loading, empty, error and pressed states take their
+treatment from the frontend async-states and buttons design docs. The parity row, the
+screenshots to Linear and the skill moments were already in the brief and `references/skills.md`.
+
+---
+
+## 2026-10-09 — the board frame beats the written flow
+
+> reflect · 2026-10-09 · memory:feedback_board_frame_beats_written_flow · correction · applied · seen 1
+
+**What happened.** THV-1196's ticket and parent ruling 30 said the intro follow-up asks a question
+before opening the editor. The board frame shows the empty editor straight away. Main recommended
+the question because the ruling was newer. Andres: "We should have the TLdraw frame build out that
+is the design".
+**Why.** Pre-dispatch spec parity compared the ticket only against parent rulings, never against
+the frames.
+**What changed.** A Pitfall line compares the ticket's flow wording with its named frames before
+dispatch, and fixes the ruling and ticket to match the frame. Rulings still govern what a frame
+cannot show, such as data, timing and asked-once rules.
+
+---
+
+## 2026-10-09 — brief rules are read literally
+
+> reflect · 2026-10-09 · memory:feedback_brief_rules_scope_literal · skill-gap · applied · seen 1
+
+**What happened.** The THV-1197 brief said "Keep every file you touch under 1000 lines". The pane
+compacted both contract manifests to one-line JSON, changed the manifest generator, deleted route
+headings to bring routes.rb to 999 lines and added file-size cap tests. It also stopped on a
+literal "every production hunk red" gate that coupled extractions could not meet. Undoing it cost
+a fix round.
+**Why.** Panes follow every brief rule to the letter, so an unscoped rule reaches files it was
+never meant for.
+**What changed.** A Pitfall line scopes size and gate rules to the code the pane writes and exempts
+generated artifacts, manifests, routes.rb and files already over the limit.
+
+---
+
+## 2026-10-03 — re-read the ticket's comments before merging
+
+> reflect · 2026-10-03 · memory:feedback_reread_ticket_comments_before_merge · broken-rule · applied · seen 1
+
+**What happened.** PR 11 (THV-1047) merged about 30 minutes after Andres posted a binding ruling on
+the ticket from another session. The fix needed THV-1064 and PR 13.
+**Why.** Parallel sessions post rulings into each other's tickets. The PR description and main's
+context were older than the ruling.
+**What changed.** A Pitfall line lists the ticket's Linear comments right before `gh pr merge`; a
+newer ruling holds the merge until the diff applies it.
+
+---
+
+## 2026-10-01 — apply a visual correction literally, in main
+
+> reflect · 2026-10-01 · memory:feedback_apply_design_corrections_literally · correction · applied · seen 1
+
+**What happened.** In the marketplace polish (THV-991) Andres asked for a neutral 3D button with a
+duotone bulb, and it became a plain text link. The separator gaps were claimed equal, not measured.
+He had to repeat himself and said main "didn't listen". He also said panes and builder subagents
+are for big builds, not small edits.
+**Why.** The correction was reinterpreted instead of applied, and small edits were routed through
+heavier machinery.
+**What changed.** A Pitfall line dispatches multi-file feature builds only and has main make a small
+visual correction itself, as worded, measured by computed style and geometry.
+
+---
+
+## 2026-09-27 — no proto questions during a build
+
+> reflect · 2026-09-27 · memory:feedback_no_proto_questions_during_build · correction · applied · seen 1
+
+**What happened.** Mid Materials v3 build, main asked whether a homework card in the D1 (THV-863)
+proto should be compact at 1440. Andres: "what are we talking about here ... how does this relate to
+the library and why am I seeing prototypes still we should be implementing".
+**Why.** In a build phase he measures progress by shipped components. A proto layout question reads
+as drift, and it did not say how it connected to the feature.
+**What changed.** A Pitfall line settles proto edge cases by the rule already set, records it in
+RULINGS, tells him in one line, and asks only a product call no rule covers.
+
+---
+
+## 2026-09-16 — a fix round carries about five findings
+
+> reflect · 2026-09-16 · memory:feedback_subagent_token_budget · correction · applied · seen 2
+
+**What happened.** The THV-538 build agent reached 347k tokens. Andres: "that feels excessive for
+one subagent ... make sure agents have tight [budgets]". A THV-578 fix-forward brief with 11 items
+plus e2e ran to about 265k.
+**Why.** One agent held the build, the suite output and the review fixes in one window, and its
+judgment degraded as the window filled.
+**What changed.** The 250k budget was already in `references/brief.md` STANDING. Step edit in the
+fix-round brief: carry about five findings per round and split a larger set by concern into panes
+whose files do not overlap.
+
+---
+
+## 2026-09-06 — shard a large review
+
+> reflect · 2026-09-06 · memory:feedback_shard_thermos_reviews · correction · applied · seen 1
+
+**What happened.** Andres stopped a single U02 Thermos review agent after it used about 372k
+tokens on a whole-branch diff (backend 6k added lines, frontend 29k).
+**Why.** One reviewer reading the whole diff blows the window and re-reads findings it barely
+needs.
+**What changed.** Step edit in `references/review.md` verifier brief step 5: past about 1k added
+lines, shard the review by surface from `git diff --numstat`, with one shared BRIEF.md, one small
+findings file per shard, and sonnet for structural and lower-risk shards.
