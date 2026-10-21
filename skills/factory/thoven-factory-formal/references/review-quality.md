@@ -23,4 +23,4 @@ Once per batch of loop PRs, or after every tenth ticket (scorecard owns the cade
 4. Score hit (they named the planted bug) or miss.
 5. Delete the scratch. Never push it.
 
-`scripts/mutation-sample.sh` starts step 1 and 2. It does not send the reviewer prompt.
+[mutation-sample.sh](../scripts/mutation-sample.sh) starts step 1 and 2. It does not send the reviewer prompt.

@@ -43,8 +43,8 @@ scripts/doctor.sh --fe "$FE_URL" --be "$BE_URL" --out "$THOVEN_VERIFY_EVIDENCE_D
 Worth driving only when all of these hold.
 
 - Host is staging, `*.vercel.app`, or another named preview. Not `thoven.co` / `api.thoven.co`.
-- `GET $FE_URL/api/version` returns JSON with `sha`.
-- `GET $BE_URL/health` returns JSON with `status` (staging default is `healthy`).
+- GET on the frontend version endpoint returns JSON with a sha.
+- GET on the API health endpoint returns JSON with a status (staging default is healthy).
 - You started this drive, or the URL is the agreed factory target. Do not attach to someone else's local session.
 
 ## Drive
@@ -57,10 +57,10 @@ A station that is not a UI change still runs a doctor plus [references/evidence.
 
 Save under `$THOVEN_VERIFY_EVIDENCE_DIR` (survives cleanup).
 
-- `fe-version.json` from `https://staging.thoven.co/api/version` or the preview's `/api/version`
-- `be-health.json` from `https://thoven-api-staging.onrender.com/health` (or the preview's API health)
+- frontend version JSON from https://staging.thoven.co/api/version or the preview version endpoint
+- API health JSON from https://thoven-api-staging.onrender.com/health
 - One screenshot of the action and one of the resulting state
-- `steps.jsonl` with one line per observed step
+- steps.jsonl with one line per observed step
 
 ```bash
 scripts/version.sh --fe "$FE_URL" --be "$BE_URL" --out "$THOVEN_VERIFY_EVIDENCE_DIR"

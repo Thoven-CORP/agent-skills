@@ -42,7 +42,7 @@ Record hit or miss in the evidence dir. Do not merge the planted bug.
 
 ## Output
 
-Write `formal.md` in the run's evidence dir, then
+Write the formal report in the run's evidence dir, then
 
 ```bash
 ../thoven-verify/scripts/check-station-output.sh --kind formal --file "$THOVEN_VERIFY_EVIDENCE_DIR/formal.md"

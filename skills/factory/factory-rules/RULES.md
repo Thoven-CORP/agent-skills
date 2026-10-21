@@ -30,8 +30,8 @@ A batch PR may close several linked tickets. Size and open counts are per batch 
 
 A loop PR must not change these. The list is not configurable.
 
-- Database migrations (`db/migrate`, `db/schema.rb`, `db/structure.sql`, Strong Migrations)
-- `config/recurring.yml`
+- Database migrations (db/migrate, db/schema.rb, db/structure.sql, Strong Migrations)
+- config/recurring.yml
 - Billing, credits, wallets, Stripe charges
 - Authentication, session, JWT, Devise, student-auth
 - Privacy policy, terms, legal wording

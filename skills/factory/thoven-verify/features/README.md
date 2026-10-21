@@ -5,7 +5,7 @@ Maintained source for user-facing factory drives. Read this index, then the feat
 ## Baseline preconditions
 
 - Target is staging or a Vercel preview. Doctor exited 0.
-- Evidence dir is set (`scripts/evidence-init.sh`).
+- Evidence dir is set ([evidence-init.sh](../scripts/evidence-init.sh)).
 - Version JSON is already written.
 - You have a staging persona when the journey needs a session. Do not create production users.
 - Never drive `https://thoven.co` or `https://api.thoven.co`.

@@ -26,7 +26,7 @@ It does not check file overlap between open PRs. Merge conflicts are handled at 
 
 ## Station output
 
-Write `rules.txt` (the script stdout) into the verify evidence dir, then run `thoven-verify` doctor on the target the batch names. A rules fail is a failed station.
+Write the script stdout into the verify evidence dir, then run the thoven-verify doctor on the target the batch names. A rules fail is a failed station.
 
 ## Helpers
 

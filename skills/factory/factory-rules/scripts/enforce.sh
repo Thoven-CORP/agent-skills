@@ -100,7 +100,7 @@ PY
 
 names_file="$(mktemp)"
 if [[ -n "$diff_stat" ]]; then
-  awk -F' +\\|' '{print $1}' "$stat_file" | sed 's/[[:space:]]*$//' >"$names_file"
+  awk -F' +\\|' '/\|/ {print $1}' "$stat_file" | sed 's/[[:space:]]*$//' >"$names_file"
 else
   git -C "$repo" diff --name-only "$base"...HEAD >"$names_file" 2>/dev/null \
     || git -C "$repo" diff --name-only >"$names_file"

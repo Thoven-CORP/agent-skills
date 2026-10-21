@@ -6,15 +6,15 @@ Proof lives in `$THOVEN_VERIFY_EVIDENCE_DIR`. Cleanup must not touch it.
 
 | File | Source |
 |---|---|
-| `target.txt` | FE URL, BE URL, run id |
-| `fe-version.json` | `$FE_URL/api/version` |
-| `be-health.json` | `$BE_URL/health` |
-| `doctor.txt` | doctor stdout |
-| `steps.jsonl` | one JSON object per observed step |
-| `action.png` | screenshot of the user action |
-| `result.png` | screenshot of the resulting state |
+| target.txt | FE URL, BE URL, run id |
+| fe-version.json | frontend version endpoint |
+| be-health.json | API health endpoint |
+| doctor.txt | doctor stdout |
+| steps.jsonl | one JSON object per observed step |
+| action.png | screenshot of the user action |
+| result.png | screenshot of the resulting state |
 
-A document-only station may omit the PNGs and instead keep the artifact path in `steps.jsonl`.
+A document-only station may omit the PNGs and instead keep the artifact path in steps.jsonl.
 
 ## Version reads
 
@@ -40,4 +40,4 @@ One line per observation, written as you see it.
 
 ## After cleanup
 
-Confirm the evidence dir still exists and still holds `fe-version.json` and `be-health.json`. If cleanup ate the proof, the run failed.
+Confirm the evidence dir still exists and still holds the version and health JSON. If cleanup ate the proof, the run failed.
