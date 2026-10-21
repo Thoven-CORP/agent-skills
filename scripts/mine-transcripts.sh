@@ -235,14 +235,19 @@ mine_codex() {
 # without its trigger cannot be routed to a skill. Main sessions only: subagents never reach here
 # (AUTHOR_FILTER), and a session whose first real turn is a pane brief is dropped whole, since its
 # "human" turns are main relaying to a pane. A bare "try again" is a retry, not a lesson. Only the
-# human's own words count: a pasted pane report inside <pasted_content> is transport (class 8).
+# human's own words count: a pasted pane report inside <pasted_content> is transport (class 8), and
+# so is a herdr relay. A message re-sent word for word counts once.
 CORRECTION='(i told you|i said|i already|we already|already (told|said|decided|did)|as i (said|mentioned)|again|remember|forgot|we (talked|discussed|decided|agreed)|last time|how many times|you keep|keep (doing|asking)|stop (doing|asking)|not what i|wrong|why did you|i never said|settled|stale|re-?ask|same (mistake|thing)|confused|lost|instead of)'
 BRIEF='(DONE WHEN|REPORT TO|Writes to:|## Brief|herdr pane)'
+# herdr relays: main's prompt inside a pane session, or a pane's report typed into main. Each opens
+# with a sender label ("Main:", "THV-1303 from main:", "F3 restore:", "Lock released:", "PR 319 run").
+RELAY='^(MAIN|Main|main|THV-[0-9]+[^:]{0,30}|F[0-9]+[^:]{0,24}|Lock released|PR [0-9]+ run[^:]{0,30}):'
+
 
 flag_corrections() {
-  awk -F'\t' -v OFS='\t' -v h="$1" -v since="$SINCE" -v noise="$NOISE" -v corr="(^|[^a-z])$CORRECTION([^a-z]|$)" -v brief="$BRIEF" '
+  awk -F'\t' -v OFS='\t' -v h="$1" -v since="$SINCE" -v noise="$NOISE" -v corr="(^|[^a-z])$CORRECTION([^a-z]|$)" -v brief="$BRIEF" -v relay="$RELAY" '
     { own = $6; gsub(/<pasted_content[^>]*>.*<\/pasted_content[^>]*>/, "", own); sub(/^(\\n|[ \t])+/, "", own) }
-    own ~ noise || own == "" {next}
+    own ~ noise || own ~ relay || own == "" || said[own]++ {next}
     !seen++ && length($6) > 1500 && $6 ~ brief {exit}
     $3 >= since && tolower(own) ~ corr && split(own, w, " ") > 3 {$6 = own; print h"\t"$0}' >> "$OUT/corrections.tsv"
 }
@@ -282,6 +287,8 @@ codex_turns() {
 }
 
 corrections_md() {
+  # The same opening words in several sessions are main forwarding a ruling to its panes: keep the first.
+  awk -F'\t' 'NR == 1 || !said[substr($7, 1, 160)]++' "$OUT/corrections.tsv" > "$OUT/.corr" && mv "$OUT/.corr" "$OUT/corrections.tsv"
   awk -F'\t' 'NR > 1 {
       if ($3 != path) { path = $3; printf "\n## %s · %s · %s\n\n", $1, $4, $3 }
       printf "- **%s** (last skill loaded: %s)\n  - Agent before: %s\n  - Andres: %s\n", $4, ($5 == "" ? "none" : $5), $6, $7

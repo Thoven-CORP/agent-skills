@@ -5,6 +5,18 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-21 — round 2 from the first eval
+
+> reflect · 2026-10-21 · 997fee44 · skill-gap · applied · seen 1
+
+**What happened.** Three prompts were run with the skill and without it. The skill passed 18/18 checks; the baseline passed 13/18. The baseline still found 158 feedback memories to the skill's 151, because the skill inventoried by filename. About 7 of the 37 digest rows were herdr relays (`Main:`, `THV-1303 from main:`, `Lock released:`), and the tooling reviewer built 6 findings on them. A migration routed 45 Pitfall lines to andres-mode against a cap of 10. `seen` was never defined, and two memories that contradict each other had no destination.
+
+**Why.** The filename was standing in for the memory type. The miner's noise list knew pasted reports but not relays. The cap had no overflow rule.
+
+**What changed.** The inventory greps `type: feedback`. The miner drops relays, and a message seen again in the same or another session counts once (37 rows down to 27 on the same window). Overflow becomes `step:` edits. `seen` is defined. `conflict` is a migration destination that Andres settles first. Named rows go in the free-text answer. The mine gets a 10-minute timeout.
+
+---
+
 ## 2026-10-20 — one miner, and the noise it had already learned
 
 > reflect · 2026-10-20 · 997fee44 · tooling · applied · seen 1
