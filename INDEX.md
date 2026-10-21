@@ -10,6 +10,8 @@ Bug-and-fix factory. Stations run in order. Every station skill checks its own o
 |---|---|---|
 | [thoven-verify](skills/factory/thoven-verify/SKILL.md) | all | Drive staging or a Vercel preview and keep evidence. |
 | [thoven-factory-formal](skills/factory/thoven-factory-formal/SKILL.md) | 7 | Verify the review's proof, not the factory loop. |
+| [thoven-factory-mode](skills/factory/thoven-factory-mode/SKILL.md) | 6 | Factory loop working style and the cloud-agent fix prompt. |
+| [factory-rules](skills/factory/factory-rules/SKILL.md) | 6 | Configurable caps and the forbidden-area list. |
 
 Deferred folders (another agent supplies them later). Do not add plugin or index rows until those folders exist.
 
