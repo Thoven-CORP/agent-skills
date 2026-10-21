@@ -16,10 +16,17 @@ INT_KEYS = {
     "max_files",
     "ci_failure_stop",
     "claim_lock_hours",
+    "replay_min_tickets",
+    "live_score_pct",
+    "station_fail_k",
+    "monthly_eval_budget",
 }
 STATUS_KEYS = {
     "weekly_pr_cap_status",
     "pr_size_status",
+    "station_fail_k_status",
+    "monthly_eval_budget_status",
+    "judge_blind_status",
 }
 
 

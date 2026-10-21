@@ -94,6 +94,10 @@ max_lines=400
 max_files=15
 ci_failure_stop=2
 claim_lock_hours=24
+replay_min_tickets=10
+live_score_pct=25
+station_fail_k=3
+monthly_eval_budget=20
 ```
 EOF
 set +e

@@ -22,6 +22,7 @@ Exit 0 only when every check passes. Print every violation. Do not auto-fix a fo
 - Diff paths against the forbidden-area list
 - CI failure count on this PR vs `ci_failure_stop`
 - `claim_lock_hours` (default 24) for factory-claim stale locks
+- Loop-eval caps: `replay_min_tickets=10`, `live_score_pct=25`, plus **PENDING ANDRES** `station_fail_k`, `monthly_eval_budget`, and judge-family blindness
 
 It does not check file overlap between open PRs. Merge conflicts are handled at merge time.
 

@@ -16,6 +16,7 @@ Station map for the bug-and-fix factory. Load only a skill that exists as a fold
 | 9 | [factory-ci-watch](factory-ci-watch/SKILL.md) | Read CI. Stop after two real failures. |
 | 11-12 | [factory-version-read](factory-version-read/SKILL.md) | Prove which commits are live. |
 | claim | [factory-claim](factory-claim/SKILL.md) | Claim the Sentry issue after a verified fix. |
+| eval | [factory-loop-eval](factory-loop-eval/SKILL.md) | Replay past fixed bugs after 10 real tickets (DEP-11). |
 | Friday | [factory-scorecard](factory-scorecard/SKILL.md) | Weekly scorecard and replay eval. |
 
 Every station skill checks its own output with `thoven-verify`. `.cursor-plugin/plugin.json` loads `./skills/`, so these folders register the same way as the rest.

@@ -35,6 +35,7 @@ required_for() {
     classify) printf '%s\n' "Verdict" "Issue" "Reason" ;;
     ci-watch) printf '%s\n' "PR" "head" "Evidence" ;;
     version-read) printf '%s\n' "RESULT" "WORKER" ;;
+    loop-eval) printf '%s\n' "Gate" "Cases" "Judge" "Live sample" "Budget" "Improve" "Verdict" ;;
     *) echo "unknown kind: $1" >&2; return 2 ;;
   esac
 }

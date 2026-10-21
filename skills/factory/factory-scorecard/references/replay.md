@@ -1,12 +1,7 @@
 # Replay eval
 
-After every tenth factory ticket closes, pick that ticket and the nine before it.
+After every tenth **real** factory ticket closes, run `skills/factory/factory-loop-eval`.
 
-For each ticket
+That skill checks out the parent of each fix, uses the ticket as the prompt, and passes only if the hidden repro or test passes. It scores 25% of live runs with a blinded judge, stays under the monthly eval budget (**PENDING ANDRES**), and opens a draft improvement PR after K station failures (**PENDING ANDRES**). The bot never merges that PR.
 
-1. Hide the landed fix from a fresh agent.
-2. Give it the original report and the station 1 template.
-3. Score whether it files the required fields, bounces forbidden areas, and groups a batch instead of one-file micro tickets.
-4. Then give it the repro evidence and score whether it writes a guarantee a user can test.
-
-Write the hit rate on the scorecard. Ten tickets is the minimum sample. Do not replay production data.
+Do not replay production data. Do not count synthetic tickets toward the 10.

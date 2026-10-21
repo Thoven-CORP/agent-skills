@@ -73,8 +73,15 @@ cap_max_lines=""
 cap_max_files=""
 cap_ci_failure_stop=""
 cap_claim_lock_hours=""
+cap_replay_min_tickets=""
+cap_live_score_pct=""
+cap_station_fail_k=""
+cap_monthly_eval_budget=""
 cap_weekly_pr_cap_status=""
 cap_pr_size_status=""
+cap_station_fail_k_status=""
+cap_monthly_eval_budget_status=""
+cap_judge_blind_status=""
 while IFS='=' read -r k v; do
   case "$k" in
     open_pr_cap) cap_open_pr_cap="$v" ;;
@@ -83,8 +90,15 @@ while IFS='=' read -r k v; do
     max_files) cap_max_files="$v" ;;
     ci_failure_stop) cap_ci_failure_stop="$v" ;;
     claim_lock_hours) cap_claim_lock_hours="$v" ;;
+    replay_min_tickets) cap_replay_min_tickets="$v" ;;
+    live_score_pct) cap_live_score_pct="$v" ;;
+    station_fail_k) cap_station_fail_k="$v" ;;
+    monthly_eval_budget) cap_monthly_eval_budget="$v" ;;
     weekly_pr_cap_status) cap_weekly_pr_cap_status="$v" ;;
     pr_size_status) cap_pr_size_status="$v" ;;
+    station_fail_k_status) cap_station_fail_k_status="$v" ;;
+    monthly_eval_budget_status) cap_monthly_eval_budget_status="$v" ;;
+    judge_blind_status) cap_judge_blind_status="$v" ;;
     *) echo "FAIL  unknown cap $k" >&2; exit 1 ;;
   esac
   if [[ -z "$v" ]]; then
@@ -93,7 +107,7 @@ while IFS='=' read -r k v; do
   fi
 done <<<"$caps_txt"
 
-for n in "$cap_open_pr_cap" "$cap_weekly_pr_cap" "$cap_max_lines" "$cap_max_files" "$cap_ci_failure_stop" "$cap_claim_lock_hours"; do
+for n in "$cap_open_pr_cap" "$cap_weekly_pr_cap" "$cap_max_lines" "$cap_max_files" "$cap_ci_failure_stop" "$cap_claim_lock_hours" "$cap_replay_min_tickets" "$cap_live_score_pct" "$cap_station_fail_k" "$cap_monthly_eval_budget"; do
   if ! [[ "$n" =~ ^[0-9]+$ ]]; then
     echo "FAIL  cap value is not an int: $n" >&2
     exit 1

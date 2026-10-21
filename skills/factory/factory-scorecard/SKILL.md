@@ -18,7 +18,7 @@ Run once on Friday around 4 PM ET. Write `scorecards/YYYY-MM-DD.md` for that Fri
 3. Count tickets closed by batch PRs, bounces, and planted-bug hits from `thoven-factory-formal`.
 4. Fill per-station counts and first-try pass rate for intake, classify, repro, card, fix, review, ci-watch, version-read, and claim.
 5. Invoke `skills/dev/thoven-reflect/SKILL.md` for the learnings pass. Put broken factory rules in the Reflect section. Name thoven-reflect as the source.
-6. After every tenth ticket closed by the factory, run the replay eval in [references/replay.md](references/replay.md).
+6. After every tenth real ticket closed by the factory, run `factory-loop-eval` (DEP-11). The short pointer is [references/replay.md](references/replay.md).
 7. Write the scorecard from [references/scorecard.md](references/scorecard.md) to `scorecards/YYYY-MM-DD.md`.
 8. If the week produced proposed new checks, open a **draft PR** for Andres. Leave it draft. Do not mark ready. Do not merge. The bot never merges that PR.
 

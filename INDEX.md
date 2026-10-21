@@ -20,6 +20,7 @@ Bug-and-fix factory. Stations run in order. Every station skill checks its own o
 | [factory-ci-watch](skills/factory/factory-ci-watch/SKILL.md) | 9 | Read loop-PR CI, classify failures, stop after two real ones. |
 | [factory-version-read](skills/factory/factory-version-read/SKILL.md) | 11-12 | Prove which frontend and backend commits are live. |
 | [factory-claim](skills/factory/factory-claim/SKILL.md) | claim | Claim the Sentry issue in org thoven-gy. |
+| [factory-loop-eval](skills/factory/factory-loop-eval/SKILL.md) | eval | Replay past fixed bugs after 10 real tickets (DEP-11). |
 | [factory-scorecard](skills/factory/factory-scorecard/SKILL.md) | Friday | Weekly scorecard and replay eval after 10 tickets. |
 
 ## Other categories
