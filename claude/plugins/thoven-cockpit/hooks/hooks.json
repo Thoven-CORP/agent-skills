@@ -1,1 +1,0 @@
-{ "description": "thoven-cockpit hooks module", "modules": ["./register.ts"] }

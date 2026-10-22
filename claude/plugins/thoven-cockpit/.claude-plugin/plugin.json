@@ -1,6 +1,0 @@
-{
-  "name": "thoven-cockpit",
-  "version": "0.1.0",
-  "description": "Thoven cockpit: one pane in a space's main session showing every ticket's pane, report, fix round, review proof, PR, CI and Linear drift (THV-1053). It never merges and sends no Linear mutation; its only writes are herdr pane labels and the /workspace update hand-off.",
-  "author": { "name": "Thoven" }
-}

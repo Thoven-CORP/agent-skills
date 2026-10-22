@@ -12,8 +12,8 @@ SCRIPT = Path(__file__).resolve().parent / "claude.py"
 KEY = "CLAUDE_CODE_PLUGIN_DIRS"
 
 tmp = Path(tempfile.mkdtemp(prefix="thv1063.", dir="/tmp"))
-cockpit = str(tmp / "thoven" / "agent-skills" / "claude" / "plugins" / "thoven-cockpit")
-worktree = str(tmp / "thoven" / "agent-skills-thv-1063" / "claude" / "plugins" / "thoven-cockpit")
+stale = str(tmp / "thoven" / "agent-skills" / "claude" / "plugins" / "retired-plugin")
+stale_worktree = str(tmp / "thoven" / "agent-skills-thv-1063" / "claude" / "plugins" / "retired-plugin")
 settings = tmp / ".claude" / "settings.json"
 
 
@@ -23,62 +23,44 @@ def run(*args, ok=True):
     return got.stdout
 
 
-def env():
-    return json.loads(settings.read_text()).get("env", {})
+def data():
+    return json.loads(settings.read_text())
 
 
-def main_checkout():
-    (tmp / "thoven" / "agent-skills" / ".git").mkdir(parents=True)
-    plugin = Path(cockpit) / ".claude-plugin"
-    plugin.mkdir(parents=True)
-    (plugin / "plugin.json").write_text('{"name": "thoven-cockpit"}\n')
+def write(value):
+    settings.parent.mkdir(parents=True, exist_ok=True)
+    settings.write_text(json.dumps(value, indent=2) + "\n")
 
 
 try:
-    # Without a main checkout the step is skipped, says why, and an --apply exits 1.
+    # Empty input: no settings.json. Nothing is added to the env, and --apply leaves no env block.
     out = run()
-    assert f"- env {KEY}: skipped, {tmp}/thoven/agent-skills is not a main checkout" in out, out
+    assert f"- env {KEY}: no stale entry" in out, out
     assert not settings.exists(), "dry run wrote settings.json"
-    run("--apply", ok=False)
-    assert KEY not in env(), env()
-    settings.unlink()
-
-    main_checkout()
-    settings.write_text(json.dumps({"env": {"OTHER": "1", KEY: f"/opt/other-plugin:{worktree}"}}, indent=2) + "\n")
-    original = settings.read_bytes()
-
-    out = run()
-    assert f"- env {KEY}=/opt/other-plugin:{cockpit}: set" in out, out
-    assert settings.read_bytes() == original, "dry run wrote settings.json"
-
-    # The worktree copy is replaced by the main checkout, other folders and env keys are kept.
     run("--apply")
-    assert env() == {"OTHER": "1", KEY: f"/opt/other-plugin:{cockpit}"}, env()
-    assert (tmp / ".claude" / "settings.json.bak-thv969").read_bytes() == original, "backup is not the original"
-    applied = settings.read_bytes()
-
+    assert "env" not in data(), data()
+    assert "hooks" in data(), "the hooks were not installed"
     out = run("--apply")
-    assert settings.read_bytes() == applied, "second --apply changed settings.json"
-    assert f"- env {KEY}=/opt/other-plugin:{cockpit}: already present" in out, out
     assert "No changes." in out, out
 
-    out = run("--rollback")
-    assert f"- env {KEY}: remove {cockpit}" in out, out
-    assert settings.read_bytes() == applied, "rollback dry run wrote settings.json"
+    # Present input: the retired plugin folder, from the main checkout and a worktree, beside a live one.
+    write({**data(), "env": {"OTHER": "1", KEY: f"{stale}:/opt/other-plugin:{stale_worktree}"}})
+    original = settings.read_bytes()
+    out = run()
+    assert f"- env {KEY}: remove {stale}, {stale_worktree}" in out, out
+    assert settings.read_bytes() == original, "dry run wrote settings.json"
+    run("--apply")
+    assert data()["env"] == {"OTHER": "1", KEY: "/opt/other-plugin"}, data()["env"]
+    applied = settings.read_bytes()
+    out = run("--apply")
+    assert settings.read_bytes() == applied and "No changes." in out, out
+    assert f"- env {KEY}: no stale entry" in out, out
 
-    run("--rollback", "--apply")
-    assert env() == {"OTHER": "1", KEY: "/opt/other-plugin"}, env()
-    assert "hooks" in json.loads(settings.read_text()), "rollback removed the hooks"
-    rolled = settings.read_bytes()
-    out = run("--rollback", "--apply")
-    assert settings.read_bytes() == rolled and "No changes." in out, out
-
-    # With the cockpit as the only folder, rollback removes the variable itself.
-    data = json.loads(settings.read_text())
-    data["env"] = {KEY: cockpit}
-    settings.write_text(json.dumps(data, indent=2) + "\n")
-    run("--rollback", "--apply")
-    assert "env" not in json.loads(settings.read_text()), settings.read_text()
+    # When the stale folder was the only entry, the variable goes, and an env block left empty goes too.
+    write({**data(), "env": {KEY: stale}})
+    run("--apply")
+    assert "env" not in data(), data()
+    assert "--rollback" not in run("--help")
 finally:
     assert tmp.name.startswith("thv1063.") and str(tmp.parent) == "/tmp", tmp
     shutil.rmtree(tmp)

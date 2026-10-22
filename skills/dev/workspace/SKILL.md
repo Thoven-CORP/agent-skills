@@ -8,8 +8,8 @@ description: >-
 
 # Workspace
 
-`$workspace` is a pure reader until the user approves a disclosed write set. A cockpit press is that
-approval for one fixed write (see Update from the cockpit). It owns Project
+`$workspace` is a pure reader until the user approves a disclosed write set. Andres's go in chat on a
+dispatch update is that approval for its fixed writes (see Update after a dispatch). It owns Project
 orientation, Linear lifecycle, capture, close, the derived Map, and the Project log. It does not
 perform semantic feature reconciliation.
 
@@ -132,17 +132,18 @@ reconciliation ownership.
    serially. Re-run the snapshot and report its new fingerprint and the before/after open-issue
    count per Project.
 
-## Update from the cockpit
+## Update after a dispatch
 
-`update THV-n <event> [THV-m <event> ...]` arrives when Andres presses ↻ in the cockpit mod
-(THV-1053). That press is his approval of exactly the write in this table, so skip the snapshot and
-the approval step. Anything the table does not name goes through the Recipe.
+`update THV-n <event> [THV-m <event> ...]` names the Linear writes a dispatch event needs. Main ends a
+merge or Done report with them as a one-line go (dispatch-work, Roles). Andres's go in chat approves
+exactly the writes in this table, so skip the snapshot and the approval step. Anything the table
+does not name goes through the Recipe.
 
 | Event | Write |
 |---|---|
 | `started` | `node tools/set-status.js "In Progress" THV-n` |
 | `pr <number>` | `set-status.js "Ready" THV-n`, then one comment: `PR #<number> opened` |
-| `report <STATUS>` | One comment: the report's status line and its Acceptance rows, nothing else. Take them from the report as this session received it, or from `$TMPDIR/dispatch/out/THV-n.md` when it is still there |
+| `report <STATUS>` | One comment: the report's status line and its Acceptance rows, nothing else. Take them from the newest REPORT entry that `~/.agents/skills/dispatch-work/scripts/dispatch board <project> --ticket THV-n` prints |
 | `merged <number>` | `set-status.js "Done" THV-n`, then one comment: `Merged #<number>`. List the open tickets the merge may close; moving them needs the Recipe |
 
 Each write is idempotent: when the issue already sits at or past the target state, skip the move and
@@ -152,7 +153,7 @@ say so. Reply with one line per issue, the state `set-status.js` read back, and 
 
 The main session has read the snapshot fingerprint and can account for every mechanical blocker
 and unknown. A write operation is complete only when the approved writes are applied and the
-post-write snapshot has been read. A cockpit update is complete when every issue in it has its
+post-write snapshot has been read. A dispatch update is complete when every issue in it has its
 read-back line.
 
 ## Compatibility
