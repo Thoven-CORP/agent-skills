@@ -57,7 +57,8 @@ LOG = "verify.log"
 #   `zsh -c source .../shell-snapshots/...` group; one still alive when the agent
 #   says done is a background shell, and its children are the dev server / test
 #   runner / browser / sleep loop. The reason names the deepest child of each
-#   such group, so "pnpm dev" is reported rather than the zsh wrapper.
+#   such group, so "pnpm dev" is reported rather than the zsh wrapper. A group made only
+#   of WAITS (below) is pending, not fail.
 # Not seen: processes that daemonised themselves out of the tree (nohup + disown
 #   reparented to launchd). The tree cannot follow those.
 # The Claude Monitor tool is a background task attached to main, not an OS process
@@ -79,6 +80,38 @@ DEV_RE = re.compile(
     r"(?:node|nodejs)\s+\S*webpack-dev-server(?:\s|$)|webpack-dev-server(?:\s|$)|"
     r"(?:npm|pnpm|yarn|bun)\s+run\s+dev(?:\s|$))")
 
+# A work group whose every member is one of these is a background wait, not leftover work:
+# herdr reports a Claude pane done while a background shell still runs, and the agent is
+# woken when it ends. Dev servers never end, so they stay out of this table.
+VERIFY_ENGINE_RE = re.compile(
+    r"^(?:\S*/)?(?:node|ruby|[Pp]ython[\d.]*)\s+(?:\S*/)?"
+    r"(?:bin/verify|scripts/verify/diff-lock\.py|scripts/verify/diff\.mjs|verify-engine\.py)(?:\s|$)")
+WAITS = (
+    ("sleep", re.compile(r"^(?:\S*/)?sleep\s+\d+(?:\.\d+)?[smhd]?$")),
+    ("load gate", re.compile(r"^(?:(?:\S*/)?(?:ba|z)?sh\s+)?(?:\S*/)?thoven-load-gate(?:\s|$)")),
+    ("bin/verify", VERIFY_ENGINE_RE),
+    ("locked stack", re.compile(r"^(?:(?:\S*/)?[Pp]ython[\d.]*\s+)?(?:\S*/)?run-locked-stack\.py(?:\s|$)")),
+    ("search", re.compile(r"^(?:\S*/)?(?:ugrep|rg)\s")),
+    ("shell snapshot", re.compile(r"^(?:\S*/)?(?:ba|z)?sh -c source \S*/shell-snapshots/snapshot-")),
+    # pnpm's guard that kills its child's group if pnpm dies; it lives exactly as long as that child.
+    ("pnpm guard", re.compile(r"^(?:\S*/)?sh -c trap '' INT TERM HUP; read -r _ \|\| kill -9 -\$1 sh \d+$")),
+)
+
+
+def wait_name(p, procs):
+    """The WAITS name for a process, or None when it is real work. Anything bin/verify
+    started (vitest, rspec, bin/ci, tsc) waits with it, whatever its own command."""
+    for name, pattern in WAITS:
+        if pattern.search(p["cmd"]):
+            return name
+    seen, parent = set(), procs.get(p["ppid"])
+    while parent and parent["pid"] not in seen:
+        if VERIFY_ENGINE_RE.search(parent["cmd"]):
+            return "bin/verify"
+        seen.add(parent["pid"])
+        parent = procs.get(parent["ppid"])
+    return None
+
 
 def process_intent_path(pane_id):
     return os.path.join(tw.STATE, "verify-process-intent", f"{tw.safe_name(pane_id)}.json")
@@ -97,6 +130,7 @@ def registered_dev(pane_id, process):
 
 
 def check_processes(pane_id, has_agent):
+    """('fail'|'pending', reason) or None when no work is left running."""
     shell, agent = tw.pane_procs(pane_id, has_agent)
     if not shell:
         return None
@@ -129,14 +163,21 @@ def check_processes(pane_id, has_agent):
     groups = {}
     for p in work:
         groups.setdefault(p["pgid"], []).append(p)
-    names = []
+    names, waits = [], []
     for members in groups.values():
         real = [m for m in members if not WRAPPER_RE.search(m["cmd"])] or members
         pick = real[-1]
-        names.append(f"{tw.short_cmd(pick['cmd'], 30)} (pid {pick['pid']})")
-    n = len(names)
-    return f"{n} live process{'es' if n > 1 else ''}: " + ", ".join(names[:3]) + (
-        " …" if n > 3 else "")
+        if all(wait_name(m, procs) for m in members):
+            waits.append(tw.short_cmd(pick["cmd"], 30))
+        else:
+            names.append(f"{tw.short_cmd(pick['cmd'], 30)} (pid {pick['pid']})")
+    if names:
+        n = len(names)
+        return "fail", f"{n} live process{'es' if n > 1 else ''}: " + ", ".join(names[:3]) + (
+            " …" if n > 3 else "")
+    n, shown = len(waits), list(dict.fromkeys(waits))
+    return "pending", ("waiting on a background run: " if n == 1 else f"waiting on {n} background runs: ") + (
+        ", ".join(shown[:3]) + (" …" if len(shown) > 3 else ""))
 
 
 # ------------------------------------------------------------------ git checks
@@ -158,12 +199,26 @@ def repo_info(cwd):
     return top, branch, (f"THV-{m.group(1)}" if m else None)
 
 
-def check_dirty(top):
-    out = git(top, "status", "--porcelain", "--untracked-files=no")
-    if out:
-        n = len(out.splitlines())
-        return f"{n} uncommitted tracked file{'s' if n > 1 else ''}"
+def operation_in_progress(top):
+    """'merge' or 'rebase' when one is stopped mid-way in this worktree, else None."""
+    paths = (git(top, "rev-parse", "--git-path", "MERGE_HEAD", "--git-path", "REBASE_HEAD",
+                 "--git-path", "rebase-merge", "--git-path", "rebase-apply") or "").splitlines()
+    for op, path in zip(("merge", "rebase", "rebase", "rebase"), paths):
+        if os.path.exists(os.path.join(top, path)):
+            return op
     return None
+
+
+def check_dirty(top):
+    """('fail'|'pending', reason) or None when the tree is clean."""
+    out = git(top, "status", "--porcelain", "--untracked-files=no")
+    if not out:
+        return None
+    n = len(out.splitlines())
+    op = operation_in_progress(top)
+    if op:
+        return "pending", f"{op} in progress, {n} file{'s' if n > 1 else ''}"
+    return "fail", f"{n} uncommitted tracked file{'s' if n > 1 else ''}"
 
 
 RED = {"FAILURE", "ERROR", "CANCELLED", "TIMED_OUT", "ACTION_REQUIRED", "STARTUP_FAILURE"}
@@ -200,7 +255,8 @@ def check_pr(top, branch, dirty):
         elif concl == "" and (st in PENDING or st not in ("COMPLETED", "SUCCESS")):
             pend.append(name)
     if red:
-        return "fail", f"PR #{num} checks red: " + ", ".join(red[:3])
+        # Main sends CI fix rounds as briefs; nudging the pane would go around it.
+        return "pending", f"PR #{num} checks red (main owns the PR): " + ", ".join(red[:3])
     if pend:
         return "pending", f"PR #{num} checks pending: " + ", ".join(pend[:3])
     if not pr.get("statusCheckRollup"):
@@ -218,11 +274,28 @@ def own_escalation(name):
         return False
 
 
+# Mirrors the cockpit's inboxFile (claude/plugins/thoven-cockpit/hooks/dispatch.ts): an inbox file
+# is an undelivered report only when it is named <ticket>.md and its first non-empty line is that
+# ticket's own status line. The folder also holds research drops and -verify/-fixes notes.
+STATUS_WORDS = ("DONE_WITH_CONCERNS", "DONE", "NEEDS_CONTEXT", "BLOCKED", "VERIFIED", "FINDINGS")
+
+
+def undelivered_report(name, ticket):
+    if name.lower() != f"{ticket}.md".lower() or own_escalation(name):
+        return False
+    try:
+        with open(os.path.join(tw.INBOX, name)) as f:
+            head = next((line for line in f if line.strip()), "")
+    except Exception:
+        return False
+    words = "|".join(STATUS_WORDS)
+    return re.match(rf"[ \t]*(?:{words})[ \t]+{re.escape(ticket)}\b", head) is not None
+
+
 def check_report(ticket):
     if not ticket or not os.path.isdir(tw.INBOX):
         return None
-    pat = re.compile(rf"^{re.escape(ticket)}(\D|$)", re.I)
-    left = [f for f in os.listdir(tw.INBOX) if pat.match(f) and not own_escalation(f)]
+    left = [f for f in os.listdir(tw.INBOX) if undelivered_report(f, ticket)]
     if left:
         return f"report not delivered: {os.path.join(tw.INBOX, left[0])}"
     return None
@@ -236,12 +309,12 @@ def verify(pane):
     fails, pends = [], []
     r = check_processes(pane_id, bool(pane.get("agent")))
     if r:
-        fails.append(r)
+        (fails if r[0] == "fail" else pends).append(r[1])
     top, branch, ticket = repo_info(pane.get("foreground_cwd") or pane.get("cwd"))
     if top and branch and branch != "main":
         dirty = check_dirty(top)
         if dirty:
-            fails.append(dirty)
+            (fails if dirty[0] == "fail" else pends).append(dirty[1])
         if branch != "HEAD":
             pr = check_pr(top, branch, bool(dirty))
             if pr:
@@ -251,6 +324,23 @@ def verify(pane):
         fails.append(r)
     status = "fail" if fails else ("pending" if pends else "ok")
     return status, fails + pends, ticket
+
+
+# Claude: "You've hit your limit · resets 3pm", "Claude usage limit reached. Your limit will reset
+# at 5pm". Codex: "You've hit your usage limit. ... or try again in 2 hours 13 minutes."
+LIMIT_RE = re.compile(r"usage limit reached|hit your (?:usage )?limit|limit will reset at|"
+                      r"\bresets at \d|try again in \d", re.I)
+
+
+def at_usage_limit(pane_id):
+    """True when the bottom of the pane's screen shows a usage-limit banner. Only the last lines
+    are read, so a limit the agent merely talked about earlier in the session does not count."""
+    rc, out, _ = tw.run([tw.HERDR, "agent", "read", pane_id, "--source", "recent-unwrapped",
+                         "--lines", "40"], timeout=10)
+    if rc != 0:
+        return False
+    tail = [line for line in out.splitlines() if line.strip()][-12:]
+    return any(LIMIT_RE.search(line) for line in tail)
 
 
 def get_pane(pane_id):
@@ -340,6 +430,9 @@ def on_event():
             internal["escalated"] = False
         internal["ticket"] = ticket
 
+        if result == "fail" and at_usage_limit(pane_id):
+            # The agent cannot act on a nudge until the limit resets.
+            result, reasons = "pending", ["stopped at a usage limit"] + reasons
         if result == "fail":
             if nudges < MAX_NUDGES:
                 text = f"You reported done, but: {'; '.join(reasons)}. Fix it or explain why it is fine."
