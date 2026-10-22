@@ -36,5 +36,9 @@ case "$status" in
     ;;
 esac
 
-"$herdr" agent prompt "$target" "$text" --wait --until working --until blocked --timeout 60000
+# A prompt can land in the input box without being submitted (agent_prompt_stalled): press Enter once.
+if ! "$herdr" agent prompt "$target" "$text" --wait --until working --until blocked --timeout 60000; then
+  "$herdr" agent send-keys "$target" Enter
+  "$herdr" agent wait "$target" --until working --until blocked --timeout 30000
+fi
 echo "sent $(wc -c <"$brief" | tr -d ' ') bytes to $target, reply address $main"
