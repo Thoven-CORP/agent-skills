@@ -151,8 +151,7 @@ An alert line names the pane and the cause:
 | `FROZEN` | Read further back. A long test run or `waiting for verification lock` is fine. A hung tool: `dispatch interrupt <pane>`, then ask for status. |
 | `GONE` | The agent exited. Spawn a fresh pane on the same brief plus `Resume from <last commit>.` |
 | `LIMIT` | Tell Andres the reset time in one line. After it, check `git -C <tree> status` for a half-done merge or rebase, then message the pane `continue`. |
-| `SETTLED_NO_REPORT` | Message the pane: `Post your REPORT entry and message me your status line.` The uncommitted files it lists may be other sessions' edits in a shared tree. |
-| `LIVE_WORK` | A background job still runs under the pane. It re-checks on its own; act only if it repeats. |
+| `SETTLED_NO_REPORT` | The pane ended a turn with no REPORT, QUESTION or HANDOFF entry of its own. Message it: `Post your REPORT entry and message me your status line.` The uncommitted files it lists may be other sessions' edits in a shared tree. `still running: …` means a background job kept it from reporting for 10 minutes: ask the pane whether it still needs that job, and to stop a server it forgot. |
 | `SETTLED` (Codex) | Read the pane's REPORT entry with `dispatch board <project> --ticket THV-x`, then handle it as the status table says. |
 
 **Corrections and fix rounds go as a peer message plus a CORRECTION entry** (`dispatch post ...

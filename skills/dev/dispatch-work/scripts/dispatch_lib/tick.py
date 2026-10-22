@@ -43,11 +43,12 @@ class Gates:
     def live_work(self) -> list[str]:
         return self.mux.live_work(self.reg.pane)
 
-    def has_report(self, since: str | None = None) -> bool:
-        after = max(parse_iso(self.reg.launched_at), parse_iso(since)) if since else parse_iso(self.reg.launched_at)
-        return any(e.kind in (EntryKind.REPORT, EntryKind.QUESTION, EntryKind.HANDOFF)
-                   and parse_iso(e.at) > after
-                   for _, e in store.entries(self.reg.project, ticket=self.reg.ticket))
+    def report_count(self) -> int:
+        """This pane's own REPORT, QUESTION and HANDOFF entries since its launch."""
+        after = parse_iso(self.reg.launched_at)
+        return sum(1 for _, e in store.entries(self.reg.project, ticket=self.reg.ticket)
+                   if e.kind in (EntryKind.REPORT, EntryKind.QUESTION, EntryKind.HANDOFF)
+                   and e.frm == self.reg.agent_name and parse_iso(e.at) > after)
 
     def dirty(self) -> list[str]:
         res = self.run(["git", "-C", self.reg.tree, "status", "--porcelain"], timeout=20)
@@ -81,7 +82,7 @@ def step(reg: Registration, watch: dict, status: Status, now: datetime.datetime,
         w["last_state"] = State.GONE.name
         return done()
 
-    prev = State[w["last_state"]] if w["last_state"] in State.__members__ else State.WORKING
+    prev = State[w["last_state"]] if w["last_state"] in State.__members__ else None
     state = status.state
     if state != State.UNKNOWN and w["last_state"] != state.name:
         w["last_state"], w["since"] = state.name, stamp
@@ -89,8 +90,8 @@ def step(reg: Registration, watch: dict, status: Status, now: datetime.datetime,
         w["last_fingerprint"], w["fingerprint_since"] = status.fingerprint, stamp
 
     if state != State.UNKNOWN:
-        w["reported"] = True
-    elif not w.get("reported") and _secs(now, reg.launched_at) >= STARTUP_AFTER:
+        w["status_seen"] = True
+    elif not w.get("status_seen") and _secs(now, reg.launched_at) >= STARTUP_AFTER:
         alert("STARTUP", reg.launched_at, f"no status {STARTUP_AFTER}s after launch: a trust, update or login "
               "dialog is likely waiting")
 
@@ -105,42 +106,51 @@ def step(reg: Registration, watch: dict, status: Status, now: datetime.datetime,
                   f"working with no change since {w['fingerprint_since']}, cpu {'?' if cpu is None else cpu}%")
 
     if state in ACTIVE:
-        if prev not in ACTIVE or not w.get("active_since"):
-            w["active_since"] = stamp
-        w["settle_since"] = w["live_since"] = None
-        w["pending"] = False
+        w["settle_since"], w["pending"] = None, False
     elif state in SETTLED:
+        # Only an observed ACTIVE -> SETTLED transition is a settle; a pane first seen settled is just recorded.
         if prev in ACTIVE:
-            w["settle_since"], w["live_since"], w["pending"] = stamp, None, True
+            w["settle_since"], w["pending"] = stamp, True
         if w.get("pending"):
             settle(reg, w, now, gates, alert)
     return done()
 
 
 def settle(reg: Registration, w: dict, now: datetime.datetime, gates, alert) -> None:
+    """Runs on every settled tick until the settle is resolved: by a report, an alert, or a new turn."""
     episode = w["settle_since"]
-    live = gates.live_work()
-    if live:
-        # A background shell still runs; the agent is woken when it ends, so wait and look again.
-        w["live_since"] = w.get("live_since") or iso(now)
-        if _secs(now, w["live_since"]) >= LIVE_GRACE:
-            alert("LIVE_WORK", episode, "still running after settle: " + ", ".join(live[:3]))
-        return
-    w["pending"], w["live_since"] = False, None
-    dirty, limit = gates.dirty(), gates.limit_line()
-    dirty_text = f"{len(dirty)} uncommitted: " + "; ".join(dirty[:5]) if dirty else ""
-    since = w.get("active_since")
-    reported = gates.has_report(since)
-    if reg.cli == "codex":
-        alert("SETTLED", episode, "codex settled. report: " + ("yes" if reported else "no")
-              + "; dirty: " + (dirty_text or "no") + "; limit: " + (limit or "no"))
-        return
-    # Shared integration trees always carry other sessions' edits, so a dirty tree only matters without a report.
-    if not reported:
-        alert("SETTLED_NO_REPORT", episode, f"settled with no REPORT, QUESTION or HANDOFF entry since "
-              f"{since or reg.launched_at}" + (f"; {reg.tree}: {dirty_text}" if dirty else ""))
+    limit = gates.limit_line()
     if limit:
         alert("LIMIT", episode, limit)
+    count = gates.report_count()
+    # The turn boundary is the pane's own report count at the last resolved settle, not a sampled time.
+    reported = count > (w.get("reports_at_settle") or 0)
+
+    def resolve() -> None:
+        w["pending"], w["reports_at_settle"] = False, count
+
+    def dirty_text() -> str:
+        dirty = gates.dirty()
+        return f"{len(dirty)} uncommitted: " + "; ".join(dirty[:5]) if dirty else ""
+
+    if reg.cli == "codex":
+        live, dirty = gates.live_work(), dirty_text()
+        alert("SETTLED", episode, "codex settled. report: " + ("yes" if reported else "no")
+              + "; dirty: " + (dirty or "no") + "; limit: " + (limit or "no")
+              + (f"; still running: {', '.join(live[:3])}" if live else ""))
+        return resolve()
+    if reported:
+        return resolve()
+    live = gates.live_work()
+    # A background shell wakes a Claude agent when it ends, so the report may still come.
+    if live and _secs(now, episode) < LIVE_GRACE:
+        return
+    dirty = dirty_text()
+    # Shared integration trees always carry other sessions' edits, so a dirty tree only matters without a report.
+    alert("SETTLED_NO_REPORT", episode, f"settled with no REPORT, QUESTION or HANDOFF entry from {reg.agent_name} "
+          "this turn" + (f"; {reg.tree}: {dirty}" if dirty else "")
+          + (f"; still running: {', '.join(live[:3])}" if live else ""))
+    resolve()
 
 
 def tick_pane(reg: Registration, run: Runner, now: datetime.datetime | None = None, mux=None) -> list[tuple[Alert, str]]:

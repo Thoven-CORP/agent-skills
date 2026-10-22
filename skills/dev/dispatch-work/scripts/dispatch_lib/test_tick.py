@@ -113,7 +113,6 @@ class Settle(TickCase):
         self.assertEqual(self.tick(reg, done(), 60), ["LIMIT"])
         bodies = {e.status: e.body for _, e in store.entries("proj") if e.kind == EntryKind.ALERT}
         self.assertEqual(bodies["LIMIT"], "build-thv-1 (rex block:a): You've hit your usage limit · resets at 5pm")
-        self.assertEqual(self.run.calls[0], ["git", "-C", "/nonexistent", "status", "--porcelain"])
 
     def test_a_dirty_tree_rides_the_no_report_alert(self):
         reg = self.reg()
@@ -122,6 +121,7 @@ class Settle(TickCase):
         self.assertEqual(self.tick(reg, done(), 60), ["SETTLED_NO_REPORT"])
         body = [e.body for _, e in store.entries("proj") if e.kind == EntryKind.ALERT][0]
         self.assertTrue(body.endswith("; /nonexistent: 1 uncommitted:  M app.rb"), body)
+        self.assertIn(["git", "-C", "/nonexistent", "status", "--porcelain"], self.run.calls)
 
     def test_a_fix_round_that_settles_without_a_new_report_alerts(self):
         reg = self.reg()
@@ -141,12 +141,36 @@ class Settle(TickCase):
                          "build-thv-1 (rex block:a): codex settled. report: yes; dirty: no; limit: no")
         self.assertEqual(self.tick(reg, Status(State.IDLE, fingerprint="i"), 100), [])
 
-    def test_unknown_at_startup_then_idle_is_not_a_settle_after_idle(self):
+    def test_codex_first_seen_idle_is_not_a_settle_nor_is_unknown_between_idles(self):
         reg = self.reg(cli="codex")
-        self.tick(reg, Status(State.IDLE), 0)
-        self.assertEqual(self.alerts(), [("SETTLED", "THV-1")])
+        self.assertEqual(self.tick(reg, Status(State.IDLE), 0), [])
         self.assertEqual(self.tick(reg, Status(State.UNKNOWN), 30), [])
         self.assertEqual(self.tick(reg, Status(State.IDLE), 60), [])
+        self.assertEqual(self.alerts(), [])
+
+    def test_first_observation_of_a_settled_claude_pane_is_not_a_settle(self):
+        reg = self.reg()
+        self.assertEqual(self.tick(reg, done(), 0), [])
+        self.assertEqual(self.tick(reg, done(), 30), [])
+        self.tick(reg, working(), 60)
+        self.assertEqual(self.tick(reg, done("d2"), 90), ["SETTLED_NO_REPORT"])
+
+    def test_a_report_from_another_agent_on_the_ticket_does_not_count(self):
+        reg = self.reg()
+        self.tick(reg, working(), 0)
+        store.post("proj", "THV-1", EntryKind.REPORT, "verified", "verify-thv-1", "VERIFIED", at=at(30))
+        self.assertEqual(self.tick(reg, done(), 60), ["SETTLED_NO_REPORT"])
+
+    def test_a_report_posted_before_the_tick_saw_the_turn_start_counts(self):
+        reg = self.reg()
+        self.tick(reg, working(), 0)
+        self.report(reg, 30)
+        self.assertEqual(self.tick(reg, done(), 60), [])
+        # Fix round: the pane starts at 70 and reports at 75; the tick first sees WORKING at 90.
+        self.report(reg, 75)
+        self.tick(reg, working("w3"), 90)
+        self.assertEqual(self.tick(reg, done("d3"), 120), [])
+        self.assertEqual(self.alerts(), [])
 
     def test_live_work_waits_and_rechecks_then_runs_the_gates_when_it_ends(self):
         reg = self.reg()
@@ -158,16 +182,32 @@ class Settle(TickCase):
         self.mux.live = []
         self.assertEqual(self.tick(reg, done(), 120), ["SETTLED_NO_REPORT"])
 
-    def test_live_work_escalates_only_after_ten_minutes(self):
+    def test_live_work_defers_no_report_for_ten_minutes_then_rides_it(self):
         reg = self.reg()
         self.mux.live = ["pnpm dev (pid 77)"]
         self.tick(reg, working(), 0)
         self.assertEqual(self.tick(reg, done(), 60), [])
         self.assertEqual(self.tick(reg, done(), 659), [])
-        self.assertEqual(self.tick(reg, done(), 660), ["LIVE_WORK"])
+        self.assertEqual(self.tick(reg, done(), 660), ["SETTLED_NO_REPORT"])
         self.assertEqual(self.tick(reg, done(), 690), [])
-        self.assertEqual(store.entries("proj")[-1][1].body,
-                         "build-thv-1 (rex block:a): still running after settle: pnpm dev (pid 77)")
+        self.assertTrue(store.entries("proj")[-1][1].body.endswith("; still running: pnpm dev (pid 77)"),
+                        store.entries("proj")[-1][1].body)
+
+    def test_a_limit_behind_live_work_alerts_at_once(self):
+        reg = self.reg()
+        self.mux.live = ["pnpm dev (pid 77)"]
+        self.mux.screen = "■ You've hit your usage limit. Upgrade to Pro or try again in 2 hours.\n>\n"
+        self.tick(reg, working(), 0)
+        self.assertEqual(self.tick(reg, done(), 60), ["LIMIT"])
+
+    def test_a_report_beside_live_work_is_quiet(self):
+        reg = self.reg()
+        self.mux.live = ["pnpm dev (pid 77)"]
+        self.tick(reg, working(), 0)
+        self.report(reg, 30)
+        for s in (60, 660, 690):
+            self.assertEqual(self.tick(reg, done(), s), [])
+        self.assertEqual(self.alerts(), [])
 
     def test_resuming_work_then_settling_again_is_a_new_episode(self):
         reg = self.reg()

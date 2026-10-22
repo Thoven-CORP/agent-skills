@@ -118,7 +118,7 @@ def read_watch(project: str, ref: PaneRef) -> dict:
     data = read_json(watch_path(project, ref))
     if not isinstance(data, dict):
         return empty_watch()
-    for key in ("since", "fingerprint_since", "settle_since", "live_since", "active_since"):
+    for key in ("since", "fingerprint_since", "settle_since"):
         if data.get(key) is not None:
             try:
                 parse_iso(data[key])
