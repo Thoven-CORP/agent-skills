@@ -349,6 +349,21 @@ merged_at_tip() {
     grep -Fxq "$tip"
 }
 
+# the physical common git dir of the repo holding <dir>, the same from a linked tree and its main checkout
+common_dir() {
+  local d
+  d="$(git -C "$1" rev-parse --git-common-dir 2>/dev/null)" || return 1
+  (CDPATH='' && cd "$1" && cd "$d" && pwd -P)
+}
+
+# branch_claimed <dir> <branch>: true when this session created <branch> in the repo holding <dir>
+branch_claimed() {
+  [ -n "$session_id" ] && [ -f "$state/branches" ] || return 1
+  local c
+  c="$(common_dir "$1")" || return 1
+  grep -qxF "$c"$'\t'"$2" "$state/branches"
+}
+
 # git's own arguments after its global options, with the repo dir -C points at
 parse_git() {
   local dir="$1"; shift
@@ -377,6 +392,7 @@ work_cwd="$cwd"
 # keeps its newlines as \036 for awk to decode: bash 3.2's ${x//a/b} takes 10 s on 20 KB.
 declare -a queue=("C$command")
 declare -a subcommands=()
+declare -a claims=()
 while [ "${#queue[@]}" -gt 0 ]; do
   cur="${queue[0]}"
   queue=("${queue[@]:1}")
@@ -458,6 +474,45 @@ for entry in "${subcommands[@]}"; do
   parse_git "$work_cwd" "${words[@]:1}"
   g1="${git_args[0]:-}"
   g2="${git_args[1]:-}"
+
+  # A branch this session creates is its own to delete. One that exists already is never claimed, so
+  # `git branch <existing>` cannot launder another session's work.
+  new_branch=""
+  create_flags=""
+  case "$g1 $g2" in
+    "branch "*)
+      names=()
+      plain=1
+      for a in "${git_args[@]:1}"; do
+        case "$a" in
+          -f|--force|-t|--track|--no-track) ;;
+          -*) plain=0 ;;
+          *) names+=("$a") ;;
+        esac
+      done
+      [ "$plain" -eq 1 ] && [ "${#names[@]}" -ge 1 ] && [ "${#names[@]}" -le 2 ] && new_branch="${names[0]}"
+      ;;
+    "checkout "*|"worktree add") create_flags=" -b -B " ;;
+    "switch "*) create_flags=" -c -C --create --force-create " ;;
+  esac
+  if [ -n "$create_flags" ]; then
+    prev=""
+    for a in "${git_args[@]:1}"; do
+      [[ "$create_flags" == *" $prev "* ]] && new_branch="$a"
+      prev="$a"
+    done
+  fi
+  new_branch="${new_branch//[\"\']/}"
+  new_branch="${new_branch%)}"
+  case "$new_branch" in
+    ''|-*|*'$'*|*'`'*) ;;
+    *)
+      if [ -n "$session_id" ] && ! git -C "$git_dir" rev-parse --verify -q "refs/heads/$new_branch" >/dev/null &&
+        repo_common="$(common_dir "$git_dir")"; then
+        claims+=("$repo_common"$'\t'"$new_branch")
+      fi
+      ;;
+  esac
 
   if [ "$g1" = "clean" ] || { [ "$g1" = "reset" ] && [[ " ${git_args[*]} " == *" --hard "* ]]; }; then
     deny "This tree is shared with other sessions. That command discards work you did not write. Undo your own files by path instead."
@@ -577,7 +632,7 @@ for entry in "${subcommands[@]}"; do
         esac
         git -C "$git_dir" rev-parse --verify -q "refs/heads/$b" >/dev/null || continue
         ahead="$(unpushed_count "$git_dir" "refs/heads/$b")"
-        if [ "${ahead:-0}" -gt 0 ] && ! merged_at_tip "$git_dir" "$b"; then
+        if [ "${ahead:-0}" -gt 0 ] && ! branch_claimed "$git_dir" "$b" && ! merged_at_tip "$git_dir" "$b"; then
           deny "Branch $b holds work that is not on origin (unpushed commits: $ahead), which git branch -D destroys, and gh shows no merged PR whose head is its tip; push it with git push origin $b first, or use git branch -d if it is merged."
         fi
       done
@@ -585,4 +640,5 @@ for entry in "${subcommands[@]}"; do
   fi
 done
 
+[ "${#claims[@]}" -eq 0 ] || printf '%s\n' "${claims[@]}" >>"$state/branches"
 allow
