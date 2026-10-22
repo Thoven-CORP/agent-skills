@@ -7,6 +7,8 @@
 # on exit 2. Cursor's allow is an explicit {"permission":"allow"}, as in its sample hooks.
 #   thoven-guard-bash [--dialect claude|cursor|devin]
 set -o pipefail
+# Read-only git: status never takes index.lock to refresh, so it cannot block another session's commit.
+export GIT_OPTIONAL_LOCKS=0
 
 dialect=claude
 [ "${1:-}" = "--dialect" ] && dialect="${2:-claude}"

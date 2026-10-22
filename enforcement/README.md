@@ -43,6 +43,9 @@ watching only `Edit` sees nothing. It injects one line pointing at the
 A `Bash` call is charged only with the files that changed while it ran: the same script runs
 with `--pre` before the call and stamps its start, and `PostToolUse` keeps files newer than
 that stamp (the session start when there is none).
+It runs after every `Bash` call, so it and the other hooks that read `git status` export
+`GIT_OPTIONAL_LOCKS=0`: status then never takes `index.lock` to refresh stat data, which
+had been failing other sessions' `git add` and `git commit`.
 
 `thoven-guard-bash` runs before `Bash` and refuses destructive or invalid commands. It denies the unit-test runner's exclude flag, which replaces the
 config's exclude array and reports failures that do not exist, and it denies
@@ -200,7 +203,9 @@ file fails to link. `bin/thoven-evidence-dedupe-test` proves it in a `mktemp -d`
 
 `bin/thoven-sync` runs every 30 minutes from the launchd agent `co.thoven.sync`,
 installed by `install/launchd.py`. It runs `git fetch --prune` in both main
-checkouts and fast-forwards each one only when it is on `main` and clean. When a
+checkouts and fast-forwards each one only when it is on `main` with no tracked changes.
+Untracked files do not block it: a fast-forward leaves them alone, and git refuses one that
+would overwrite an untracked file, which the log line quotes. When a
 fast-forward changes `pnpm-lock.yaml`, it runs `pnpm install --frozen-lockfile`,
 unless a dev server (`next`, `vite`) works in that tree or in a worktree whose
 `node_modules` links into it; the log line then names the pid and the command. Local main

@@ -151,6 +151,19 @@ class TrackEditsTest(unittest.TestCase):
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertLess(elapsed, 2.0, f"hook took {elapsed:.1f}s on a large node_modules tree")
 
+    def test_scan_leaves_the_index_unwritten(self):
+        kept = self.repo / "kept.txt"
+        kept.write_text("same\n")
+        subprocess.run(["git", "-C", str(self.repo), "add", "kept.txt"], check=True)
+        subprocess.run(["git", "-C", str(self.repo), "commit", "-qm", "kept"], check=True)
+        # A stale stat entry: a plain git status refreshes it and writes the index, holding index.lock.
+        os.utime(kept, (time.time() - 3600, time.time() - 3600))
+        index = self.repo / ".git" / "index"
+        before = index.read_bytes()
+        result = self.invoke("true", cwd=self.repo)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual(before, index.read_bytes())
+
 
 class PerCommandStampTest(unittest.TestCase):
     """A Bash call is charged only with the files that changed while it ran."""
