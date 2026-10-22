@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Runs thoven-andres-mode against a throwaway HOME holding a fake andres-mode skill.
+set -uo pipefail
+
+HOOK="$(cd "$(dirname "$0")/.." && pwd)/hooks/thoven-andres-mode"
+T=$(mktemp -d /tmp/thv1361.XXXXXX) || exit 1
+case "$T" in /tmp/thv1361.*) ;; *) exit 1 ;; esac
+trap 'rm -rf "$T"' EXIT
+H="$(cd "$T" && pwd -P)/home"
+mkdir -p "$H/.agents/skills/andres-mode" "$H/thoven/frontend" "$T/elsewhere"
+printf -- '---\nname: andres-mode\ndescription: x\n---\n\n# Andres mode\n\nRule one.\n' > "$H/.agents/skills/andres-mode/SKILL.md"
+
+ok() { printf 'ok %s\n' "$1"; }
+fail() { printf 'FAIL %s: got %s\n' "$1" "$2"; exit 1; }
+expect() { if [ "$2" = "$3" ]; then ok "$1"; else fail "$1" "'$2' (want '$3')"; fi; }
+run() { HOME="$H" "$HOOK" <<<"$1"; }
+payload() { jq -nc --arg c "$1" '{session_id:"s",hook_event_name:"SessionStart",source:"startup",cwd:$c}'; }
+
+out="$(run "$(payload "$H/thoven/frontend")")"; code=$?
+expect "a Thoven session exits 0" "$code" 0
+expect "a Thoven session gets the skill body" "$(grep -c '^# Andres mode$' <<<"$out")" 1
+expect "the frontmatter is left out" "$(grep -c '^name: andres-mode' <<<"$out")" 0
+expect "the body ends with its last rule" "$(tail -n 1 <<<"$out")" "Rule one."
+expect "a session in HOME gets it too" "$(run "$(payload "$H")" | grep -c '^# Andres mode$')" 1
+expect "a session elsewhere gets nothing" "$(run "$(payload "$T/elsewhere")")" ""
+expect "a sibling of thoven gets nothing" "$(run "$(payload "$H/thoven-notes")")" ""
+out="$(cd "$T/elsewhere" && run "")"; code=$?
+expect "empty input outside Thoven exits 0" "$code" 0
+expect "empty input outside Thoven prints nothing" "$out" ""
+expect "empty input falls back to the working directory" \
+  "$(cd "$H/thoven/frontend" && run "" | grep -c '^# Andres mode$')" 1
+rm "$H/.agents/skills/andres-mode/SKILL.md"
+out="$(run "$(payload "$H/thoven/frontend")")"; code=$?
+expect "a missing skill exits 0" "$code" 0
+expect "a missing skill prints nothing" "$out" ""
+
+echo "all passed"

@@ -1,9 +1,12 @@
 # Standing rules for every dispatched pane
 
 Every brief points here. Machine and Database restate
-`~/thoven/agent-skills/enforcement/rules/thoven-law.md` for a pane that never reads it; change both
+`~/thoven/agent-skills/enforcement/rules/thoven-law.md` so they bind without a read; change both
 together.
 
+- The law is `~/thoven/agent-skills/enforcement/rules/thoven-law.md`. Read it there. `sync.sh`
+  refreshes the law block only in the main checkouts, so a parked tree's CLAUDE.md copy can lag, and
+  where the two differ the source file wins.
 - You and main run side by side. Main owns Linear, product calls and your review. You own the code
   on this branch and your commits.
 - Commit as you go, by exact path, message ending in THV-<id>. Commit only: main pushes the branch

@@ -46,7 +46,7 @@ auto_skills=(
 
   # Product verification and daily Thoven work
   qa-flow control-cli control-ui find-skills preflight publish verify workspace
-  feature-ledger investigate-thoven doc-freshness dispatch-work
+  feature-ledger investigate-thoven doc-freshness dispatch-work andres-mode
 
   # Official Cursor Team Kit (Cursor plugins, main)
   check-compiler-errors deslop fix-ci fix-merge-conflicts get-pr-comments
@@ -89,7 +89,8 @@ is_activated() {
 unpark_all() {
   [[ -d "$parked_dir" ]] || return 0
   local parked_skill skill_name restored=0 trashed=0
-  local trash="$HOME/.Trash/skills-on-demand-$(date +%Y%m%d-%H%M%S)"
+  local trash
+  trash="$HOME/.Trash/skills-on-demand-$(date +%Y%m%d-%H%M%S)"
   for parked_skill in "$parked_dir"/*; do
     [[ -e "$parked_skill" ]] || continue
     skill_name="$(basename "$parked_skill")"
@@ -154,7 +155,9 @@ write_block() {
       rm -f "$tmp"; return 1; }
   fi
   mkdir -p "$(dirname "$codex_config")"
-  [[ -f "$codex_config" ]] && chmod --reference="$codex_config" "$tmp" 2>/dev/null || chmod 600 "$tmp"
+  if ! { [[ -f "$codex_config" ]] && chmod --reference="$codex_config" "$tmp" 2>/dev/null; }; then
+    chmod 600 "$tmp"
+  fi
   mv "$tmp" "$codex_config"
 }
 
