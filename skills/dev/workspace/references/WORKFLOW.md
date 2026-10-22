@@ -391,7 +391,7 @@ bounded evidence only; they do not mutate shared Project state or Linear.
 
 ### The issue names where it sits, then the output path
 
-The body stamp is §8 Location stamp (`Sits in:` · `Ledger:` · `herdr:` · `Writes to:` · `Done when:`). This section is only the `Writes to:` routing rule.
+The body stamp is §8 Location stamp (`Sits in:` · `Ledger:` · `Room:` · `Writes to:` · `Done when:`). This section is only the `Writes to:` routing rule.
 
 Every issue whose output is a document carries a literal line:
 
@@ -519,19 +519,21 @@ DEFERRING
 
 ---
 
-## 8. herdr — the physical layout of sessions
+## 8. Rex and herdr — the physical layout of sessions
 
 *Added 2026-08-24, from the Parent 2.0 Lane B/C/D orchestration. Linear stays the source of
-truth; herdr makes parallelism visible.*
+truth; the multiplexer makes parallelism visible. New Projects open in Rex (2026-10-22); Projects
+already in herdr finish there. The same names apply in both: a Rex **session** is a herdr
+**space**, a Rex **window** is a herdr **tab**, a Rex **block** is a herdr **pane**.*
 
 ### The mapping
 
-| Linear | herdr | Rule |
+| Linear | Rex / herdr | Rule |
 |---|---|---|
-| Feature / Linear **Project** | **Space** (see Live spaces below) | One Project and one ledger. Meta is optional. An audience is several spaces, not one. |
+| Feature / Linear **Project** | Rex **session** / herdr **space** (see Live spaces below) | One Project and one ledger. Meta is optional. An audience is several spaces, not one. |
 | (none required) | **Work tab** | A prose unit Meta or Andres named (`notifications`, `upcoming`, `payments`). Independent items get their own tab. A checkbox on the fat card does not. |
-| Issue, when one exists | **Pane**. Label = `<Kind> · <job> (THV-x)` | `Design · Messages panel (THV-149)`. Kind is the milestone word for milestone work (`Plan` covers PRD and Architecture), `Research`, `Audit` or `Fix` for work outside a milestone, and `Meta` for main. `dispatch-work/scripts/label.sh --kinds` prints the full list, and `label.sh` refuses any other word. A pane can exist before a THV- does. Status words stay on Meta, not the pane name. |
-| Dispatched issue (`dispatch-work`) | **Tab** = the issue, **panes** = its sub-issues | Main creates them when it dispatches. Sub-issue panes run in parallel only when their Paths share no file. Andres ruling 2026-09-27. |
+| Issue, when one exists | **Pane**. Label = `<Kind> · <job> (THV-x)` | `Design · Messages panel (THV-149)`. Kind is the milestone word for milestone work (`Plan` covers PRD and Architecture), `Research`, `Audit` or `Fix` for work outside a milestone, and `Meta` for main. `dispatch-work/scripts/dispatch label --kinds` prints the full list, and `dispatch label` refuses any other word. A pane can exist before a THV- does. Status words stay on Meta, not the pane name. |
+| Dispatched issue (`dispatch-work`) | **Window / tab** = the issue, **blocks / panes** = its sub-issues | Main creates them when it dispatches. Sub-issue panes run in parallel only when their Paths share no file. Andres ruling 2026-09-27. |
 | | Optional **Meta** tab in that space | An organizer for **this** Project when orchestration needs one. |
 
 A space may carry one **`Meta · <Project>`** tab. Meta is a convenience, not a prerequisite for
@@ -540,15 +542,9 @@ Andres, and proposes bounded panes; the main session still owns synthesis and sh
 
 ### Live spaces
 
-Updated 2026-10-06 (Design System space replaces UI Polishes). A space with no row here has no Project: hotfix, scratch and
-repo-home spaces. The cockpit mod (THV-1053) shows their tabs without a Linear column. Add the row
-when a space is opened for a Project.
-
-| herdr space | Linear Project |
-|---|---|
-| `COPPA` | COPPA and Data Compliance Audit |
-| `Design System` | Design System |
-| `Cockpit` | Thoven cockpit |
+Derived, never hand-kept: `rex ls` lists Rex sessions and `herdr workspace list` lists herdr
+spaces. A session or space is named for its Linear Project, so the name is the mapping. One with no
+matching Project is a hotfix, scratch or repo-home room.
 
 ### Ledger bind
 
@@ -562,8 +558,8 @@ Do not collapse these. They answer different questions.
 
 | Ladder | Question | Lives |
 |---|---|---|
-| **Initiative → Project → Issue** | Which audience, which feature, which slice | Linear + herdr (space = Project, pane = issue when one exists) |
-| **Milestone** | Which **lifecycle** is this slice in (spec, draw, code, review) | Linear field on the issue. **Tag on the pane label.** No herdr tab named Design. |
+| **Initiative → Project → Issue** | Which audience, which feature, which slice | Linear + the multiplexer (session or space = Project, pane = issue when one exists) |
+| **Milestone** | Which **lifecycle** is this slice in (spec, draw, code, review) | Linear field on the issue. **Tag on the pane label.** No tab named Design. |
 | **DESIGN_SKELETON L1–L6** | How far the **design walk** for a track has gone | Hash bars in the skeleton. Not a Linear milestone |
 
 A Dashboard issue in `Build` can sit under an L3 wireframe bar. That is consistent: this slice is being coded while another track is still drawing.
@@ -575,14 +571,14 @@ The issue **points**. It does not retell the spec. One block at the top of the b
 ```
 Sits in: <Initiative> · <Audience>: <Feature> · <Milestone>
 Ledger: <D# or ADR# · one-line surface name>
-herdr: ~<ProjectSpace> / <tab>
+Room: ~<Project session or space> / <tab>
 Writes to: <path>          ← documents only; omit on Build/Review
 Done when: <checkable outcome>
 ```
 
 `Sits in:` is how the workflow shows up **on the ticket**. Workspace writes this at create and at claim. Meta's pane label is milestone + job, then the id.
 
-**Trust herdr, not OpenCode chrome.** The pane label and the tab label are the room. OpenCode's session title (`OC | THV-178 Business Shell…`) is a leftover from whichever chat was last `/rename`d inside that process. If it disagrees with the pane, it is wrong. Fix it with `/rename` in that chat to the **same sentence as the pane label**. Do not route work from the OC title.
+**Trust the multiplexer, not OpenCode chrome.** The pane label and the tab label are the room. OpenCode's session title (`OC | THV-178 Business Shell…`) is a leftover from whichever chat was last `/rename`d inside that process. If it disagrees with the pane, it is wrong. Fix it with `/rename` in that chat to the **same sentence as the pane label**. Do not route work from the OC title.
 
 ### Meta vs Work panes — the scoping rule
 
