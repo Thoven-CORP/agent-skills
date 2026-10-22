@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-22 — spawn sends the brief's skill line, so poteto-mode loads
+
+> session · 2026-10-22 · 1509cf8d · 3dfd2928 · tooling · applied · seen 1
+
+**What happened.** On THV-1368 (Design System, floating scale S3b) the resumed builder pane ran without poteto-mode. Its brief opened with `/poteto-mode feature THV-1368 ...`, and Andres asked why the dispatched prompt did not start with it. Seven earlier builder and verifier panes in the same run loaded the skill only because each chose to invoke it after reading the brief.
+**Why.** `dispatch spawn` launched every pane with the fixed prompt `Read and follow your brief: <path>`. A slash command fires only from the prompt the CLI receives. Inside the brief file it is text.
+**What changed.** Spawn takes the brief's first non-blank line, refuses a brief whose first line is not a skill line (`/name` or `$name`), and launches with `<skill line> Read and follow your brief: <path>` on one line, which also suits Devin. A headless `claude -p '/bro ... Read and follow your brief: /dev/null'` expanded the skill with the rest as its arguments. Two new `test_cli` cases, an empty brief among the refusals, fail on the old `cli.py`. brief.md says spawn sends the line. No Pitfall line: the script enforces it.
+
 ## 2026-10-22 — dispatch v2: peer messages, a Project board, a tick watcher, brief v2
 
 > grill · 2026-10-22 · 708bf6f4 · tooling · applied · seen 7
