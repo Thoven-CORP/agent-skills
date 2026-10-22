@@ -212,14 +212,12 @@ class HerdrMux:
         self._h("pane", "rename", pane, label)
         # agent start needs the shell at its prompt; wait until the shell has drawn something.
         self._h("pane", "wait-output", pane, "--regex", r"\S", "--timeout", "15000", timeout=20)
+        # The opening prompt rides in argv and is never typed: a typed Enter answers whatever dialog is up, and
+        # the folder-trust dialog defaults to "No, exit". A prompt in argv waits behind the dialog instead.
         res = self._h("agent", "start", launch.name, "--kind", launch.kind, "--pane", pane, "--timeout", "120000",
-                      "--", *launch.argv[1:], timeout=130)
+                      "--", *launch.argv[1:], launch.prompt, timeout=130)
         if not res.ok and "agent_not_ready" not in res.out + res.err:
             raise MuxError(f"herdr agent start failed in {pane}: {(res.err or res.out).strip()[-300:]}")
-        self._h("agent", "wait", pane, "--until", "idle", "--until", "done", "--timeout", "120000", timeout=130)
-        if not self._h("agent", "prompt", pane, launch.prompt, "--wait", "--until", "working", "--until", "blocked",
-                       "--timeout", "60000", timeout=70).ok:
-            self._h("agent", "send-keys", pane, "enter")
         return ref
 
     def label(self, pane, label, tab):

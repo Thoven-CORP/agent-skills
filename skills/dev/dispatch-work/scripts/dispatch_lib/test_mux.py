@@ -1,9 +1,11 @@
 import json
+import os
 import unittest
+from unittest import mock
 
 import testkit  # noqa: F401
 from dispatch_lib.model import PaneRef, State
-from dispatch_lib.mux import HerdrMux, RexMux, normalise_rex, screen_fingerprint
+from dispatch_lib.mux import HerdrMux, Launch, RexMux, normalise_rex, screen_fingerprint
 from dispatch_lib.runner import Result
 from testkit import FakeRunner
 
@@ -102,3 +104,18 @@ class HerdrMuxCalls(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class HerdrSpawn(unittest.TestCase):
+    def test_the_opening_prompt_rides_agent_start_and_nothing_is_typed(self):
+        tab = Result(0, json.dumps({"result": {"root_pane": {"pane_id": "w9:p3"}}}), "")
+        run = FakeRunner({("herdr", "tab", "create"): tab})
+        launch = Launch(kind="claude", name="build-thv-1", argv=("claude", "-n", "build-thv-1", "--model", "haiku"),
+                        prompt="Read and follow your brief: /b.md")
+        with mock.patch.dict(os.environ, {"HERDR_WORKSPACE_ID": "w9", "HERDR_BIN": "herdr"}):
+            ref = HerdrMux(run).spawn("/tree", "Build · x (THV-1)", launch, None)
+        self.assertEqual(ref, PaneRef("herdr", "w9:p3", "w9"))
+        start = next(c for c in run.calls if c[1:3] == ["agent", "start"])
+        self.assertEqual(start[start.index("--") + 1:],
+                         ["-n", "build-thv-1", "--model", "haiku", "Read and follow your brief: /b.md"])
+        self.assertEqual([c for c in run.calls if c[1:3] in (["agent", "prompt"], ["agent", "send-keys"])], [])
