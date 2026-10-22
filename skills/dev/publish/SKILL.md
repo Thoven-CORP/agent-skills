@@ -8,6 +8,9 @@ description: Use when Andres asks to publish, deploy, release, promote, or hotfi
 ## Pitfalls
 
 - Describe production as "thoven.co runs `main` at <sha>, tagged prod/<date>-<n>; this merge reaches it at the next publish". A tag name alone reads as a branch. (LEARNINGS 2026-10-22)
+- Open a hotfix PR as soon as the targeted tests are green; `bin/verify` and the reviews run beside PR CI, and gate repairs go on their own branch. (LEARNINGS 2026-10-22)
+- Build the release plan's post-promote list from the range's merged tickets and a mem0 search, and run every backfill or rake task they owe as a numbered step before the production harness. (LEARNINGS 2026-10-22)
+- Before promote, check every PR in the range wrote its `[Unreleased]` changelog entry, and add the missing ones in one PR. (LEARNINGS 2026-10-22)
 
 ## Route
 

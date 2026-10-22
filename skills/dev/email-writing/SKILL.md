@@ -1,6 +1,6 @@
 ---
 name: email-writing
-description: Write and send emails in Andres's voice. Use when user says "write email", "draft email", "email to [person]", or needs to compose professional emails. Supports investors, advisors, and partners. Can compose directly in Gmail using browser automation.
+description: Write and send emails in Andres's voice. Use when user says "write email", "draft email", "email to [person]", or needs to compose professional emails. Supports investors, advisors and partners, and product-update emails to Thoven teachers and families (use Andres's earlier update emails as the template for tone). Can compose directly in Gmail using browser automation.
 ---
 
 # Email Writing

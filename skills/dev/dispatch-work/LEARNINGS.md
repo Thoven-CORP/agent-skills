@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-22 — the delivery loop: quiet heartbeats, limits, inbox, close-out, review sizing
+
+> reflect · 2026-10-22 · 39a12a43 · 889d1f76 · d9f3ef92 · a010cb0c · 19da0b54 · ec30f47b · c132eb65 · 79269fdf · 02cf7024 · d0d40add · 636cedec · f60a27f9 · 93f7415c · broken-rule · applied · seen 7
+
+**What happened.** A 14-day deep pass over main sessions found the loop leaking at every handoff. Heartbeat exits outnumbered real events about 4.5 to 1, and each forced a line to Andres ("Is this even that important?"). A watcher killed for memory stayed dead ("rearm and check if the pane froze"). Panes stopped at usage limits until Andres said "limits should be back" (5 sessions). Builder reports failed with `agent_blocked` while main sat at a dialog, and builders looped 30-60 retries; nothing read the out/ inbox. Linear looked stale ("Why is linear not updated I am so confused"). Close-out left trees, databases and branches for Andres to ask about in 7 sessions. He asked about 20 times for /thermos and /deslop on PRs with no verifier pane. Tickets ran 8-14 fix rounds on an undefined severity scale. On THV-1355 he saw the page only after two verifier passes, and his notes reopened it. Old integration branches' pre-push hooks pushed panes to `--no-verify`. `gh pr merge` exited nonzero after good merges.
+**Why.** Step 4 told main to report every wake and never said how to recover a killed watcher, a usage limit or a failed report. Step 6 said "Done means merged and a user can reach it", which clashed with Done on an integration branch. review.md named no severity scale and ran code-quality thermo only on big diffs.
+**What changed.** Step 4: heartbeats re-arm silently; a killed watcher is replaced by `herdr agent wait` (Andres: herdr's own wait is lighter); a usage-limit row; the out/ inbox read on every wake; brief.md REPORT says stop, never loop. Linear section: every merge or Done report ends with the pending Linear writes as a go. Step 1: offer a catch-up merge when the branch's hooks differ from main. Step 6: Done means merged into its target, integration branch or main (Andres: "Done on an integration branch should also mean done"), and the report says where it lives; close-out removes the ticket's own tree and merged branches. review.md: severity defined; thermo sized to the diff (code-quality under ~300 lines in one module, /thermos above, sharded past ~1k), Matt Pocock's /code-review, and every PR put to Andres gets the trio. Pitfalls: show UI at first DONE; read back the PR after every merge.
+
 ## 2026-10-22 — corrections to a busy pane go as a brief file, never a typed follow-up
 
 > reflect · 2026-10-22 · memory:project_codex_queued_addendum_lands_late · d9f3ef92 · broken-rule · applied · seen 2

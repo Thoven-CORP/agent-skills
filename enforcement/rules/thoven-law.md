@@ -40,11 +40,15 @@ a rebase ate a day of the onboarding prototype.)
   files overlap another live tree's dirty files, or the work is risky and long. From Claude,
   `claude --worktree <area>-thv-<n>` runs the same script.
 - Open a held PR into `main`, and merge it on Andres's "merge it", gated by the required `CI` check.
+  `CI` runs only on PRs into `main`: a ticket PR into an integration branch merges on its
+  `bin/verify` block and the verifier's pass, and `CI` gates the integration branch when it lands.
   The method follows the PR's role:
 
   | PR | Merge |
   |---|---|
-  | A ticket into `main`, or into an integration branch | `gh pr merge --auto --squash` |
+  | A ticket into `main` | `gh pr merge --auto --squash` |
+  | A ticket into an integration branch | `gh pr merge --squash` on the verify block and verifier pass |
+  | Docs only (no code, config or tests) | squash in the same pass, like an agent-skills PR |
   | A catch-up of `main` into an integration branch | `--merge`, so `main` stays an ancestor |
   | An integration branch landing in `main` | `--auto --merge`, so each ticket's commit and THV id survive for later conflict resolution |
 
@@ -94,7 +98,10 @@ database: export `DATABASE_URL` and `TEST_DATABASE_URL` in the same line.
 
 **Review order.** A builder's DONE is a claim. A fresh verifier pane reviews feature slices; a Sonnet
 subagent of main reviews cleanup and hardening work. Both open with spec parity. Main reruns the
-touched files and merges backend before the frontend that reads it. UI merges after Andres sees the
+touched files and merges backend before the frontend that reads it. Backend-first holds only for a
+backward-compatible change: a newly required request field stays optional until the frontend that
+sends it is on staging. (Backend #278 made `source_timezone` required hours before the frontend
+sent it, and staging refused every reschedule for six hours.) UI merges after Andres sees the
 evidence. Procedure: `dispatch-work/references/review.md`.
 
 **Scope.** Make the surgical edit the ticket asks for. Debt, bugs and smells in code the ticket or
