@@ -2,6 +2,8 @@
 # SessionStart: put the andres-mode skill in context for a session in ~/thoven or ~.
 # Three main sessions on 2026-10-21/22 never loaded it, so its rules went unread; the description
 # alone did not fire reliably (THV-1361). Silent elsewhere and when the skill is not installed.
+# It prints a read directive and the Pitfalls, not the whole skill: Claude Code keeps only a 2 KB
+# preview of hook output over its limit, and the 12 KB body was cut there.
 #   claude, codex  SessionStart, matcher startup|clear|compact; plain stdout becomes context.
 payload="$(cat)"
 cwd="$(printf '%s' "$payload" | jq -r '.cwd // empty' 2>/dev/null)"
@@ -12,5 +14,5 @@ case "$cwd" in
 esac
 skill="$HOME/.agents/skills/andres-mode/SKILL.md"
 [ -f "$skill" ] || exit 0
-printf 'The andres-mode skill (%s) is loaded for this session by a SessionStart hook. Follow it as if you had invoked it.\n\n' "$skill"
-awk 'NR == 1 && /^---$/ { fm = 1; next } fm && /^---$/ { fm = 0; next } !fm' "$skill"
+printf 'Read %s in full with your file-read tool before your first reply, and follow it as if you had invoked the andres-mode skill. A SessionStart hook loaded it for this session. Its Pitfalls:\n\n' "$skill"
+awk '/^## Pitfalls/ { p = 1; next } p && /^## / { exit } p && NF' "$skill"

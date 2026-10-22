@@ -64,8 +64,9 @@ rulings matter most. It reuses the plugin's scope and its per-session "already s
 nothing is injected twice. It is silent on any failure: recall is a bonus, never a gate.
 
 `thoven-andres-mode` runs on `SessionStart` (startup, clear, compact) in Claude and Codex. For a
-session in `~/thoven` or `~`, it prints the installed andres-mode skill, which both CLIs add to
-context. The skill's description alone did not fire: three main sessions on 2026-10-21 and 10-22
+session in `~/thoven` or `~`, it tells the agent to read the installed andres-mode skill and prints
+its Pitfalls, which both CLIs add to context. It stays near 2 KB: printing the whole 12 KB skill
+put it over Claude Code's hook-output limit, which keeps only a 2 KB preview. The skill's description alone did not fire: three main sessions on 2026-10-21 and 10-22
 never loaded it. Codex could not have, because `scripts/apply-skill-visibility.sh` had switched it
 off; it is now in that script's visible core. `bin/thoven-andres-mode-test` covers it.
 
