@@ -682,7 +682,7 @@ procs_inside() {
 # remove converges whenever nothing unrecoverable would be lost: tracked edits and commits no origin
 # branch holds are refused, everything untracked is archived, then git removes the tree with --force.
 remove() {
-  local path main db key suffix dbs=() dirty ahead branch procs dest
+  local path main db key suffix dbs=() dirty ahead procs dest
   path="$(physical "$1")" || die 1 "remove: $1 is not a directory"
   [ "$(physical "$(git -C "$path" rev-parse --show-toplevel 2>/dev/null)")" = "$path" ] ||
     die 1 "remove: $path is not the top of a git worktree"
@@ -693,11 +693,10 @@ remove() {
   dirty="$(git -C "$path" status --porcelain --untracked-files=no)" || die 1 "remove: git status failed in $path"
   [ -z "$dirty" ] || die 1 "remove: $path has tracked changes, so nothing was removed. Commit and push them, or restore them:
 $dirty"
-  ahead="$(git -C "$path" rev-list --count HEAD --not --remotes=origin)" || die 1 "remove: git rev-list failed in $path"
-  if [ "$ahead" != 0 ]; then
-    branch="$(git -C "$path" branch --show-current)"
-    die 1 "remove: $path has $ahead commit(s) on HEAD that no origin branch contains, so nothing was removed. Push them: git -C $path push -u origin ${branch:-HEAD:refs/heads/<branch>}"
-  fi
+  # The branch outlives its tree, so a commit on a branch is kept (a squash-merged ticket's are on
+  # no origin branch). Only a detached HEAD can hold commits that removing the tree strands.
+  ahead="$(git -C "$path" rev-list --count HEAD --not --branches --remotes=origin)" || die 1 "remove: git rev-list failed in $path"
+  [ "$ahead" = 0 ] || die 1 "remove: $path has a detached HEAD with $ahead commit(s) no branch holds, so nothing was removed. Keep them on a branch: git -C $path switch -c <branch>"
   # A dev server writing during the delete left a partial delete with 176 MB behind.
   procs="$(procs_inside "$path")" || die 1 "remove: nothing was removed"
   [ -z "$procs" ] || die 1 "remove: these processes work inside $path, so nothing was removed. Stop them, or cd out, and rerun:

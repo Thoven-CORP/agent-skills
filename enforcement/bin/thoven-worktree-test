@@ -385,8 +385,8 @@ tip="$(git -C "$AHEAD" rev-parse HEAD)"
 expect "remove of a squash-merged shape (branch commit not on origin) exit" "$code" 0
 expect "removing the tree keeps its branch and commit" "$(git -C "$TMP/backend" rev-parse -q --verify ahead/thv-982)" "$tip"
 
-DETACHED="$TMP/backend-thv-984"
-"$TOOL" create be detached 984 >/dev/null 2>&1
+DETACHED="$TMP/backend-thv-989"
+"$TOOL" create be detached 989 >/dev/null 2>&1
 (cd "$DETACHED" && git checkout -q --detach && printf 'x\n' > mine && git add mine && git commit -qm mine)
 err="$("$TOOL" remove "$DETACHED" 2>&1 >/dev/null)"; code=$?
 expect "remove of a detached HEAD with a commit no branch holds exit" "$code" 1
