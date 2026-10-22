@@ -1,22 +1,38 @@
 # The brief
 
-Copy the block below to `$TMPDIR/dispatch/<THV-x>.md` and fill every `<…>`. `scripts/send.sh` fills
-`{{MAIN_PANE}}`. The ticket is the spec, so the brief points at it and adds only what the ticket
-cannot know. A brief that restates the ticket drifts from it. STANDING Machine and Database
-restate `enforcement/rules/thoven-law.md` for a pane that never reads it; change both together.
+Copy the block below to the board's `briefs/THV-x.md` and fill every `<…>`. `dispatch spawn`
+fills the `{{…}}` fields and refuses a brief with any field left. The snapshot is the spec, so the
+brief adds only what the snapshot cannot know. Process rules every pane follows live in
+[standing.md](standing.md); the brief points there and never restates them.
+
+Three rules from real misses:
+- Put every binding rule you hold in RULES before dispatch. A rule sent later is an addendum the
+  pane may read after it reports.
+- Label every chat ruling by who made it. A guess written as a ruling gets built as one.
+- Scope each rule to the files this pane writes.
 
 For Codex panes write `$poteto-mode`. For Devin keep the task on the first line.
 
 ```text
 /poteto-mode <playbook> THV-<id> "<ticket title>"
 
+You are {{AGENT_NAME}}. Main is the Claude session {{MAIN_SESSION}}. Project board: {{BOARD}}.
+DISPATCH = ~/.agents/skills/dispatch-work/scripts/dispatch
+
 FITS       <one line: where this ticket sits in its parent issue and what it unblocks>
-SPEC       Linear THV-<id>. Read it in full first with the Linear tools. It is the spec, already
-           decided upstream: build it as written. When the ticket and the code disagree, or the
-           ticket needs a choice it does not make, send NEEDS_CONTEXT.
+SPEC       {{SNAPSHOT}}. Read it in full first. It holds the ticket, its comments and the parent's
+           decisions as main read them. Build it as written. When the snapshot and the code
+           disagree, or the snapshot needs a choice it does not make, ASK.
 DECISIONS  <every parent decision id this ticket touches, each with the board frame the parent
-           cites for it ("D4 -> A3. Send moment"), from the parent's "Decisions (canonical)".
-           A brief whose spec is a plan section, not a ticket, lists them too. "none" if none.>
+           cites for it ("D4 -> A3. Send moment"). "none" if none.>
+DECIDED IN CHAT
+           <each ruling that lives only in main's conversation, one line each, labelled:
+           "Andres ruled <date>: …", "main recommends: …" or "guess: …". Build to "Andres ruled"
+           lines. Treat the others as defaults you may overturn with a reason in your report.
+           "none" if none.>
+RULES      <every binding rule for this ticket, each scoped to the files this pane writes, with
+           its exemptions (generated files, manifests, routes.rb, files already over a limit).
+           "none" if none.>
 DESIGN     <"no UI", or the board path, the frames above, and every screen and state they show,
            async states included.> Bring each frame to life as the decisions describe it, at
            visual parity and full fidelity: layout, spacing, type, every state, and motion where
@@ -30,81 +46,52 @@ DESIGN     <"no UI", or the board path, the frames above, and every screen and s
            that Andres confirmed cites its ruling; any other difference is a defect you fix.
 WHERE      Repo <path>, branch <branch>, base <sha>. <Parallel panes, if any, and their Paths.>
 KNOWN      <interfaces, rulings and commits from earlier tickets this one builds on. "none" if none.>
-RULINGS    <main's resolution of anything ambiguous in the ticket. "none" if none.>
 ACCESS     <the skill lines from skills.md this ticket reaches, each with its moment>
-           Tools: graphify for callers and impact, Linear (read), Context7 for vendor docs,
-           control-cli and control-ui for a running app, tier-5 subagents for wide reads.
+           Tools: graphify for callers and impact, Context7 for vendor docs, control-cli and
+           control-ui for a running app, tier-5 subagents for wide reads.
 DONE WHEN  <the ticket's Done when, verbatim or by pointer>
            Seams: <where the tests sit>. Proof goes red before your change and green after it.
            Verify per `~/.agents/skills/verify/SKILL.md`: lint and types, the touched test files
            one per run, the design scan suite on any component or token diff,
            `__tests__/mail-link-routes.test.ts` on a diff that adds or moves a route, and
            `bin/verify --base <integration branch>` once before DONE with its block in the report.
+STANDING   Read ~/.agents/skills/dispatch-work/references/standing.md now and follow it.
 
-STANDING
-- You and main run side by side. Main owns Linear, product calls and your review. You own
-  the code on this branch and your commits.
-- Commit as you go, by exact path, message ending in THV-<id>. Commit only: main pushes the branch and opens the PR.
-- Machine: run the touched test files, one file per run, one process at a time, no watch mode.
-  Run e2e, build, stack and perf work through
-  `/Users/andresmartinez/thoven/agent-skills/enforcement/bin/thoven-load-gate -- <cmd>`, which waits
-  for free memory and a free slot. Exit 75 means the wait ran out: rerun once, then send
-  NEEDS_CONTEXT. `bin/verify` never goes through the gate: run it plain, it holds its own
-  machine lock, and a 20-minute Playwright run must not queue it. CI runs the full suite on
-  the integration PR. Stop the servers you started after each step. Delete scratch you can
-  regenerate. Route big logs and wide reads through a subagent and keep its summary.
-- Dev server: it runs for the parity capture and stops after it. Start it and `rails s` plain, or
-  through the load gate with `--check-only`, because a gated server holds a slot for its whole life.
-  Use your own port, delete your `.next-*` folder when you stop, and leave uncommitted the
-  tsconfig.json include that `next dev` adds for a custom distDir.
-- Evidence: one folder per ticket, `~/.thoven-artifacts/THV-<id>/evidence/`. Overwrite your own
-  earlier run of the same check so only the last green log of each check stays. Point at a board
-  frame or screenshot that already exists instead of saving a second copy. Write no test or
-  verification file beyond the ticket's own red and green proof.
-- Database (backend ticket): export the pane's own `DATABASE_URL` and `TEST_DATABASE_URL` in the
-  same line as every backend command, `git commit` included.
-- Budget: stop near 250k tokens and send your status with what is done and what is left.
-- Debt, bugs and smells in code this ticket or feature owns are fixed on this branch in the same
-  round. A problem outside it goes in Noticed as one line. A product call goes to Andres as a
-  question in your report.
-- Decide what you can and write the ruling into your report. Stop only for: an irreversible or
-  destructive step, prod or a secret value, a product call, or a ticket so wrong every path is a
-  guess.
-- Leave no files behind outside the repo. Parity captures land under
-  `~/.thoven-artifacts/<branch>/parity/`, which main uploads to the Linear issue and the board
-  and then deletes. Other evidence goes in your report.
-- Parity, on a UI ticket, before DONE: the `parity` row of `bin/verify`, as the verify skill
-  says, plus a short video of the flow and the list of differences from the board.
-- Browser: drive agent-browser from this pane only, never from a subagent. Close it when you are
-  done. Send Escape in-page (dispatchEvent of a keydown), never with agent-browser press Escape,
-  which pins the renderer. A renderer near 100% CPU means start a fresh browser; it is not a
-  product bug unless a normal browser reproduces it.
+ASK
+When the spec does not decide something, post the question and message main, then keep building
+every part the question does not touch:
+  printf '%s\n' "QUESTION, the options you see, your default" |
+    $DISPATCH post {{PROJECT}} --ticket THV-<id> --kind question --status NEEDS_CONTEXT --from {{AGENT_NAME}}
+  then SendMessage to {{MAIN_SESSION}}: "NEEDS_CONTEXT THV-<id>: ONE LINE. Entry: ENTRY_PATH"
+  (ENTRY_PATH is the path the post command printed.)
+Main answers by peer message. Codex: post the entry only, then stop and wait.
+
+BUDGET
+Near 250k tokens, post a HANDOFF entry (what is done with commit SHAs, what is left, the exact
+next step), then report BLOCKED with the reason "budget".
 
 REPORT
-Send exactly one message to main when you finish or need main, with
-~/.local/bin/herdr agent prompt {{MAIN_PANE}} and the message as one quoted argument.
-It starts with STATUS THV-<id>, where STATUS is DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT
-or BLOCKED. Write it to $TMPDIR/dispatch/out/THV-<id>.md and send
-"$(cat $TMPDIR/dispatch/out/THV-<id>.md)" so backticks stay text. Delete the file only after
-the send succeeds. If it fails (`agent_blocked` means main is at a dialog), leave the file and
-stop: that folder is main's inbox. Never retry in a loop.
-Then the ASCII block:
+When you finish or need main, write the report to a file and post it:
+  $DISPATCH post {{PROJECT}} --ticket THV-<id> --kind report --status STATUS --from {{AGENT_NAME}} < REPORT_FILE
+STATUS is DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT or BLOCKED. The body is the ASCII block:
   Acceptance   one row per line: ✓/✗, evidence (file:line, command → result)
   Proof        command, red before, green after
   Commits      SHAs and git diff --stat against base
+  Verify       the THOVEN_VERIFY block
   Parity       UI tickets: the `~/.thoven-artifacts/<branch>/parity/grid.html` path, and each
-               difference from a frame:
-               fixed, or confirmed with its ruling
+               difference from a frame: fixed, or confirmed with its ruling
   Rulings      what you decided and why
   Noticed      one line per problem outside this ticket's code, for main's grouped Linear issue
-Label every claim measured, inferred or guess. Then print the same block in this pane and end
-with a line starting "result:".
+Label every claim measured, inferred or guess.
+Then SendMessage to {{MAIN_SESSION}}: "STATUS THV-<id>: ONE LINE. Entry: ENTRY_PATH".
+Codex: post the entry only; main hears when you settle. End by printing the block in this pane.
 ```
 
 ## Fix-round brief
 
 Carry about five findings per round. Split a larger set by concern into panes whose files do not
-overlap. Send into the builder's pane with `scripts/send.sh`:
+overlap. Post it as a CORRECTION entry, then send the same text to the builder by peer message
+(Codex: `dispatch send <pane> <file>` once it is idle):
 
 ```text
 FIX ROUND <n>/3 THV-<id>. Base for this round: <sha>.

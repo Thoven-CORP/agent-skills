@@ -4,6 +4,10 @@ The builder's own report is a claim. A fresh verifier pane turns it into evidenc
 slice, on the model `agents.md` names, so it is not reviewing its own work. Cleanup and hardening
 work is reviewed by a Sonnet subagent of main with the same brief.
 
+The verifier judges from three inputs only: the ticket's snapshot, the builder's REPORT entry, and
+the diff against base. It never reads the builder's screen or main's reasoning, so it cannot
+inherit their framing.
+
 ## Main's pass
 
 1. Rerun only the files the builder touched, one per run, and compare with the report.
@@ -16,10 +20,9 @@ work is reviewed by a Sonnet subagent of main with the same brief.
 
 ## Working if
 
-Check these against the builder's pane transcript and the branch before starting the verifier.
-Each one that fails is a finding.
+Check these against the builder's REPORT entry (`dispatch board <project> --ticket THV-x`) and the
+branch before starting the verifier. Each one that fails is a finding.
 
-- The pane opened by reading the ticket and restating what it would build.
 - A red run exists before the green one, for the proof the ticket names.
 - Type-check, the touched test files (one file per run) and lint on those files ran during the build.
 - Commits land on the named branch, by exact path, each ending in the ticket id.
@@ -30,19 +33,20 @@ Each one that fails is a finding.
 
 ## Verifier brief
 
-Start the verifier as in step 3 and send:
+Write it to the board's `briefs/THV-x-verify.md`, then start it as in step 3 with
+`dispatch spawn <project> THV-x --kind Verify --brief <that file> ...` beside the builder:
 
 ```text
 /poteto-mode Verify THV-<id> "<ticket title>"
-Read Linear THV-<id> in full. The builder's report is below. Treat every line of it as a claim.
-Repo <path>, branch <branch>, diff <base>..<head>. Builder pane <builder pane id>. Read and run
-only; leave the code as it is.
-Evidence first. Read the builder's pane with
-`herdr agent read <builder pane> --source recent-unwrapped --lines 120`, and read the receipt for
-the head SHA at `git rev-parse --git-path thoven-verify.json`. A fresh receipt for the same
+You are {{AGENT_NAME}}. Main is the Claude session {{MAIN_SESSION}}. Project board: {{BOARD}}.
+DISPATCH = ~/.agents/skills/dispatch-work/scripts/dispatch
+Read {{SNAPSHOT}} in full: it is the spec. Read the builder's REPORT entry with
+`$DISPATCH board {{PROJECT}} --ticket THV-<id>`. Treat every line of it as a claim.
+Repo <path>, branch <branch>, diff <base>..<head>. Read and run only; leave the code as it is.
+Evidence first. Read the receipt for the head SHA at `git rev-parse --git-path thoven-verify.json`. A fresh receipt for the same
 fingerprint proves its tests: re-run nothing it covers. No receipt means the run did not pass:
 run `bin/verify --base <integration branch>` yourself and paste the block.
-1. SPEC PARITY. Read the parent's "Decisions (canonical)". Trace every Acceptance line and every
+1. SPEC PARITY. Read the parent's "Decisions (canonical)" in the snapshot. Trace every Acceptance line and every
    behaviour in the diff to a decision id. Name invented scope, a decision the diff missed or
    changed, and lexicon slips.
 2. DESIGN PARITY, on a UI ticket. Open the builder's `~/.thoven-artifacts/<branch>/parity/grid.html`
@@ -60,14 +64,14 @@ run `bin/verify --base <integration branch>` yourself and paste the block.
 Round 2 and later: read the fix diff only.
 Write findings into your reply and into the ticket's one evidence folder
 (`~/.thoven-artifacts/THV-<id>/evidence/`). Create no parallel suite and no second evidence tree.
-Reply to main with herdr agent prompt {{MAIN_PANE}} "VERIFIED THV-<id>" or "FINDINGS THV-<id>",
-then a SPEC PARITY table (decision id, verdict, evidence), a DESIGN PARITY table (state,
+Report as a builder does: post a REPORT entry whose status is VERIFIED or FINDINGS
+(`$DISPATCH post {{PROJECT}} --ticket THV-<id> --kind report --status VERIFIED --from {{AGENT_NAME}} < REPORT_FILE`),
+then SendMessage to {{MAIN_SESSION}}: "VERIFIED THV-<id>" or "FINDINGS THV-<id>" and the entry path.
+The body is a SPEC PARITY table (decision id, verdict, evidence), a DESIGN PARITY table (state,
 frame, verdict, image) on a UI ticket, and a table: Acceptance line or claim, verdict, evidence. Findings carry file:line and a
 severity: critical (data loss, security, a broken core flow), important (a user hits it in the
 normal flow, or a difference from a frame Andres did not confirm) or minor (everything else: rare
 edge cases, test nits, style).
-
-<builder's report, pasted>
 ```
 
 ## Every PR put to Andres
@@ -80,7 +84,7 @@ into an integration branch, run one /deslop and thermo pass over the merged rang
 ## Handling findings
 
 - **Gate repair, CI fixes and redesigns are not fix rounds.** They are one line to Andres with a choice.
-- **Critical or important:** a fix round (`brief.md`, fix-round brief) into the builder's pane,
+- **Critical or important:** a fix round (`brief.md`, fix-round brief) to the builder by peer message plus a CORRECTION entry,
   then a verifier re-run scoped to the fix diff. There are 3 fix rounds. Rounds 1 and 2 go to the
   builder's pane. Round 3 goes to a fresh pane one tier up. The ticket stays **Ready** throughout.
 - **After round 3:** main rules on each open finding. Wrong or contestable: park it with the

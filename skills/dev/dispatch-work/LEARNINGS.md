@@ -5,6 +5,28 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-22 — dispatch v2: peer messages, a Project board, a tick watcher, brief v2
+
+> grill · 2026-10-22 · 708bf6f4 · tooling · applied · seen 7
+
+**What happened.** Fourteen days of main sessions showed the loop failing at every handoff.
+- The watcher exited 432 times on HEARTBEAT against 95 real events.
+- 13 prompts sat unsubmitted.
+- Reports typed into main bounced off its dialogs, and builders retried them 30-60 times.
+- 5 panes could not read their Linear spec, because Codex and expired auth answer UNAUTHORIZED.
+- About 8 rounds of addenda arrived after dispatch. Some landed after DONE, and one reversed the last.
+
+The brief research (about 30 incidents) found builders already asked, about 11 times, but the answers arrived late. It also found main's guesses written into briefs as if they were rulings.
+**Why.** Herdr inferred agent state from the screen, so watching meant polling and hashing. Reports and corrections travelled by typing into a TUI that has no addressing and no turn boundary. The spec lived where some panes cannot read. Rules main already held went out one addendum at a time.
+**What changed.**
+- `scripts/dispatch` replaces `send.sh`, `label.sh` and `watch.sh`, and detects Rex or herdr.
+- Builders and main talk by Claude peer message, which reaches a busy session between tool calls. Every report, question, answer, correction and alert is also an entry on the Project board at `~/.local/state/thoven/dispatch/<project>/`.
+- A launchd `dispatch tick` watches every registered pane and posts an alert only when something is wrong. Main arms one Monitor on `dispatch watch` and never polls.
+- `dispatch snapshot` saves the ticket and parent decisions for the pane.
+- Brief v2 carries every rule up front, scoped to the pane's files, and labels each chat ruling "Andres ruled", "main recommends" or "guess". Its process rules moved to `references/standing.md`.
+- The verifier sees only the snapshot, the builder's REPORT entry and the diff.
+- The cockpit is dropped from this skill.
+
 ## 2026-10-22 — watcher and send lessons move into the scripts
 
 > reflect · 2026-10-22 · 39a12a43 · d9f3ef92 · 889d1f76 · a010cb0c · 93f7415c · tooling · applied · seen 5

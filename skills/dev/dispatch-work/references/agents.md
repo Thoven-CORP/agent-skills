@@ -18,8 +18,8 @@ this session.
 `python3 <this skill>/scripts/agents.py tiers` prints what each tier resolves to. A ticket that
 needs something outside the tiers gets an explicit CLI, model and effort: `agents.py models <cli>`
 and `agents.py efforts <cli> <model>` list the choices. To change a tier, edit its line in
-`agents.toml`, run `agents.py check`, and merge it. From herdr, `Ctrl+Space g` does the same from
-lists: set a tier, wire a new CLI, or check the config. It merges the change and pulls the checkout.
+`agents.toml`, run `agents.py check`, and merge it. In herdr, `Ctrl+Space g` does the same from
+lists.
 
 ## Complexity signals
 
@@ -34,9 +34,8 @@ lists: set a tier, wire a new CLI, or check the config. It merges the change and
 ## Verifier and fix rounds
 
 - The verifier is a fresh tier-2 pane that did not build the ticket. A fresh pane is the
-  independence that matters (Andres, 2026-09-27). The cockpit mod (THV-1053) sees which review
-  skills ran only in Claude panes, so a verifier on another CLI shows a partial Review cell. Use
-  one when Andres asks for a second family.
+  independence that matters (Andres, 2026-09-27). A verifier on another CLI runs only when Andres
+  asks for a second family.
 - Fix rounds follow `review.md` "Handling findings". The fresh round-3 pane is one tier up, told:
   "A prior agent attempted this twice. Read its commits and the findings."
 
@@ -44,12 +43,17 @@ lists: set a tier, wire a new CLI, or check the config. It merges the change and
 
 Every pane launches without approval prompts. A Claude pane uses `--permission-mode auto`, because
 the auto-mode classifier blocks `--dangerously-skip-permissions` when main starts the pane.
-`agents.py launch-line <tier>` prints the `herdr agent start` line, with the model, the effort and
-the permission flag filled in from `agents.toml`. Confirm the model on the pane's first screen. A
-CLI herdr runs but `agents.toml` lacks shows as unwired in `agents.py clis`; it needs a
-`[cli.<name>]` block before it can launch.
+`dispatch spawn` builds the launch from `agents.toml` (model, effort, permission flag) and adds
+the session name and the opening prompt. `agents.py launch-line <tier>` prints the herdr form for
+reference. Confirm the model on the pane's first screen. A CLI `agents.toml` lacks shows as unwired
+in `agents.py clis`; it needs a `[cli.<name>]` block before it can launch.
 
 ## Gotchas by CLI
+
+- **Codex** cannot send peer messages. It posts its question and report entries and stops; the
+  watcher posts a SETTLED alert when it goes idle, and main reads its entry. Send it corrections
+  with `dispatch send` once it is idle. Codex reports no status for about 40 seconds at startup,
+  then working and idle, never done.
 
 - **Devin** drops a prompt whose first line is only a slash command. Put the task on the same line
   as `/poteto-mode`.
