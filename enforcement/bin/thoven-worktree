@@ -31,8 +31,8 @@ usage: thoven-worktree create <fe|be> <area> <n> [--project <name>] [--kind <kin
        thoven-worktree bootstrap <path>
        thoven-worktree remove <path>   (archives its gitignored docs and untracked files to
                                        ~/thoven/archive first, and drops the worktree's own
-                                       databases. Refuses tracked edits, unpushed commits and a
-                                       process working inside it)
+                                       databases. Refuses tracked edits, a detached HEAD's own
+                                       commits and a process working inside it)
        thoven-worktree orphan-dbs      (lists local databases no worktree uses; drops nothing)
        thoven-worktree hook            (Claude Code WorktreeCreate; JSON on stdin)
        thoven-worktree post-checkout <prev> <new> <flag>
@@ -679,8 +679,8 @@ procs_inside() {
     /^n/ { n = substr($0, 2); if (n == P || index(n, P "/") == 1) print "  pid " pid " (" cmd ")" }'
 }
 
-# remove converges whenever nothing unrecoverable would be lost: tracked edits and commits no origin
-# branch holds are refused, everything untracked is archived, then git removes the tree with --force.
+# remove converges whenever nothing unrecoverable would be lost: tracked edits and a detached HEAD's
+# own commits are refused, everything untracked is archived, then git removes the tree with --force.
 remove() {
   local path main db key suffix dbs=() dirty ahead procs dest
   path="$(physical "$1")" || die 1 "remove: $1 is not a directory"
