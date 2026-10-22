@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-22 — watcher and send lessons move into the scripts
+
+> reflect · 2026-10-22 · 39a12a43 · d9f3ef92 · 889d1f76 · a010cb0c · 93f7415c · tooling · applied · seen 5
+
+**What happened.** The deep reflect pass wrote three watcher lessons into step 4 as prose: re-arm heartbeats silently, replace a killed watcher with `herdr agent wait`, read the out/ inbox on every wake. Prose about a script's behaviour is the symptom. `watch.sh` itself exited every 9 minutes on HEARTBEAT, and FROZEN could not fire: `BEAT_MIN` 9 was below `FREEZE_MIN` 10, the `watch.$$` state died with each run, and the agent's ticking turn timer changed the screen hash. A pane sat stuck for 77 minutes. `send.sh` gave up on `agent_prompt_stalled` when one Enter would have submitted the prompt (13 times in 5 sessions).
+**Why.** Each wake-up rule depended on main remembering it, and the script disagreed with the rule.
+**What changed.** `watch.sh` has no heartbeat. It keeps per-pane state in `$TMPDIR/dispatch/watch/` across re-arms, replaces an older watcher on the same panes, drops the turn-timer line and digits from the hash, and restarts the freeze clock after a FROZEN report. `send.sh` presses Enter once on a stalled prompt. `scripts/watch-test.sh` covers each behaviour against a fake herdr; 5 of its 9 cases fail on the old scripts. Step 4 lost its prose. `herdr agent wait` was dropped as the fallback because the cockpit recognises a watcher only by `watch.sh` and the bare wait sees neither a freeze nor a gone pane. An INBOX exit was built and removed: `$TMPDIR/dispatch/out/` is shared by every main and herdr's verify plugin, and the cockpit already names undelivered reports per row.
+
 ## 2026-10-22 — the delivery loop: quiet heartbeats, limits, inbox, close-out, review sizing
 
 > reflect · 2026-10-22 · 39a12a43 · 889d1f76 · d9f3ef92 · a010cb0c · 19da0b54 · ec30f47b · c132eb65 · 79269fdf · 02cf7024 · d0d40add · 636cedec · f60a27f9 · 93f7415c · broken-rule · applied · seen 7

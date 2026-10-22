@@ -87,7 +87,7 @@ It starts with STATUS THV-<id>, where STATUS is DONE, DONE_WITH_CONCERNS, NEEDS_
 or BLOCKED. Write it to $TMPDIR/dispatch/out/THV-<id>.md and send
 "$(cat $TMPDIR/dispatch/out/THV-<id>.md)" so backticks stay text. Delete the file only after
 the send succeeds. If it fails (`agent_blocked` means main is at a dialog), leave the file and
-stop: that folder is main's inbox and main reads it on every wake. Never retry in a loop.
+stop: that folder is main's inbox. Never retry in a loop.
 Then the ASCII block:
   Acceptance   one row per line: ✓/✗, evidence (file:line, command → result)
   Proof        command, red before, green after

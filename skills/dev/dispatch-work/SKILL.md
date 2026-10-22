@@ -137,17 +137,14 @@ In Progress.
 
 Arm `scripts/watch.sh <pane> [<pane>...]` with the Monitor tool, or as a background command. It
 exits on the first thing main must look at, and prints why. The watcher is the only poll: a
-`sleep` loop in main's shell costs a turn per tick and the harness refuses long ones. Keep doing main's own work meanwhile. Every exit wakes main.
-A `HEARTBEAT` exit re-arms silently. Andres gets one plain-English line only for `SETTLED`,
-`BLOCKED`, `GONE`, `FROZEN` or a pane status line: what happened and what main did. Then re-arm on
-every pane still live.
+`sleep` loop in main's shell costs a turn per tick and the harness refuses long ones. Keep doing main's own work meanwhile.
+Every exit is something main acts on, so every wake ends with one plain-English line to Andres
+saying what happened and what main did, then the watcher re-armed on every pane still live.
+Re-arming is always safe: it replaces an older watcher on the same panes and keeps each pane's
+freeze clock. When the harness kills a watcher, re-arm at once and say so in one line.
 
-When the harness kills a watcher (memory pressure, a stopped task), re-arm at once with herdr's own
-wait, which is lighter: `herdr agent wait <pane> --until done --until blocked` as a background
-command, one per pane. Tell Andres in one line. Never leave a live pane unwatched until he asks.
-
-On every wake, also list `$TMPDIR/dispatch/out/`. A file there is a status line whose send failed
-(main was at a dialog): handle it as if it had arrived, then delete it.
+A status line whose send failed waits in `$TMPDIR/dispatch/out/THV-<id>.md`. The cockpit names it
+at the end of main's turn; a main without the cockpit (Codex) lists that folder on each wake.
 
 A status line from the pane arrives as a message in main's own pane:
 
@@ -172,7 +169,7 @@ else. Read `herdr agent read <pane> --source recent-unwrapped --lines 80` and na
 | -- | -- |
 | Approval or question dialog (`blocked`) | Answer it when it is inside the brief's scope. Otherwise ask Andres. |
 | Provider, rate-limit or network error | Wait two minutes and send `continue`. Still failing: restart the agent in the same pane with the brief and its last commit. |
-| Usage-limit banner ("limit reached", "resets at") | Read the reset time off the screen and tell Andres in one line. Arm a background wait until then. After it, run `git -C <tree> status` for a half-done merge or rebase in each stopped pane, then send `continue`. Andres never has to say the limits are back. |
+| Usage-limit banner ("limit reached", "resets at") | Read the reset time off the screen and tell Andres in one line. Arm a background wait until then. After it, run `git -C <tree> status` for a half-done merge or rebase in each stopped pane, then send `continue`. |
 | Turn ended without a status line | Send: `Reply with your status line now: DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT or BLOCKED.` |
 | Shell prompt, agent gone (`GONE`) | Restart the agent in the same pane. Send the brief plus `Resume from <last commit>.` |
 | `working` with a frozen screen (`FROZEN`) | Read further back. A long test run or `waiting for verification lock` is fine: re-arm. A hung tool: `herdr agent send-keys <pane> esc`, then ask for status. |
@@ -209,5 +206,6 @@ After the verifier passes, show Andres the evidence table and, on a UI ticket, t
 4. After Andres has looked at the evidence, delete `$TMPDIR/dispatch/<THV-x>.md`,
    `~/.thoven-artifacts/THV-<id>/evidence/` and any file the dispatch wrote outside the repo.
 
-**Done when:** `herdr pane list` no longer shows the dispatch's panes, its brief file is gone, and
-the ticket reads Done.
+**Done when:** `herdr pane list` no longer shows the dispatch's panes, `git worktree list` no longer
+shows the ticket's own tree, its merged branches are gone locally and on origin, its brief file is
+gone, and the ticket reads Done with the comment saying where the work lives.
