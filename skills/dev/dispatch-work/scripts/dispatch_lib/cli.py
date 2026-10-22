@@ -26,6 +26,7 @@ PLACEHOLDER_RE = re.compile(r"\{\{[^{}]*\}\}|<<[^<>\n]+>>")
 # The ticket id in brief.md's template; spawn and the herdr picker (compose.py) both fill it.
 TICKET_SLOT = "THV-<id>"
 KEY_RE = re.compile(r"^[A-Za-z0-9+_-]{1,20}$")
+OPENER_RE = re.compile(r"^[/$][A-Za-z][\w:.-]*(\s|$)")
 
 
 # ---------------------------------------------------------------- helpers with no I/O beyond their args
@@ -54,6 +55,12 @@ def fill_brief(text: str, values: dict[str, str]) -> str:
 
 def unfilled(text: str) -> list[tuple[int, str]]:
     return [(n, line) for n, line in enumerate(text.splitlines(), 1) if PLACEHOLDER_RE.search(line)]
+
+
+def opener(text: str) -> str | None:
+    """The brief's skill line, e.g. `/poteto-mode feature THV-1 "Cart"`; None when the brief opens with prose."""
+    first = next((line.strip() for line in text.splitlines() if line.strip()), "")
+    return first if OPENER_RE.match(first) else None
 
 
 def agent_name_for(kind: str, ticket: str, taken: set[str]) -> str:
@@ -193,12 +200,18 @@ class App:
         left = unfilled(text)
         if left:
             raise WrongState(f"unfilled field in {source}:\n" + "\n".join(f"  {n}: {line}" for n, line in left))
+        skill = opener(text)
+        if not skill:
+            raise WrongState(f"{source} does not open with a skill line (`/poteto-mode <playbook> {ticket} ...`, "
+                             "`$poteto-mode` for Codex); references/brief.md")
         stem = os.path.splitext(os.path.basename(source))[0]
         brief = os.path.join(store.sub(project, "briefs"), f"{stem}.{name}.md")
         store.write_atomic(brief, text)
+        # The pane's first prompt carries the skill line: inside the brief file it is only text and never fires.
+        prompt = f"{skill} Read and follow your brief: {brief}"
         # The brief, snapshot and board sit outside the tree; without this a Claude pane asks to read its own brief.
         add_dirs = [d for d in (a.add_dir, store.project_dir(project)) if d]
-        cli, launch = build_launch(a.tier, a.cli, a.model, name, f"Read and follow your brief: {brief}", add_dirs)
+        cli, launch = build_launch(a.tier, a.cli, a.model, name, prompt, add_dirs)
         base = a.base or (lambda r: r.out.strip() if r.ok else "")(self.run(["git", "-C", cwd, "rev-parse", "HEAD"]))
         regs: list[Registration] = []
 

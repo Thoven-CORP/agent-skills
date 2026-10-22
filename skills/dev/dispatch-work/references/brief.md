@@ -16,7 +16,9 @@ ONE LINE) are the pane's to fill: leave them.
   `Andres ruled <date>: …`, `main recommends: …` or `guess: …`.
 - RULES: every binding rule you hold, scoped to the files this pane writes, with its exemptions
   (generated files, manifests, routes.rb, files already over a limit).
-- For a Codex pane write `$poteto-mode`.
+- For a Codex pane write `$poteto-mode`. `dispatch spawn` sends the brief's first line as the
+  pane's opening prompt, because inside the file it is only text, and refuses a brief that opens
+  with anything but a skill line.
 
 ```text
 /poteto-mode <<playbook>> THV-<id> "<<ticket title>>"

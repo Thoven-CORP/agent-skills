@@ -250,12 +250,30 @@ class Spawn(Harness):
                 self.assertEqual(self.mux.spawned, [])
                 self.assertEqual(store.registrations(), [])
 
+    def test_a_brief_without_a_skill_line_is_refused(self):
+        for text in ("", "\n\n", "Read and follow the ticket.\n/poteto-mode feature THV-5\n", "poteto-mode feature\n",
+                     "/ feature THV-5\n", "$5 budget\n"):
+            with self.subTest(text):
+                self.brief(text)
+                self.assertEqual(self.spawn(), 3)
+                self.assertIn("does not open with a skill line", self.err.getvalue())
+                self.assertEqual(self.mux.spawned, [])
+                self.assertEqual(store.registrations(), [])
+
+    def test_the_skill_line_leads_the_first_prompt(self):
+        for line in ('/poteto-mode feature THV-5 "Cart"', '$poteto-mode Verify THV-5 "Cart"', "/poteto-mode"):
+            with self.subTest(line):
+                self.brief(f"\n{line}\nYou are {{{{AGENT_NAME}}}}.\n")
+                self.assertEqual(self.spawn(), 0)
+                launch = self.mux.spawned[-1][2]
+                self.assertEqual(launch.prompt, f"{line} Read and follow your brief: {store.registrations()[-1].brief}")
+
     def test_missing_brief_is_refused(self):
         self.assertEqual(self.spawn(), 3)
         self.assertIn("no brief at", self.err.getvalue())
 
     def test_a_brief_that_reads_the_snapshot_needs_the_snapshot(self):
-        self.brief("SPEC {{SNAPSHOT}}\n")
+        self.brief("/poteto-mode feature THV-5 \"Cart\"\nSPEC {{SNAPSHOT}}\n")
         self.assertEqual(self.spawn(), 3)
         self.assertIn(f"no snapshot at {self.home}/proj/snapshots/THV-5.md: run dispatch snapshot proj THV-5 first",
                       self.err.getvalue())
@@ -264,7 +282,7 @@ class Spawn(Harness):
         self.assertEqual(self.spawn(), 0)
 
     def test_a_failed_agent_start_keeps_the_registration_and_says_so(self):
-        self.brief("go {{AGENT_NAME}}\n")
+        self.brief("/poteto-mode feature THV-5 \"Cart\"\ngo {{AGENT_NAME}}\n")
         self.mux.start_error = MuxError("herdr agent start failed in block:new1: timed out")
         self.assertEqual(self.spawn(), 1)
         reg = store.registrations()[0]
@@ -276,7 +294,8 @@ class Spawn(Harness):
 
     def test_legitimate_angle_brackets_pass_and_fields_fill(self):
         self.snapshot()
-        self.brief("You are {{AGENT_NAME}}; main {{MAIN_SESSION}}; board {{BOARD}}; spec {{SNAPSHOT}}; "
+        self.brief("/poteto-mode feature THV-5 \"Cart\"\n"
+                   "You are {{AGENT_NAME}}; main {{MAIN_SESSION}}; board {{BOARD}}; spec {{SNAPSHOT}}; "
                    "project {{PROJECT}}.\nArray<string> and <Parallel panes> and a -> b.\n"
                    "<div> <https://linear.app/x> <a@b.co> <Path> a << b\n"
                    "post --ticket THV-<id>\n")
@@ -286,19 +305,20 @@ class Spawn(Harness):
                          ("build-thv-5-2", "andres-main", "block:new1", "abc123", "claude", self.tree))
         self.assertEqual(reg.brief, os.path.join(self.home, "proj", "briefs", "THV-5.build-thv-5-2.md"))
         with open(reg.brief) as f:
-            self.assertEqual(f.read(), f"You are build-thv-5-2; main andres-main; board {self.home}/proj/board.md; "
+            self.assertEqual(f.read(), "/poteto-mode feature THV-5 \"Cart\"\n"
+                                       f"You are build-thv-5-2; main andres-main; board {self.home}/proj/board.md; "
                                        f"spec {self.home}/proj/snapshots/THV-5.md; project proj.\n"
                                        "Array<string> and <Parallel panes> and a -> b.\n"
                                        "<div> <https://linear.app/x> <a@b.co> <Path> a << b\n"
                                        "post --ticket THV-5\n")
         cwd, label, launch, split = self.mux.spawned[0]
         self.assertEqual((cwd, label, split), (self.tree, "Build · Cart (THV-5)", None))
-        self.assertEqual(launch.prompt, f"Read and follow your brief: {reg.brief}")
+        self.assertEqual(launch.prompt, f'/poteto-mode feature THV-5 "Cart" Read and follow your brief: {reg.brief}')
         self.assertEqual(self.spawn(), 0)
         self.assertEqual(store.registrations()[1].agent_name, "build-thv-5-3")
 
     def test_brief_flag_uses_another_file(self):
-        self.brief("verify {{AGENT_NAME}}\n", name="THV-5-verify.md")
+        self.brief("/poteto-mode Verify THV-5 \"Cart\"\nverify {{AGENT_NAME}}\n", name="THV-5-verify.md")
         self.assertEqual(self.spawn("--brief", os.path.join(store.sub("proj", "briefs"), "THV-5-verify.md")), 0)
         self.assertTrue(store.registrations()[0].brief.endswith("/briefs/THV-5-verify.build-thv-5-2.md"))
 
