@@ -76,14 +76,156 @@ extract_parens() {
   done
 }
 
-# split a string on &&, ||, ;, |, newline (top-level, no quote-awareness)
+# Split a command into its subcommands, one line each prefixed S. Only an unquoted ; & | or newline
+# separates, so `pgrep -f "vitest|rspec"` is one command. A heredoc body is data unless a shell on
+# its line reads it. Code a shell runs (bash -c, eval, a heredoc fed to bash or piped to sh) comes
+# back prefixed Q with its newlines as \036, to be judged like a top-level command. A parse that
+# ends inside a quote, a $( or an unterminated heredoc has lost track of bash, so the old split on
+# every separator is added and the guard fails closed. awk, because a bash char loop is O(n^2).
 split_subcommands() {
-  local s="$1"
-  s="${s//&&/$'\n'}"
-  s="${s//||/$'\n'}"
-  s="${s//;/$'\n'}"
-  s="${s//|/$'\n'}"
-  printf '%s\n' "$s"
+  printf '%s' "$1" | LC_ALL=C awk '
+    function flush_to(j) { if (j > seg) buf = buf substr(s, seg, j - seg); seg = j }
+    function word_end(j) { if (inword) { wn++; ws[wn] = wstart; we[wn] = j - 1; inword = 0 } }
+    function word(k) { return substr(s, ws[k], we[k] - ws[k] + 1) }
+    function bare(w) { gsub(/["\047\\]/, "", w); return w }
+    function unq(w,   f) {
+      if (w !~ /^["\047]/) return w
+      f = substr(w, 1, 1)
+      if (substr(w, length(w), 1) != f) sub(/\)+$/, "", w)
+      if (length(w) >= 2 && substr(w, length(w), 1) == f) return substr(w, 2, length(w) - 2)
+      return w
+    }
+    function requeue(t) { gsub(/\n/, "\036", t); if (t ~ /[^ \t\036]/) print "Q" t }
+    function emit(t) { gsub(/\n/, " ", t); sub(/^[ \t]+/, "", t); sub(/[ \t]+$/, "", t); if (t != "") print "S" t }
+    # the command word after VAR=val prefixes and simple wrappers, as an index into the words
+    function head(   k, w, a) {
+      k = 1
+      while (k <= wn) {
+        w = bare(word(k)); sub(/^\(+/, "", w)
+        if (w ~ /^[A-Za-z_][A-Za-z0-9_]*=/) { k++; continue }
+        if (w ~ /^(xargs|env|nohup|time|command)$/) {
+          k++
+          while (k <= wn) {
+            a = bare(word(k))
+            if (a ~ /^-/) { k++; if (w == "xargs" && a ~ /^-[IdEnLPs]$/) k++; continue }
+            if (w == "env" && a ~ /^[A-Za-z_][A-Za-z0-9_]*=/) { k++; continue }
+            break
+          }
+          continue
+        }
+        return k
+      }
+      return 0
+    }
+    function end_sub(j,   k, hw, m, w, code) {
+      word_end(j); flush_to(j); emit(buf); buf = ""
+      k = head()
+      if (k) {
+        hw = bare(word(k)); sub(/^\(+/, "", hw); sub(/.*\//, "", hw)
+        if (hw ~ /^(bash|sh|zsh|dash|ksh)$/) {
+          line_shell = 1
+          for (m = k + 1; m <= wn; m++) {
+            w = word(m)
+            if ((w ~ /^-[A-Za-z]*c[A-Za-z]*$/ || w == "<<<") && m < wn) { requeue(unq(word(m + 1))); break }
+            if (w ~ /^<<</) { requeue(unq(substr(w, 4))); break }
+          }
+        } else if (hw == "eval") {
+          line_shell = 1
+          code = ""
+          for (m = k + 1; m <= wn; m++) code = code " " unq(word(m))
+          requeue(code)
+        }
+      }
+      wn = 0
+    }
+    function push(t) { d++; sq[d] = q; sp[d] = pd; st[d] = t; q = ""; pd = 0 }
+    function pop() { q = sq[d]; pd = sp[d]; d-- }
+    # read the bodies of the pending heredocs from the line after position j; returns where they end
+    function bodies(j,   k, e, line, cmp, body) {
+      for (k = 1; k <= hn; k++) {
+        body = ""
+        while (1) {
+          if (j > n) { broken = 1; break }
+          e = j; while (e <= n && ch[e] != "\n") e++
+          line = substr(s, j, e - j); cmp = line
+          if (hx[k]) sub(/^\t+/, "", cmp)
+          j = e + 1
+          if (cmp == hd[k]) break
+          body = body line "\n"
+        }
+        if (!hnest[k] && line_shell) requeue(body)
+      }
+      hn = 0
+      return j
+    }
+    { s = (NR == 1 ? $0 : s "\n" $0) }
+    END {
+      n = split(s, ch, "")
+      q = ""; d = 0; pd = 0; st[0] = ""; seg = 1; buf = ""; wn = 0; inword = 0; hn = 0; broken = 0; line_shell = 0
+      i = 1
+      while (i <= n) {
+        c = ch[i]
+        if (q == "\047") { if (c == "\047") q = ""; i++; continue }
+        if (q == "$\047") { if (c == "\\") i++; else if (c == "\047") q = ""; i++; continue }
+        if (q == "\"") {
+          if (c == "\\") i++
+          else if (c == "\"") q = ""
+          else if (c == "$" && ch[i + 1] == "(") { push(ch[i + 2] == "(" ? "a" : "c"); i += (st[d] == "a" ? 3 : 2); continue }
+          i++; continue
+        }
+        sep = (c == ";" || c == "|" || (c == "&" && ch[i - 1] != ">" && ch[i - 1] != "<" && ch[i + 1] != ">"))
+        if (d == 0) {
+          if (c == " " || c == "\t" || c == "\n" || sep) word_end(i)
+          else if (!inword) { inword = 1; wstart = i }
+        }
+        if (c == "\\") {
+          if (ch[i + 1] == "\n") { flush_to(i); i += 2; seg = i; continue }
+          i += 2; continue
+        }
+        if (c == "\047") { q = "\047"; i++; continue }
+        if (c == "\"") { q = "\""; i++; continue }
+        if (c == "$" && ch[i + 1] == "\047") { q = "$\047"; i += 2; continue }
+        if (c == "$" && ch[i + 1] == "(") { push(ch[i + 2] == "(" ? "a" : "c"); i += (st[d] == "a" ? 3 : 2); continue }
+        if (st[d] == "a") {
+          if (c == "(") pd++
+          else if (c == ")") { if (pd > 0) pd--; else if (ch[i + 1] == ")") { pop(); i += 2; continue } }
+          i++; continue
+        }
+        if (d > 0 && c == "(") { pd++; i++; continue }
+        if (d > 0 && c == ")") { if (pd > 0) pd--; else pop(); i++; continue }
+        if (c == "#" && (i == 1 || ch[i - 1] ~ /[ \t\n;&|()]/)) {
+          flush_to(i); while (i <= n && ch[i] != "\n") i++; seg = i; continue
+        }
+        if (c == "<" && ch[i + 1] == "<") {
+          if (ch[i + 2] == "<") { i += 3; continue }
+          j = i + 2; dash = 0; delim = ""
+          if (ch[j] == "-") { dash = 1; j++ }
+          while (ch[j] == " " || ch[j] == "\t") j++
+          while (j <= n && ch[j] !~ /[ \t\n;&|<>()]/) {
+            if (ch[j] == "\047") { j++; while (j <= n && ch[j] != "\047") delim = delim ch[j++]; j++ }
+            else if (ch[j] == "\"") { j++; while (j <= n && ch[j] != "\"") { if (ch[j] == "\\") j++; delim = delim ch[j++] } j++ }
+            else if (ch[j] == "\\") { j++; delim = delim ch[j++] }
+            else delim = delim ch[j++]
+          }
+          if (delim != "") { hn++; hd[hn] = delim; hx[hn] = dash; hnest[hn] = (d > 0); i = j; continue }
+          i += 2; continue
+        }
+        if (c == "\n") {
+          if (d == 0) end_sub(i)
+          else flush_to(i + 1)
+          if (hn > 0) { i = bodies(i + 1); seg = i } else { i++; if (d == 0) seg = i }
+          if (d == 0) line_shell = 0
+          continue
+        }
+        if (d == 0 && sep) { end_sub(i); i++; seg = i; continue }
+        i++
+      }
+      end_sub(n + 1)
+      if (q != "" || d > 0 || broken) {
+        t = s; gsub(/&&|\|\||;|\|/, "\n", t); m = split(t, parts, "\n")
+        for (k = 1; k <= m; k++) emit(parts[k])
+      }
+    }'
 }
 
 paths_all_edited() {
@@ -153,7 +295,7 @@ parse_git() {
 # work_cwd follows `cd <dir>` across the chain, so `cd repo && git branch -D x` is judged in repo
 work_cwd="$cwd"
 
-# gather every subcommand, expanding $( ... ) recursively
+# gather every subcommand, expanding $( ... ) and the code a shell re-enters recursively
 declare -a queue=("$command")
 declare -a subcommands=()
 while [ "${#queue[@]}" -gt 0 ]; do
@@ -163,8 +305,10 @@ while [ "${#queue[@]}" -gt 0 ]; do
     [ -n "$piece" ] && queue+=("$piece")
   done < <(extract_parens "$cur")
   while IFS= read -r sub; do
-    sub="$(printf '%s' "$sub" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-    [ -n "$sub" ] && subcommands+=("$sub")
+    case "$sub" in
+      S*) subcommands+=("${sub:1}") ;;
+      Q*) sub="${sub:1}"; queue+=("${sub//$'\036'/$'\n'}") ;;
+    esac
   done < <(split_subcommands "$cur")
 done
 
