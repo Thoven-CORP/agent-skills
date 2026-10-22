@@ -128,7 +128,11 @@ changes to upstream skills live here, as a string patch in
 
 `bin/thoven-worktree create <fe|be> <area> <n>` is the one way a ticket worktree
 gets made: `~/thoven/<repo>-thv-<n>` on `<area>/thv-<n>` from `origin/main`, with
-the env file copied, dependencies installed and backend storage blobs linked. Git
+the env file copied, dependencies installed and backend storage blobs linked. With
+`--project`, the first Build ticket cuts the Project's tree instead: `~/thoven/<repo>-<slug>`
+on its registry row's branch, else `<slug>/integration`, pushed to origin. A Project branch
+counts only when origin has it, so a local-only one (merged and deleted, or never pushed) is
+refused, never reused. Git
 carries none of those into a new worktree, and Claude's own `--worktree` names
 the branch `worktree-<name>`, so both repos wire `hook` mode as Claude's
 `WorktreeCreate` and `bootstrap` as Cursor's and the Codex app's setup step. A
@@ -155,7 +159,11 @@ A live dev server blocks that copy, so rerun `bootstrap` after adding a migratio
 with the server stopped. `remove <path>` first copies the tree's gitignored docs
 (`.md`, `.mdx`, `.markdown`, `.txt`, `.html`; never `node_modules` or build output)
 to `~/thoven/archive/<tree>-<date>/`, because those plans and notes exist nowhere
-else. It drops both databases, and only after `git worktree remove` succeeds. `orphan-dbs` lists the local Thoven databases no
+else, and every untracked file beside them (`.specs/`, `.audit/`) except rebuildable
+scratch, then runs `git worktree remove --force`. It refuses, and touches nothing, when
+the tree has tracked changes, commits no origin branch holds, or a process working inside
+it (a dev server writing during the delete left 176 MB behind). It drops both databases,
+and only after `git worktree remove` succeeds. `orphan-dbs` lists the local Thoven databases no
 worktree's `.env` names, and drops nothing.
 
 `thoven-worktree post-checkout` is each repo's lefthook `post-checkout` step. It

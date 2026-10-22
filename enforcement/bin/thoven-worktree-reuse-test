@@ -34,7 +34,9 @@ git init -q "$TMP/seed"
 (cd "$TMP/seed" && echo hi > README && git add -A && git commit -qm init)
 git clone -q --bare "$TMP/seed" "$TMP/origin.git"
 git clone -q "$TMP/origin.git" "$TMP/backend"
+# A Project branch counts only when origin has it, so the fixture pushes the one the tree is on.
 git -C "$TMP/backend" branch int/proj origin/main
+git -C "$TMP/backend" push -q origin int/proj
 git -C "$TMP/backend" worktree add -q "$TMP/proj-tree" int/proj
 git -C "$TMP/backend" worktree add -q -b tooling/thv-70 "$TMP/other-tree" origin/main
 PROJ_TREE="$(cd "$TMP/proj-tree" && pwd -P)"
@@ -103,15 +105,16 @@ check "f: a stale row is reported and falls through" 0 "stale row: branch int/go
 run "$TOOL" where Gone be
 check "f: where reports the stale row" 1 "stale row"
 run "$TOOL" where Nobody be
-check "f: where reports a missing row" 1 "no registry row"
+check "f: where with no row and no branch names the derived default" 1 "nobody/integration is not on origin"
 run "$TOOL" where Proj be
 check "f: where prints the validated path" 0 "$PROJ_TREE"
 git -C "$TMP/backend" branch int/lonely origin/main
+git -C "$TMP/backend" push -q origin int/lonely
 run "$TOOL" register-project Lonely be int/lonely
 run "$TOOL" where Lonely be
 check "f: where reports a branch with no tree" 1 "no worktree has int/lonely"
 run "$TOOL" create be tooling 17 --project Lonely --kind build --dry-run
-check "f: row 4 plans a tree on the existing branch" 0 "worktree add $TMP/backend-thv-17 int/lonely"
+check "f: row 4 plans a tree on the existing branch" 0 "worktree add $TMP/backend-lonely int/lonely"
 git -C "$TMP/backend" worktree remove --force "$TMP/other-tree"
 rm -rf "$TMP/proj-tree"
 run "$TOOL" where Proj be
@@ -142,6 +145,68 @@ run "$TOOL" create be tooling
 check "h: too few arguments is a usage error" 2 ""
 run "$TOOL" create be tooling 19 --kind bogus
 check "h: an unknown kind is a usage error" 2 ""
+
+# i: a Project's integration branch is its row's, else <slug>/integration, and it counts only when
+# origin has it.
+run "$TOOL" create be tooling 20 --project "Academy Positioning & Public Pages" --kind build --dry-run
+check "i: no row plans <slug>/integration at <repo>-<slug>" 0 \
+  "worktree add --no-track -b academy-positioning-public-pages/integration $TMP/backend-academy-positioning-public-pages origin/main"
+check "i: the dry-run plans the push" 0 "push -u origin academy-positioning-public-pages/integration"
+[ "$(printf '%s\n' "$OUT" | tail -n 1)" = "$TMP/backend-academy-positioning-public-pages" ] &&
+  pass "i: last stdout line is the Project tree path" || flunk "i: last stdout line" "$OUT"
+! printf '%s\n' "$ERR" | grep -qF "register-project" && pass "i: no register-project nag" || flunk "i: nag" "$ERR"
+[ ! -e "$TMP/backend-academy-positioning-public-pages" ] && pass "i: dry-run created no tree" || flunk "i: dry-run tree" "exists"
+[ -z "$(git -C "$TMP/origin.git" ls-remote . refs/heads/academy-positioning-public-pages/integration)" ] &&
+  pass "i: dry-run pushed nothing" || flunk "i: dry-run push" "origin has the branch"
+
+# The frontend-thv-1355 case: a row whose branch lives in a local tree but not on origin.
+git -C "$TMP/backend" worktree add -q -b academy-positioning/thv-1355 "$TMP/backend-thv-1355" origin/main
+run "$TOOL" register-project Academy be academy-positioning/thv-1355
+run "$TOOL" where Academy be
+check "i: a row whose branch is local only is stale" 1 "academy-positioning/thv-1355 exists locally but not on origin"
+[ -z "$OUT" ] && pass "i: where prints no path for a stale row" || flunk "i: stale where stdout" "$OUT"
+run "$TOOL" create be tooling 21 --project Academy --kind build --dry-run
+check "i: create refuses a local-only row branch" 1 "Push it if it is live work"
+
+# PR #361: origin deleted the branch, and the remote-tracking ref was left behind.
+git -C "$TMP/backend" push -q origin origin/main:refs/heads/int/leftover
+git -C "$TMP/backend" fetch -q origin
+git -C "$TMP/origin.git" branch -D -q int/leftover
+git -C "$TMP/backend" show-ref --verify --quiet refs/remotes/origin/int/leftover &&
+  pass "i: fixture keeps refs/remotes/origin/int/leftover" || flunk "i: fixture" "no remote-tracking ref"
+run "$TOOL" register-project Leftover be int/leftover
+run "$TOOL" where Leftover be
+check "i: a left-behind remote-tracking ref is stale" 1 "stale row: branch int/leftover is not on origin"
+run "$TOOL" create be tooling 22 --project Leftover --kind build --dry-run
+check "i: a stale row with nothing local is cut afresh from origin/main" 0 \
+  "worktree add --no-track -b int/leftover $TMP/backend-leftover origin/main"
+mv "$TMP/origin.git" "$TMP/origin.git.off"
+run "$TOOL" where Leftover be
+check "i: with origin unreachable, the remote-tracking ref decides" 1 "no worktree has int/leftover"
+mv "$TMP/origin.git.off" "$TMP/origin.git"
+
+# A derived branch that exists locally only is never reused silently.
+git -C "$TMP/backend" branch local-only/integration origin/main
+run "$TOOL" create be tooling 23 --project "Local Only" --kind build --dry-run
+check "i: dry-run refuses a local-only derived branch" 1 "local-only/integration exists locally but not on origin"
+run "$TOOL" create be tooling 23 --project "Local Only" --kind build
+check "i: create refuses a local-only derived branch" 1 "delete it if it landed"
+[ ! -e "$TMP/backend-local-only" ] && [ ! -e "$TMP/backend-thv-23" ] && pass "i: the refusal cut no tree" ||
+  flunk "i: refusal tree" "$(ls "$TMP")"
+
+# Empty input is refused, never read as a live branch.
+run "$TOOL" where "" be
+check "i: where with an empty project exits 2" 2 ""
+run "$TOOL" where "&&&" be
+check "i: where with a punctuation-only project exits 2" 2 ""
+run "$TOOL" create be tooling 24 --project " !!! " --kind build --dry-run
+check "i: create with a punctuation-only project exits 2" 2 ""
+printf 'Blank\tbe\t\n' >> "$THOVEN_WORKTREE_REGISTRY"
+run "$TOOL" where Blank be
+check "i: a row with an empty branch is not live" 1 "blank/integration is not on origin"
+[ -z "$OUT" ] && pass "i: an empty-branch row prints no path" || flunk "i: empty-branch where stdout" "$OUT"
+run "$TOOL" create be tooling 25 --project Blank --kind build --dry-run
+check "i: an empty-branch row plans the derived default" 0 "worktree add --no-track -b blank/integration $TMP/backend-blank origin/main"
 
 [ ! -e "$TMP/forbidden" ] && pass "no install or database tool was called" || flunk "forbidden tools" "$(cat "$TMP/forbidden")"
 

@@ -11,6 +11,7 @@ TMP="$(cd "$T" && pwd -P)"
 
 export THOVEN_ROOT="$TMP"
 export THOVEN_WORKTREE_SKIP_INSTALL=1
+export THOVEN_WORKTREE_REGISTRY="$TMP/projects.tsv"
 export GIT_CONFIG_GLOBAL="$TMP/gitconfig"
 export GIT_CONFIG_NOSYSTEM=1
 git config --file "$GIT_CONFIG_GLOBAL" user.name test
@@ -32,6 +33,9 @@ printf '#!/bin/sh\necho "createdb $*" >> "$TMP/db.log"\nexit "${CREATEDB_RC:-0}"
 printf '#!/bin/sh\necho "dropdb $*" >> "$TMP/db.log"\n' > "$STUB/dropdb"
 # shellcheck disable=SC2016
 printf '#!/bin/sh\ncat "$TMP/dbs" 2>/dev/null\n' > "$STUB/psql"
+# lsof lists the processes whose cwd is in $TMP/procs, so remove never sees this machine's real ones.
+# shellcheck disable=SC2016
+printf '#!/bin/sh\ncat "$TMP/procs" 2>/dev/null\nexit 0\n' > "$STUB/lsof"
 chmod +x "$STUB"/*
 export TMP PATH="$STUB:$PATH"
 installs() { cat "$TMP/installs" 2>/dev/null; }
@@ -341,6 +345,66 @@ if [ -d "$BUSY" ]; then ok "failed remove keeps the tree"; else fail "failed rem
 "$TOOL" remove "$TMP/backend" >/dev/null 2>&1; code=$?
 expect "remove refuses the main checkout" "$code" 1
 
+# remove converges on a dirty tree when nothing unrecoverable would be lost: untracked files are
+# archived, then git worktree remove --force deletes them.
+SPECS="$TMP/backend-thv-980"
+"$TOOL" create be specs 980 >/dev/null 2>&1
+mkdir -p "$SPECS/.specs"
+printf 'spec\n' > "$SPECS/.specs/notes.md"
+mkdir -p "$SPECS/build" && printf 'rebuildable\n' > "$SPECS/build/out.txt"
+err="$("$TOOL" remove "$SPECS" 2>&1 >/dev/null)"; code=$?
+expect "remove of a tree with an untracked .specs/ exit" "$code" 0
+if [ -e "$SPECS" ]; then fail "remove of a tree with an untracked .specs/ deletes it" "still there"; else ok "remove of a tree with an untracked .specs/ deletes it"; fi
+SPECS_ARCH="$TMP/archive/backend-thv-980-$(date +%Y-%m-%d)"
+expect "the untracked file is archived with its path" "$(cat "$SPECS_ARCH/.specs/notes.md" 2>/dev/null)" "spec"
+has_line "remove reports the untracked archive" "$err" "thoven-worktree: archived 1 untracked file(s) to $SPECS_ARCH"
+if [ -e "$SPECS_ARCH/build" ]; then fail "untracked build output is not archived" "archived"; else ok "untracked build output is not archived"; fi
+
+NEST="$TMP/backend-thv-984"
+"$TOOL" create be nest 984 >/dev/null 2>&1
+git init -q "$NEST/sub" && printf 'work\n' > "$NEST/sub/work.txt"
+"$TOOL" remove "$NEST" >/dev/null 2>&1; code=$?
+expect "remove of a tree holding a nested repository exit" "$code" 1
+if [ -e "$NEST/sub/work.txt" ]; then ok "a nested repository is kept"; else fail "a nested repository is kept" "gone"; fi
+
+MOD="$TMP/backend-thv-981"
+"$TOOL" create be modified 981 >/dev/null 2>&1
+printf 'mine\n' >> "$MOD/Gemfile"
+mkdir -p "$MOD/.specs" && printf 'spec\n' > "$MOD/.specs/notes.md"
+err="$("$TOOL" remove "$MOD" 2>&1 >/dev/null)"; code=$?
+expect "remove of a tree with a modified tracked file exit" "$code" 1
+expect "a refused remove leaves the edit" "$(tail -n 1 "$MOD/Gemfile")" "mine"
+has_line "the refusal names the modified file" "$err" " M Gemfile"
+if [ -e "$TMP/archive/backend-thv-981-$(date +%Y-%m-%d)" ]; then fail "a refused remove writes no archive" "wrote one"; else ok "a refused remove writes no archive"; fi
+
+AHEAD="$TMP/backend-thv-982"
+"$TOOL" create be ahead 982 >/dev/null 2>&1
+(cd "$AHEAD" && printf 'x\n' > mine && git add mine && git commit -qm mine)
+tip="$(git -C "$AHEAD" rev-parse HEAD)"
+"$TOOL" remove "$AHEAD" >/dev/null 2>&1; code=$?
+expect "remove of a squash-merged shape (branch commit not on origin) exit" "$code" 0
+expect "removing the tree keeps its branch and commit" "$(git -C "$TMP/backend" rev-parse -q --verify ahead/thv-982)" "$tip"
+
+DETACHED="$TMP/backend-thv-989"
+"$TOOL" create be detached 989 >/dev/null 2>&1
+(cd "$DETACHED" && git checkout -q --detach && printf 'detached\n' > mine && git add mine && git commit -qm detached)
+err="$("$TOOL" remove "$DETACHED" 2>&1 >/dev/null)"; code=$?
+expect "remove of a detached HEAD with a commit no branch holds exit" "$code" 1
+if [ -e "$DETACHED/mine" ]; then ok "a detached tree with its own commit is kept"; else fail "a detached tree with its own commit is kept" "gone"; fi
+if printf '%s\n' "$err" | grep -qF "1 commit(s)"; then ok "the refusal counts the commits"; else fail "the refusal counts the commits" "$err"; fi
+
+PROC="$TMP/backend-thv-983"
+"$TOOL" create be proc 983 >/dev/null 2>&1
+printf 'p4242\ncnext-server\nfcwd\nn%s/app\np17\nczsh\nfcwd\nn%s-other\n' "$PROC" "$PROC" > "$TMP/procs"
+err="$("$TOOL" remove "$PROC" 2>&1 >/dev/null)"; code=$?
+rm -f "$TMP/procs"
+expect "remove of a tree a process works in exit" "$code" 1
+if [ -d "$PROC" ]; then ok "a tree a process works in is kept"; else fail "a tree a process works in is kept" "gone"; fi
+if printf '%s\n' "$err" | grep -qF "4242 (next-server)"; then ok "the refusal names the pid and command"; else fail "the refusal names the pid and command" "$err"; fi
+if printf '%s\n' "$err" | grep -qF "zsh"; then fail "a sibling path is not inside the tree" "$err"; else ok "a sibling path is not inside the tree"; fi
+"$TOOL" remove "$PROC" >/dev/null 2>&1; code=$?
+expect "once the process is gone, remove exit" "$code" 0
+
 FOREIGN="$TMP/backend-thv-975"
 "$TOOL" create be foreign 975 >/dev/null 2>&1
 printf 'TEST_DATABASE_URL=postgresql://localhost/neondb_test_someone_thv1\n' >> "$FOREIGN/.env"
@@ -349,6 +413,8 @@ rm -f "$TMP/db.log"
 expect "remove of a worktree naming another's database exit" "$code" 0
 expect "remove drops no database named for another worktree" "$(dblog)" ""
 
+# BE carries a migration commit, and remove refuses commits no origin branch holds.
+git -C "$BE" push -q origin HEAD
 "$TOOL" remove "$BE" >/dev/null 2>&1; code=$?
 expect "remove exit" "$code" 0
 if [ -e "$BE" ]; then fail "remove deletes the tree" "still there"; else ok "remove deletes the tree"; fi
@@ -369,11 +435,6 @@ printf 'built\n' > "$FE/.next/out.md"
 mkdir -p "$FE/tmp" "$FE/.worktrees/other"
 printf 'secret\n' > "$FE/tmp/local_secret.txt"
 printf 'nested\n' > "$FE/.worktrees/other/notes.md"
-printf 'stray\n' > "$FE/untracked.md"
-"$TOOL" remove "$FE" >/dev/null 2>&1; code=$?
-expect "remove of a tree with an untracked file fails" "$code" 1
-if [ -e "$ARCH" ]; then fail "a refused remove archives nothing" "$(ls -R "$ARCH")"; else ok "a refused remove archives nothing"; fi
-rm "$FE/untracked.md"
 # A git that dies inside check-ignore leaves the doc list incomplete, so nothing may be removed.
 SHIM="$TMP/shim"; mkdir -p "$SHIM"
 # shellcheck disable=SC2016
@@ -396,5 +457,18 @@ NODOCS="$TMP/frontend-thv-979"
 "$TOOL" remove "$NODOCS" >/dev/null 2>&1; code=$?
 expect "remove without docs exit" "$code" 0
 if [ -e "$TMP/archive/frontend-thv-979-$(date +%Y-%m-%d)" ]; then fail "no docs, no archive folder" "made one"; else ok "no docs, no archive folder"; fi
+
+# Row 4: the first Build ticket of a Project cuts <slug>/integration at <repo>-<slug> and pushes it.
+PROJ="$TMP/backend-fresh-start"
+out="$("$TOOL" create be tooling 21 --project "Fresh Start" --kind build 2>/dev/null)"; code=$?
+expect "row 4 cut exit" "$code" 0
+expect "row 4 cut path" "$out" "$PROJ"
+expect "row 4 branch" "$(git -C "$PROJ" branch --show-current 2>/dev/null)" "fresh-start/integration"
+expect "row 4 branch is on origin" "$(git ls-remote "$TMP/origin-backend.git" refs/heads/fresh-start/integration | cut -f2)" \
+  "refs/heads/fresh-start/integration"
+expect "row 4 branch tracks origin, so a deletion shows as gone" \
+  "$(git -C "$PROJ" rev-parse --abbrev-ref '@{u}' 2>/dev/null)" "origin/fresh-start/integration"
+out="$("$TOOL" where "Fresh Start" be 2>/dev/null)"
+expect "where finds the pushed Project tree" "$out" "$PROJ"
 
 echo "all passed"

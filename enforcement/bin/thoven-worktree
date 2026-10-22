@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Makes Thoven worktrees at <repo>-thv-<n> on branch <area>/thv-<n>. Claude's --worktree would
+# Makes Thoven worktrees: a ticket's at <repo>-thv-<n> on branch <area>/thv-<n>, a Project's at
+# <repo>-<slug> on its integration branch, <slug>/integration by default. Claude's --worktree would
 # otherwise create branch worktree-<name>, and git never carries .env files or installed
 # dependencies into a new worktree, so a fresh one cannot boot without this.
 set -euo pipefail
@@ -28,8 +29,10 @@ usage: thoven-worktree create <fe|be> <area> <n> [--project <name>] [--kind <kin
        thoven-worktree where <project> <fe|be>
                                        (prints the Project's integration tree, validated)
        thoven-worktree bootstrap <path>
-       thoven-worktree remove <path>   (archives its gitignored docs to ~/thoven/archive first,
-                                       and drops the worktree's own databases)
+       thoven-worktree remove <path>   (archives its gitignored docs and untracked files to
+                                       ~/thoven/archive first, and drops the worktree's own
+                                       databases. Refuses tracked edits, a detached HEAD's own
+                                       commits and a process working inside it)
        thoven-worktree orphan-dbs      (lists local databases no worktree uses; drops nothing)
        thoven-worktree hook            (Claude Code WorktreeCreate; JSON on stdin)
        thoven-worktree post-checkout <prev> <new> <flag>
@@ -41,15 +44,19 @@ create decides by the ticket's Linear Project and Kind. One tree serves a Projec
   --kind build|fix (the default) with --project:
       the Project's tree exists       exit 4, its path is the last stdout line. Work there and end
                                       commits with the ticket id
-      no tree yet                     cut one on the integration branch, as create always did
-  no --project                          its own tree from origin/main (hotfix, scratch)
+      its branch, no tree             cut <repo>-<slug> on that branch
+      no branch on origin             cut <slug>/integration from origin/main at <repo>-<slug>, push it
+      its branch is local only        exit 1: push it if it is live work, delete it if it landed
+  no --project                          its own tree <repo>-thv-<n> from origin/main (hotfix, scratch)
   --new "<reason>" cuts a fresh tree from origin/main for build or fix even when a tree exists.
                    It does not apply to review, audit, research, verify, design or plan.
   --dry-run        print the plan on stderr, change nothing
 
-The registry (enforcement/worktree-projects.tsv, or THOVEN_WORKTREE_REGISTRY) caches Linear's
-Project to branch mapping. It holds branch names only. A row whose branch is gone, or whose tree
-is gone from disk, is stale and is ignored.
+A Project's integration branch is its registry row's, else <slug>/integration: the name lowercased,
+each run outside [a-z0-9] one '-', ends trimmed. A branch counts only when origin has it (git
+ls-remote). The registry (enforcement/worktree-projects.tsv, or THOVEN_WORKTREE_REGISTRY) caches
+Linear's Project to branch mapping, branch names only, and needs a row only when the confirmed name
+differs from the slug. A branch gone from origin, or a tree gone from disk, is stale.
 
 exit codes: 0 created, or the tree already exists   1 failure   2 usage error
             3 refused, read-only or docs-only kind  4 reuse an existing tree (path on stdout)
@@ -345,6 +352,34 @@ register_project() {
   log "registered $project ($repo) -> $branch in $file"
 }
 
+# project_slug <name>: lowercased, each run outside [a-z0-9] one '-', ends trimmed. Empty is a usage error.
+project_slug() {
+  local slug
+  slug="$(printf '%s' "$1" | LC_ALL=C tr '[:upper:]' '[:lower:]' | LC_ALL=C sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
+  [ -n "$slug" ] || die 2 "project '$1' has no letter or digit to name a branch with"
+  printf '%s\n' "$slug"
+}
+
+# on_origin <main> <branch>: whether origin has the branch, and ORIGIN_WHY when it does not. A
+# local-only branch is stale: its PR merged and GitHub deleted it, or it was never pushed. Only when
+# origin cannot be reached does the last fetched remote-tracking ref decide.
+on_origin() {
+  local rc=0
+  ORIGIN_WHY=""
+  [ -n "$2" ] || { ORIGIN_WHY="the branch name is empty"; return 1; }
+  git -C "$1" ls-remote --exit-code --heads origin "refs/heads/$2" >/dev/null 2>&1 || rc=$?
+  case "$rc" in
+    0) return 0 ;;
+    2) ORIGIN_WHY="git ls-remote origin has no refs/heads/$2"; return 1 ;;
+  esac
+  if git -C "$1" show-ref --verify --quiet "refs/remotes/origin/$2"; then
+    log "warning: git ls-remote origin failed (exit $rc), so the last fetched origin/$2 counts as live"
+    return 0
+  fi
+  ORIGIN_WHY="git ls-remote origin failed (exit $rc) and there is no refs/remotes/origin/$2"
+  return 1
+}
+
 # tree_for_branch <main> <branch>: the first worktree of that repo with the branch checked out.
 tree_for_branch() {
   git -C "$1" worktree list --porcelain | awk -v B="refs/heads/$2" '
@@ -352,29 +387,35 @@ tree_for_branch() {
     $1 == "branch" && $2 == B { print p; exit }'
 }
 
-# lookup_tree <main> <project> <repo> sets TREE_STATE (ok|norow|notree|stale), TREE_BRANCH, TREE_PATH, TREE_WHY.
-# It reads the registry and git refs only, with no network.
+# lookup_tree <main> <project> <repo> <slug> sets TREE_STATE, TREE_BRANCH, TREE_PATH, TREE_WHY.
+# ok: on origin with a tree. notree: on origin, no tree. stale: a row's or local branch that origin
+# lacks, or a tree gone from disk. new: no branch yet, so the first Build ticket cuts it.
 lookup_tree() {
-  local main="$1" project="$2" repo="$3" file
+  local main="$1" project="$2" repo="$3" file row="" label=stale
   TREE_STATE="" TREE_BRANCH="" TREE_PATH="" TREE_WHY=""
   file="$(registry_file)"
   if [ -f "$file" ]; then
-    TREE_BRANCH="$(awk -F'\t' -v p="$project" -v r="$repo" '!/^#/ && $1 == p && $2 == r { b = $3 } END { print b }' "$file")"
+    row="$(awk -F'\t' -v p="$project" -v r="$repo" '!/^#/ && $1 == p && $2 == r { b = $3 } END { print b }' "$file")"
   fi
-  if [ -z "$TREE_BRANCH" ]; then
-    TREE_STATE=norow TREE_WHY="no registry row for $project ($repo) in $file"
-    return 0
-  fi
-  if ! git -C "$main" show-ref --verify --quiet "refs/heads/$TREE_BRANCH" &&
-    ! git -C "$main" show-ref --verify --quiet "refs/remotes/origin/$TREE_BRANCH"; then
-    TREE_STATE=stale TREE_WHY="stale row: branch $TREE_BRANCH is neither a local nor a remote-tracking ref in $main"
+  [ -z "$row" ] || label="stale row"
+  TREE_BRANCH="${row:-$4/integration}"
+  if ! on_origin "$main" "$TREE_BRANCH"; then
+    if git -C "$main" show-ref --verify --quiet "refs/heads/$TREE_BRANCH"; then
+      TREE_PATH="$(tree_for_branch "$main" "$TREE_BRANCH")"
+      TREE_STATE=stale TREE_WHY="$label: branch $TREE_BRANCH exists locally but not on origin ($ORIGIN_WHY)${TREE_PATH:+, checked out at $TREE_PATH}. Push it if it is live work: git -C $main push -u origin $TREE_BRANCH. Remove its tree and delete it if it landed"
+      TREE_PATH=""
+    elif [ -n "$row" ]; then
+      TREE_STATE=stale TREE_WHY="stale row: branch $TREE_BRANCH is not on origin ($ORIGIN_WHY)"
+    else
+      TREE_STATE=new TREE_WHY="$TREE_BRANCH is not on origin ($ORIGIN_WHY). The Project's first Build ticket cuts it"
+    fi
     return 0
   fi
   TREE_PATH="$(tree_for_branch "$main" "$TREE_BRANCH")"
   if [ -z "$TREE_PATH" ]; then
     TREE_STATE=notree TREE_WHY="no worktree has $TREE_BRANCH checked out"
   elif [ ! -d "$TREE_PATH" ]; then
-    TREE_STATE=stale TREE_WHY="stale row: $TREE_PATH for $TREE_BRANCH is gone from disk (git worktree prune clears it)"
+    TREE_STATE=stale TREE_WHY="stale: $TREE_PATH for $TREE_BRANCH is gone from disk (git worktree prune clears it)"
     TREE_PATH=""
   else
     TREE_STATE=ok
@@ -383,13 +424,14 @@ lookup_tree() {
 
 where_tree() {
   [ $# -eq 2 ] || usage
-  local project="$1" repo="$2" row root main
+  local project="$1" repo="$2" row root main slug
   plain_arg project "$project"
+  slug="$(project_slug "$project")" || exit 2
   row="$(repo_table "$repo")" || die 2 "repo must be fe or be, got '$repo'"
   root="$(cd "$THOVEN_ROOT" 2>/dev/null && pwd)" || die 1 "THOVEN_ROOT $THOVEN_ROOT does not exist"
   main="$root/${row%% *}"
   git -C "$main" rev-parse --git-dir >/dev/null 2>&1 || die 1 "$main is not a git checkout"
-  lookup_tree "$main" "$project" "$repo"
+  lookup_tree "$main" "$project" "$repo" "$slug"
   [ "$TREE_STATE" = ok ] || die 1 "$TREE_WHY"
   printf '%s\n' "$TREE_PATH"
 }
@@ -406,7 +448,7 @@ read_recipe() {
 }
 
 create() {
-  local kind="" area="" n="" project="" tkind="" reason="" new=0 dry=0 pos=()
+  local kind="" area="" n="" project="" slug="" tkind="" reason="" new=0 dry=0 pos=()
   while [ $# -gt 0 ]; do
     case "$1" in
       --project) [ $# -ge 2 ] || die 2 "--project needs a name"; project="$2"; shift 2 ;;
@@ -424,7 +466,10 @@ create() {
   [[ "$area" =~ ^[a-z0-9][a-z0-9-]*$ ]] || die 2 "area must match ^[a-z0-9][a-z0-9-]*\$, got '$area'"
   [[ "$n" =~ ^[0-9]+$ ]] || die 2 "n must be digits, got '$n'"
   if [ "$new" = 1 ]; then plain_arg "--new reason" "$reason"; fi
-  if [ -n "${project:-}" ]; then plain_arg "--project" "$project"; fi
+  if [ -n "${project:-}" ]; then
+    plain_arg "--project" "$project"
+    slug="$(project_slug "$project")" || exit 2
+  fi
   tkind="$(printf '%s' "$tkind" | tr '[:upper:]' '[:lower:]')"
   case "$tkind" in
     "" | meta | build | fix | review | audit | research | verify | design | plan) ;;
@@ -442,7 +487,7 @@ create() {
 
   local known=0
   if [ -n "$project" ] && [ "$have_git" = 1 ]; then
-    lookup_tree "$main" "$project" "$kind"
+    lookup_tree "$main" "$project" "$kind" "$slug"
     known=1
   fi
 
@@ -463,13 +508,11 @@ create() {
 
   # Row 3: the Project's tree exists, so work there.
   if [ "$known" = 1 ]; then
-    case "$TREE_STATE" in
-      stale) log "$TREE_WHY. Ignoring the row." ;;
-      norow) log "$TREE_WHY" ;;
-    esac
     if [ "$TREE_STATE" = ok ] && [ "$new" = 1 ]; then
       log "--new: cutting a fresh tree from origin/main instead of reusing $TREE_PATH. Reason: $reason"
-    elif [ "$TREE_STATE" = ok ] && [ "$(physical "$TREE_PATH")" != "$(physical "$path")" ]; then
+    elif [ "$new" = 1 ]; then
+      log "--new: $reason"
+    elif [ "$TREE_STATE" = ok ]; then
       log "reuse the tree for $project: $TREE_PATH on branch $TREE_BRANCH"
       log "work there, and end every commit with THV-$n. To use it: cd $TREE_PATH"
       local other
@@ -485,14 +528,24 @@ create() {
     log "--new: $reason"
   fi
 
-  # Row 4: the Project has a branch and no tree yet, so the first ticket cuts its canonical tree.
-  local base="origin/main" existing=0
-  if [ "$known" = 1 ] && [ "$new" = 0 ] && [ "$TREE_STATE" = notree ]; then
+  # Row 4: the first Build ticket cuts the Project's canonical tree, and its remote branch if origin
+  # has none. A local-only branch may be landed work or unpushed work, so it is never reused.
+  local base="origin/main" existing=0 push=0
+  if [ "$known" = 1 ] && [ "$new" = 0 ]; then
     branch="$TREE_BRANCH"
-    existing=1
-    log "first ticket for $project: cutting its tree on integration branch $branch"
-  elif [ -n "$project" ] && [ "$new" = 0 ]; then
-    log "no integration tree for $project yet: $branch becomes it. Record it: thoven-worktree register-project \"$project\" $kind $branch"
+    path="$root/$repo-$slug"
+    case "$TREE_STATE" in
+      notree)
+        existing=1
+        log "first ticket for $project: cutting its tree on integration branch $branch" ;;
+      new)
+        push=1
+        log "first ticket for $project: cutting integration branch $branch from $base and pushing it" ;;
+      stale)
+        git -C "$main" show-ref --verify --quiet "refs/heads/$branch" && die 1 "$TREE_WHY. Nothing was cut."
+        push=1
+        log "$TREE_WHY. Cutting it afresh from $base and pushing it" ;;
+    esac
   fi
 
   if [ -e "$path" ]; then
@@ -513,6 +566,7 @@ create() {
     else
       log "dry-run: would fetch origin main, then run: git -C $main worktree add --no-track -b $branch $path $base"
     fi
+    [ "$push" = 0 ] || log "dry-run: would run: git -C $path push -u origin $branch"
     log "dry-run: would bootstrap $path"
     printf '%s\n' "$path"
     return 0
@@ -520,12 +574,20 @@ create() {
     if git -C "$main" show-ref --verify --quiet "refs/heads/$branch"; then
       git -C "$main" worktree add "$path" "$branch" >&2
     else
-      git -C "$main" worktree add --no-track -b "$branch" "$path" "origin/$branch" >&2
+      git -C "$main" fetch origin "refs/heads/$branch:refs/remotes/origin/$branch" >&2 ||
+        log "warning: git fetch origin $branch failed, using the last fetched origin/$branch"
+      git -C "$main" worktree add --track -b "$branch" "$path" "origin/$branch" >&2
     fi
   else
     log "fetching origin main in $main"
     git -C "$main" fetch origin main >&2
     git -C "$main" worktree add --no-track -b "$branch" "$path" "$base" >&2
+    # -u, so a later deletion on GitHub shows as [gone].
+    if [ "$push" = 1 ]; then
+      git -C "$path" push -u origin "$branch" >&2 ||
+        die 1 "git push -u origin $branch failed. $path is cut on a branch origin lacks; push it: git -C $path push -u origin $branch"
+      log "pushed integration branch $branch to origin"
+    fi
   fi
 
   bootstrap "$path"
@@ -539,14 +601,19 @@ ARCHIVE_PRUNE=(.git node_modules .pnpm-store .next '.next-*' .turbo build dist o
   playwright-report test-results .worktrees graphify-out)
 ARCHIVE_DOCS=(md mdx markdown txt html)
 
-# archive_docs <path>: copies <path>'s gitignored docs, keeping their paths, to
-# $THOVEN_ROOT/archive/<tree name>-<date>/. Tracked files are never listed by check-ignore.
+archive_dest() {
+  local dest
+  dest="$THOVEN_ROOT/archive/$(basename "$1")-$(date +%Y-%m-%d)"
+  [ -e "$dest" ] && dest="$dest-$(date +%H%M%S)"
+  printf '%s\n' "$dest"
+}
+
+# archive_docs <path> <dest>: copies <path>'s gitignored docs to <dest>, keeping their paths.
+# Tracked files are never listed by check-ignore.
 archive_docs() {
-  local path="$1" dest name prune=() docs=() f n=0 found ignored rc
+  local path="$1" dest="$2" name prune=() docs=() f n=0 found ignored rc
   for name in "${ARCHIVE_PRUNE[@]}"; do prune+=(-name "$name" -o); done
   for name in "${ARCHIVE_DOCS[@]}"; do docs+=(-name "*.$name" -o); done
-  dest="$THOVEN_ROOT/archive/$(basename "$path")-$(date +%Y-%m-%d)"
-  [ -e "$dest" ] && dest="$dest-$(date +%H%M%S)"
   # Listed to files first: check-ignore exits 1 when nothing matches, and anything above 1 means the
   # list is incomplete, so the tree must not be removed on the strength of it.
   found="$(mktemp)" && ignored="$(mktemp)" || return 1
@@ -570,17 +637,73 @@ archive_docs() {
   fi
 }
 
+# in_pruned_dir <relative path>: whether a directory on the path is an ARCHIVE_PRUNE name.
+in_pruned_dir() {
+  local rest="${1%/*}" part name
+  [ "$rest" != "$1" ] || return 1
+  while [ -n "$rest" ]; do
+    part="${rest%%/*}"
+    if [ "$part" = "$rest" ]; then rest=""; else rest="${rest#*/}"; fi
+    for name in "${ARCHIVE_PRUNE[@]}"; do
+      # shellcheck disable=SC2254
+      case "$part" in $name) return 0 ;; esac
+    done
+  done
+  return 1
+}
+
+# archive_untracked <path> <dest>: copies untracked, non-ignored files to <dest>, keeping their
+# paths, because remove --force deletes them. A nested repository fails it: its own uncommitted work
+# would go with it.
+archive_untracked() {
+  local path="$1" dest="$2" list f n=0 rc=0
+  list="$(mktemp)" || return 1
+  git -C "$path" ls-files -z --others --exclude-standard >"$list" || { rm -f "$list"; return 1; }
+  while IFS= read -r -d '' f; do
+    case "$f" in */) log "$path/$f is a nested repository; move it out first"; rc=1; break ;; esac
+    in_pruned_dir "$f" && continue
+    if ! { mkdir -p "$dest/$(dirname "$f")" && cp -pP "$path/$f" "$dest/$f"; }; then rc=1; break; fi
+    n=$((n + 1))
+  done <"$list"
+  rm -f "$list"
+  [ "$rc" -eq 0 ] || return 1
+  [ "$n" -eq 0 ] || log "archived $n untracked file(s) to $dest"
+}
+
+# procs_inside <path>: "  pid <pid> (<command>)" for each process whose cwd is in <path>.
+procs_inside() {
+  command -v lsof >/dev/null || { log "lsof is not installed, so processes inside $1 cannot be checked"; return 1; }
+  # lsof exits 1 when some processes are unreadable, and the readable ones are still listed.
+  { lsof -d cwd -Fpcn 2>/dev/null || true; } | awk -v P="$1" '
+    /^p/ { pid = substr($0, 2) } /^c/ { cmd = substr($0, 2) }
+    /^n/ { n = substr($0, 2); if (n == P || index(n, P "/") == 1) print "  pid " pid " (" cmd ")" }'
+}
+
+# remove converges whenever nothing unrecoverable would be lost: tracked edits and a detached HEAD's
+# own commits are refused, everything untracked is archived, then git removes the tree with --force.
 remove() {
-  local path main db key suffix dbs=()
+  local path main db key suffix dbs=() dirty ahead procs dest
   path="$(physical "$1")" || die 1 "remove: $1 is not a directory"
   [ "$(physical "$(git -C "$path" rev-parse --show-toplevel 2>/dev/null)")" = "$path" ] ||
     die 1 "remove: $path is not the top of a git worktree"
   main="$(physical "$(main_of "$path")")"
   [ "$path" != "$main" ] || die 1 "remove: $path is the main checkout"
-  # git refuses a tree with edits or untracked files, and a refused remove should leave no archive.
-  if [ -z "$(git -C "$path" status --porcelain)" ]; then
-    archive_docs "$path" || die 1 "remove: archiving $path's gitignored docs failed, so nothing was removed"
-  fi
+  # Neither this script nor lsof may count as a process inside the tree.
+  cd /
+  dirty="$(git -C "$path" status --porcelain --untracked-files=no)" || die 1 "remove: git status failed in $path"
+  [ -z "$dirty" ] || die 1 "remove: $path has tracked changes, so nothing was removed. Commit and push them, or restore them:
+$dirty"
+  # The branch outlives its tree, so a commit on a branch is kept (a squash-merged ticket's are on
+  # no origin branch). Only a detached HEAD can hold commits that removing the tree strands.
+  ahead="$(git -C "$path" rev-list --count HEAD --not --branches --remotes=origin)" || die 1 "remove: git rev-list failed in $path"
+  [ "$ahead" = 0 ] || die 1 "remove: $path has a detached HEAD with $ahead commit(s) no branch holds, so nothing was removed. Keep them on a branch: git -C $path switch -c <branch>"
+  # A dev server writing during the delete left a partial delete with 176 MB behind.
+  procs="$(procs_inside "$path")" || die 1 "remove: nothing was removed"
+  [ -z "$procs" ] || die 1 "remove: these processes work inside $path, so nothing was removed. Stop them, or cd out, and rerun:
+$procs"
+  dest="$(archive_dest "$path")"
+  archive_docs "$path" "$dest" || die 1 "remove: archiving $path's gitignored docs failed, so nothing was removed"
+  archive_untracked "$path" "$dest" || die 1 "remove: archiving $path's untracked files failed, so nothing was removed"
   # Only the names bootstrap gives this tree: a .env copied from another tree names that tree's.
   suffix="$(db_suffix "$path")"
   if [ -f "$path/.env" ]; then
@@ -589,7 +712,7 @@ remove() {
       { [ "$db" = "neondb_test_$suffix" ] || [ "$db" = "thoven_dev_$suffix" ]; } && dbs+=("$db")
     done
   fi
-  git -C "$main" worktree remove "$path" >&2 || die 1 "git worktree remove $path failed, so no database was dropped"
+  git -C "$main" worktree remove --force "$path" >&2 || die 1 "git worktree remove --force $path failed, so no database was dropped"
   log "removed $path"
   # A database another live worktree still names is shared, not this one's to drop.
   local still
