@@ -6,9 +6,10 @@ import unittest
 from unittest.mock import patch
 
 import testkit  # noqa: F401
-from dispatch_lib import cli, store
+from dispatch_lib import cli, fleet, store
 from dispatch_lib.model import EntryKind, State, Status
 from dispatch_lib.mux import Launch, MuxError
+from dispatch_lib.runner import Result
 from testkit import FakeMux, FakeRunner, HomeCase, at, registration
 
 
@@ -97,6 +98,30 @@ class PostBoardClean(Harness):
         self.assertEqual(self.cmd("post", "Bad_Project", "--ticket", "THV-1", "--kind", "answer", stdin="x"), 2)
         self.assertEqual(self.cmd("post", "proj", "--ticket", "thv-1", "--kind", "answer", stdin="x"), 2)
 
+    def test_a_report_status_must_be_a_report_word(self):
+        self.assertEqual(self.cmd("post", "proj", "--ticket", "THV-1", "--kind", "report", "--status", "DNOE",
+                                  stdin="x"), 2)
+        self.assertIn("report status 'DNOE' is not one of: DONE DONE_WITH_CONCERNS NEEDS_CONTEXT BLOCKED VERIFIED "
+                      "FINDINGS", self.err.getvalue())
+        self.assertEqual(self.cmd("post", "proj", "--ticket", "THV-1", "--kind", "report", stdin="x"), 2)
+        self.assertEqual(self.cmd("post", "proj", "--ticket", "THV-1", "--kind", "report", "--status", "verified",
+                                  stdin="x"), 0)
+        self.assertEqual(self.cmd("post", "proj", "--ticket", "THV-1", "--kind", "question", "--status",
+                                  "NEEDS_CONTEXT", stdin="x"), 0)
+
+    def test_board_since_must_be_an_iso_time(self):
+        self.assertEqual(self.cmd("board", "proj", "--since", "yesterday"), 2)
+        self.assertIn("--since must be an ISO time like 2026-10-22T12:00:00Z, got 'yesterday'", self.err.getvalue())
+
+    def test_json_is_offered_only_where_it_is_honoured(self):
+        with patch("sys.stderr", io.StringIO()):
+            self.assertEqual(self.cmd("post", "proj", "--ticket", "THV-1", "--kind", "answer", "--json", stdin="x"), 2)
+            self.assertEqual(self.cmd("board", "proj", "--json"), 2)
+        store.write_registration(registration(pane="block:a", ticket="THV-1"))
+        self.mux.statuses["block:a"] = Status(State.IDLE)
+        self.assertEqual(self.cmd("status", "block:a", "--json"), 0)
+        self.assertEqual(json.loads(self.out.getvalue())["state"], "IDLE")
+
     def test_clean_refuses_while_a_pane_is_live(self):
         store.write_registration(registration(project="proj", ticket="THV-7"))
         store.post("proj", "THV-7", EntryKind.REPORT, "r", "x", "DONE")
@@ -109,6 +134,20 @@ class PostBoardClean(Harness):
         self.assertEqual(self.mux.closed, ["block:a"])
         self.assertEqual(self.cmd("clean", "proj", "--ticket", "THV-7"), 0)
         self.assertEqual(store.entries("proj"), [])
+
+
+class Fleet(Harness):
+    def test_a_failed_bootstrap_exits_1_and_says_the_job_is_not_loaded(self):
+        plist = os.path.join(self.home, "LaunchAgents", "co.thoven.dispatch-tick.plist")
+        self.app.run = FakeRunner({
+            ("launchctl", "bootstrap"): Result(5, "", "Bootstrap failed: 5: Input/output error\n"),
+            ("launchctl", "print"): Result(113, "", "Could not find service"),
+        })
+        with patch.object(fleet, "plist_path", lambda: plist):
+            self.assertEqual(self.cmd("fleet", "install"), 1)
+        self.assertEqual(self.err.getvalue(), "dispatch fleet: launchctl bootstrap failed: Bootstrap failed: 5: "
+                                              "Input/output error. The old job is not loaded: no tick runs until "
+                                              "`dispatch fleet install` succeeds.\n")
 
 
 class Watch(Harness):
@@ -274,6 +313,18 @@ class TemplateDocs(unittest.TestCase):
                 self.assertNotIn("THV-<", text)
 
 
+class AlertTableDocs(unittest.TestCase):
+    def test_skill_md_has_one_alert_row_per_word_the_tick_raises(self):
+        import re
+        from dispatch_lib.model import AlertWord
+        with open(os.path.join(cli.SCRIPTS, "..", "SKILL.md")) as f:
+            text = f.read()
+        table = text[text.index("| Alert | Main does |"):]
+        table = table[:table.index("\n\n")]
+        rows = re.findall(r"^\| `([A-Z_]+)`", table, re.M)
+        self.assertEqual(sorted(rows), sorted(w.value for w in AlertWord))
+
+
 class FakeAgents:
     SPECS = {"claude": {"kind": "claude", "models": ["opus", "haiku"]}, "codex": {"kind": "codex", "models": ["gpt-x"]}}
 
@@ -344,6 +395,14 @@ class PaneCommands(Harness):
         self.mux.statuses["block:a"] = Status(State.IDLE, updated_at="u1")
         self.assertEqual(self.cmd("send", "block:a", self.file), 3)
         self.assertEqual(self.mux.keys, [("block:a", "enter")])
+
+    def test_key_presses_one_key_to_answer_a_dialog(self):
+        self.assertEqual(self.cmd("key", "build-thv-1", "down"), 0)
+        self.assertEqual(self.cmd("key", "block:a", "Enter"), 0)
+        self.assertEqual(self.mux.keys, [("block:a", "down"), ("block:a", "enter")])
+        self.assertEqual(self.out.getvalue(), "enter -> block:a\n")
+        self.assertEqual(self.cmd("key", "block:a", "rm -rf"), 2)
+        self.assertEqual(len(self.mux.keys), 2)
 
     def test_close_drops_the_registration_before_closing_the_pane(self):
         registered_at_close = []

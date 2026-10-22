@@ -12,7 +12,7 @@ import sys
 import time
 
 from . import fleet, linear, store
-from .model import (KINDS, DispatchError, EntryKind, PaneRef, Registration, State, UsageError, WrongState,
+from .model import (KINDS, REPORT_WORDS, DispatchError, EntryKind, PaneRef, Registration, State, UsageError, WrongState,
                     check_project, check_ticket, iso, now_utc, parse_iso)
 from .mux import BACKENDS, Launch, detect, main_pane, wait_started
 from .runner import Runner, run as default_run
@@ -25,6 +25,7 @@ ENTER_WAIT = 30
 PLACEHOLDER_RE = re.compile(r"\{\{[^{}]*\}\}|<<[^<>\n]+>>")
 # The ticket id in brief.md's template; spawn and the herdr picker (compose.py) both fill it.
 TICKET_SLOT = "THV-<id>"
+KEY_RE = re.compile(r"^[A-Za-z0-9+_-]{1,20}$")
 
 
 # ---------------------------------------------------------------- helpers with no I/O beyond their args
@@ -259,6 +260,14 @@ class App:
             return self.say(f"sent {len(text.encode())} bytes to {ref.pane} (pressed Enter once)")
         raise WrongState(f"{ref.pane} never started on the text; it may sit unsent in the input box")
 
+    def key(self, a):
+        if not KEY_RE.match(a.key):
+            raise UsageError(f"one key name like enter, esc, up, down, tab, y or 1, got {a.key!r}")
+        ref, _ = self.resolve(a.pane, a.backend)
+        key = a.key.lower()
+        self.mux(ref.backend).key(ref, key)
+        self.say(f"{key} -> {ref.pane}")
+
     def interrupt(self, a):
         ref, _ = self.resolve(a.pane, a.backend)
         self.mux(ref.backend).key(ref, "esc")
@@ -282,6 +291,8 @@ class App:
         status = a.status.upper() if a.status else None
         if status and not re.match(r"^[A-Z_]+$", status):
             raise UsageError(f"status must be one word like DONE, got {a.status!r}")
+        if kind == EntryKind.REPORT and status not in REPORT_WORDS:
+            raise UsageError(f"report status {status!r} is not one of: {' '.join(REPORT_WORDS)}")
         body = sys.stdin.read() if a.body is None else a.body
         if not body.strip():
             raise UsageError("empty body: pipe the entry text on stdin")
@@ -290,6 +301,11 @@ class App:
 
     def board(self, a):
         store.require_project_exists(a.project)
+        if a.since:
+            try:
+                parse_iso(a.since)
+            except ValueError:
+                raise UsageError(f"--since must be an ISO time like 2026-10-22T12:00:00Z, got {a.since!r}")
         for path, e in store.entries(a.project, ticket=a.ticket, since=a.since):
             self.say(store.show_entry(path, e))
 
@@ -347,17 +363,17 @@ class App:
 
 
 def parser() -> argparse.ArgumentParser:
-    common = argparse.ArgumentParser(add_help=False)
-    common.add_argument("--json", action="store_true", help="JSON output")
+    json_opt = argparse.ArgumentParser(add_help=False)
+    json_opt.add_argument("--json", action="store_true", help="JSON output")
     pane_opts = argparse.ArgumentParser(add_help=False)
     pane_opts.add_argument("--backend", choices=sorted(BACKENDS),
                            help="for a pane with no Registration: rex or herdr (default: the pane you run in)")
     p = argparse.ArgumentParser(prog="dispatch", description=__doc__)
     s = p.add_subparsers(dest="cmd", required=True)
-    s.add_parser("whoami", parents=[common], help="backend, main pane, main peer name, project")
-    x = s.add_parser("snapshot", parents=[common], help="Linear ticket -> snapshots/<THV-x>.md")
+    s.add_parser("whoami", parents=[json_opt], help="backend, main pane, main peer name, project")
+    x = s.add_parser("snapshot", help="Linear ticket -> snapshots/<THV-x>.md")
     x.add_argument("project"), x.add_argument("ticket")
-    x = s.add_parser("spawn", parents=[common], help="open a labelled pane and start an agent on its brief")
+    x = s.add_parser("spawn", parents=[json_opt], help="open a labelled pane and start an agent on its brief")
     x.add_argument("project"), x.add_argument("ticket")
     x.add_argument("--kind", required=True, choices=KINDS)
     x.add_argument("--title", required=True)
@@ -369,34 +385,36 @@ def parser() -> argparse.ArgumentParser:
     x.add_argument("--split-of", metavar="PANE")
     x.add_argument("--base", metavar="SHA")
     x.add_argument("--brief", metavar="FILE", help="default briefs/<THV-x>.md")
-    x = s.add_parser("label", parents=[common, pane_opts], help='label a pane "<Kind> · <title> (THV-x)"')
+    x = s.add_parser("label", parents=[pane_opts], help='label a pane "<Kind> · <title> (THV-x)"')
     x.add_argument("pane", nargs="?"), x.add_argument("kind", nargs="?"), x.add_argument("title", nargs="?")
     x.add_argument("ticket", nargs="?")
     x.add_argument("--tab", action="store_true")
     x.add_argument("--kinds", action="store_true", help="print the allowed kinds")
-    for name, text in (("status", "normalised Status"), ("interrupt", "press Esc"),
-                       ("close", "close the pane and drop its Registration")):
-        s.add_parser(name, parents=[common, pane_opts], help=text).add_argument("pane")
-    x = s.add_parser("read", parents=[common, pane_opts], help="scrollback tail")
+    s.add_parser("status", parents=[json_opt, pane_opts], help="normalised Status").add_argument("pane")
+    for name, text in (("interrupt", "press Esc"), ("close", "drop the pane's Registration and close the pane")):
+        s.add_parser(name, parents=[pane_opts], help=text).add_argument("pane")
+    x = s.add_parser("key", parents=[pane_opts], help="press one key in a pane, to answer a dialog")
+    x.add_argument("pane"), x.add_argument("key", help="enter, esc, up, down, tab, y, 1, ctrl+c ...")
+    x = s.add_parser("read", parents=[pane_opts], help="scrollback tail")
     x.add_argument("pane"), x.add_argument("--lines", type=int, default=40)
-    x = s.add_parser("send", parents=[common, pane_opts], help="type a file into an IDLE or DONE pane")
+    x = s.add_parser("send", parents=[pane_opts], help="type a file into an IDLE or DONE pane")
     x.add_argument("pane"), x.add_argument("file")
-    x = s.add_parser("post", parents=[common], help="post an entry; body from stdin; prints its path")
+    x = s.add_parser("post", help="post an entry; body from stdin; prints its path")
     x.add_argument("project")
     x.add_argument("--ticket", required=True)
-    x.add_argument("--kind", required=True)
-    x.add_argument("--status")
+    x.add_argument("--kind", required=True, help=", ".join(k.name.lower() for k in EntryKind))
+    x.add_argument("--status", help="a report needs one of " + " ".join(REPORT_WORDS))
     x.add_argument("--from", dest="frm")
     x.add_argument("--body", help=argparse.SUPPRESS)
-    x = s.add_parser("board", parents=[common], help="print entries oldest first")
+    x = s.add_parser("board", help="print entries oldest first")
     x.add_argument("project"), x.add_argument("--ticket"), x.add_argument("--since", metavar="ISO")
-    x = s.add_parser("watch", parents=[common], help="print one line per new ALERT, and per Codex REPORT, QUESTION or HANDOFF; "
-                                                    "replays what landed while no watch ran")
+    x = s.add_parser("watch", help="print one line per new ALERT, and per Codex REPORT, QUESTION or HANDOFF; "
+                                   "replays what landed while no watch ran")
     x.add_argument("project"), x.add_argument("--interval", type=float, default=3, help=argparse.SUPPRESS)
-    s.add_parser("tick", parents=[common], help="one watcher pass over every Registration")
-    x = s.add_parser("clean", parents=[common], help="delete a ticket's files, or the whole project")
+    s.add_parser("tick", help="one watcher pass over every Registration")
+    x = s.add_parser("clean", help="delete a ticket's files, or the whole project")
     x.add_argument("project"), x.add_argument("--ticket")
-    x = s.add_parser("fleet", parents=[common], help="launchd agent co.thoven.dispatch-tick")
+    x = s.add_parser("fleet", help="launchd agent co.thoven.dispatch-tick")
     x.add_argument("action", choices=("install", "uninstall", "status"))
     x.add_argument("--dry-run", action="store_true", help="install: print the plist, write nothing")
     return p

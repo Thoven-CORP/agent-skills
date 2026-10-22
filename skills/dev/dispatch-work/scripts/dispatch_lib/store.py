@@ -12,8 +12,8 @@ import secrets
 import shutil
 import tempfile
 
-from .model import (Entry, EntryKind, PaneRef, Registration, UsageError, check_project, check_ticket,
-                    iso, now_utc, parse_iso)
+from .model import (PROJECT_RE, Entry, EntryKind, PaneRef, Registration, UsageError, check_project,
+                    check_ticket, iso, now_utc, parse_iso)
 
 
 def home() -> str:
@@ -32,7 +32,7 @@ def projects() -> list[str]:
     root = home()
     if not os.path.isdir(root):
         return []
-    return sorted(p for p in os.listdir(root) if os.path.isdir(os.path.join(root, p)) and re.match(r"^[a-z0-9-]+$", p))
+    return sorted(p for p in os.listdir(root) if os.path.isdir(os.path.join(root, p)) and PROJECT_RE.match(p))
 
 
 def write_atomic(path: str, text: str) -> None:
@@ -76,7 +76,8 @@ def write_registration(reg: Registration) -> str:
     return path
 
 
-def registrations(project: str | None = None) -> list[Registration]:
+def registrations(project: str | None = None, on_skip=lambda path, why: None) -> list[Registration]:
+    """Every readable Registration. on_skip(path, reason) hears about a file that is not one."""
     out = []
     for p in [project] if project else projects():
         folder = sub(p, "panes")
@@ -85,11 +86,11 @@ def registrations(project: str | None = None) -> list[Registration]:
         for name in sorted(os.listdir(folder)):
             if not name.endswith(".json") or name.endswith(".watch.json"):
                 continue
-            data = read_json(os.path.join(folder, name))
+            path = os.path.join(folder, name)
             try:
-                out.append(Registration.from_dict(data))
-            except (TypeError, KeyError):
-                continue
+                out.append(Registration.from_dict(read_json(path)))
+            except (TypeError, ValueError) as e:
+                on_skip(path, str(e))
     return out
 
 

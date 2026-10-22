@@ -1,5 +1,6 @@
 import json
 import unittest
+import unittest.mock
 
 import testkit  # noqa: F401
 from dispatch_lib import linear, procs
@@ -59,8 +60,6 @@ class Snapshot(unittest.TestCase):
         self.assertEqual((sent["url"], sent["body"]["variables"], sent["auth"]),
                          ("https://api.linear.app/graphql", {"id": "THV-5"}, "k-test"))
 
-
-import unittest.mock  # noqa: E402
 
 if __name__ == "__main__":
     unittest.main()

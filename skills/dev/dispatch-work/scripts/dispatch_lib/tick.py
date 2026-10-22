@@ -8,7 +8,7 @@ import traceback
 from dataclasses import dataclass
 
 from . import store
-from .model import EntryKind, Registration, State, Status, iso, now_utc, parse_iso
+from .model import AlertWord, EntryKind, Registration, State, Status, iso, now_utc, parse_iso
 from .mux import BACKENDS
 from .runner import Runner
 
@@ -31,7 +31,7 @@ SETTLED = (State.DONE, State.IDLE)
 
 @dataclass(frozen=True)
 class Alert:
-    word: str
+    word: AlertWord
     episode: str
     body: str
 
@@ -89,7 +89,7 @@ def step(reg: Registration, watch: dict, status: Status, now: datetime.datetime,
     alerts: list[Alert] = []
     stamp = iso(now)
 
-    def alert(word: str, episode: str, detail: str) -> None:
+    def alert(word: AlertWord, episode: str, detail: str) -> None:
         # Raised on every tick the condition holds; the board entry named after (pane, word, episode) dedups it.
         alerts.append(Alert(word, episode, detail))
 
@@ -97,7 +97,7 @@ def step(reg: Registration, watch: dict, status: Status, now: datetime.datetime,
         return w, alerts
 
     if status.state == State.GONE:
-        alert("GONE", "pane", "the agent is no longer running in the pane")
+        alert(AlertWord.GONE, "pane", "the agent is no longer running in the pane")
         w["last_state"] = State.GONE.name
         return done()
 
@@ -111,17 +111,17 @@ def step(reg: Registration, watch: dict, status: Status, now: datetime.datetime,
     if state != State.UNKNOWN:
         w["status_seen"] = True
     elif not w.get("status_seen") and _secs(now, reg.launched_at) >= STARTUP_AFTER:
-        alert("STARTUP", reg.launched_at, f"no status {STARTUP_AFTER}s after launch: a trust, update or login "
+        alert(AlertWord.STARTUP, reg.launched_at, f"no status {STARTUP_AFTER}s after launch: a trust, update or login "
               "dialog is likely waiting")
 
     if state == State.BLOCKED and _secs(now, w["since"]) >= BLOCKED_AFTER:
         # Rex stamps the blocked record, so its episode survives a lost watch file; herdr has no stamp.
-        alert("BLOCKED", status.updated_at or w["since"], f"blocked {status.kind or '?'}: {status.msg or '-'}")
+        alert(AlertWord.BLOCKED, status.updated_at or w["since"], f"blocked {status.kind or '?'}: {status.msg or '-'}")
 
     if state == State.WORKING and status.fingerprint and _secs(now, w["fingerprint_since"]) >= FROZEN_AFTER:
         cpu = gates.cpu()
         if cpu is None or cpu < FROZEN_CPU:
-            alert("FROZEN", status.updated_at or w["fingerprint_since"],
+            alert(AlertWord.FROZEN, status.updated_at or w["fingerprint_since"],
                   f"working with no change since {w['fingerprint_since']}, cpu {'?' if cpu is None else cpu}%")
 
     if state in ACTIVE:
@@ -140,7 +140,7 @@ def settle(reg: Registration, w: dict, now: datetime.datetime, gates, alert) -> 
     episode = w["settle_since"]
     limit = gates.limit_line()
     if limit:
-        alert("LIMIT", episode, limit)
+        alert(AlertWord.LIMIT, episode, limit)
     count = gates.report_count()
     if count is None:
         return
@@ -156,7 +156,7 @@ def settle(reg: Registration, w: dict, now: datetime.datetime, gates, alert) -> 
 
     if reg.cli == "codex":
         live, dirty = gates.live_work(), dirty_text()
-        alert("SETTLED", episode, "codex settled. report: " + ("yes" if reported else "no")
+        alert(AlertWord.SETTLED, episode, "codex settled. report: " + ("yes" if reported else "no")
               + "; dirty: " + (dirty or "no") + "; limit: " + (limit or "no")
               + (f"; still running: {', '.join(live[:3])}" if live else ""))
         return resolve()
@@ -168,7 +168,7 @@ def settle(reg: Registration, w: dict, now: datetime.datetime, gates, alert) -> 
         return
     dirty = dirty_text()
     # Shared integration trees always carry other sessions' edits, so a dirty tree only matters without a report.
-    alert("SETTLED_NO_REPORT", episode, f"settled with no REPORT, QUESTION or HANDOFF entry from {reg.agent_name} "
+    alert(AlertWord.SETTLED_NO_REPORT, episode, f"settled with no REPORT, QUESTION or HANDOFF entry from {reg.agent_name} "
           "this turn" + (f"; {reg.tree}: {dirty}" if dirty else "")
           + (f"; still running: {', '.join(live[:3])}" if live else ""))
     resolve()
@@ -184,7 +184,7 @@ def failures(w: dict, errors: list[str], now: datetime.datetime) -> list[Alert]:
     w["last_error"] = errors[-1]
     if w["failures"] < TICK_ERROR_AFTER:
         return []
-    return [Alert("TICK_ERROR", w["failing_since"], f"{w['failures']} ticks in a row failed; last: {errors[-1]}")]
+    return [Alert(AlertWord.TICK_ERROR, w["failing_since"], f"{w['failures']} ticks in a row failed; last: {errors[-1]}")]
 
 
 def tick_pane(reg: Registration, run: Runner, now: datetime.datetime | None = None, mux=None,
@@ -213,9 +213,9 @@ def tick_pane(reg: Registration, run: Runner, now: datetime.datetime | None = No
         if not store.is_registered(reg):
             return posted
         body = f"{reg.agent_name} ({reg.pane.backend} {reg.pane.pane}): {a.body}" + (
-            "" if a.word == "TICK_ERROR" else note)
-        path = store.post(reg.project, reg.ticket, EntryKind.ALERT, body, "dispatch-tick", a.word, at=now,
-                          dedup=f"{store.pane_key(reg.pane)}|{a.word}|{a.episode}")
+            "" if a.word == AlertWord.TICK_ERROR else note)
+        path = store.post(reg.project, reg.ticket, EntryKind.ALERT, body, "dispatch-tick", a.word.value, at=now,
+                          dedup=f"{store.pane_key(reg.pane)}|{a.word.value}|{a.episode}")
         if path:
             posted.append((a, path))
     if store.is_registered(reg):
@@ -232,11 +232,11 @@ def tick_all(run: Runner, now: datetime.datetime | None = None, mux_for=None, ou
 
     with store.tick_lock():
         count = 0
-        for reg in store.registrations():
+        for reg in store.registrations(on_skip=lambda path, why: log(f"{iso(now)} skipped registration {path}: {why}")):
             try:
                 for a, path in tick_pane(reg, run, now, mux_for(reg) if mux_for else None, log=log):
                     count += 1
-                    log(f"{iso(now)} {reg.project} {reg.ticket} ALERT {a.word} {reg.agent_name} {path}")
+                    log(f"{iso(now)} {reg.project} {reg.ticket} ALERT {a.word.value} {reg.agent_name} {path}")
             except Exception as e:
                 log(f"{iso(now_utc())} {reg.project} {reg.ticket} {reg.pane.pane} tick failed: {e!r}")
                 traceback.print_exc(limit=2, file=out)

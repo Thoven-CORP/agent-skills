@@ -6,6 +6,7 @@ import plistlib
 import sys
 
 from . import store
+from .model import DispatchError
 from .runner import Runner
 
 LABEL = "co.thoven.dispatch-tick"
@@ -47,7 +48,10 @@ def install(run: Runner, script: str) -> list[str]:
         f.write(plist(script))
     res = run(["launchctl", "bootstrap", domain(), plist_path()])
     if not res.ok:
-        return [f"launchctl bootstrap failed: {res.err.strip()}"]
+        loaded = run(["launchctl", "print", f"{domain()}/{LABEL}"]).ok
+        state = ("The old job is still loaded and keeps ticking." if loaded else
+                 "The old job is not loaded: no tick runs until `dispatch fleet install` succeeds.")
+        raise DispatchError(f"launchctl bootstrap failed: {(res.err or res.out).strip().rstrip('.')}. {state}")
     return [f"installed {plist_path()}", f"log {log_path()}"]
 
 

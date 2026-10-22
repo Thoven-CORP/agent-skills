@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import datetime
 import re
-from dataclasses import asdict, dataclass
+from dataclasses import MISSING, asdict, dataclass, fields
 from enum import Enum
 from typing import Literal
 
@@ -11,7 +11,6 @@ Backend = Literal["rex", "herdr"]
 
 KINDS = ("Meta", "Plan", "Design", "Build", "Review", "Research", "Audit", "Fix", "Verify")
 REPORT_WORDS = ("DONE", "DONE_WITH_CONCERNS", "NEEDS_CONTEXT", "BLOCKED", "VERIFIED", "FINDINGS")
-ALERT_WORDS = ("BLOCKED", "FROZEN", "GONE", "LIMIT", "SETTLED_NO_REPORT", "DIRTY", "LIVE_WORK", "SETTLED")
 PROJECT_RE = re.compile(r"^[a-z0-9-]+$")
 TICKET_RE = re.compile(r"^THV-[0-9]+$")
 
@@ -35,6 +34,18 @@ class State(Enum):
     IDLE = "idle"
     GONE = "gone"
     UNKNOWN = "unknown"
+
+
+class AlertWord(str, Enum):
+    """Every word `dispatch tick` posts as an ALERT entry's status. SKILL.md has one row per word."""
+    STARTUP = "STARTUP"
+    BLOCKED = "BLOCKED"
+    FROZEN = "FROZEN"
+    GONE = "GONE"
+    LIMIT = "LIMIT"
+    SETTLED_NO_REPORT = "SETTLED_NO_REPORT"
+    SETTLED = "SETTLED"
+    TICK_ERROR = "TICK_ERROR"
 
 
 class EntryKind(Enum):
@@ -69,25 +80,35 @@ class Status:
 class Registration:
     project: str
     ticket: str
-    kind: str
-    title: str
     pane: PaneRef
     cli: Literal["claude", "codex"]
     agent_name: str
-    main_name: str
     tree: str
-    base_sha: str
-    brief: str
     launched_at: str
+    kind: str = ""
+    title: str = ""
+    main_name: str = ""
+    base_sha: str = ""
+    brief: str = ""
 
     def to_dict(self):
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, d):
-        fields = dict(d)
-        fields["pane"] = PaneRef(**fields["pane"])
-        return cls(**fields)
+    def from_dict(cls, d) -> "Registration":
+        """Unknown keys are ignored and optional ones default, so an older or newer dispatch can read the file.
+        ValueError names a missing required key."""
+        if not isinstance(d, dict):
+            raise ValueError("not a JSON object")
+        missing = [f.name for f in fields(cls) if f.default is MISSING and f.name not in d]
+        if missing:
+            raise ValueError("missing " + ", ".join(missing))
+        pane = d["pane"] if isinstance(d["pane"], dict) else {}
+        try:
+            ref = PaneRef(backend=pane["backend"], pane=pane["pane"], session=pane.get("session", ""))
+        except KeyError as e:
+            raise ValueError(f"pane is missing {e.args[0]}")
+        return cls(**{f.name: d[f.name] for f in fields(cls) if f.name in d and f.name != "pane"}, pane=ref)
 
 
 @dataclass(frozen=True)

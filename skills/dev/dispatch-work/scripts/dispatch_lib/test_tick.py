@@ -379,6 +379,25 @@ class GateFailures(TickCase):
         self.assertEqual(self.alerts(), [])
 
 
+class Registrations(TickCase):
+    def write(self, name, data):
+        os.makedirs(store.sub("proj", "panes"), exist_ok=True)
+        with open(os.path.join(store.sub("proj", "panes"), name), "w") as f:
+            json.dump(data, f)
+
+    def test_unknown_keys_are_ignored_missing_optional_keys_default_and_broken_ones_are_logged(self):
+        good = registration().to_dict()
+        del good["title"], good["base_sha"]
+        self.write("rex-block_a.json", {**good, "added_later": 1})
+        self.write("rex-block_b.json", {k: v for k, v in good.items() if k != "pane"})
+        regs = store.registrations()
+        self.assertEqual([(r.agent_name, r.title, r.base_sha) for r in regs], [("build-thv-1", "", "")])
+        out = io.StringIO()
+        tick.tick_all(self.run, at(0), mux_for=lambda r: self.mux, out=out)
+        self.assertIn(f"skipped registration {store.sub('proj', 'panes')}/rex-block_b.json: missing pane",
+                      out.getvalue())
+
+
 class CloseRace(TickCase):
     def test_a_pane_closed_mid_tick_gets_no_alert_and_no_watch_file(self):
         reg = self.reg()
