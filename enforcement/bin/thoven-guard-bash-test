@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2016,SC2088 # test commands are text handed to the guard, unexpanded on purpose
 # Runs thoven-guard-bash in each dialect against a temp HOME, so the shared-worktree check
 # sees $HOME/thoven/... without touching the real trees.
 set -uo pipefail
@@ -155,6 +156,53 @@ expect "test:run with a path is allowed" "$(decision claude "pnpm run test:run _
 expect "rspec on a spec is allowed" "$(decision claude "bundle exec rspec spec/models/user_spec.rb")" "allow"
 expect "THOVEN_FULL_SUITE=1 allows the full suite" "$(decision claude "THOVEN_FULL_SUITE=1 bundle exec rspec")" "allow"
 expect "prose naming vitest run stays allowed" "$(decision claude "echo pnpm vitest run")" "allow"
+
+# A separator inside quotes, or a line of a heredoc body, is not a command boundary.
+expect "a quoted pipe in a pgrep pattern is not a command" "$(decision claude 'pgrep -fl "vitest|rspec|rails runner"')" "allow"
+expect "a quoted pipe in a grep pattern is not a command" "$(decision claude "grep -E 'x|git stash|y' notes.md")" "allow"
+expect "a quoted pipe in a ps | grep pattern is not a command" "$(decision claude 'ps aux | grep -E "node.*vitest|rspec"')" "allow"
+expect "a heredoc body read by python is not judged" "$(decision claude $'python3 - <<\'PY\'\nimport subprocess\nbundle exec rspec\ngit stash push\ngit checkout -- app\nPY')" "allow"
+expect "a <<- heredoc body written by cat is not judged" "$(decision claude $'cat > notes.md <<-EOF\n\tbundle exec rspec\n\tgit stash push\n\tgit checkout -- app\n\tEOF\necho done')" "allow"
+expect "a heredoc body with an apostrophe does not hide the command after it" "$(decision claude $'cat <<\'EOF\' > notes.md\nit\'s here\nEOF\ngit stash push')" "deny"
+expect "a heredoc body read by bash is judged" "$(decision claude $'bash <<\'EOF\'\necho cleaning\ngit clean -fd\nEOF')" "deny"
+expect "a heredoc body piped to sh is judged" "$(decision claude $'cat <<\'EOF\' | sh\ngit clean -fd\nEOF')" "deny"
+expect "sh -c runs its argument" "$(decision claude "sh -c 'git stash push'")" "deny"
+expect "sh -c runs every command in its argument" "$(decision claude "sh -c 'git stash; git clean -fd'")" "deny"
+expect "bash -c runs its argument" "$(decision claude 'bash -c "pnpm vitest run"')" "deny"
+expect "env and bash -lc do not hide the argument" "$(decision claude "env FOO=1 bash -lc 'bundle exec rspec'")" "deny"
+expect "xargs sh -c does not hide the argument" "$(decision claude "echo x | xargs sh -c 'git clean -fd'")" "deny"
+expect "a bash -c newline separates commands" "$(decision claude $'bash -c \'echo hi\ngit stash push\'')" "deny"
+expect "eval runs its argument" "$(decision claude 'eval "git reset --hard"')" "deny"
+expect "bash -c of a harmless command stays allowed" "$(decision claude "bash -c 'git status; echo ok'")" "allow"
+expect "a for loop over quoted suite strings is allowed" "$(decision claude "for c in 'bundle exec rspec' 'pnpm vitest run'; do echo \"\$c\"; done")" "allow"
+expect "an unquoted ; still separates a suite run" "$(decision claude "echo hi; bundle exec rspec")" "deny"
+expect "a multi-line commit message naming git clean is allowed" "$(decision claude $'git commit -m "Refuse stray cleans\n\nThe guard now judges ; git clean -fd only as a command."')" "allow"
+expect "an apostrophe in a comment does not hide the next line" "$(decision claude $'# don\'t stash yet\ngit stash push')" "deny"
+expect "a quote in a \$(cat <<EOF) body does not hide the command after it" "$(decision claude $'git commit -m "$(cat <<\'EOF\'\nsay "hi\nEOF\n)"; git stash push')" "deny"
+expect "an arithmetic shift is not a heredoc" "$(decision claude $'echo $((1<<2))\ngit stash push')" "deny"
+expect "an unterminated quote fails closed" "$(decision claude 'echo "unterminated; git stash push')" "deny"
+
+# Command substitution is judged with the same quote and heredoc awareness as the top level.
+expect "a \$(cat <<'EOF') commit message naming guarded commands is allowed" "$(decision claude $'git commit -m "$(cat <<\'EOF\'\nTighten the guard\n\ngit stash push\nbundle exec rspec\nEOF\n)"')" "allow"
+expect "\$(git stash push) is denied" "$(decision claude "echo \"\$(git stash push)\"")" "deny"
+expect "a backtick git clean is denied" "$(decision claude "echo \`git clean -fd\`")" "deny"
+expect "a single-quoted \$(git stash) is literal and allowed" "$(decision claude "echo '\$(git stash)'")" "allow"
+expect "\$( ) in an unquoted heredoc body is denied" "$(decision claude $'cat > notes.md <<EOF\n$(git stash push)\nEOF')" "deny"
+expect "\$( ) in a quoted heredoc body is literal and allowed" "$(decision claude $'cat > notes.md <<\'EOF\'\n$(git stash push)\nEOF')" "allow"
+# Wrappers in front of a command do not hide it.
+expect "timeout 60 bash -c runs its argument" "$(decision claude "timeout 60 bash -c 'git stash push'")" "deny"
+expect "sudo git clean is denied" "$(decision claude "sudo git clean -fd")" "deny"
+expect "env X=1 git stash push is denied" "$(decision claude "env X=1 git stash push")" "deny"
+expect "nice -n 5 bundle exec rspec is denied" "$(decision claude "nice -n 5 bundle exec rspec")" "deny"
+expect "a whole suite inside a loop body is denied" "$(decision claude "for f in x; do bundle exec rspec; done")" "deny"
+# A redirection is not a path.
+expect "pnpm vitest run 2>&1 is denied" "$(decision claude "pnpm vitest run 2>&1")" "deny"
+expect "bundle exec rspec > out.log is denied" "$(decision claude "bundle exec rspec > out.log")" "deny"
+expect "a redirection with no target is not a path" "$(decision claude "bundle exec rspec >")" "deny"
+expect "rspec on a spec with 2>&1 is allowed" "$(decision claude "bundle exec rspec spec/x_spec.rb 2>&1")" "allow"
+# Text piped into a shell is run.
+expect "echo text piped to bash is judged" "$(decision claude "echo \"git stash push\" | bash")" "deny"
+expect "a 20 KB heredoc returns within 5 s" "$(fast $'python3 - <<\'PY\'\n'"$(printf 'print("step")  # bundle exec rspec, git stash push, x | y; z\n%.0s' $(seq 330))"$'\nPY')" "allow"
 
 [ "$failed" -eq 0 ] || exit 1
 echo "all passed"

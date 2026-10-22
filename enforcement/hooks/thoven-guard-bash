@@ -53,37 +53,226 @@ deny() {
   exit 0
 }
 
-# extract the inner text of every top-level $( ... ) in a string
-extract_parens() {
-  local s="$1"
-  local i=0 len=${#s} depth j start
-  while [ "$i" -lt "$len" ]; do
-    if [ "${s:$i:2}" = '$(' ]; then
-      depth=1
-      j=$((i + 2))
-      start=$j
-      while [ "$j" -lt "$len" ] && [ "$depth" -gt 0 ]; do
-        c="${s:$j:1}"
-        [ "$c" = "(" ] && depth=$((depth + 1))
-        [ "$c" = ")" ] && depth=$((depth - 1))
-        j=$((j + 1))
-      done
-      printf '%s\n' "${s:$start:$((j - start - 1))}"
-      i=$j
-    else
-      i=$((i + 1))
-    fi
-  done
-}
-
-# split a string on &&, ||, ;, |, newline (top-level, no quote-awareness)
+# Split a command into its subcommands, one line each: S, the VAR=val words in front of the command,
+# \037, then the command from its head word on, past VAR=val, wrappers (env, timeout, sudo, nice,
+# nohup, time, command, xargs) and do/then/else/elif. Only an unquoted ; & | or newline separates,
+# so `pgrep -f "vitest|rspec"` is one command. Code a shell runs comes back as Q with its newlines
+# as \036, to be judged like a top-level command: a $( ) or backtick body outside single quotes,
+# bash -c, eval, a here-string, a heredoc fed to a shell, and echo or printf text piped to one. A
+# heredoc body is otherwise data; an unquoted one comes back as H, to be scanned for $( ) and
+# backticks only (mode H). A parse that ends inside a quote, a $( , a backtick or an unterminated
+# heredoc has lost track of bash, so the old split on every separator is added and the guard fails
+# closed. awk, because a bash char loop is O(n^2).
 split_subcommands() {
-  local s="$1"
-  s="${s//&&/$'\n'}"
-  s="${s//||/$'\n'}"
-  s="${s//;/$'\n'}"
-  s="${s//|/$'\n'}"
-  printf '%s\n' "$s"
+  printf '%s' "$1" | LC_ALL=C awk -v mode="${2:-C}" '
+    function flush_to(j) { if (j > seg) buf = buf substr(s, seg, j - seg); seg = j }
+    function word_end(j) { if (inword) { wn++; ws[wn] = wstart; we[wn] = j - 1; wb[wn] = wbuf; inword = 0 } }
+    function word(k) { return substr(s, ws[k], we[k] - ws[k] + 1) }
+    function bare(w) { gsub(/["\047\\]/, "", w); return w }
+    function unq(w,   f) {
+      if (w !~ /^["\047]/) return w
+      f = substr(w, 1, 1)
+      if (substr(w, length(w), 1) != f) sub(/\)+$/, "", w)
+      if (length(w) >= 2 && substr(w, length(w), 1) == f) return substr(w, 2, length(w) - 2)
+      return w
+    }
+    function requeue(t) { gsub(/\n/, "\036", t); if (t ~ /[^ \t\036]/) print "Q" t }
+    function trim(t) { gsub(/\n/, " ", t); sub(/^[ \t]+/, "", t); sub(/[ \t]+$/, "", t); return t }
+    # the command word after VAR=val prefixes, wrappers and their options, as an index into the words
+    function head(   k, w, a, pos) {
+      k = 1
+      while (k <= wn) {
+        w = bare(word(k)); sub(/^\(+/, "", w)
+        if (w ~ /^[A-Za-z_][A-Za-z0-9_]*=/) { k++; continue }
+        sub(/.*\//, "", w)
+        if (w ~ /^(do|then|else|elif)$/) { k++; continue }
+        if (w ~ /^(env|timeout|nohup|time|command|sudo|nice|xargs)$/) {
+          k++; pos = (w == "timeout")
+          while (k <= wn) {
+            a = bare(word(k))
+            if (a == "--") { k++; break }
+            if (a ~ /^-/) {
+              k++
+              if (a ~ /=/) continue
+              if ((w == "env" && a ~ /^-[uCPS]$/) || (w == "timeout" && a ~ /^-[sk]$/) || (w == "nice" && a == "-n") ||
+                  (w == "sudo" && a ~ /^-[ugpCDrtTU]$/) || (w == "xargs" && a ~ /^-[IdEnLPsaJRS]$/)) k++
+              continue
+            }
+            if (pos) { pos = 0; k++; continue }
+            break
+          }
+          continue
+        }
+        return k
+      }
+      return 0
+    }
+    function emit(k,   a, m, w) {
+      if (trim(buf) == "") return
+      a = ""
+      for (m = 1; m < k || (!k && m <= wn); m++) {
+        w = bare(word(m)); sub(/^\(+/, "", w)
+        if (w ~ /^[A-Za-z_][A-Za-z0-9_]*=/) a = a " " w
+      }
+      print "S" trim(a) "\037" (k ? trim(substr(buf, wb[k])) : "")
+    }
+    # the fallback: one piece of the separator split, its words cut on blanks
+    function emit_plain(t,   save, L, j, k0) {
+      save = s; s = t; buf = t; wn = 0; L = length(t); j = 1
+      while (j <= L) {
+        while (j <= L && substr(t, j, 1) ~ /[ \t\n]/) j++
+        if (j > L) break
+        k0 = j; while (j <= L && substr(t, j, 1) !~ /[ \t\n]/) j++
+        wn++; ws[wn] = k0; we[wn] = j - 1; wb[wn] = k0
+      }
+      emit(head()); s = save; wn = 0
+    }
+    function end_sub(j,   k, hw, m, w, code, found, text) {
+      word_end(j); flush_to(j)
+      if (trim(buf) == "") { buf = ""; wn = 0; return }
+      k = head(); emit(k); buf = ""
+      text = ""
+      if (k) {
+        hw = bare(word(k)); sub(/^\(+/, "", hw); sub(/.*\//, "", hw)
+        if (hw ~ /^(bash|sh|zsh|dash|ksh)$/) {
+          line_shell = 1; found = 0
+          for (m = k + 1; m <= wn; m++) {
+            w = word(m)
+            if ((w ~ /^-[A-Za-z]*c[A-Za-z]*$/ || w == "<<<") && m < wn) { requeue(unq(word(m + 1))); found = 1; break }
+            if (w ~ /^<<</) { requeue(unq(substr(w, 4))); found = 1; break }
+          }
+          if (!found && piped != "") requeue(piped)
+        } else if (hw == "eval") {
+          line_shell = 1
+          code = ""
+          for (m = k + 1; m <= wn; m++) code = code " " unq(word(m))
+          requeue(code)
+        } else if (hw ~ /^(echo|printf)$/ && ch[j] == "|" && ch[j + 1] != "|" && ch[j - 1] != "|") {
+          for (m = k + 1; m <= wn; m++) {
+            w = unq(word(m))
+            if (hw == "echo" && text == "" && w ~ /^-[neE]+$/) continue
+            text = text " " w
+          }
+          gsub(/\\n/, "\n", text)
+        }
+      }
+      piped = text
+      wn = 0
+    }
+    function push(t) { d++; sq[d] = q; sp[d] = pd; st[d] = t; q = ""; pd = 0 }
+    function pop() { q = sq[d]; pd = sp[d]; d-- }
+    function open_sub() { push(ch[i + 2] == "(" ? "a" : "c"); i += (st[d] == "a" ? 3 : 2); sb[d] = i; if (st[d] == "c") nc++ }
+    # a $( ) closing at j; the outermost one is requeued, and its re-split reaches the ones inside
+    function close_sub(j) { if (st[d] == "c" && --nc == 0) requeue(substr(s, sb[d], j - sb[d])); pop() }
+    # a backtick at i: requeue its body with \$ \` \\ unescaped, as bash does, and step past it
+    function tick(   j, b, o, k, c2) {
+      j = i + 1
+      while (j <= n && ch[j] != "`") j += (ch[j] == "\\" ? 2 : 1)
+      if (j > n) broken = 1
+      b = substr(s, i + 1, j - i - 1); o = ""
+      for (k = 1; k <= length(b); k++) {
+        c2 = substr(b, k, 1)
+        if (c2 == "\\" && substr(b, k + 1, 1) ~ /[$`\\]/) c2 = substr(b, ++k, 1)
+        o = o c2
+      }
+      if (!nc) requeue(o)
+      i = j + 1
+    }
+    # read the bodies of the pending heredocs from the line after position j; returns where they end
+    function bodies(j,   k, e, line, cmp, body) {
+      for (k = 1; k <= hn; k++) {
+        body = ""
+        while (1) {
+          if (j > n) { broken = 1; break }
+          e = j; while (e <= n && ch[e] != "\n") e++
+          line = substr(s, j, e - j); cmp = line
+          if (hx[k]) sub(/^\t+/, "", cmp)
+          j = e + 1
+          if (cmp == hd[k]) break
+          body = body line "\n"
+        }
+        if (!hnest[k]) {
+          if (line_shell) requeue(body)
+          else if (!hlit[k] && body ~ /[$`]/) { gsub(/\n/, "\036", body); print "H" body }
+        }
+      }
+      hn = 0
+      return j
+    }
+    { s = (NR == 1 ? $0 : s "\n" $0) }
+    END {
+      gsub(/\036/, "\n", s)
+      n = split(s, ch, "")
+      q = (mode == "H" ? "h" : ""); d = 0; pd = 0; st[0] = ""; nc = 0; seg = 1; buf = ""; wn = 0; inword = 0
+      hn = 0; broken = 0; line_shell = 0; piped = ""
+      i = 1
+      while (i <= n) {
+        c = ch[i]
+        if (q == "\047") { if (c == "\047") q = ""; i++; continue }
+        if (q == "$\047") { if (c == "\\") i++; else if (c == "\047") q = ""; i++; continue }
+        # inside double quotes, or anywhere in an unquoted heredoc body (q h)
+        if (q == "\"" || q == "h") {
+          if (c == "\\") i++
+          else if (c == "\"" && q == "\"") q = ""
+          else if (c == "$" && ch[i + 1] == "(") { open_sub(); continue }
+          else if (c == "`") { tick(); continue }
+          i++; continue
+        }
+        sep = (c == ";" || c == "|" || (c == "&" && ch[i - 1] != ">" && ch[i - 1] != "<" && ch[i + 1] != ">"))
+        if (d == 0) {
+          if (c == " " || c == "\t" || c == "\n" || sep) word_end(i)
+          else if (!inword) { inword = 1; wstart = i; wbuf = length(buf) + i - seg + 1 }
+        }
+        if (c == "\\") {
+          if (ch[i + 1] == "\n") { flush_to(i); i += 2; seg = i; continue }
+          i += 2; continue
+        }
+        if (c == "\047") { q = "\047"; i++; continue }
+        if (c == "\"") { q = "\""; i++; continue }
+        if (c == "$" && ch[i + 1] == "\047") { q = "$\047"; i += 2; continue }
+        if (c == "$" && ch[i + 1] == "(") { open_sub(); continue }
+        if (c == "`") { tick(); continue }
+        if (st[d] == "a") {
+          if (c == "(") pd++
+          else if (c == ")") { if (pd > 0) pd--; else if (ch[i + 1] == ")") { close_sub(i); i += 2; continue } }
+          i++; continue
+        }
+        if (d > 0 && c == "(") { pd++; i++; continue }
+        if (d > 0 && c == ")") { if (pd > 0) pd--; else close_sub(i); i++; continue }
+        if (c == "#" && (i == 1 || ch[i - 1] ~ /[ \t\n;&|()]/)) {
+          flush_to(i); while (i <= n && ch[i] != "\n") i++; seg = i; continue
+        }
+        if (c == "<" && ch[i + 1] == "<") {
+          if (ch[i + 2] == "<") { i += 3; continue }
+          j = i + 2; dash = 0; delim = ""; lit = 0
+          if (ch[j] == "-") { dash = 1; j++ }
+          while (ch[j] == " " || ch[j] == "\t") j++
+          while (j <= n && ch[j] !~ /[ \t\n;&|<>()]/) {
+            if (ch[j] == "\047") { lit = 1; j++; while (j <= n && ch[j] != "\047") delim = delim ch[j++]; j++ }
+            else if (ch[j] == "\"") { lit = 1; j++; while (j <= n && ch[j] != "\"") { if (ch[j] == "\\") j++; delim = delim ch[j++] } j++ }
+            else if (ch[j] == "\\") { lit = 1; j++; delim = delim ch[j++] }
+            else delim = delim ch[j++]
+          }
+          if (delim != "") { hn++; hd[hn] = delim; hx[hn] = dash; hlit[hn] = lit; hnest[hn] = (d > 0); i = j; continue }
+          i += 2; continue
+        }
+        if (c == "\n") {
+          if (d == 0) end_sub(i)
+          else flush_to(i + 1)
+          if (hn > 0) { i = bodies(i + 1); seg = i } else { i++; if (d == 0) seg = i }
+          if (d == 0) line_shell = 0
+          continue
+        }
+        if (d == 0 && sep) { end_sub(i); i++; seg = i; continue }
+        i++
+      }
+      if (mode != "H") end_sub(n + 1)
+      for (k = 1; k <= d; k++) if (st[k] == "c") { requeue(substr(s, sb[k])); break }
+      if ((q != "" && q != "h") || d > 0 || broken) {
+        t = s; gsub(/&&|\|\||;|\|/, "\n", t); m = split(t, parts, "\n")
+        for (k = 1; k <= m; k++) emit_plain(parts[k])
+      }
+    }'
 }
 
 paths_all_edited() {
@@ -99,6 +288,7 @@ paths_all_edited() {
 }
 
 # resolve a path against a directory, expanding a leading ~ or $HOME and dropping quotes
+# shellcheck disable=SC2016,SC2088 # the patterns match the unexpanded text a command carries
 resolve_in() {
   local dir="$1" p="${2//[\"\']/}"
   case "$p" in
@@ -153,22 +343,26 @@ parse_git() {
 # work_cwd follows `cd <dir>` across the chain, so `cd repo && git branch -D x` is judged in repo
 work_cwd="$cwd"
 
-# gather every subcommand, expanding $( ... ) recursively
-declare -a queue=("$command")
+# gather every subcommand, expanding $( ... ) and the code a shell re-enters recursively. A queue
+# entry is its split mode (C a command, H an unquoted heredoc body) followed by its text. The text
+# keeps its newlines as \036 for awk to decode: bash 3.2's ${x//a/b} takes 10 s on 20 KB.
+declare -a queue=("C$command")
 declare -a subcommands=()
 while [ "${#queue[@]}" -gt 0 ]; do
   cur="${queue[0]}"
   queue=("${queue[@]:1}")
-  while IFS= read -r piece; do
-    [ -n "$piece" ] && queue+=("$piece")
-  done < <(extract_parens "$cur")
   while IFS= read -r sub; do
-    sub="$(printf '%s' "$sub" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-    [ -n "$sub" ] && subcommands+=("$sub")
-  done < <(split_subcommands "$cur")
+    case "$sub" in
+      S*) subcommands+=("${sub:1}") ;;
+      Q*) queue+=("C${sub:1}") ;;
+      H*) queue+=("H${sub:1}") ;;
+    esac
+  done < <(split_subcommands "${cur:1}" "${cur:0:1}")
 done
 
-for sub in "${subcommands[@]}"; do
+for entry in "${subcommands[@]}"; do
+  assigns="${entry%%$'\037'*}"
+  sub="${entry#*$'\037'}"
   # Matched at command position, so prose naming the flag stays allowed. The
   # substring version denied this repo's own README on 2026-09-18, and denied
   # the edit that fixed it, which is how it got found.
@@ -191,10 +385,7 @@ for sub in "${subcommands[@]}"; do
   # THOVEN_FULL_SUITE=1, as a prefix or in the environment, is the sanctioned full run.
   fwords=("${vwords[@]}")
   full_ok="${THOVEN_FULL_SUITE:-}"
-  while [ "${#fwords[@]}" -gt 0 ] && [[ "${fwords[0]}" == [A-Za-z_]*=* ]]; do
-    [ "${fwords[0]}" = "THOVEN_FULL_SUITE=1" ] && full_ok=1
-    fwords=("${fwords[@]:1}")
-  done
+  [[ " $assigns " == *" THOVEN_FULL_SUITE=1 "* ]] && full_ok=1
   suite=""
   rest=()
   case "${fwords[0]:-}" in
@@ -215,8 +406,18 @@ for sub in "${subcommands[@]}"; do
     rspec|bin/rspec|*/bin/rspec) suite="rspec"; rest=("${fwords[@]:1}") ;;
   esac
   if [ -n "$suite" ] && [ "$full_ok" != 1 ]; then
+    # A redirection (2>&1, > out.log, <in) and its target are not a path.
     has_path=""
+    target_next=""
     for fw in "${rest[@]}"; do
+      [ -n "$target_next" ] && { target_next=""; continue; }
+      rt="${fw#"${fw%%[!0-9]*}"}"
+      case "$rt" in
+        '<'*|'>'*|'&>'*)
+          rt="${rt#"${rt%%[!<>&|]*}"}"
+          [ -n "$rt" ] || target_next=1
+          continue ;;
+      esac
       case "$fw" in run|watch|--|-*) ;; *) has_path=1; break ;; esac
     done
     if [ -z "$has_path" ]; then
@@ -225,8 +426,6 @@ for sub in "${subcommands[@]}"; do
   fi
 
   read -r -a words <<<"$sub"
-  # The ; split leaves a loop or if body behind its keyword: `for b in x; do git branch -D $b; done`.
-  case "${words[0]:-}" in do|then|else|elif) words=("${words[@]:1}") ;; esac
   w0="${words[0]:-}"
   w1="${words[1]:-}"
 
