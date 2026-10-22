@@ -39,9 +39,22 @@ a rebase ate a day of the onboarding prototype.)
   copies the env file and installs dependencies. Add `--new "<reason>"` for a fresh tree when your
   files overlap another live tree's dirty files, or the work is risky and long. From Claude,
   `claude --worktree <area>-thv-<n>` runs the same script.
-- Open a held PR into `main`. Merging is `gh pr merge --auto --squash`, gated by the required `CI`
-  check. A catch-up PR of `main` into an integration branch merges with `--merge`, so `main` stays an
-  ancestor. An agent-skills PR is not held. It merges in the same pass, then `enforcement/sync.sh
+- Open a held PR into `main`, and merge it on Andres's "merge it", gated by the required `CI` check.
+  The method follows the PR's role:
+
+  | PR | Merge |
+  |---|---|
+  | A ticket into `main`, or into an integration branch | `gh pr merge --auto --squash` |
+  | A catch-up of `main` into an integration branch | `--merge`, so `main` stays an ancestor |
+  | An integration branch landing in `main` | `--auto --merge`, so each ticket's commit and THV id survive for later conflict resolution |
+
+  Every merge go names source, target and method: "scheduling/improvements → main, merge commit".
+  (#256 and #318 squashed 282 and 403 commits into one each, and later Private Lessons conflicts
+  traced to a 470-file commit with no ticket id.)
+- When an integration branch lands in `main`, retire it: remove its `worktree-projects.tsv` row and
+  its tree, and point follow-up tickets at `origin/main`. A Project that continues cuts a fresh
+  `<project-slug>/integration` from `main`.
+- An agent-skills PR is not held. It merges in the same pass, then `enforcement/sync.sh
   --apply` runs until `sync.sh` reports every harness copy matches. Commit and merge only on a
   branch in a tree, never in a `main` checkout: `co.thoven.sync` fast-forwards the clean `main` checkouts every 30 minutes.
 - Production moves only through `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh`.

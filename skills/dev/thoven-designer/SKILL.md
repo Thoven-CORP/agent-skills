@@ -128,5 +128,6 @@ The browser is Andres's, not a scratch surface.
 - Raw `<button>` only inside `components/ui/`.
 - No raw colours. `bg-blue-600`, hand-rolled shadows and hex literals route through tokens.
 - Focus rings are `:focus-visible` only.
+- The 44px tap minimum comes from the transparent hit-area pseudo-element in `design/buttons.md` (Hit target row). Never enlarge a component's visible size to meet it.
 - Every component covers loading, empty, error and disabled before it is called done.
 - Values found by feel go through `dialkit` and land as a token module with a test at **Build**, not during Design. While a surface is still being designed the value lives in the proto.

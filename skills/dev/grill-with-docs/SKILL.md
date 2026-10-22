@@ -9,7 +9,7 @@ description: >-
 
 ## Pitfalls
 
-- Derive the item list only from the Linear Project description and what Andres pasted; add nothing from your own research, and leave items he called resolved closed. (LEARNINGS 2026-10-08)
+- Derive the item list only from the Linear Project description and what Andres pasted; add nothing from your own research, and leave items he called resolved closed. Your own findings go in a separate list labelled as yours, never into a grill question. (LEARNINGS 2026-10-08)
 - Before putting a fork to Andres, read the Linear Project description and parent decisions, grep prior session transcripts and Mem0 for a ruling, quote it with its date, and ask only what it leaves open. (LEARNINGS 2026-09-14)
 
 ## Session gate

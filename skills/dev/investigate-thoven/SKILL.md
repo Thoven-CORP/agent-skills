@@ -9,6 +9,10 @@ Systematic 7-phase debugging workflow aligned with backend architecture. Classif
 
 Read [enforcement-rules.md](references/enforcement-rules.md) before Phase 1.
 
+## Pitfalls
+
+- Before diagnosing a display bug, write down who should receive or see the item and confirm it; a wrong label can be a routing bug, so the "what should happen" slot names the product rule, not the symptom. (LEARNINGS 2026-10-22)
+
 ## MANDATORY First Action
 
 **Before doing anything else — before reading files, before asking questions — create tasks:**

@@ -5,6 +5,10 @@ description: Use when Andres asks to publish, deploy, release, promote, or hotfi
 
 # Publish
 
+## Pitfalls
+
+- Describe production as "thoven.co runs `main` at <sha>, tagged prod/<date>-<n>; this merge reaches it at the next publish". A tag name alone reads as a branch. (LEARNINGS 2026-10-22)
+
 ## Route
 
 1. Pick the path from what Andres said:

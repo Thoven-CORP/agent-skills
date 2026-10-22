@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-22 — meet the tap minimum invisibly
+
+> reflect · 2026-10-22 · 39a12a43 · broken-rule · applied · seen 1
+
+**What happened.** An agent proposed enlarging a component to reach the 44px touch target. Andres: "can we not just augment the touch target invisibly instead of the full component."
+**Why.** The rule exists in frontend `design/buttons.md` (Hit target: a transparent pseudo-element, visual height unchanged) and is browser-tested on SaveToggle, but nothing in this skill surfaced it before a resize was proposed.
+**What changed.** Standing checks: the tap minimum comes from the hit-area pseudo-element, never a larger visible size. (A step, since Pitfalls is at its ten-line cap.)
+
 ## 2026-10-14 — an option the user cannot take is unselectable, not refused
 
 > reflect · 2026-10-14 · memory:feedback_unselectable_not_refused · correction · applied · seen 1
