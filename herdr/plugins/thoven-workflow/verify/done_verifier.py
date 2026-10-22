@@ -11,7 +11,8 @@ $STATE/verify-internal/<pane_id>.json so the contract file keeps its exact shape
 
 Scope: --event skips main panes, meaning any pane marked main (main-pane.<ws>) or recorded
 as a dispatcher (dispatch/by-pane/*.json). A main waits on CI and holds watchers, so it is
-not a build pane claiming done. Safety gate: if $STATE/verify.only-panes exists, --event acts
+not a build pane claiming done. It also skips any pane with a dispatch v2 Registration
+($THOVEN_DISPATCH_HOME/*/panes/herdr-<pane>.json): `dispatch tick` owns those. Safety gate: if $STATE/verify.only-panes exists, --event acts
 only on the pane ids listed in it (whitespace separated; empty file = act on none).
 
 Never crashes the hook: everything is caught, logged to $STATE/verify.log, exit 0.
@@ -384,7 +385,20 @@ def is_main(pane_id):
     return False
 
 
+def dispatch_home():
+    return os.environ.get("THOVEN_DISPATCH_HOME") or os.path.expanduser("~/.local/state/thoven/dispatch")
+
+
+def dispatch_registered(pane_id):
+    """True when `dispatch spawn` registered this pane; same key as dispatch_lib.store.pane_key."""
+    import glob
+    key = "herdr-" + re.sub(r"[^A-Za-z0-9._-]", "_", pane_id)
+    return bool(glob.glob(os.path.join(glob.escape(dispatch_home()), "*", "panes", key + ".json")))
+
+
 def in_scope(pane_id):
+    if dispatch_registered(pane_id):
+        return False
     gate = os.path.join(tw.STATE, "verify.only-panes")
     if not os.path.exists(gate):
         return not is_main(pane_id)

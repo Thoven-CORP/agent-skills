@@ -426,5 +426,42 @@ class UsageLimitTest(unittest.TestCase):
         self.assertEqual(len(prompts), 1)
 
 
+class DispatchRegistrationTest(unittest.TestCase):
+    def setUp(self):
+        self.home = tempfile.mkdtemp()
+        self.state = tempfile.mkdtemp()
+        for d in (self.home, self.state):
+            self.addCleanup(subprocess.run, ["rm", "-rf", d])
+        for patcher in (patch.dict(verifier.os.environ, {"THOVEN_DISPATCH_HOME": self.home}),
+                        patch.object(verifier.tw, "STATE", self.state)):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def register(self, pane_key):
+        os.makedirs(os.path.join(self.home, "proj", "panes"))
+        with open(os.path.join(self.home, "proj", "panes", pane_key + ".json"), "w") as f:
+            f.write("{}")
+
+    def test_a_registered_pane_is_left_to_the_dispatch_tick(self):
+        self.assertTrue(verifier.in_scope("w5A:p29"))
+        self.register("herdr-w5A_p29")
+        self.assertFalse(verifier.in_scope("w5A:p29"))
+        self.assertTrue(verifier.in_scope("w5A:p3"))
+        with open(os.path.join(self.state, "verify.only-panes"), "w") as f:
+            f.write("w5A:p29 w5A:p3")
+        self.assertFalse(verifier.in_scope("w5A:p29"))
+        self.assertTrue(verifier.in_scope("w5A:p3"))
+
+    def test_a_done_event_on_a_registered_pane_does_nothing(self):
+        self.register("herdr-w5A_p29")
+        event = json.dumps({"data": {"pane_id": "w5A:p29", "agent_status": "done"}})
+        with patch.dict(verifier.os.environ, {"HERDR_PLUGIN_EVENT_JSON": event}), \
+             patch.object(verifier, "is_main", return_value=False), \
+             patch.object(verifier, "get_pane") as get_pane:
+            verifier.on_event()
+        get_pane.assert_not_called()
+        self.assertFalse(os.path.exists(verifier.contract_path("w5A:p29")))
+
+
 if __name__ == "__main__":
     unittest.main()
