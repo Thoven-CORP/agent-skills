@@ -275,14 +275,21 @@ split_subcommands() {
     }'
 }
 
+# A path passes when this session edited it, or when it is a file with no changes as the guard runs:
+# then all the command can discard is what the command itself writes, as in `sed -i ... f; git restore f`.
+# A directory or glob is never taken as clean, since a long command leaves time for another
+# session to write under it.
 paths_all_edited() {
   local paths=("$@")
   [ "${#paths[@]}" -gt 0 ] || return 1
-  [ -f "$edited_file" ] || return 1
-  local p abs
+  local p abs changes
   for p in "${paths[@]}"; do
+    case "$p" in *'$'*|*'`'*) return 1 ;; esac
     abs="$(resolve_in "$git_dir" "$p")"
-    grep -qxF "$abs" "$edited_file" || return 1
+    grep -qxF "$abs" "$edited_file" 2>/dev/null && continue
+    [ -f "$abs" ] || return 1
+    changes="$(git -C "$git_dir" status --porcelain --untracked-files=all -- "$abs" 2>/dev/null)" || return 1
+    [ -z "$changes" ] || return 1
   done
   return 0
 }
@@ -298,9 +305,31 @@ resolve_in() {
     '${HOME}/'*) p="$HOME/${p#'${HOME}/'}" ;;
   esac
   case "$p" in
-    /*) printf '%s\n' "$p" ;;
-    *) printf '%s\n' "$dir/$p" ;;
+    /*) ;;
+    *) p="$dir/$p" ;;
   esac
+  while [[ "$p" == *"/./"* ]]; do p="${p%%/./*}/${p#*/./}"; done
+  [ "$p" = "/." ] || p="${p%/.}"
+  printf '%s\n' "$p"
+}
+
+# words <subcommand>: its words in the array words, with each redirection and its target dropped
+# (2>/dev/null, >&2, 2>&1, > out.log, <in), which bash consumes and the command never sees
+split_words() {
+  local raw w rt target_next=""
+  read -r -a raw <<<"$1"
+  words=()
+  for w in "${raw[@]}"; do
+    [ -n "$target_next" ] && { target_next=""; continue; }
+    rt="${w#"${w%%[!0-9]*}"}"
+    case "$rt" in
+      '<'*|'>'*|'&>'*)
+        rt="${rt#"${rt%%[!<>&|]*}"}"
+        [ -n "$rt" ] || target_next=1
+        continue ;;
+    esac
+    words+=("$w")
+  done
 }
 
 # commits reachable from a ref in a repo that no origin ref contains
@@ -366,9 +395,9 @@ for entry in "${subcommands[@]}"; do
   # Matched at command position, so prose naming the flag stays allowed. The
   # substring version denied this repo's own README on 2026-09-18, and denied
   # the edit that fixed it, which is how it got found.
-  read -r -a vwords <<<"$sub"
+  split_words "$sub"
   vrunner=""
-  for vw in "${vwords[@]}"; do
+  for vw in "${words[@]}"; do
     case "$vw" in
       vitest|*/vitest) vrunner="$vw"; break ;;
       npx|pnpm|yarn|bun|npm|run|exec|dlx) continue ;;
@@ -376,14 +405,14 @@ for entry in "${subcommands[@]}"; do
       *) break ;;
     esac
   done
-  if [ -n "$vrunner" ] && [[ " ${vwords[*]} " == *" --exclude "* ]]; then
+  if [ -n "$vrunner" ] && [[ " ${words[*]} " == *" --exclude "* ]]; then
     deny "That flag replaces the config's exclude array and reports failures that do not exist. Run the failing files by path instead."
   fi
 
   # A whole suite pins the machine every pane shares (retro 2026-10-03, THV-1047). Judged at command
   # position: vitest run, the package test:run / test:coverage scripts, and rspec, each with no path.
   # THOVEN_FULL_SUITE=1, as a prefix or in the environment, is the sanctioned full run.
-  fwords=("${vwords[@]}")
+  fwords=("${words[@]}")
   full_ok="${THOVEN_FULL_SUITE:-}"
   [[ " $assigns " == *" THOVEN_FULL_SUITE=1 "* ]] && full_ok=1
   suite=""
@@ -406,18 +435,8 @@ for entry in "${subcommands[@]}"; do
     rspec|bin/rspec|*/bin/rspec) suite="rspec"; rest=("${fwords[@]:1}") ;;
   esac
   if [ -n "$suite" ] && [ "$full_ok" != 1 ]; then
-    # A redirection (2>&1, > out.log, <in) and its target are not a path.
     has_path=""
-    target_next=""
     for fw in "${rest[@]}"; do
-      [ -n "$target_next" ] && { target_next=""; continue; }
-      rt="${fw#"${fw%%[!0-9]*}"}"
-      case "$rt" in
-        '<'*|'>'*|'&>'*)
-          rt="${rt#"${rt%%[!<>&|]*}"}"
-          [ -n "$rt" ] || target_next=1
-          continue ;;
-      esac
       case "$fw" in run|watch|--|-*) ;; *) has_path=1; break ;; esac
     done
     if [ -z "$has_path" ]; then
@@ -425,7 +444,6 @@ for entry in "${subcommands[@]}"; do
     fi
   fi
 
-  read -r -a words <<<"$sub"
   w0="${words[0]:-}"
   w1="${words[1]:-}"
 
