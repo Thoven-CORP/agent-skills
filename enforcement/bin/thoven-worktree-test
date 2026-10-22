@@ -380,9 +380,17 @@ if [ -e "$TMP/archive/backend-thv-981-$(date +%Y-%m-%d)" ]; then fail "a refused
 AHEAD="$TMP/backend-thv-982"
 "$TOOL" create be ahead 982 >/dev/null 2>&1
 (cd "$AHEAD" && printf 'x\n' > mine && git add mine && git commit -qm mine)
-err="$("$TOOL" remove "$AHEAD" 2>&1 >/dev/null)"; code=$?
-expect "remove of a tree with an unpushed commit exit" "$code" 1
-if [ -e "$AHEAD/mine" ]; then ok "a tree with an unpushed commit is kept"; else fail "a tree with an unpushed commit is kept" "gone"; fi
+tip="$(git -C "$AHEAD" rev-parse HEAD)"
+"$TOOL" remove "$AHEAD" >/dev/null 2>&1; code=$?
+expect "remove of a squash-merged shape (branch commit not on origin) exit" "$code" 0
+expect "removing the tree keeps its branch and commit" "$(git -C "$TMP/backend" rev-parse -q --verify ahead/thv-982)" "$tip"
+
+DETACHED="$TMP/backend-thv-984"
+"$TOOL" create be detached 984 >/dev/null 2>&1
+(cd "$DETACHED" && git checkout -q --detach && printf 'x\n' > mine && git add mine && git commit -qm mine)
+err="$("$TOOL" remove "$DETACHED" 2>&1 >/dev/null)"; code=$?
+expect "remove of a detached HEAD with a commit no branch holds exit" "$code" 1
+if [ -e "$DETACHED/mine" ]; then ok "a detached tree with its own commit is kept"; else fail "a detached tree with its own commit is kept" "gone"; fi
 if printf '%s\n' "$err" | grep -qF "1 commit(s)"; then ok "the refusal counts the commits"; else fail "the refusal counts the commits" "$err"; fi
 
 PROC="$TMP/backend-thv-983"
