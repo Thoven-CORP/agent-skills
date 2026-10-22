@@ -11,6 +11,7 @@ TMP="$(cd "$T" && pwd -P)"
 
 export THOVEN_ROOT="$TMP"
 export THOVEN_WORKTREE_SKIP_INSTALL=1
+export THOVEN_WORKTREE_REGISTRY="$TMP/projects.tsv"
 export GIT_CONFIG_GLOBAL="$TMP/gitconfig"
 export GIT_CONFIG_NOSYSTEM=1
 git config --file "$GIT_CONFIG_GLOBAL" user.name test
@@ -396,5 +397,18 @@ NODOCS="$TMP/frontend-thv-979"
 "$TOOL" remove "$NODOCS" >/dev/null 2>&1; code=$?
 expect "remove without docs exit" "$code" 0
 if [ -e "$TMP/archive/frontend-thv-979-$(date +%Y-%m-%d)" ]; then fail "no docs, no archive folder" "made one"; else ok "no docs, no archive folder"; fi
+
+# Row 4: the first Build ticket of a Project cuts <slug>/integration at <repo>-<slug> and pushes it.
+PROJ="$TMP/backend-fresh-start"
+out="$("$TOOL" create be tooling 21 --project "Fresh Start" --kind build 2>/dev/null)"; code=$?
+expect "row 4 cut exit" "$code" 0
+expect "row 4 cut path" "$out" "$PROJ"
+expect "row 4 branch" "$(git -C "$PROJ" branch --show-current 2>/dev/null)" "fresh-start/integration"
+expect "row 4 branch is on origin" "$(git ls-remote "$TMP/origin-backend.git" refs/heads/fresh-start/integration | cut -f2)" \
+  "refs/heads/fresh-start/integration"
+expect "row 4 branch tracks origin, so a deletion shows as gone" \
+  "$(git -C "$PROJ" rev-parse --abbrev-ref '@{u}' 2>/dev/null)" "origin/fresh-start/integration"
+out="$("$TOOL" where "Fresh Start" be 2>/dev/null)"
+expect "where finds the pushed Project tree" "$out" "$PROJ"
 
 echo "all passed"
