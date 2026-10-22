@@ -152,6 +152,7 @@ An alert line names the pane and the cause:
 | `GONE` | The agent exited. Spawn a fresh pane on the same brief plus `Resume from <last commit>.` |
 | `LIMIT` | Tell Andres the reset time in one line. After it, check `git -C <tree> status` for a half-done merge or rebase, then message the pane `continue`. |
 | `SETTLED_NO_REPORT` | The pane ended a turn with no REPORT, QUESTION or HANDOFF entry of its own. Message it: `Post your REPORT entry and message me your status line.` The uncommitted files it lists may be other sessions' edits in a shared tree. `still running: …` means a background job kept it from reporting for 10 minutes: ask the pane whether it still needs that job, and to stop a server it forgot. |
+| `TICK_ERROR` | The watcher failed to read this pane for 4 ticks in a row (about 2 minutes) and names the last error. Run `dispatch status <pane>`: a Rex or herdr error is the backend's to fix; tell Andres in one line. While the status read itself fails, no other alert fires for that pane. |
 | `SETTLED` (Codex) | Read the pane's REPORT entry with `dispatch board <project> --ticket THV-x`, then handle it as the status table says. |
 
 **Corrections and fix rounds go as a peer message plus a CORRECTION entry** (`dispatch post ...

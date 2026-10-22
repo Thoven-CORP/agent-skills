@@ -253,7 +253,7 @@ class Idempotency(TickCase):
         count = tick.tick_all(self.run, at(0), mux_for=lambda r: self.mux, out=out)
         self.assertEqual(count, 1)
         self.assertEqual(self.alerts(), [("GONE", "THV-2")])
-        self.assertIn("block:bad tick failed: RuntimeError('rex down')", out.getvalue())
+        self.assertIn("block:bad tick error: status: RuntimeError('rex down')", out.getvalue())
 
 
 
@@ -290,6 +290,68 @@ class AlertDedup(TickCase):
         self.assertEqual(self.tick(reg, blocked, 150), [])
         self.assertEqual(self.tick(reg, blocked, 300), [])
         self.assertEqual(self.alerts(), [("BLOCKED", "THV-1")])
+
+
+
+def boom(message):
+    def raise_(*args):
+        raise RuntimeError(message)
+    return raise_
+
+
+class GateFailures(TickCase):
+    def test_a_failing_gate_still_records_the_settle_and_notes_the_error(self):
+        reg = self.reg()
+        self.mux.live_work = boom("ps died")
+        self.tick(reg, working(), 0)
+        self.assertEqual(self.tick(reg, done(), 60), ["SETTLED_NO_REPORT"])
+        body = store.entries("proj")[-1][1].body
+        self.assertTrue(body.endswith("; gate errors: live_work: RuntimeError('ps died')"), body)
+        self.assertEqual(store.read_watch("proj", reg.pane)["last_state"], "DONE")
+
+    def test_a_pane_whose_status_keeps_failing_raises_tick_error_once(self):
+        reg = self.reg()
+        self.tick(reg, working(), 0)
+        self.mux.statuses[reg.pane.pane] = RuntimeError("rex down")
+        words = [[a.word for a, _ in tick.tick_pane(reg, self.run, at(s), self.mux)] for s in (30, 60, 90, 120, 150)]
+        self.assertEqual(words, [[], [], [], ["TICK_ERROR"], []])
+        self.assertEqual(store.entries("proj")[-1][1].body,
+                         "build-thv-1 (rex block:a): 4 ticks in a row failed; last: status: RuntimeError('rex down')")
+        self.assertEqual(store.read_watch("proj", reg.pane)["last_state"], "WORKING")
+
+    def test_a_recovered_pane_starts_a_new_failure_count(self):
+        reg = self.reg()
+        self.mux.statuses[reg.pane.pane] = RuntimeError("rex down")
+        for s in (0, 30, 60):
+            self.assertEqual([a.word for a, _ in tick.tick_pane(reg, self.run, at(s), self.mux)], [])
+        self.assertEqual(self.tick(reg, working(), 90), [])
+        self.mux.statuses[reg.pane.pane] = RuntimeError("rex down")
+        for s in (120, 150, 180):
+            self.assertEqual([a.word for a, _ in tick.tick_pane(reg, self.run, at(s), self.mux)], [])
+
+
+    def test_an_unreadable_board_never_reads_as_no_report(self):
+        reg = self.reg()
+        self.tick(reg, working(), 0)
+        with patch.object(store, "entries", side_effect=OSError("board gone")):
+            self.assertEqual(self.tick(reg, done(), 60), [])
+        self.report(reg, 70)
+        self.assertEqual(self.tick(reg, done(), 90), [])
+        self.assertEqual(self.alerts(), [])
+
+
+class CloseRace(TickCase):
+    def test_a_pane_closed_mid_tick_gets_no_alert_and_no_watch_file(self):
+        reg = self.reg()
+
+        def closed_meanwhile(pane):
+            store.remove_registration(reg)
+            return Status(State.GONE)
+
+        self.mux.status = closed_meanwhile
+        self.assertEqual([a.word for a, _ in tick.tick_pane(reg, self.run, at(0), self.mux)], [])
+        self.assertEqual(self.alerts(), [])
+        self.assertFalse(os.path.exists(store.watch_path("proj", reg.pane)))
 
 
 if __name__ == "__main__":

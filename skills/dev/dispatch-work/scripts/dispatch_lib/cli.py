@@ -246,9 +246,11 @@ class App:
 
     def close(self, a):
         ref, reg = self.resolve(a.pane, a.backend)
-        self.mux(ref.backend).close(ref)
         if reg:
-            store.remove_registration(reg)
+            # Dropped first and under tick.lock, so no tick pass sees a closing pane as GONE.
+            with store.tick_lock():
+                store.remove_registration(reg)
+        self.mux(ref.backend).close(ref)
         self.say(f"closed {ref.pane}" + (f" ({reg.agent_name})" if reg else ""))
 
     def post(self, a):

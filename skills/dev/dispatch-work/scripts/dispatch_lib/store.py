@@ -1,6 +1,7 @@
 """Disk layout: one owner per file. Registrations, watch memory, briefs, snapshots and the board."""
 from __future__ import annotations
 
+import contextlib
 import datetime
 import fcntl
 import hashlib
@@ -100,6 +101,19 @@ def find_registration(pane: str) -> Registration | None:
     return None
 
 
+def is_registered(reg: Registration) -> bool:
+    return os.path.exists(registration_path(reg.project, reg.pane))
+
+
+@contextlib.contextmanager
+def tick_lock():
+    """Held for a whole `dispatch tick` pass, and by `dispatch close` while it drops a registration."""
+    os.makedirs(home(), exist_ok=True)
+    with open(os.path.join(home(), "tick.lock"), "a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        yield
+
+
 def remove_registration(reg: Registration) -> None:
     for path in (registration_path(reg.project, reg.pane), watch_path(reg.project, reg.pane)):
         try:
@@ -118,7 +132,7 @@ def read_watch(project: str, ref: PaneRef) -> dict:
     data = read_json(watch_path(project, ref))
     if not isinstance(data, dict):
         return empty_watch()
-    for key in ("since", "fingerprint_since", "settle_since"):
+    for key in ("since", "fingerprint_since", "settle_since", "failing_since"):
         if data.get(key) is not None:
             try:
                 parse_iso(data[key])

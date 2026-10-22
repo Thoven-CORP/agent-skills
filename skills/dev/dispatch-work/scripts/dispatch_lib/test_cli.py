@@ -236,6 +236,13 @@ class PaneCommands(Harness):
         self.assertEqual(self.cmd("send", "block:a", self.file), 3)
         self.assertEqual(self.mux.keys, [("block:a", "enter")])
 
+    def test_close_drops_the_registration_before_closing_the_pane(self):
+        registered_at_close = []
+        self.mux.close = lambda pane: registered_at_close.append(bool(store.registrations()))
+        self.assertEqual(self.cmd("close", "build-thv-1"), 0)
+        self.assertEqual(registered_at_close, [False])
+        self.assertEqual(self.out.getvalue(), "closed block:a (build-thv-1)\n")
+
     def test_label_and_kinds(self):
         self.assertEqual(self.cmd("label", "--kinds"), 0)
         self.assertEqual(self.out.getvalue().split(), ["Meta", "Plan", "Design", "Build", "Review", "Research",

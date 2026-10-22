@@ -2,8 +2,6 @@
 from __future__ import annotations
 
 import datetime
-import fcntl
-import os
 import re
 import sys
 import traceback
@@ -19,6 +17,7 @@ STARTUP_AFTER = 90
 FROZEN_AFTER = 600
 FROZEN_CPU = 5.0
 LIVE_GRACE = 600
+TICK_ERROR_AFTER = 4
 LIMIT_RE = re.compile(r"limit reached|resets at|usage limit|weekly limit", re.I)
 ACTIVE = (State.WORKING, State.BLOCKED)
 SETTLED = (State.DONE, State.IDLE)
@@ -32,31 +31,45 @@ class Alert:
 
 
 class Gates:
-    """The slow checks, run only when a step needs them."""
+    """The slow checks, run only when a step needs them. Each fails soft: its error is kept in
+    `errors` and it answers as if it found nothing."""
 
     def __init__(self, reg: Registration, mux, run: Runner):
         self.reg, self.mux, self.run = reg, mux, run
+        self.errors: list[str] = []
+
+    def _soft(self, name: str, fn, default):
+        try:
+            return fn()
+        except Exception as e:
+            self.errors.append(f"{name}: {e!r}")
+            return default
 
     def cpu(self) -> float | None:
-        return self.mux.cpu(self.reg.pane)
+        return self._soft("cpu", lambda: self.mux.cpu(self.reg.pane), None)
 
     def live_work(self) -> list[str]:
-        return self.mux.live_work(self.reg.pane)
+        return self._soft("live_work", lambda: self.mux.live_work(self.reg.pane), [])
 
-    def report_count(self) -> int:
-        """This pane's own REPORT, QUESTION and HANDOFF entries since its launch."""
+    def report_count(self) -> int | None:
+        """This pane's own REPORT, QUESTION and HANDOFF entries since its launch; None when unreadable."""
         after = parse_iso(self.reg.launched_at)
-        return sum(1 for _, e in store.entries(self.reg.project, ticket=self.reg.ticket)
-                   if e.kind in (EntryKind.REPORT, EntryKind.QUESTION, EntryKind.HANDOFF)
-                   and e.frm == self.reg.agent_name and parse_iso(e.at) > after)
+        return self._soft("report_count", lambda: sum(
+            1 for _, e in store.entries(self.reg.project, ticket=self.reg.ticket)
+            if e.kind in (EntryKind.REPORT, EntryKind.QUESTION, EntryKind.HANDOFF)
+            and e.frm == self.reg.agent_name and parse_iso(e.at) > after), None)
 
     def dirty(self) -> list[str]:
-        res = self.run(["git", "-C", self.reg.tree, "status", "--porcelain"], timeout=20)
-        return [line for line in res.out.splitlines() if line.strip()] if res.ok else []
+        def check():
+            res = self.run(["git", "-C", self.reg.tree, "status", "--porcelain"], timeout=20)
+            return [line for line in res.out.splitlines() if line.strip()] if res.ok else []
+        return self._soft("dirty", check, [])
 
     def limit_line(self) -> str | None:
-        screen = self.mux.read(self.reg.pane, 30)
-        return next((line.strip() for line in screen.splitlines() if LIMIT_RE.search(line)), None)
+        def check():
+            screen = self.mux.read(self.reg.pane, 30)
+            return next((line.strip() for line in screen.splitlines() if LIMIT_RE.search(line)), None)
+        return self._soft("limit_line", check, None)
 
 
 def _secs(now: datetime.datetime, since: str | None) -> float:
@@ -123,6 +136,8 @@ def settle(reg: Registration, w: dict, now: datetime.datetime, gates, alert) -> 
     if limit:
         alert("LIMIT", episode, limit)
     count = gates.report_count()
+    if count is None:
+        return
     # The turn boundary is the pane's own report count at the last resolved settle, not a sampled time.
     reported = count > (w.get("reports_at_settle") or 0)
 
@@ -153,37 +168,70 @@ def settle(reg: Registration, w: dict, now: datetime.datetime, gates, alert) -> 
     resolve()
 
 
-def tick_pane(reg: Registration, run: Runner, now: datetime.datetime | None = None, mux=None) -> list[tuple[Alert, str]]:
+def failures(w: dict, errors: list[str], now: datetime.datetime) -> list[Alert]:
+    """Count consecutive ticks with a status or gate error; one TICK_ERROR per failing streak."""
+    if not errors:
+        w["failures"], w["failing_since"], w["last_error"] = 0, None, None
+        return []
+    w["failures"] = (w.get("failures") or 0) + 1
+    w["failing_since"] = w.get("failing_since") or iso(now)
+    w["last_error"] = errors[-1]
+    if w["failures"] < TICK_ERROR_AFTER:
+        return []
+    return [Alert("TICK_ERROR", w["failing_since"], f"{w['failures']} ticks in a row failed; last: {errors[-1]}")]
+
+
+def tick_pane(reg: Registration, run: Runner, now: datetime.datetime | None = None, mux=None,
+              log=lambda line: None) -> list[tuple[Alert, str]]:
     mux = mux or BACKENDS[reg.pane.backend](run)
     now = now or now_utc()
     watch = store.read_watch(reg.project, reg.pane)
-    new, alerts = step(reg, watch, mux.status(reg.pane), now, Gates(reg, mux, run))
+    gates = Gates(reg, mux, run)
+    try:
+        status = mux.status(reg.pane)
+    except Exception as e:
+        status, status_error = None, f"status: {e!r}"
+    if status is None:
+        new, alerts = {**watch}, []
+    else:
+        status_error = None
+        new, alerts = step(reg, watch, status, now, gates)
+    errors = ([status_error] if status_error else []) + gates.errors
+    alerts += failures(new, errors, now)
+    for err in errors:
+        log(f"{iso(now)} {reg.project} {reg.ticket} {reg.pane.pane} tick error: {err}")
+    note = "; gate errors: " + "; ".join(gates.errors) if gates.errors else ""
     posted = []
     for a in alerts:
-        body = f"{reg.agent_name} ({reg.pane.backend} {reg.pane.pane}): {a.body}"
+        # `dispatch close` may have dropped the pane since this pass listed it.
+        if not store.is_registered(reg):
+            return posted
+        body = f"{reg.agent_name} ({reg.pane.backend} {reg.pane.pane}): {a.body}" + (
+            "" if a.word == "TICK_ERROR" else note)
         path = store.post(reg.project, reg.ticket, EntryKind.ALERT, body, "dispatch-tick", a.word, at=now,
                           dedup=f"{store.pane_key(reg.pane)}|{a.word}|{a.episode}")
         if path:
             posted.append((a, path))
-    store.write_watch(reg.project, reg.pane, new)
+    if store.is_registered(reg):
+        store.write_watch(reg.project, reg.pane, new)
     return posted
 
 
 def tick_all(run: Runner, now: datetime.datetime | None = None, mux_for=None, out=sys.stdout) -> int:
     """Alerts posted. One pane failing never stops the pass."""
     now = now or now_utc()
-    os.makedirs(store.home(), exist_ok=True)
-    with open(os.path.join(store.home(), "tick.lock"), "a") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX)
+
+    def log(line: str) -> None:
+        print(line, file=out, flush=True)
+
+    with store.tick_lock():
         count = 0
         for reg in store.registrations():
             try:
-                for a, path in tick_pane(reg, run, now, mux_for(reg) if mux_for else None):
+                for a, path in tick_pane(reg, run, now, mux_for(reg) if mux_for else None, log=log):
                     count += 1
-                    print(f"{iso(now)} {reg.project} {reg.ticket} ALERT {a.word} {reg.agent_name} {path}",
-                          file=out, flush=True)
+                    log(f"{iso(now)} {reg.project} {reg.ticket} ALERT {a.word} {reg.agent_name} {path}")
             except Exception as e:
-                print(f"{iso(now_utc())} {reg.project} {reg.ticket} {reg.pane.pane} tick failed: {e!r}", file=out,
-                      flush=True)
+                log(f"{iso(now_utc())} {reg.project} {reg.ticket} {reg.pane.pane} tick failed: {e!r}")
                 traceback.print_exc(limit=2, file=out)
         return count
