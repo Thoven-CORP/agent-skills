@@ -313,7 +313,8 @@ NOT_BANNERS = {
     "report prose": "Rulings      the API quota resets at 5pm, so I batched calls\n"
                     "Noticed      the usage limit page in settings has no tests\n",
     "quoted banner in a report": "  Noticed   - You've hit your usage limit is untranslated in es.json\n",
-    "banner far up the screen": "  ⎿  5-hour limit reached ∙ resets 3pm\n" + "".join(f"line {n}\n" for n in range(20)),
+    "banner far up the screen": "  ⎿  5-hour limit reached ∙ resets 3pm\n"
+                                + "".join(f"line {n}\n" for n in range(20)),
 }
 
 

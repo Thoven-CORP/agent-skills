@@ -168,9 +168,9 @@ def settle(reg: Registration, w: dict, now: datetime.datetime, gates, alert) -> 
         return
     dirty = dirty_text()
     # Shared integration trees always carry other sessions' edits, so a dirty tree only matters without a report.
-    alert(AlertWord.SETTLED_NO_REPORT, episode, f"settled with no REPORT, QUESTION or HANDOFF entry from {reg.agent_name} "
-          "this turn" + (f"; {reg.tree}: {dirty}" if dirty else "")
-          + (f"; still running: {', '.join(live[:3])}" if live else ""))
+    alert(AlertWord.SETTLED_NO_REPORT, episode,
+          f"settled with no REPORT, QUESTION or HANDOFF entry from {reg.agent_name} this turn"
+          + (f"; {reg.tree}: {dirty}" if dirty else "") + (f"; still running: {', '.join(live[:3])}" if live else ""))
     resolve()
 
 
@@ -184,7 +184,8 @@ def failures(w: dict, errors: list[str], now: datetime.datetime) -> list[Alert]:
     w["last_error"] = errors[-1]
     if w["failures"] < TICK_ERROR_AFTER:
         return []
-    return [Alert(AlertWord.TICK_ERROR, w["failing_since"], f"{w['failures']} ticks in a row failed; last: {errors[-1]}")]
+    return [Alert(AlertWord.TICK_ERROR, w["failing_since"],
+                  f"{w['failures']} ticks in a row failed; last: {errors[-1]}")]
 
 
 def tick_pane(reg: Registration, run: Runner, now: datetime.datetime | None = None, mux=None,
