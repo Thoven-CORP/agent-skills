@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-22 — a workflow session outside ~/thoven never loaded andres-mode
+
+> reflect · 2026-10-22 · 708bf6f4 · broken-rule · applied · seen 2
+
+**What happened.** A session started in `~` to compare Herdr with Rex and audit dispatch-work, the cockpit and WORKFLOW.md. andres-mode never loaded, and three written rules broke. The first answer ended with an offer ("If you want, I can write…"). The research audits ran on the default model instead of sonnet. The agent said the `/recall` Andres named was not installed, though `~/.claude/skills/recall` existed with `disable-model-invocation: true`.
+**Why.** The description tied loading to "Main … at session start" for Thoven. A session about his own agent tooling that starts outside the repo never matched. This repeats the backlog gap "main sessions are not loading andres-mode at start".
+**What changed.** The description now covers any session about his agent workflow (panes, Herdr or Rex, the cockpit, agent-skills, /reflect, /recall), wherever it starts. Still in backlog: a SessionStart hook that loads it for his sessions.
+
 ## 2026-10-22 — CI red is real until proven a flake; the session he talks to does the work
 
 > reflect · 2026-10-22 · 19da0b54 · 889d1f76 · a010cb0c · 01a151d4 · broken-rule · applied · seen 3
