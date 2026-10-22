@@ -1,6 +1,7 @@
 """Shared fixtures for the dispatch tests: a temp THOVEN_DISPATCH_HOME, a FakeMux and a fake runner."""
 import datetime
 import io
+import json
 import os
 import sys
 import tempfile
@@ -94,9 +95,26 @@ class HomeCase(unittest.TestCase):
         os.environ["THOVEN_DISPATCH_HOME"] = self.home
         self.addCleanup(lambda: os.environ.__setitem__("THOVEN_DISPATCH_HOME", old) if old is not None
                         else os.environ.pop("THOVEN_DISPATCH_HOME", None))
+        # No test may read the real ~/.claude sessions or transcripts.
+        claude = os.environ.get("CLAUDE_CONFIG_DIR")
+        os.environ["CLAUDE_CONFIG_DIR"] = self.claude = os.path.join(self.home, ".claude")
+        self.addCleanup(lambda: os.environ.__setitem__("CLAUDE_CONFIG_DIR", claude) if claude is not None
+                        else os.environ.pop("CLAUDE_CONFIG_DIR", None))
 
     def alerts(self, project="proj"):
         return [(e.status, e.ticket) for _, e in store.entries(project) if e.kind.name == "ALERT"]
+
+
+def claude_session(claude_dir, pid, name, sid):
+    os.makedirs(os.path.join(claude_dir, "sessions"), exist_ok=True)
+    with open(os.path.join(claude_dir, "sessions", f"{pid}.json"), "w") as f:
+        json.dump({"sessionId": sid, "name": name, "pid": pid}, f)
+
+
+def assistant_line(mid, model, inp, out, cache_read=0, cache_create=0):
+    return json.dumps({"type": "assistant", "message": {"id": mid, "model": model, "usage": {
+        "input_tokens": inp, "output_tokens": out, "cache_read_input_tokens": cache_read,
+        "cache_creation_input_tokens": cache_create}}}) + "\n"
 
 
 def capture():

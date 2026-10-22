@@ -7,7 +7,7 @@ import sys
 import traceback
 from dataclasses import dataclass
 
-from . import store
+from . import events, store, usage
 from .model import AlertWord, EntryKind, Registration, State, Status, iso, now_utc, parse_iso
 from .mux import BACKENDS
 from .runner import Runner
@@ -203,6 +203,16 @@ def tick_pane(reg: Registration, run: Runner, now: datetime.datetime | None = No
     else:
         status_error = None
         new, alerts = step(reg, watch, status, now, gates)
+    if reg.cli == "claude" and not new.get("session_id"):
+        # Caught while the agent runs, so `dispatch close` and `stats` can cost a pane that is GONE by then.
+        try:
+            sid = usage.session_id(reg.agent_name)
+        except Exception as e:
+            sid = None
+            log(f"{iso(now)} {reg.project} {reg.ticket} {reg.pane.pane} telemetry: session id: {e!r}")
+        if sid:
+            new["session_id"] = sid
+            events.emit(events.for_reg("session", reg, at=iso(now), session_id=sid), log=log)
     errors = ([status_error] if status_error else []) + gates.errors
     alerts += failures(new, errors, now)
     for err in errors:
@@ -219,6 +229,9 @@ def tick_pane(reg: Registration, run: Runner, now: datetime.datetime | None = No
                           dedup=f"{store.pane_key(reg.pane)}|{a.word.value}|{a.episode}")
         if path:
             posted.append((a, path))
+            # Only the post that created the entry emits, so the event is deduped exactly like the entry.
+            events.emit(events.for_reg("alert", reg, at=iso(now), kind="alert", status=a.word.value,
+                                       episode=a.episode), log=log)
     if store.is_registered(reg):
         store.write_watch(reg.project, reg.pane, new)
     return posted

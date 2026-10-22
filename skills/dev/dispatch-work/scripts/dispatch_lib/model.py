@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import datetime
 import re
-from dataclasses import MISSING, asdict, dataclass, fields
+from dataclasses import MISSING, asdict, dataclass, field, fields
 from enum import Enum
 from typing import Literal
 
@@ -13,6 +13,8 @@ KINDS = ("Meta", "Plan", "Design", "Build", "Review", "Research", "Audit", "Fix"
 REPORT_WORDS = ("DONE", "DONE_WITH_CONCERNS", "NEEDS_CONTEXT", "BLOCKED", "VERIFIED", "FINDINGS")
 PROJECT_RE = re.compile(r"^[a-z0-9-]+$")
 TICKET_RE = re.compile(r"^THV-[0-9]+$")
+# Folders under the dispatch home that are not Projects.
+RESERVED_DIRS = ("events",)
 
 
 class DispatchError(Exception):
@@ -121,6 +123,40 @@ class Entry:
     body: str
 
 
+EVENT_NAMES = ("spawn", "session", "post", "alert", "send", "key", "interrupt", "close", "clean")
+
+
+@dataclass(frozen=True)
+class Event:
+    """One line of the events log. `kind` is the pane's Kind on spawn and the entry kind on post;
+    `status` is the report word or alert word."""
+    at: str
+    event: str
+    project: str
+    ticket: str | None = None
+    agent: str | None = None
+    pane: str | None = None
+    backend: str | None = None
+    cli: str | None = None
+    kind: str | None = None
+    status: str | None = None
+    detail: dict = field(default_factory=dict)
+
+    def to_dict(self):
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, d) -> "Event":
+        """ValueError when `d` is not an event; unknown keys are ignored."""
+        if not isinstance(d, dict) or d.get("event") not in EVENT_NAMES:
+            raise ValueError("not an event")
+        e = cls(**{f.name: d[f.name] for f in fields(cls) if f.name in d})
+        parse_iso(e.at)
+        if not isinstance(e.project, str) or not isinstance(e.detail, dict):
+            raise ValueError("bad project or detail")
+        return e
+
+
 def now_utc() -> datetime.datetime:
     return datetime.datetime.now(datetime.timezone.utc)
 
@@ -137,6 +173,8 @@ def parse_iso(s: str) -> datetime.datetime:
 def check_project(project: str) -> str:
     if not PROJECT_RE.match(project or ""):
         raise UsageError(f"project must be a lowercase slug [a-z0-9-]+, got {project!r}")
+    if project in RESERVED_DIRS:
+        raise UsageError(f"{project!r} is reserved for dispatch's own files; pick another project slug")
     return project
 
 

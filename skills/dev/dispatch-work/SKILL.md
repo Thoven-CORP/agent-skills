@@ -17,6 +17,8 @@ when something is wrong. Main never polls.
 **Source:** `~/thoven/agent-skills/skills/dev/dispatch-work/`. Home copies are installs.
 `scripts/dispatch` runs every pane action and detects Rex or herdr from the pane it runs in. Its
 usage text is the syntax authority. First time on a machine: `scripts/dispatch fleet install`.
+Every pane action also lands in an events log that `clean` keeps, and `scripts/dispatch stats` reads it
+per pane: reports, corrections, alerts and tokens.
 
 ## Pitfalls
 

@@ -12,7 +12,7 @@ import secrets
 import shutil
 import tempfile
 
-from .model import (PROJECT_RE, Entry, EntryKind, PaneRef, Registration, UsageError, WrongState, check_project,
+from .model import (PROJECT_RE, RESERVED_DIRS, Entry, EntryKind, PaneRef, Registration, UsageError, WrongState, check_project,
                     check_ticket, iso, now_utc, parse_iso)
 
 
@@ -32,7 +32,8 @@ def projects() -> list[str]:
     root = home()
     if not os.path.isdir(root):
         return []
-    return sorted(p for p in os.listdir(root) if os.path.isdir(os.path.join(root, p)) and PROJECT_RE.match(p))
+    return sorted(p for p in os.listdir(root) if os.path.isdir(os.path.join(root, p)) and PROJECT_RE.match(p)
+                  and p not in RESERVED_DIRS)
 
 
 def write_atomic(path: str, text: str) -> None:

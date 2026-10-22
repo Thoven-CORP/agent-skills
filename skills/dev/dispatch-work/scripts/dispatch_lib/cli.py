@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import argparse
 import datetime
-import glob
 import importlib.util
 import json
 import os
@@ -11,12 +10,13 @@ import re
 import sys
 import time
 
-from . import fleet, linear, store
-from .model import (KINDS, REPORT_WORDS, DispatchError, EntryKind, PaneRef, Registration, State, UsageError, WrongState,
-                    check_project, check_ticket, iso, now_utc, parse_iso)
+from . import events, fleet, linear, stats, store, usage
+from .model import (KINDS, REPORT_WORDS, DispatchError, EntryKind, Event, PaneRef, Registration, State, UsageError,
+                    WrongState, check_project, check_ticket, iso, now_utc, parse_iso)
 from .mux import BACKENDS, Launch, detect, main_pane, wait_started
 from .runner import Runner, run as default_run
 from .tick import tick_all
+from .usage import claude_sessions, sessions_dir
 
 SCRIPTS = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SEND_WAIT = 60
@@ -30,19 +30,6 @@ KEY_RE = re.compile(r"^[A-Za-z0-9+_-]{1,20}$")
 
 # ---------------------------------------------------------------- helpers with no I/O beyond their args
 
-def sessions_dir() -> str:
-    return os.path.join(os.environ.get("CLAUDE_CONFIG_DIR") or os.path.expanduser("~/.claude"), "sessions")
-
-
-def claude_sessions(folder: str) -> list[dict]:
-    out = []
-    for path in sorted(glob.glob(os.path.join(folder, "*.json"))):
-        data = store.read_json(path)
-        if isinstance(data, dict):
-            out.append(data)
-    return out
-
-
 def peer_name(folder: str, session_id: str | None) -> str | None:
     """Main's peer name: the `name` of the live session file whose sessionId is ours."""
     if not session_id:
@@ -51,6 +38,12 @@ def peer_name(folder: str, session_id: str | None) -> str | None:
         if s.get("sessionId") == session_id and s.get("name"):
             return s["name"]
     return None
+
+
+def argv_model(argv) -> str | None:
+    """The value after --model or -m in a launch line."""
+    argv = list(argv)
+    return next((argv[i + 1] for i, x in enumerate(argv[:-1]) if x in ("--model", "-m")), None)
 
 
 def fill_brief(text: str, values: dict[str, str]) -> str:
@@ -119,6 +112,17 @@ class App:
     def say(self, *lines: str) -> None:
         for line in lines:
             print(line, file=self.out, flush=True)
+
+    def emit(self, ev: Event) -> None:
+        events.emit(ev, log=lambda line: print(f"dispatch: {line}", file=self.err, flush=True))
+
+    def soft(self, what: str, fn, default=None):
+        """Telemetry reads: a failure is reported on stderr and never fails the command."""
+        try:
+            return fn()
+        except Exception as e:
+            print(f"dispatch: telemetry: {what}: {e!r}", file=self.err, flush=True)
+            return default
 
     def mux(self, backend: str):
         return BACKENDS[backend](self.run)
@@ -204,16 +208,23 @@ class App:
                                      launched_at=launched_at))
             store.write_registration(regs[-1])
 
+        def spawned(reg: Registration) -> None:
+            self.emit(events.for_reg("spawn", reg, kind=a.kind, launched_at=reg.launched_at, tier=str(a.tier),
+                                     model=argv_model(launch.argv), argv=list(launch.argv),
+                                     brief_bytes=len(text.encode())))
+
         try:
             ref = self.mux(backend).spawn(cwd, label, launch, a.split_of, on_pane)
         except Exception as e:
             if not regs:
                 raise
+            spawned(regs[-1])
             raise DispatchError(f"{e}\n{regs[-1].pane.pane} stays registered as {name}, so the tick raises STARTUP "
                                 f"or GONE for it. Read it with dispatch read, or drop it with dispatch close.")
         if not regs or regs[-1].pane != ref:
             on_pane(ref, regs[-1].launched_at if regs else iso(now_utc()))
         reg = regs[-1]
+        spawned(reg)
         if a.json:
             return self.say(json.dumps(reg.to_dict()))
         self.say(f"pane {ref.pane}", f"agent {name}", f"label {label}", f"brief {brief}",
@@ -241,7 +252,7 @@ class App:
         self.say(self.mux(ref.backend).read(ref, a.lines))
 
     def send(self, a):
-        ref, _ = self.resolve(a.pane, a.backend)
+        ref, reg = self.resolve(a.pane, a.backend)
         mux = self.mux(ref.backend)
         try:
             with open(a.file, encoding="utf-8") as f:
@@ -259,6 +270,8 @@ class App:
                 pass
             raise WrongState(f"refusing to send: {ref.pane} is {before.state.name}, not IDLE or DONE.\n{screen}")
         mux.type_text(ref, text)
+        if reg:
+            self.emit(events.for_reg("send", reg, bytes=len(text.encode())))
         if wait_started(mux, ref, before, SEND_WAIT, sleep=self.sleep, clock=self.clock):
             return self.say(f"sent {len(text.encode())} bytes to {ref.pane}")
         mux.key(ref, "enter")
@@ -269,23 +282,39 @@ class App:
     def key(self, a):
         if not KEY_RE.match(a.key):
             raise UsageError(f"one key name like enter, esc, up, down, tab, y or 1, got {a.key!r}")
-        ref, _ = self.resolve(a.pane, a.backend)
+        ref, reg = self.resolve(a.pane, a.backend)
         key = a.key.lower()
         self.mux(ref.backend).key(ref, key)
+        if reg:
+            self.emit(events.for_reg("key", reg, key=key))
         self.say(f"{key} -> {ref.pane}")
 
     def interrupt(self, a):
-        ref, _ = self.resolve(a.pane, a.backend)
+        ref, reg = self.resolve(a.pane, a.backend)
         self.mux(ref.backend).key(ref, "esc")
+        if reg:
+            self.emit(events.for_reg("interrupt", reg))
         self.say(f"esc -> {ref.pane}")
 
     def close(self, a):
         ref, reg = self.resolve(a.pane, a.backend)
+        sid = None
         if reg:
+            if reg.cli == "claude":
+                # Read while the pane lives: its sessions file goes when the agent exits. A GONE pane's id was
+                # caught by an earlier tick.
+                sid = self.soft("session id", lambda: usage.session_id(reg.agent_name)
+                                or store.read_watch(reg.project, reg.pane).get("session_id"))
             # Dropped first and under tick.lock, so no tick pass sees a closing pane as GONE.
             with store.tick_lock():
                 store.remove_registration(reg)
-        self.mux(ref.backend).close(ref)
+        try:
+            self.mux(ref.backend).close(ref)
+        finally:
+            if reg:
+                detail = (self.soft("usage", lambda: usage.summary(sid), {"session_id": sid})
+                          if reg.cli == "claude" else {"usage_by_model": None})
+                self.emit(events.for_reg("close", reg, **detail))
         self.say(f"closed {ref.pane}" + (f" ({reg.agent_name})" if reg else ""))
 
     def post(self, a):
@@ -303,7 +332,13 @@ class App:
         if not body.strip():
             raise UsageError("empty body: pipe the entry text on stdin")
         frm = a.frm or self.main_name() or "main"
-        self.say(store.post(a.project, check_ticket(a.ticket), kind, body, frm, status))
+        path = store.post(a.project, check_ticket(a.ticket), kind, body, frm, status)
+        reg = self.soft("post sender", lambda: next(
+            (r for r in store.registrations(a.project) if r.agent_name == frm), None))
+        self.emit(events.for_reg("post", reg, kind=kind.value, status=status, frm=frm) if reg else Event(
+            at=iso(now_utc()), event="post", project=a.project, ticket=a.ticket, agent=frm, kind=kind.value,
+            status=status, detail={"frm": frm}))
+        self.say(path)
 
     def board(self, a):
         store.require_project_exists(a.project)
@@ -355,7 +390,25 @@ class App:
                              + ", ".join(f"{r.agent_name} ({r.pane.pane})" for r in live)
                              + ". Run dispatch close <pane> first.")
         removed = store.clean(a.project, check_ticket(a.ticket) if a.ticket else None)
+        self.emit(Event(at=iso(now_utc()), event="clean", project=a.project, ticket=a.ticket,
+                        detail={"removed": len(removed)}))
         self.say(f"removed {len(removed)} path{'s' if len(removed) != 1 else ''}")
+
+    def stats(self, a):
+        try:
+            since = stats.parse_day(a.since) if a.since else None
+        except ValueError:
+            raise UsageError(f"--since must be a day like 2026-10-15, got {a.since!r}")
+        if a.project:
+            check_project(a.project)
+        rows = stats.build(events.read(log=lambda line: print(f"dispatch stats: {line}", file=self.err)),
+                           since=since, project=a.project)
+        if a.json:
+            return self.say(json.dumps([r.to_dict() for r in rows]))
+        if a.md:
+            return self.out.write(stats.markdown(rows))
+        self.out.write(stats.text(rows) if rows else "no dispatch events" + (f" since {a.since}" if a.since else "")
+                       + "\n")
 
     def fleet(self, a):
         if a.action == "install" and a.dry_run:
@@ -397,7 +450,7 @@ def parser() -> argparse.ArgumentParser:
     x.add_argument("--tab", action="store_true")
     x.add_argument("--kinds", action="store_true", help="print the allowed kinds")
     s.add_parser("status", parents=[json_opt, pane_opts], help="normalised Status").add_argument("pane")
-    for name, text in (("interrupt", "press Esc"), ("close", "drop the pane's Registration and close the pane")):
+    for name, text in (("interrupt", "press Esc"), ("close", "drop the pane's Registration and close the pane; logs a Claude pane's tokens")):
         s.add_parser(name, parents=[pane_opts], help=text).add_argument("pane")
     x = s.add_parser("key", parents=[pane_opts], help="press one key in a pane, to answer a dialog")
     x.add_argument("pane"), x.add_argument("key", help="enter, esc, up, down, tab, y, 1, ctrl+c ...")
@@ -420,6 +473,11 @@ def parser() -> argparse.ArgumentParser:
     s.add_parser("tick", help="one watcher pass over every Registration")
     x = s.add_parser("clean", help="delete a ticket's files, or the whole project")
     x.add_argument("project"), x.add_argument("--ticket")
+    x = s.add_parser("stats", parents=[json_opt], help="one row per pane from the events log (<home>/events/, which "
+                                                       "clean keeps): reports, corrections, alerts, tokens")
+    x.add_argument("--since", metavar="YYYY-MM-DD", help="rows with an event on or after this day (UTC)")
+    x.add_argument("--project")
+    x.add_argument("--md", action="store_true", help="markdown table and a friction footer")
     x = s.add_parser("fleet", help="launchd agent co.thoven.dispatch-tick")
     x.add_argument("action", choices=("install", "uninstall", "status"))
     x.add_argument("--dry-run", action="store_true", help="install: print the plist, write nothing")
