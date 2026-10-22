@@ -72,7 +72,10 @@ def normalise_rex(records: list[dict], process: dict | None) -> Status:
     states = [r.get("state") for r in records]
     blocked = next((r for r in records if r.get("state") == "blocked"), None)
     if blocked:
-        return Status(State.BLOCKED, blocked.get("kind"), blocked.get("msg"), updated, updated)
+        # updated_at is the blocked record's own stamp: one per blocked episode, while a working subagent
+        # keeps moving the fingerprint.
+        return Status(State.BLOCKED, blocked.get("kind"), blocked.get("msg"), blocked.get("updated_at") or updated,
+                      updated)
     if "working" in states:
         working = next(r for r in records if r.get("state") == "working")
         return Status(State.WORKING, None, working.get("msg") or working.get("title"), updated, updated)

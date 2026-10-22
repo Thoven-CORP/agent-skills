@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import datetime
+import fcntl
+import hashlib
 import json
 import os
 import re
@@ -109,13 +111,12 @@ def remove_registration(reg: Registration) -> None:
 # ---------------------------------------------------------------- watch memory
 
 def empty_watch() -> dict:
-    return {"last_state": None, "since": None, "last_fingerprint": None, "fingerprint_since": None,
-            "alerted": []}
+    return {"last_state": None, "since": None, "last_fingerprint": None, "fingerprint_since": None}
 
 
 def read_watch(project: str, ref: PaneRef) -> dict:
     data = read_json(watch_path(project, ref))
-    if not isinstance(data, dict) or not isinstance(data.get("alerted", []), list):
+    if not isinstance(data, dict):
         return empty_watch()
     for key in ("since", "fingerprint_since", "settle_since", "live_since", "active_since"):
         if data.get(key) is not None:
@@ -172,7 +173,9 @@ def parse_entry(text: str) -> Entry:
 
 
 def post(project: str, ticket: str, kind: EntryKind, body: str, frm: str, status: str | None = None,
-         at=None) -> str:
+         at=None, dedup: str | None = None) -> str | None:
+    """The new entry's path. With `dedup`, the name derives from it, so a second post of the same key
+    is a no-op that returns None."""
     check_ticket(ticket)
     t = at or now_utc()
     entry = Entry(at=iso(t), ticket=ticket, frm=frm, kind=kind, status=status, body=body)
@@ -180,15 +183,25 @@ def post(project: str, ticket: str, kind: EntryKind, body: str, frm: str, status
     os.makedirs(folder, exist_ok=True)
     t = t.astimezone(datetime.timezone.utc)
     stamp = t.strftime("%Y%m%dT%H%M%S") + f"{t.microsecond // 1000:03d}Z"
-    while True:
-        path = os.path.join(folder, f"{stamp}-{ticket}-{kind.name}-{secrets.token_hex(2)}.md")
-        try:
-            fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
-            break
-        except FileExistsError:
-            continue
-    with os.fdopen(fd, "w", encoding="utf-8") as f:
-        f.write(format_entry(entry))
+    # Written under a dot name entries() skips, then linked into place: a reader sees all of it or none.
+    fd, tmp = tempfile.mkstemp(dir=folder, prefix=".tmp-")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(format_entry(entry))
+        while True:
+            if dedup:
+                digest = hashlib.sha1(dedup.encode()).hexdigest()[:12]
+                path = os.path.join(folder, f"{ticket}-{kind.name}-{status or 'NONE'}-{digest}.md")
+            else:
+                path = os.path.join(folder, f"{stamp}-{ticket}-{kind.name}-{secrets.token_hex(2)}.md")
+            try:
+                os.link(tmp, path)
+                break
+            except FileExistsError:
+                if dedup:
+                    return None
+    finally:
+        os.unlink(tmp)
     render(project)
     return path
 
@@ -224,9 +237,13 @@ def show_entry(path: str, e: Entry) -> str:
 
 
 def render(project: str) -> str:
-    text = f"# Board: {project}\n\n" + "\n".join(show_entry(p, e) for p, e in entries(project))
+    """Regenerate board.md. Serialised per project: the last renderer runs after the last entry landed."""
+    os.makedirs(project_dir(project), exist_ok=True)
     path = board_md(project)
-    write_atomic(path, text)
+    with open(os.path.join(project_dir(project), ".board.lock"), "a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        text = f"# Board: {project}\n\n" + "\n".join(show_entry(p, e) for p, e in entries(project))
+        write_atomic(path, text)
     return path
 
 

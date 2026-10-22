@@ -2,6 +2,7 @@ import io
 import json
 import os
 import unittest
+from unittest.mock import patch
 
 import testkit  # noqa: F401
 from dispatch_lib import store, tick
@@ -56,8 +57,9 @@ class Blocked(TickCase):
         self.tick(reg, blocked, 0)
         self.assertEqual(self.tick(reg, blocked, 120), ["BLOCKED"])
         self.tick(reg, working("w2"), 150)
-        self.tick(reg, blocked, 180)
-        self.assertEqual(self.tick(reg, blocked, 300), ["BLOCKED"])
+        again = Status(State.BLOCKED, "permission", "m", "u3", "u3")
+        self.tick(reg, again, 180)
+        self.assertEqual(self.tick(reg, again, 300), ["BLOCKED"])
 
 
 class Frozen(TickCase):
@@ -214,9 +216,6 @@ class Idempotency(TickCase):
         self.assertIn("block:bad tick failed: RuntimeError('rex down')", out.getvalue())
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class Startup(TickCase):
     def unknown(self):
@@ -232,3 +231,26 @@ class Startup(TickCase):
         reg = self.reg()
         self.tick(reg, working(), 10)
         self.assertEqual(self.tick(reg, self.unknown(), 200), [])
+
+
+class AlertDedup(TickCase):
+    def test_a_crash_after_posting_never_reposts(self):
+        self.reg()
+        with patch.object(store, "write_watch", side_effect=RuntimeError("disk full")):
+            for s in (0, 30, 60):
+                tick.tick_all(self.run, at(s), mux_for=lambda r: self.mux, out=io.StringIO())
+        self.assertEqual(self.alerts(), [("GONE", "THV-1")])
+
+    def test_a_watch_reset_does_not_realert_an_alerted_blocked_episode(self):
+        reg = self.reg()
+        blocked = Status(State.BLOCKED, "permission", "m", "u1", "u1")
+        self.tick(reg, blocked, 0)
+        self.assertEqual(self.tick(reg, blocked, 120), ["BLOCKED"])
+        os.unlink(store.watch_path("proj", reg.pane))
+        self.assertEqual(self.tick(reg, blocked, 150), [])
+        self.assertEqual(self.tick(reg, blocked, 300), [])
+        self.assertEqual(self.alerts(), [("BLOCKED", "THV-1")])
+
+
+if __name__ == "__main__":
+    unittest.main()

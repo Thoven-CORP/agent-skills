@@ -54,6 +54,10 @@ class RexNormalisationTable(unittest.TestCase):
         self.assertEqual((st.state, st.kind, st.msg, st.updated_at, st.fingerprint),
                          (State.BLOCKED, "permission", "approve Bash: rm", "T2", "T2"))
 
+    def test_blocked_updated_at_is_the_blocked_records_own_stamp(self):
+        st = normalise_rex([rec("blocked", kind="permission", at="T1"), rec("working", id="sub", at="T5")], CLAUDE)
+        self.assertEqual((st.state, st.updated_at, st.fingerprint), (State.BLOCKED, "T1", "T5"))
+
     def test_a_subagent_update_moves_the_fingerprint_while_the_root_is_still(self):
         st = normalise_rex([rec("working", at="2026-10-22T11:00:00-04:00"),
                             rec("working", id="sub", at="2026-10-22T11:09:00-04:00")], CLAUDE)

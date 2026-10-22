@@ -19,7 +19,6 @@ STARTUP_AFTER = 90
 FROZEN_AFTER = 600
 FROZEN_CPU = 5.0
 LIVE_GRACE = 600
-KEEP_KEYS = 100
 LIMIT_RE = re.compile(r"limit reached|resets at|usage limit|weekly limit", re.I)
 ACTIVE = (State.WORKING, State.BLOCKED)
 SETTLED = (State.DONE, State.IDLE)
@@ -28,7 +27,7 @@ SETTLED = (State.DONE, State.IDLE)
 @dataclass(frozen=True)
 class Alert:
     word: str
-    key: str
+    episode: str
     body: str
 
 
@@ -66,18 +65,15 @@ def _secs(now: datetime.datetime, since: str | None) -> float:
 def step(reg: Registration, watch: dict, status: Status, now: datetime.datetime, gates) -> tuple[dict, list[Alert]]:
     """The next watch memory and the alerts to post. Pure apart from the lazy gates."""
     w = {**store.empty_watch(), **watch}
-    w["alerted"] = list(w.get("alerted") or [])
+    w.pop("alerted", None)
     alerts: list[Alert] = []
     stamp = iso(now)
 
     def alert(word: str, episode: str, detail: str) -> None:
-        key = f"{word}@{episode}"
-        if key not in w["alerted"]:
-            w["alerted"].append(key)
-            alerts.append(Alert(word, key, detail))
+        # Raised on every tick the condition holds; the board entry named after (pane, word, episode) dedups it.
+        alerts.append(Alert(word, episode, detail))
 
     def done() -> tuple[dict, list[Alert]]:
-        w["alerted"] = w["alerted"][-KEEP_KEYS:]
         return w, alerts
 
     if status.state == State.GONE:
@@ -99,12 +95,13 @@ def step(reg: Registration, watch: dict, status: Status, now: datetime.datetime,
               "dialog is likely waiting")
 
     if state == State.BLOCKED and _secs(now, w["since"]) >= BLOCKED_AFTER:
-        alert("BLOCKED", w["since"], f"blocked {status.kind or '?'}: {status.msg or '-'}")
+        # Rex stamps the blocked record, so its episode survives a lost watch file; herdr has no stamp.
+        alert("BLOCKED", status.updated_at or w["since"], f"blocked {status.kind or '?'}: {status.msg or '-'}")
 
     if state == State.WORKING and status.fingerprint and _secs(now, w["fingerprint_since"]) >= FROZEN_AFTER:
         cpu = gates.cpu()
         if cpu is None or cpu < FROZEN_CPU:
-            alert("FROZEN", w["fingerprint_since"],
+            alert("FROZEN", status.updated_at or w["fingerprint_since"],
                   f"working with no change since {w['fingerprint_since']}, cpu {'?' if cpu is None else cpu}%")
 
     if state in ACTIVE:
@@ -154,7 +151,10 @@ def tick_pane(reg: Registration, run: Runner, now: datetime.datetime | None = No
     posted = []
     for a in alerts:
         body = f"{reg.agent_name} ({reg.pane.backend} {reg.pane.pane}): {a.body}"
-        posted.append((a, store.post(reg.project, reg.ticket, EntryKind.ALERT, body, "dispatch-tick", a.word, at=now)))
+        path = store.post(reg.project, reg.ticket, EntryKind.ALERT, body, "dispatch-tick", a.word, at=now,
+                          dedup=f"{store.pane_key(reg.pane)}|{a.word}|{a.episode}")
+        if path:
+            posted.append((a, path))
     store.write_watch(reg.project, reg.pane, new)
     return posted
 
