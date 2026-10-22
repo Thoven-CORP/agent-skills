@@ -351,12 +351,21 @@ SPECS="$TMP/backend-thv-980"
 "$TOOL" create be specs 980 >/dev/null 2>&1
 mkdir -p "$SPECS/.specs"
 printf 'spec\n' > "$SPECS/.specs/notes.md"
+mkdir -p "$SPECS/build" && printf 'rebuildable\n' > "$SPECS/build/out.txt"
 err="$("$TOOL" remove "$SPECS" 2>&1 >/dev/null)"; code=$?
 expect "remove of a tree with an untracked .specs/ exit" "$code" 0
 if [ -e "$SPECS" ]; then fail "remove of a tree with an untracked .specs/ deletes it" "still there"; else ok "remove of a tree with an untracked .specs/ deletes it"; fi
 SPECS_ARCH="$TMP/archive/backend-thv-980-$(date +%Y-%m-%d)"
 expect "the untracked file is archived with its path" "$(cat "$SPECS_ARCH/.specs/notes.md" 2>/dev/null)" "spec"
 has_line "remove reports the untracked archive" "$err" "thoven-worktree: archived 1 untracked file(s) to $SPECS_ARCH"
+if [ -e "$SPECS_ARCH/build" ]; then fail "untracked build output is not archived" "archived"; else ok "untracked build output is not archived"; fi
+
+NEST="$TMP/backend-thv-984"
+"$TOOL" create be nest 984 >/dev/null 2>&1
+git init -q "$NEST/sub" && printf 'work\n' > "$NEST/sub/work.txt"
+"$TOOL" remove "$NEST" >/dev/null 2>&1; code=$?
+expect "remove of a tree holding a nested repository exit" "$code" 1
+if [ -e "$NEST/sub/work.txt" ]; then ok "a nested repository is kept"; else fail "a nested repository is kept" "gone"; fi
 
 MOD="$TMP/backend-thv-981"
 "$TOOL" create be modified 981 >/dev/null 2>&1

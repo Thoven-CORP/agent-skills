@@ -159,7 +159,11 @@ A live dev server blocks that copy, so rerun `bootstrap` after adding a migratio
 with the server stopped. `remove <path>` first copies the tree's gitignored docs
 (`.md`, `.mdx`, `.markdown`, `.txt`, `.html`; never `node_modules` or build output)
 to `~/thoven/archive/<tree>-<date>/`, because those plans and notes exist nowhere
-else. It drops both databases, and only after `git worktree remove` succeeds. `orphan-dbs` lists the local Thoven databases no
+else, and every untracked file beside them (`.specs/`, `.audit/`) except rebuildable
+scratch, then runs `git worktree remove --force`. It refuses, and touches nothing, when
+the tree has tracked changes, commits no origin branch holds, or a process working inside
+it (a dev server writing during the delete left 176 MB behind). It drops both databases,
+and only after `git worktree remove` succeeds. `orphan-dbs` lists the local Thoven databases no
 worktree's `.env` names, and drops nothing.
 
 `thoven-worktree post-checkout` is each repo's lefthook `post-checkout` step. It

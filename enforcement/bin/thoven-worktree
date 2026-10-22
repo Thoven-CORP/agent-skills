@@ -29,8 +29,10 @@ usage: thoven-worktree create <fe|be> <area> <n> [--project <name>] [--kind <kin
        thoven-worktree where <project> <fe|be>
                                        (prints the Project's integration tree, validated)
        thoven-worktree bootstrap <path>
-       thoven-worktree remove <path>   (archives its gitignored docs to ~/thoven/archive first,
-                                       and drops the worktree's own databases)
+       thoven-worktree remove <path>   (archives its gitignored docs and untracked files to
+                                       ~/thoven/archive first, and drops the worktree's own
+                                       databases. Refuses tracked edits, unpushed commits and a
+                                       process working inside it)
        thoven-worktree orphan-dbs      (lists local databases no worktree uses; drops nothing)
        thoven-worktree hook            (Claude Code WorktreeCreate; JSON on stdin)
        thoven-worktree post-checkout <prev> <new> <flag>
@@ -599,14 +601,19 @@ ARCHIVE_PRUNE=(.git node_modules .pnpm-store .next '.next-*' .turbo build dist o
   playwright-report test-results .worktrees graphify-out)
 ARCHIVE_DOCS=(md mdx markdown txt html)
 
-# archive_docs <path>: copies <path>'s gitignored docs, keeping their paths, to
-# $THOVEN_ROOT/archive/<tree name>-<date>/. Tracked files are never listed by check-ignore.
+archive_dest() {
+  local dest
+  dest="$THOVEN_ROOT/archive/$(basename "$1")-$(date +%Y-%m-%d)"
+  [ -e "$dest" ] && dest="$dest-$(date +%H%M%S)"
+  printf '%s\n' "$dest"
+}
+
+# archive_docs <path> <dest>: copies <path>'s gitignored docs to <dest>, keeping their paths.
+# Tracked files are never listed by check-ignore.
 archive_docs() {
-  local path="$1" dest name prune=() docs=() f n=0 found ignored rc
+  local path="$1" dest="$2" name prune=() docs=() f n=0 found ignored rc
   for name in "${ARCHIVE_PRUNE[@]}"; do prune+=(-name "$name" -o); done
   for name in "${ARCHIVE_DOCS[@]}"; do docs+=(-name "*.$name" -o); done
-  dest="$THOVEN_ROOT/archive/$(basename "$path")-$(date +%Y-%m-%d)"
-  [ -e "$dest" ] && dest="$dest-$(date +%H%M%S)"
   # Listed to files first: check-ignore exits 1 when nothing matches, and anything above 1 means the
   # list is incomplete, so the tree must not be removed on the strength of it.
   found="$(mktemp)" && ignored="$(mktemp)" || return 1
@@ -630,17 +637,74 @@ archive_docs() {
   fi
 }
 
+# in_pruned_dir <relative path>: whether a directory on the path is an ARCHIVE_PRUNE name.
+in_pruned_dir() {
+  local rest="${1%/*}" part name
+  [ "$rest" != "$1" ] || return 1
+  while [ -n "$rest" ]; do
+    part="${rest%%/*}"
+    if [ "$part" = "$rest" ]; then rest=""; else rest="${rest#*/}"; fi
+    for name in "${ARCHIVE_PRUNE[@]}"; do
+      # shellcheck disable=SC2254
+      case "$part" in $name) return 0 ;; esac
+    done
+  done
+  return 1
+}
+
+# archive_untracked <path> <dest>: copies untracked, non-ignored files to <dest>, keeping their
+# paths, because remove --force deletes them. A nested repository fails it: its own uncommitted work
+# would go with it.
+archive_untracked() {
+  local path="$1" dest="$2" list f n=0 rc=0
+  list="$(mktemp)" || return 1
+  git -C "$path" ls-files -z --others --exclude-standard >"$list" || { rm -f "$list"; return 1; }
+  while IFS= read -r -d '' f; do
+    case "$f" in */) log "$path/$f is a nested repository; move it out first"; rc=1; break ;; esac
+    in_pruned_dir "$f" && continue
+    if ! { mkdir -p "$dest/$(dirname "$f")" && cp -pP "$path/$f" "$dest/$f"; }; then rc=1; break; fi
+    n=$((n + 1))
+  done <"$list"
+  rm -f "$list"
+  [ "$rc" -eq 0 ] || return 1
+  [ "$n" -eq 0 ] || log "archived $n untracked file(s) to $dest"
+}
+
+# procs_inside <path>: "  pid <pid> (<command>)" for each process whose cwd is in <path>.
+procs_inside() {
+  command -v lsof >/dev/null || { log "lsof is not installed, so processes inside $1 cannot be checked"; return 1; }
+  # lsof exits 1 when some processes are unreadable, and the readable ones are still listed.
+  { lsof -d cwd -Fpcn 2>/dev/null || true; } | awk -v P="$1" '
+    /^p/ { pid = substr($0, 2) } /^c/ { cmd = substr($0, 2) }
+    /^n/ { n = substr($0, 2); if (n == P || index(n, P "/") == 1) print "  pid " pid " (" cmd ")" }'
+}
+
+# remove converges whenever nothing unrecoverable would be lost: tracked edits and commits no origin
+# branch holds are refused, everything untracked is archived, then git removes the tree with --force.
 remove() {
-  local path main db key suffix dbs=()
+  local path main db key suffix dbs=() dirty ahead branch procs dest
   path="$(physical "$1")" || die 1 "remove: $1 is not a directory"
   [ "$(physical "$(git -C "$path" rev-parse --show-toplevel 2>/dev/null)")" = "$path" ] ||
     die 1 "remove: $path is not the top of a git worktree"
   main="$(physical "$(main_of "$path")")"
   [ "$path" != "$main" ] || die 1 "remove: $path is the main checkout"
-  # git refuses a tree with edits or untracked files, and a refused remove should leave no archive.
-  if [ -z "$(git -C "$path" status --porcelain)" ]; then
-    archive_docs "$path" || die 1 "remove: archiving $path's gitignored docs failed, so nothing was removed"
+  # Neither this script nor lsof may count as a process inside the tree.
+  cd /
+  dirty="$(git -C "$path" status --porcelain --untracked-files=no)" || die 1 "remove: git status failed in $path"
+  [ -z "$dirty" ] || die 1 "remove: $path has tracked changes, so nothing was removed. Commit and push them, or restore them:
+$dirty"
+  ahead="$(git -C "$path" rev-list --count HEAD --not --remotes=origin)" || die 1 "remove: git rev-list failed in $path"
+  if [ "$ahead" != 0 ]; then
+    branch="$(git -C "$path" branch --show-current)"
+    die 1 "remove: $path has $ahead commit(s) on HEAD that no origin branch contains, so nothing was removed. Push them: git -C $path push -u origin ${branch:-HEAD:refs/heads/<branch>}"
   fi
+  # A dev server writing during the delete left a partial delete with 176 MB behind.
+  procs="$(procs_inside "$path")" || die 1 "remove: nothing was removed"
+  [ -z "$procs" ] || die 1 "remove: these processes work inside $path, so nothing was removed. Stop them, or cd out, and rerun:
+$procs"
+  dest="$(archive_dest "$path")"
+  archive_docs "$path" "$dest" || die 1 "remove: archiving $path's gitignored docs failed, so nothing was removed"
+  archive_untracked "$path" "$dest" || die 1 "remove: archiving $path's untracked files failed, so nothing was removed"
   # Only the names bootstrap gives this tree: a .env copied from another tree names that tree's.
   suffix="$(db_suffix "$path")"
   if [ -f "$path/.env" ]; then
@@ -649,7 +713,7 @@ remove() {
       { [ "$db" = "neondb_test_$suffix" ] || [ "$db" = "thoven_dev_$suffix" ]; } && dbs+=("$db")
     done
   fi
-  git -C "$main" worktree remove "$path" >&2 || die 1 "git worktree remove $path failed, so no database was dropped"
+  git -C "$main" worktree remove --force "$path" >&2 || die 1 "git worktree remove --force $path failed, so no database was dropped"
   log "removed $path"
   # A database another live worktree still names is shared, not this one's to drop.
   local still
