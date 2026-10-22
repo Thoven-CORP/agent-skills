@@ -8,7 +8,12 @@ case "$T" in /tmp/thv1361.*) ;; *) exit 1 ;; esac
 trap 'rm -rf "$T"' EXIT
 H="$(cd "$T" && pwd -P)/home"
 mkdir -p "$H/.agents/skills/andres-mode" "$H/thoven/frontend" "$T/elsewhere"
-printf -- '---\nname: andres-mode\ndescription: x\n---\n\n# Andres mode\n\nRule one.\n' > "$H/.agents/skills/andres-mode/SKILL.md"
+SKILL="$H/.agents/skills/andres-mode/SKILL.md"
+{
+  printf -- '---\nname: andres-mode\ndescription: x\n---\n\n# Andres mode\n\nIntro.\n\n## Pitfalls\n\n- Pitfall one.\n- Pitfall two.\n\n## Steps\n\n'
+  for _ in $(seq 400); do echo '- A long rule line that pads the skill well past any hook output limit.'; done
+  echo '- Last rule.'
+} > "$SKILL"
 
 ok() { printf 'ok %s\n' "$1"; }
 fail() { printf 'FAIL %s: got %s\n' "$1" "$2"; exit 1; }
@@ -18,18 +23,21 @@ payload() { jq -nc --arg c "$1" '{session_id:"s",hook_event_name:"SessionStart",
 
 out="$(run "$(payload "$H/thoven/frontend")")"; code=$?
 expect "a Thoven session exits 0" "$code" 0
-expect "a Thoven session gets the skill body" "$(grep -c '^# Andres mode$' <<<"$out")" 1
-expect "the frontmatter is left out" "$(grep -c '^name: andres-mode' <<<"$out")" 0
-expect "the body ends with its last rule" "$(tail -n 1 <<<"$out")" "Rule one."
-expect "a session in HOME gets it too" "$(run "$(payload "$H")" | grep -c '^# Andres mode$')" 1
+expect "the first line tells the agent to read the skill file" \
+  "$(head -n 1 <<<"$out" | grep -c "Read $SKILL in full")" 1
+expect "the Pitfalls section is inline" "$(grep -c '^- Pitfall two\.$' <<<"$out")" 1
+expect "the output ends with the last pitfall" "$(tail -n 1 <<<"$out")" "- Pitfall two."
+expect "the rest of the skill stays in the file" "$(grep -c -e '^## Steps' -e 'Last rule' -e '^name:' <<<"$out")" 0
+expect "the output stays under 4 KB, so no CLI cuts it" "$(( $(wc -c <<<"$out") < 4096 ))" 1
+expect "a session in HOME gets it too" "$(run "$(payload "$H")" | grep -c '^- Pitfall one\.$')" 1
 expect "a session elsewhere gets nothing" "$(run "$(payload "$T/elsewhere")")" ""
 expect "a sibling of thoven gets nothing" "$(run "$(payload "$H/thoven-notes")")" ""
 out="$(cd "$T/elsewhere" && run "")"; code=$?
 expect "empty input outside Thoven exits 0" "$code" 0
 expect "empty input outside Thoven prints nothing" "$out" ""
 expect "empty input falls back to the working directory" \
-  "$(cd "$H/thoven/frontend" && run "" | grep -c '^# Andres mode$')" 1
-rm "$H/.agents/skills/andres-mode/SKILL.md"
+  "$(cd "$H/thoven/frontend" && run "" | grep -c '^- Pitfall one\.$')" 1
+rm "$SKILL"
 out="$(run "$(payload "$H/thoven/frontend")")"; code=$?
 expect "a missing skill exits 0" "$code" 0
 expect "a missing skill prints nothing" "$out" ""
