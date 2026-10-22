@@ -66,6 +66,16 @@ PATCHES = [
         "description: Remove AI-generated code slop and clean up code style",
         "description: Remove AI-generated slop from the current branch's diff vs main — stray/over-explanatory comments, defensive try/catch on trusted paths, `any` casts that only silence types, needless deep nesting. Surgical and behavior-preserving. Use right after generating code, before review; pair with `thermo-nuclear-code-quality-review` for a structural pass.",
     ),
+    (
+        "show-me",
+        "Match the product's colors, type, spacing, and components; use real labels and data; support desktop and mobile.",
+        "Build it with the **visual-artifacts** skill and use real labels and data.",
+    ),
+    (
+        "teach",
+        "A mermaid diagram fits a flow or structure where the labels carry the meaning.",
+        "A mermaid diagram fits a flow or structure where the labels carry the meaning. Mermaid does not render in the terminal, so put the series in one HTML page built with the **visual-artifacts** skill.",
+    ),
 ]
 
 # Routers whose named skills must stay model-invocable. Each entry is a skill

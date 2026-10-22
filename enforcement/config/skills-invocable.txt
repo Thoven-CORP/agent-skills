@@ -29,3 +29,4 @@ thermos
 thermo-nuclear-review
 thermo-nuclear-code-quality-review
 deslop
+visual-artifacts
