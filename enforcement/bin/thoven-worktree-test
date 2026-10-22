@@ -387,7 +387,7 @@ expect "removing the tree keeps its branch and commit" "$(git -C "$TMP/backend" 
 
 DETACHED="$TMP/backend-thv-989"
 "$TOOL" create be detached 989 >/dev/null 2>&1
-(cd "$DETACHED" && git checkout -q --detach && printf 'x\n' > mine && git add mine && git commit -qm mine)
+(cd "$DETACHED" && git checkout -q --detach && printf 'detached\n' > mine && git add mine && git commit -qm detached)
 err="$("$TOOL" remove "$DETACHED" 2>&1 >/dev/null)"; code=$?
 expect "remove of a detached HEAD with a commit no branch holds exit" "$code" 1
 if [ -e "$DETACHED/mine" ]; then ok "a detached tree with its own commit is kept"; else fail "a detached tree with its own commit is kept" "gone"; fi
