@@ -181,5 +181,27 @@ expect "a quote in a \$(cat <<EOF) body does not hide the command after it" "$(d
 expect "an arithmetic shift is not a heredoc" "$(decision claude $'echo $((1<<2))\ngit stash push')" "deny"
 expect "an unterminated quote fails closed" "$(decision claude 'echo "unterminated; git stash push')" "deny"
 
+# Command substitution is judged with the same quote and heredoc awareness as the top level.
+expect "a \$(cat <<'EOF') commit message naming guarded commands is allowed" "$(decision claude $'git commit -m "$(cat <<\'EOF\'\nTighten the guard\n\ngit stash push\nbundle exec rspec\nEOF\n)"')" "allow"
+expect "\$(git stash push) is denied" "$(decision claude "echo \"\$(git stash push)\"")" "deny"
+expect "a backtick git clean is denied" "$(decision claude "echo \`git clean -fd\`")" "deny"
+expect "a single-quoted \$(git stash) is literal and allowed" "$(decision claude "echo '\$(git stash)'")" "allow"
+expect "\$( ) in an unquoted heredoc body is denied" "$(decision claude $'cat > notes.md <<EOF\n$(git stash push)\nEOF')" "deny"
+expect "\$( ) in a quoted heredoc body is literal and allowed" "$(decision claude $'cat > notes.md <<\'EOF\'\n$(git stash push)\nEOF')" "allow"
+# Wrappers in front of a command do not hide it.
+expect "timeout 60 bash -c runs its argument" "$(decision claude "timeout 60 bash -c 'git stash push'")" "deny"
+expect "sudo git clean is denied" "$(decision claude "sudo git clean -fd")" "deny"
+expect "env X=1 git stash push is denied" "$(decision claude "env X=1 git stash push")" "deny"
+expect "nice -n 5 bundle exec rspec is denied" "$(decision claude "nice -n 5 bundle exec rspec")" "deny"
+expect "a whole suite inside a loop body is denied" "$(decision claude "for f in x; do bundle exec rspec; done")" "deny"
+# A redirection is not a path.
+expect "pnpm vitest run 2>&1 is denied" "$(decision claude "pnpm vitest run 2>&1")" "deny"
+expect "bundle exec rspec > out.log is denied" "$(decision claude "bundle exec rspec > out.log")" "deny"
+expect "a redirection with no target is not a path" "$(decision claude "bundle exec rspec >")" "deny"
+expect "rspec on a spec with 2>&1 is allowed" "$(decision claude "bundle exec rspec spec/x_spec.rb 2>&1")" "allow"
+# Text piped into a shell is run.
+expect "echo text piped to bash is judged" "$(decision claude "echo \"git stash push\" | bash")" "deny"
+expect "a 20 KB heredoc returns within 5 s" "$(fast $'python3 - <<\'PY\'\n'"$(printf 'print("step")  # bundle exec rspec, git stash push, x | y; z\n%.0s' $(seq 330))"$'\nPY')" "allow"
+
 [ "$failed" -eq 0 ] || exit 1
 echo "all passed"
