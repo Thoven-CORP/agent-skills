@@ -9,7 +9,7 @@ import testkit  # noqa: F401
 from dispatch_lib import cli, store
 from dispatch_lib.model import EntryKind, State, Status
 from dispatch_lib.mux import Launch, MuxError
-from testkit import FakeMux, FakeRunner, HomeCase, registration
+from testkit import FakeMux, FakeRunner, HomeCase, at, registration
 
 
 class Harness(HomeCase):
@@ -32,6 +32,22 @@ class Harness(HomeCase):
 
 
 class PostBoardClean(Harness):
+    def setUp(self):
+        super().setUp()
+        os.makedirs(store.project_dir("proj"))
+
+    def test_a_typo_project_is_refused_not_created(self):
+        def stop_watching(seconds):
+            raise KeyboardInterrupt
+
+        self.app.sleep = stop_watching
+        for argv in (("post", "projj", "--ticket", "THV-1", "--kind", "answer"), ("board", "projj"),
+                     ("watch", "projj")):
+            with self.subTest(argv[0]):
+                self.assertEqual(self.cmd(*argv, stdin="x"), 2)
+                self.assertIn(f"no project 'projj' under {self.home}", self.err.getvalue())
+        self.assertFalse(os.path.exists(store.project_dir("projj")))
+
     def test_round_trip(self):
         self.assertEqual(self.cmd("post", "proj", "--ticket", "THV-7", "--kind", "report", "--status", "done",
                                   "--from", "build-thv-7", stdin="Acceptance ok\nProof ok\n"), 0)
@@ -93,6 +109,52 @@ class PostBoardClean(Harness):
         self.assertEqual(self.mux.closed, ["block:a"])
         self.assertEqual(self.cmd("clean", "proj", "--ticket", "THV-7"), 0)
         self.assertEqual(store.entries("proj"), [])
+
+
+class Watch(Harness):
+    def setUp(self):
+        super().setUp()
+        os.makedirs(store.project_dir("proj"))
+        store.write_registration(registration(pane="block:a", ticket="THV-1", launched_at="2026-10-22T12:00:00.000Z"))
+        store.write_registration(registration(pane="block:c", ticket="THV-2", cli="codex",
+                                              launched_at="2026-10-22T12:05:00.000Z"))
+
+    def watch(self):
+        """One pass of `dispatch watch proj`, as a fresh process would run it."""
+        self.out.seek(0), self.out.truncate()
+        passes = iter([False, True])
+        self.app.watch(cli.parser().parse_args(["watch", "proj"]), stop=lambda: next(passes))
+        return [line.split("  ")[0] for line in self.out.getvalue().splitlines()]
+
+    def post(self, minute, kind, frm, status, body, ticket="THV-1"):
+        return store.post("proj", ticket, kind, body, frm, status, at=at(minute * 60))
+
+    def test_first_watch_replays_since_the_earliest_live_launch(self):
+        self.post(-1, EntryKind.ALERT, "dispatch-tick", "GONE", "before launch")
+        self.post(1, EntryKind.ALERT, "dispatch-tick", "BLOCKED", "after launch")
+        self.assertEqual(self.watch(), ["ALERT BLOCKED THV-1 after launch"])
+
+    def test_a_watch_restart_replays_what_landed_while_it_was_down(self):
+        self.post(1, EntryKind.ALERT, "dispatch-tick", "BLOCKED", "first")
+        self.assertEqual(self.watch(), ["ALERT BLOCKED THV-1 first"])
+        self.post(2, EntryKind.ALERT, "dispatch-tick", "LIMIT", "while down")
+        self.assertEqual(self.watch(), ["ALERT LIMIT THV-1 while down"])
+        self.assertEqual(self.watch(), [])
+
+    def test_an_entry_published_late_with_an_earlier_time_is_still_delivered(self):
+        self.post(3, EntryKind.ALERT, "dispatch-tick", "BLOCKED", "published first")
+        self.assertEqual(self.watch(), ["ALERT BLOCKED THV-1 published first"])
+        self.post(2, EntryKind.ALERT, "dispatch-tick", "FROZEN", "slow tick pass")
+        self.assertEqual(self.watch(), ["ALERT FROZEN THV-1 slow tick pass"])
+
+    def test_codex_reports_questions_and_handoffs_are_forwarded(self):
+        self.post(6, EntryKind.QUESTION, "build-thv-2", "NEEDS_CONTEXT", "Which table?", "THV-2")
+        self.post(7, EntryKind.HANDOFF, "build-thv-2", "HANDOFF", "budget", "THV-2")
+        self.post(8, EntryKind.REPORT, "build-thv-2", "DONE", "all done", "THV-2")
+        self.post(9, EntryKind.REPORT, "build-thv-1", "DONE", "claude says so by peer message")
+        self.post(10, EntryKind.ANSWER, "main", None, "use orders", "THV-2")
+        self.assertEqual(self.watch(), ["QUESTION NEEDS_CONTEXT THV-2 Which table?", "HANDOFF HANDOFF THV-2 budget",
+                                        "REPORT DONE THV-2 all done"])
 
 
 class Spawn(Harness):

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import datetime
 import glob
 import importlib.util
 import json
@@ -12,7 +13,7 @@ import time
 
 from . import fleet, linear, store
 from .model import (KINDS, DispatchError, EntryKind, PaneRef, Registration, State, UsageError, WrongState,
-                    check_project, check_ticket, iso, now_utc)
+                    check_project, check_ticket, iso, now_utc, parse_iso)
 from .mux import BACKENDS, Launch, detect, main_pane, wait_started
 from .runner import Runner, run as default_run
 from .tick import tick_all
@@ -273,7 +274,7 @@ class App:
         self.say(f"closed {ref.pane}" + (f" ({reg.agent_name})" if reg else ""))
 
     def post(self, a):
-        check_project(a.project)
+        store.require_project_exists(a.project)
         try:
             kind = EntryKind[a.kind.upper()]
         except KeyError:
@@ -288,22 +289,37 @@ class App:
         self.say(store.post(a.project, check_ticket(a.ticket), kind, body, frm, status))
 
     def board(self, a):
-        check_project(a.project)
+        store.require_project_exists(a.project)
         for path, e in store.entries(a.project, ticket=a.ticket, since=a.since):
             self.say(store.show_entry(path, e))
 
     def watch(self, a, stop=lambda: False):
-        check_project(a.project)
-        seen = {p for p, _ in store.entries(a.project)}
+        store.require_project_exists(a.project)
+        cursor = store.read_cursor(a.project)
+        if cursor is None:
+            # First watch on this project: replay from the earliest live pane's launch.
+            launches = [parse_iso(r.launched_at) for r in store.registrations(a.project)]
+            start = min(launches) if launches else now_utc()
+            cursor = {"at": iso(start), "seen": {os.path.basename(p): e.at for p, e in store.entries(a.project)
+                                                 if parse_iso(e.at) <= start}}
+        store.write_cursor(a.project, cursor)
+        lookback = datetime.timedelta(seconds=store.WATCH_LOOKBACK)
         while not stop():
             codex = {r.agent_name for r in store.registrations(a.project) if r.cli == "codex"}
-            for path, e in store.entries(a.project):
-                if path in seen:
-                    continue
-                seen.add(path)
-                if e.kind == EntryKind.ALERT or (e.kind == EntryKind.REPORT and e.frm in codex):
+            fresh = [(p, e) for p, e in store.entries(a.project, since=iso(parse_iso(cursor["at"]) - lookback))
+                     if os.path.basename(p) not in cursor["seen"]]
+            for path, e in fresh:
+                cursor["seen"][os.path.basename(path)] = e.at
+                cursor["at"] = max(cursor["at"], e.at, key=parse_iso)
+                # A Codex pane cannot peer-message, so its own entries are main's only word from it.
+                if e.kind == EntryKind.ALERT or (e.frm in codex and e.kind in (
+                        EntryKind.REPORT, EntryKind.QUESTION, EntryKind.HANDOFF)):
                     first = (e.body.splitlines() or [""])[0]
                     self.say(f"{e.kind.name} {e.status or '-'} {e.ticket} {first}  {path}")
+            if fresh:
+                floor = parse_iso(cursor["at"]) - lookback
+                cursor["seen"] = {n: t for n, t in cursor["seen"].items() if parse_iso(t) > floor}
+                store.write_cursor(a.project, cursor)
             self.sleep(a.interval)
 
     def tick(self, a):
@@ -374,7 +390,8 @@ def parser() -> argparse.ArgumentParser:
     x.add_argument("--body", help=argparse.SUPPRESS)
     x = s.add_parser("board", parents=[common], help="print entries oldest first")
     x.add_argument("project"), x.add_argument("--ticket"), x.add_argument("--since", metavar="ISO")
-    x = s.add_parser("watch", parents=[common], help="print one line per new ALERT (and Codex REPORT)")
+    x = s.add_parser("watch", parents=[common], help="print one line per new ALERT, and per Codex REPORT, QUESTION or HANDOFF; "
+                                                    "replays what landed while no watch ran")
     x.add_argument("project"), x.add_argument("--interval", type=float, default=3, help=argparse.SUPPRESS)
     s.add_parser("tick", parents=[common], help="one watcher pass over every Registration")
     x = s.add_parser("clean", parents=[common], help="delete a ticket's files, or the whole project")

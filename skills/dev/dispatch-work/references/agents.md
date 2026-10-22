@@ -48,8 +48,9 @@ pane's first screen. A CLI `agents.toml` lacks shows as unwired in `agents.py cl
 
 ## Gotchas by CLI
 
-- **Codex** has no peer messages. It posts its question and report entries and stops; the
-  watcher posts a SETTLED alert when it goes idle, and main reads its entry. Send it corrections
+- **Codex** has no peer messages. It posts its question and report entries and stops; `dispatch
+  watch` prints each of those entries, the watcher posts a SETTLED alert when it goes idle, and main
+  reads its entry. Send it corrections
   with `dispatch send` once it is idle. Codex shows no status for about 40 seconds at startup,
   then working and idle, never done. It sees only the allowlisted skills: any other skill needs
   `~/thoven/agent-skills/scripts/apply-skill-visibility.sh activate <name>` and a new Codex session.

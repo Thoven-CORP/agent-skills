@@ -127,8 +127,10 @@ in Linear, then come back.
 
 ### 4. Watch
 
-Arm `scripts/dispatch watch <project>` once per session, with the Monitor tool. It prints a line only
-when an ALERT entry lands. Peer messages from panes arrive on their own. Wait on those two wake-ups
+Arm `scripts/dispatch watch <project>` once per session, with the Monitor tool. It prints one line
+per new ALERT entry, and per REPORT, QUESTION or HANDOFF entry from a Codex pane. Its cursor
+(`<project>/watch.cursor`) replays what landed while no watch ran, so a re-armed watch misses
+nothing. Peer messages from panes arrive on their own. Wait on those two wake-ups
 only. Keep doing main's own work meanwhile, and end every wake with one plain-English line to
 Andres saying what happened and what main did.
 

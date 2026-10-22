@@ -287,5 +287,31 @@ def clean(project: str, ticket: str | None = None) -> list[str]:
 def require_project_exists(project: str) -> str:
     root = project_dir(project)
     if not os.path.isdir(root):
-        raise UsageError(f"no project {project!r} under {home()}")
+        raise UsageError(f"no project {project!r} under {home()}: dispatch snapshot or spawn creates it")
     return root
+
+
+# ---------------------------------------------------------------- the watch cursor
+
+# An entry's time is stamped before it is linked (a tick pass stamps its start), so one can land after a
+# newer one was delivered. The cursor keeps every name delivered within this window and rescans it.
+WATCH_LOOKBACK = 300
+
+
+def cursor_path(project: str) -> str:
+    return os.path.join(project_dir(project), "watch.cursor")
+
+
+def read_cursor(project: str) -> dict | None:
+    """{"at": newest delivered entry time, "seen": {entry name: its time}} or None before the first watch."""
+    data = read_json(cursor_path(project))
+    try:
+        parse_iso(data["at"])
+        seen = {str(k): v for k, v in data["seen"].items() if parse_iso(v)}
+    except (TypeError, KeyError, ValueError, AttributeError):
+        return None
+    return {"at": data["at"], "seen": seen}
+
+
+def write_cursor(project: str, cursor: dict) -> None:
+    write_atomic(cursor_path(project), json.dumps(cursor, indent=1) + "\n")
