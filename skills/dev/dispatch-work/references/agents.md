@@ -4,8 +4,7 @@
 
 Skills route by tier number. What each tier runs today (CLI, model, effort) lives in
 `~/thoven/agent-skills/config/agents.toml`, the one place a model name is written (THV-1077).
-Every tier runs Claude Code. Codex, Devin, Cursor and Droid launch only when Andres names one in
-this session.
+Codex, Devin, Cursor and Droid launch only when Andres names one in this session.
 
 | Tier | Work |
 | -- | -- |
@@ -43,22 +42,16 @@ lists.
 
 Every pane launches without approval prompts. A Claude pane uses `--permission-mode auto`, because
 the auto-mode classifier blocks `--dangerously-skip-permissions` when main starts the pane.
-`dispatch spawn` builds the launch from `agents.toml` (model, effort, permission flag) and adds
-the session name and the opening prompt. `agents.py launch-line <tier>` prints the herdr form for
-reference. Confirm the model on the pane's first screen. A CLI `agents.toml` lacks shows as unwired
-in `agents.py clis`; it needs a `[cli.<name>]` block before it can launch.
+`dispatch spawn` builds the launch line from `agents.toml` and prints it. Confirm the model on the
+pane's first screen. A CLI `agents.toml` lacks shows as unwired in `agents.py clis`; it needs a
+`[cli.<name>]` block before it can launch.
 
 ## Gotchas by CLI
 
-- **Codex** cannot send peer messages. It posts its question and report entries and stops; the
+- **Codex** has no peer messages. It posts its question and report entries and stops; the
   watcher posts a SETTLED alert when it goes idle, and main reads its entry. Send it corrections
-  with `dispatch send` once it is idle. Codex reports no status for about 40 seconds at startup,
-  then working and idle, never done.
-
-- **Devin** drops a prompt whose first line is only a slash command. Put the task on the same line
-  as `/poteto-mode`.
-- **Cursor** has no Linear MCP. Paste the ticket's Acceptance, Paths and Done when into the brief.
-- **Codex** sees only the allowlisted skills. Any other skill needs
+  with `dispatch send` once it is idle. Codex shows no status for about 40 seconds at startup,
+  then working and idle, never done. It sees only the allowlisted skills: any other skill needs
   `~/thoven/agent-skills/scripts/apply-skill-visibility.sh activate <name>` and a new Codex session.
-- **Any CLI:** a skill with `disable-model-invocation` cannot be loaded by the agent. Tell the pane
-  to read that skill's `SKILL.md` and follow it.
+- **Devin** drops a prompt whose first line is only a slash command. Put the task on the same line
+  as `/poteto-mode`, as the brief template does.

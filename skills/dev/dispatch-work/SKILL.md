@@ -40,9 +40,8 @@ usage text is the syntax authority. First time on a machine: `scripts/dispatch f
 | Sends corrections and fix rounds | Posts one REPORT entry and messages main its status line |
 | Verifies in a fresh pane, then closes | Waits for main's answer or a fix round |
 
-The pane never writes to Linear, never pushes, and never decides a product question. Main never
-edits the pane's code. Fixes go back to a pane. A Codex pane cannot peer-message: it posts entries
-only, and the watcher tells main when it settles.
+Linear writes, pushes and product calls stay with main. Code stays with the pane: every fix goes
+back to a pane.
 
 Main moves status with `node ~/.agents/skills/workspace/tools/set-status.js "<State>" THV-x`, which
 prints the state it read back. Every merge or Done report ends with the pending Linear writes (status
@@ -54,11 +53,12 @@ moves, the Project Update) as a one-line go, so Linear never goes stale without 
   gets its own window, `<Kind> · <issue title> (THV-x)`. Sub-issues are splits in that window.
 - **herdr:** one space per Project. Main's tab is `Meta · <Project>`, each issue is a tab with the
   same label, and sub-issues are panes in that tab.
-- Kind names the ticket's work. Pick it by the rule in WORKFLOW.md §8. `dispatch label --kinds`
-  prints the accepted words: Meta, Plan, Design, Build, Review, Research, Audit, Fix, Verify.
+- Kind names the ticket's work. Pick it by the rule in
+  [WORKFLOW.md §8](../workspace/references/WORKFLOW.md). `dispatch label --kinds` prints the
+  accepted words.
 - Panes of one issue run in parallel only when their `Paths` share no file, in a shared tree too.
   Otherwise run them one after another in the same window.
-- Nothing `dispatch` opens takes focus. The verifier gets its own pane beside the builder at step 5.
+- The verifier gets its own pane beside the builder at step 5.
 - The board lives at `~/.local/state/thoven/dispatch/<project>/`: `briefs/`, `snapshots/`,
   `board/` (one file per entry) and the rendered `board.md`. `<project>` is the Project's slug.
 
@@ -116,10 +116,9 @@ in Linear, then come back.
    Record the base SHA there (`git -C <path> rev-parse HEAD`). Review diffs start there. Never let
    herdr or Rex create the worktree.
 2. `scripts/dispatch spawn <project> THV-x --kind <K> --title "<title>" --cwd <path> --tier <n> --base <sha>`.
-   It refuses a brief with an unfilled field, fills main's session name, opens the labelled window
-   or tab, and starts the agent on its brief. A ticket that spans both repos gets one pane: spawn in
-   the frontend tree and add `--add-dir <backend tree>`. A sub-issue adds `--split-of <pane>`. Add
-   `--cli codex` only when Andres named Codex.
+   It fills the `{{…}}` fields and refuses a brief with any `<…>` left. A ticket that spans both
+   repos gets one pane: spawn in the frontend tree and add `--add-dir <backend tree>`. A sub-issue
+   adds `--split-of <pane>`. Add `--cli codex` only when Andres named Codex.
 3. On the first dispatch in this Project, label main's own pane (`$REX_BLOCK` in Rex, `$HERDR_PANE_ID` in herdr): `scripts/dispatch label <pane> Meta "<Project>" --tab`.
 4. Move the ticket to **In Progress** with `set-status.js`.
 
@@ -128,9 +127,9 @@ in Linear, then come back.
 ### 4. Watch
 
 Arm `scripts/dispatch watch <project>` once per session, with the Monitor tool. It prints a line only
-when an ALERT entry lands. Peer messages from panes arrive on their own. Those are main's only
-wake-ups: no polling loop, no sleep. Keep doing main's own work meanwhile, and end every wake with
-one plain-English line to Andres saying what happened and what main did.
+when an ALERT entry lands. Peer messages from panes arrive on their own. Wait on those two wake-ups
+only. Keep doing main's own work meanwhile, and end every wake with one plain-English line to
+Andres saying what happened and what main did.
 
 A peer message from a pane carries a status line and its entry path:
 
@@ -152,7 +151,7 @@ An alert line names the pane and the cause:
 | `FROZEN` | Read further back. A long test run or `waiting for verification lock` is fine. A hung tool: `dispatch interrupt <pane>`, then ask for status. |
 | `GONE` | The agent exited. Spawn a fresh pane on the same brief plus `Resume from <last commit>.` |
 | `LIMIT` | Tell Andres the reset time in one line. After it, check `git -C <tree> status` for a half-done merge or rebase, then message the pane `continue`. |
-| `SETTLED_NO_REPORT` | Message the pane: `Post your REPORT entry and message me your status line.` The alert lists the tree's uncommitted files; a dirty tree beside a report is the verifier's concern, not an alert, because shared trees carry other sessions' edits. |
+| `SETTLED_NO_REPORT` | Message the pane: `Post your REPORT entry and message me your status line.` The uncommitted files it lists may be other sessions' edits in a shared tree. |
 | `LIVE_WORK` | A background job still runs under the pane. It re-checks on its own; act only if it repeats. |
 | `SETTLED` (Codex) | Read the pane's REPORT entry with `dispatch board <project> --ticket THV-x`, then handle it as the status table says. |
 
@@ -166,10 +165,8 @@ answered the last correction. The entries are the record Andres reads.
 
 ### 5. Verify
 
-Follow [references/review.md](references/review.md): main's pass, then the review. A feature slice
-gets a verifier in its own fresh pane, on the model [references/agents.md](references/agents.md)
-names, against the base SHA. The verifier sees the snapshot, the builder's REPORT entry and the diff,
-nothing else. Cleanup and hardening get a review subagent of main with the same inputs.
+Follow [references/review.md](references/review.md): main's pass, then a verifier pane for a
+feature slice or a review subagent for cleanup and hardening.
 
 **Done when:** every Acceptance line has a verdict with evidence, and every item in the review's
 "working if" list is checked.
@@ -184,8 +181,8 @@ After the verifier passes, show Andres the evidence table and, on a UI ticket, t
    `<branch>`, reaches staging when the branch lands", or "Done on `main`, on staging". On a UI ticket, upload the parity
    images to the issue and place them on the board beside their frames.
 2. Minor findings are fixed on the branch before Done, or dropped with the reason in that comment.
-   They never become tickets. Each `Noticed` line of the report, a problem outside the ticket's
-   code, goes as one line into an existing grouped Linear issue, or a new issue only when none fits.
+   Each `Noticed` line of the report, a problem outside the ticket's code, goes as one line into an
+   existing grouped Linear issue, or a new issue only when none fits.
 3. `scripts/dispatch close <pane>` for every pane this dispatch opened. Remove the ticket's own tree
    with `thoven-worktree remove` (it drops the tree's databases), never a live integration tree, and
    delete the ticket's merged branches locally and on origin.

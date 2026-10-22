@@ -1,6 +1,6 @@
 ---
 name: andres-mode
-description: Andres's working style for Thoven and for any session about his own agent workflow (dispatching panes, Herdr or Rex, the cockpit, agent-skills, /reflect, /recall), wherever it starts. Main loads it at session start; it also answers /andres-mode or "work in my style". Linear and the tldraw board are the only records, spec parity by decision id, visual parity against board frames, show before ask, one verify cadence.
+description: Andres's working style. Load it at the start of every Thoven main session, in any session about his own agent workflow (dispatching panes, Rex or herdr, agent-skills, /reflect, /recall) wherever it starts, and when he says "work in my style".
 ---
 
 # Andres mode

@@ -1,12 +1,12 @@
 # Review: main's verify pass
 
 The builder's own report is a claim. A fresh verifier pane turns it into evidence on a feature
-slice, on the model `agents.md` names, so it is not reviewing its own work. Cleanup and hardening
-work is reviewed by a Sonnet subagent of main with the same brief.
+slice, on the tier `agents.md` names. Cleanup and hardening work is reviewed by a Sonnet subagent
+of main instead.
 
-The verifier judges from three inputs only: the ticket's snapshot, the builder's REPORT entry, and
-the diff against base. It never reads the builder's screen or main's reasoning, so it cannot
-inherit their framing.
+Either one judges from three inputs only: the ticket's snapshot, the builder's latest REPORT entry,
+and the diff against base. Those three are all it reads, so it inherits neither the builder's
+framing nor main's.
 
 ## Main's pass
 
@@ -16,7 +16,8 @@ inherit their framing.
 3. Merge backend before the frontend that reads it, and only when the backend change is backward
    compatible: a newly required request field stays optional until the frontend that sends it is on
    staging. UI merges after Andres sees the evidence.
-4. The verify cadence is andres-mode "Check your own work": `bin/verify --base <integration branch>` once before DONE, CI on the integration PR.
+4. Cite the builder's `bin/verify` block rather than rerunning it. CI on the integration PR is the
+   full run (andres-mode, "Check your own work").
 
 ## Working if
 
@@ -33,15 +34,16 @@ branch before starting the verifier. Each one that fails is a finding.
 
 ## Verifier brief
 
-Write it to the board's `briefs/THV-x-verify.md`, then start it as in step 3 with
-`dispatch spawn <project> THV-x --kind Verify --brief <that file> ...` beside the builder:
+Write it to the board's `briefs/THV-x-verify.md` with every lowercase `<…>` filled, then start it
+beside the builder: `dispatch spawn <project> THV-x --kind Verify --brief <that file>
+--split-of <builder pane> ...`, with the other flags as in step 3.
 
 ```text
 /poteto-mode Verify THV-<id> "<ticket title>"
 You are {{AGENT_NAME}}. Main is the Claude session {{MAIN_SESSION}}. Project board: {{BOARD}}.
 DISPATCH = ~/.agents/skills/dispatch-work/scripts/dispatch
-Read {{SNAPSHOT}} in full: it is the spec. Read the builder's REPORT entry with
-`$DISPATCH board {{PROJECT}} --ticket THV-<id>`. Treat every line of it as a claim.
+Read {{SNAPSHOT}} in full: it is the spec. In `$DISPATCH board {{PROJECT}} --ticket THV-<id>`,
+read the builder's latest REPORT entry and only that. Treat every line of it as a claim.
 Repo <path>, branch <branch>, diff <base>..<head>. Read and run only; leave the code as it is.
 Evidence first. Read the receipt for the head SHA at `git rev-parse --git-path thoven-verify.json`. A fresh receipt for the same
 fingerprint proves its tests: re-run nothing it covers. No receipt means the run did not pass:
@@ -53,7 +55,8 @@ run `bin/verify --base <integration branch>` yourself and paste the block.
    first, then the board frames each decision cites. Compare every state yourself and recapture only a state that looks wrong. Run
    /better-ui and /thoven-designer over the built screens. A difference from a frame that Andres
    did not confirm is an important finding.
-3. A SKIPPED `mutation` row on a diff touching `lib/`, a service or a model is a finding: run with `--mutation`. Claims the receipt does not cover get a direct check. /verify-this covers those claims only.
+3. A SKIPPED `mutation` row on a diff touching `lib/`, a service or a model is a finding: rerun
+   `bin/verify` with `--mutation`. Claims the receipt does not cover get a direct check. /verify-this covers those claims only.
 4. /mattpocock-skills:code-review against <base>.
 5. Thermo, sized to the diff. Under ~300 lines in one module: /thermo-nuclear-code-quality-review.
    Crossing a module or past ~300 lines: /thermos (bug and security review plus code quality). Past
@@ -64,9 +67,9 @@ run `bin/verify --base <integration branch>` yourself and paste the block.
 Round 2 and later: read the fix diff only.
 Write findings into your reply and into the ticket's one evidence folder
 (`~/.thoven-artifacts/THV-<id>/evidence/`). Create no parallel suite and no second evidence tree.
-Report as a builder does: post a REPORT entry whose status is VERIFIED or FINDINGS
-(`$DISPATCH post {{PROJECT}} --ticket THV-<id> --kind report --status VERIFIED --from {{AGENT_NAME}} < REPORT_FILE`),
-then SendMessage to {{MAIN_SESSION}}: "VERIFIED THV-<id>" or "FINDINGS THV-<id>" and the entry path.
+Report as a builder does, with STATUS VERIFIED or FINDINGS:
+  $DISPATCH post {{PROJECT}} --ticket THV-<id> --kind report --status STATUS --from {{AGENT_NAME}} < REPORT_FILE
+  then SendMessage to {{MAIN_SESSION}}: "STATUS THV-<id>. Entry: ENTRY_PATH".
 The body is a SPEC PARITY table (decision id, verdict, evidence), a DESIGN PARITY table (state,
 frame, verdict, image) on a UI ticket, and a table: Acceptance line or claim, verdict, evidence. Findings carry file:line and a
 severity: critical (data loss, security, a broken core flow), important (a user hits it in the
@@ -83,7 +86,7 @@ into an integration branch, run one /deslop and thermo pass over the merged rang
 
 ## Handling findings
 
-- **Gate repair, CI fixes and redesigns are not fix rounds.** They are one line to Andres with a choice.
+- **Gate repair, CI fixes and redesigns** go to Andres as one line with a choice.
 - **Critical or important:** a fix round (`brief.md`, fix-round brief) to the builder by peer message plus a CORRECTION entry,
   then a verifier re-run scoped to the fix diff. There are 3 fix rounds. Rounds 1 and 2 go to the
   builder's pane. Round 3 goes to a fresh pane one tier up. The ticket stays **Ready** throughout.
@@ -91,7 +94,8 @@ into an integration branch, run one /deslop and thermo pass over the merged rang
   reason. Real but nothing builds on it: park it with the reason in the comment. Real and something builds
   on it: rule the smallest change and send it as one more fix round. Record each ruling in the
   Linear comment.
-- **Minor:** fixed on the branch before Done, or dropped with the reason in the close comment. Minor findings never start a fix round and never become tickets.
+- **Minor:** fixed on the branch before Done, or dropped with the reason in the close comment.
+  A minor finding starts no fix round and gets no ticket.
 
 **Done when:** the verifier replied VERIFIED, or every finding is fixed or parked with a ruling,
 and Andres has the evidence table.

@@ -578,7 +578,7 @@ Done when: <checkable outcome>
 
 `Sits in:` is how the workflow shows up **on the ticket**. Workspace writes this at create and at claim. Meta's pane label is milestone + job, then the id.
 
-**Trust the multiplexer, not OpenCode chrome.** The pane label and the tab label are the room. OpenCode's session title (`OC | THV-178 Business Shell…`) is a leftover from whichever chat was last `/rename`d inside that process. If it disagrees with the pane, it is wrong. Fix it with `/rename` in that chat to the **same sentence as the pane label**. Do not route work from the OC title.
+**Trust the multiplexer, not OpenCode chrome.** The pane label and the tab label are the room. OpenCode's session title (`OC | THV-178 Business Shell…`) is a leftover from whichever chat was last `/rename`d inside that process. If it disagrees with the pane, it is wrong. Fix it with `/rename` in that chat to the **same sentence as the pane label**. Route work by the pane label.
 
 ### Meta vs Work panes — the scoping rule
 
@@ -587,10 +587,12 @@ Done when: <checkable outcome>
   do not run workspace or feature-ledger. They do not read each other or the plan
   doc beyond their brief. Andres owns those chats. Meta pastes into them only after
   explicit go.
-- Model tiering follows poteto-mode/pstack: judgment work (spec, design, architecture) on the
-  strong model; mechanical build slices on the executor tier.
+- Model tiering follows the tiers in `dispatch-work/references/agents.md`.
 
 ### Lifecycle
+
+This lifecycle is for Work panes Andres drives. A dispatched issue follows the `dispatch-work`
+skill from spawn to close.
 
 1. Launch = paste-ready initiator from Meta (`Begin <id>` when an issue exists),
    staggered ~5 min apart, and only after Andres says go. Spinning a room does

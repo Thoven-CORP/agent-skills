@@ -1,17 +1,21 @@
 # The brief
 
-Copy the block below to the board's `briefs/THV-x.md` and fill every `<…>`. `dispatch spawn`
-fills the `{{…}}` fields and refuses a brief with any field left. The snapshot is the spec, so the
-brief adds only what the snapshot cannot know. Process rules every pane follows live in
-[standing.md](standing.md); the brief points there and never restates them.
+Copy the block below to the board's `briefs/THV-x.md` and replace every lowercase `<…>` slot,
+writing `none` where nothing applies. The snapshot is the spec, so the brief adds only what the
+snapshot cannot know. Process rules every pane follows live in [standing.md](standing.md); the
+brief points there.
 
-Three rules from real misses:
-- Put every binding rule you hold in RULES before dispatch. A rule sent later is an addendum the
-  pane may read after it reports.
-- Label every chat ruling by who made it. A guess written as a ruling gets built as one.
-- Scope each rule to the files this pane writes.
+`dispatch spawn` fills the `{{…}}` fields and refuses a line that still holds a lowercase `<…>`,
+so keep each slot on one line. UPPERCASE words (STATUS, ENTRY_PATH, REPORT_FILE, HANDOFF_FILE,
+ONE LINE) are the pane's to fill: leave them.
 
-For Codex panes write `$poteto-mode`. For Devin keep the task on the first line.
+- DECISIONS: each parent decision id with the board frame the parent cites for it
+  (`D4 -> A3. Send moment`).
+- DECIDED IN CHAT: one line per ruling that lives only in main's conversation, labelled
+  `Andres ruled <date>: …`, `main recommends: …` or `guess: …`.
+- RULES: every binding rule you hold, scoped to the files this pane writes, with its exemptions
+  (generated files, manifests, routes.rb, files already over a limit).
+- For a Codex pane write `$poteto-mode`.
 
 ```text
 /poteto-mode <playbook> THV-<id> "<ticket title>"
@@ -23,20 +27,15 @@ FITS       <one line: where this ticket sits in its parent issue and what it unb
 SPEC       {{SNAPSHOT}}. Read it in full first. It holds the ticket, its comments and the parent's
            decisions as main read them. Build it as written. When the snapshot and the code
            disagree, or the snapshot needs a choice it does not make, ASK.
-DECISIONS  <every parent decision id this ticket touches, each with the board frame the parent
-           cites for it ("D4 -> A3. Send moment"). "none" if none.>
+DECISIONS  <decision ids, each with its board frame>
 DECIDED IN CHAT
-           <each ruling that lives only in main's conversation, one line each, labelled:
-           "Andres ruled <date>: …", "main recommends: …" or "guess: …". Build to "Andres ruled"
-           lines. Treat the others as defaults you may overturn with a reason in your report.
-           "none" if none.>
-RULES      <every binding rule for this ticket, each scoped to the files this pane writes, with
-           its exemptions (generated files, manifests, routes.rb, files already over a limit).
-           "none" if none.>
-DESIGN     <"no UI", or the board path, the frames above, and every screen and state they show,
-           async states included.> Bring each frame to life as the decisions describe it, at
-           visual parity and full fidelity: layout, spacing, type, every state, and motion where
-           the frame shows it. Values come from design-system tokens; use the shared component
+           <labelled chat rulings, one per line>
+           Build to "Andres ruled" lines. Treat the others as defaults you may overturn with a
+           reason in your report.
+RULES      <binding rules for the files this pane writes, with exemptions>
+DESIGN     <no UI, or the board path, the frames above, and every screen and state they show, async included>
+           Bring each frame to life as the decisions describe it, at visual parity and full
+           fidelity: layout, spacing, type, every state, and motion where the frame shows it. Values come from design-system tokens; use the shared component
            where one exists, and build a missing one with /building-components. Loading, empty,
            error and pressed states take their treatment from `docs/design/async-states.md` and
            `design/buttons.md`. A frame is one static sample at one width: it binds which
@@ -44,8 +43,8 @@ DESIGN     <"no UI", or the board path, the frames above, and every screen and s
            hug, stretch, reflow at other widths) follows component best practice; match the
            frame at its own width and give the reason in one line. A difference from a frame
            that Andres confirmed cites its ruling; any other difference is a defect you fix.
-WHERE      Repo <path>, branch <branch>, base <sha>. <Parallel panes, if any, and their Paths.>
-KNOWN      <interfaces, rulings and commits from earlier tickets this one builds on. "none" if none.>
+WHERE      Repo <path>, branch <branch>, base <sha>. <parallel panes and their Paths, or none>
+KNOWN      <interfaces, rulings and commits from earlier tickets this one builds on>
 ACCESS     <the skill lines from skills.md this ticket reaches, each with its moment>
            Tools: graphify for callers and impact, Context7 for vendor docs, control-cli and
            control-ui for a running app, tier-5 subagents for wide reads.
@@ -67,8 +66,11 @@ every part the question does not touch:
 Main answers by peer message. Codex: post the entry only, then stop and wait.
 
 BUDGET
-Near 250k tokens, post a HANDOFF entry (what is done with commit SHAs, what is left, the exact
-next step), then report BLOCKED with the reason "budget".
+Near 250k tokens, write a handoff to a file (what is done with commit SHAs, what is left, the
+exact next step) and post it:
+  $DISPATCH post {{PROJECT}} --ticket THV-<id> --kind handoff --status HANDOFF --from {{AGENT_NAME}} < HANDOFF_FILE
+  then SendMessage to {{MAIN_SESSION}}: "HANDOFF THV-<id>: ONE LINE. Entry: ENTRY_PATH".
+Codex: post the entry only, then stop.
 
 REPORT
 When you finish or need main, write the report to a file and post it:
@@ -78,13 +80,14 @@ STATUS is DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT or BLOCKED. The body is the AS
   Proof        command, red before, green after
   Commits      SHAs and git diff --stat against base
   Verify       the THOVEN_VERIFY block
-  Parity       UI tickets: the `~/.thoven-artifacts/<branch>/parity/grid.html` path, and each
+  Parity       UI tickets: the path of your parity `grid.html` (standing.md, Parity), and each
                difference from a frame: fixed, or confirmed with its ruling
   Rulings      what you decided and why
   Noticed      one line per problem outside this ticket's code, for main's grouped Linear issue
 Label every claim measured, inferred or guess.
 Then SendMessage to {{MAIN_SESSION}}: "STATUS THV-<id>: ONE LINE. Entry: ENTRY_PATH".
-Codex: post the entry only; main hears when you settle. End by printing the block in this pane.
+Codex: post the entry only; main hears when you settle.
+End by printing the block in this pane.
 ```
 
 ## Fix-round brief
