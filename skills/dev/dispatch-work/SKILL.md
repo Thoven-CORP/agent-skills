@@ -147,6 +147,7 @@ An alert line names the pane and the cause:
 
 | Alert | Main does |
 | -- | -- |
+| `STARTUP` | No status 90s after launch. Read `dispatch read <pane>`: answer a trust, update or login dialog, then message the pane to start on its brief. |
 | `BLOCKED` (2 min or more) | Read `dispatch read <pane>`. Answer a dialog inside the brief's scope; otherwise ask Andres. |
 | `FROZEN` | Read further back. A long test run or `waiting for verification lock` is fine. A hung tool: `dispatch interrupt <pane>`, then ask for status. |
 | `GONE` | The agent exited. Spawn a fresh pane on the same brief plus `Resume from <last commit>.` |

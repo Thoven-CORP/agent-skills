@@ -216,3 +216,19 @@ class Idempotency(TickCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Startup(TickCase):
+    def unknown(self):
+        return Status(State.UNKNOWN)
+
+    def test_no_status_90s_after_launch_alerts_once(self):
+        reg = self.reg(launched_at="2026-10-22T12:00:00.000Z")
+        self.assertEqual(self.tick(reg, self.unknown(), 60), [])
+        self.assertEqual(self.tick(reg, self.unknown(), 95), ["STARTUP"])
+        self.assertEqual(self.tick(reg, self.unknown(), 125), [])
+
+    def test_a_pane_that_reported_once_never_raises_startup(self):
+        reg = self.reg()
+        self.tick(reg, working(), 10)
+        self.assertEqual(self.tick(reg, self.unknown(), 200), [])

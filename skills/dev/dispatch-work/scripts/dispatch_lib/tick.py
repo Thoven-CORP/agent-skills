@@ -15,6 +15,7 @@ from .mux import BACKENDS
 from .runner import Runner
 
 BLOCKED_AFTER = 120
+STARTUP_AFTER = 90
 FROZEN_AFTER = 600
 FROZEN_CPU = 5.0
 LIVE_GRACE = 600
@@ -90,6 +91,12 @@ def step(reg: Registration, watch: dict, status: Status, now: datetime.datetime,
         w["last_state"], w["since"] = state.name, stamp
     if status.fingerprint != w["last_fingerprint"] or not w["fingerprint_since"]:
         w["last_fingerprint"], w["fingerprint_since"] = status.fingerprint, stamp
+
+    if state != State.UNKNOWN:
+        w["reported"] = True
+    elif not w.get("reported") and _secs(now, reg.launched_at) >= STARTUP_AFTER:
+        alert("STARTUP", reg.launched_at, f"no status {STARTUP_AFTER}s after launch: a trust, update or login "
+              "dialog is likely waiting")
 
     if state == State.BLOCKED and _secs(now, w["since"]) >= BLOCKED_AFTER:
         alert("BLOCKED", w["since"], f"blocked {status.kind or '?'}: {status.msg or '-'}")
