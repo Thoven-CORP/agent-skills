@@ -288,6 +288,7 @@ paths_all_edited() {
 }
 
 # resolve a path against a directory, expanding a leading ~ or $HOME and dropping quotes
+# shellcheck disable=SC2016,SC2088 # the patterns match the unexpanded text a command carries
 resolve_in() {
   local dir="$1" p="${2//[\"\']/}"
   case "$p" in

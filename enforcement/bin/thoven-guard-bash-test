@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2016,SC2088 # test commands are text handed to the guard, unexpanded on purpose
 # Runs thoven-guard-bash in each dialect against a temp HOME, so the shared-worktree check
 # sees $HOME/thoven/... without touching the real trees.
 set -uo pipefail
