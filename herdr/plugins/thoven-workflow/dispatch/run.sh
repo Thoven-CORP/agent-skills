@@ -37,7 +37,7 @@ repo_dir() { case "$1" in fe) echo frontend ;; be) echo backend ;; esac; }
 flags=()
 while IFS= read -r -d '' a; do flags+=("$a"); done < <(python3 "$HERE/compose.py" flags "$cli" "$pick_model" "$effort")
 
-# Reports go to the pane that dispatched (TW_DISPATCHER), else the space's main, else the inbox.
+# Reports go to the pane that dispatched (TW_DISPATCHER), else the space's main.
 space="${TW_DISPATCH_WS:-}"
 dispatcher="${TW_DISPATCHER:-}"
 [ -n "$space" ] || { [ -n "$dispatcher" ] && space="$(tw_pane_workspace "$dispatcher")"; }
@@ -137,11 +137,13 @@ if [ -n "$other" ]; then
   obase="$(git -C "$other_path" rev-parse --short HEAD 2>/dev/null || echo "origin/main")"
   other_desc="$other_path ($(repo_dir "$other")), branch $ob, base $obase"
 fi
+# compose.py names main's Claude session from the report_to pane and the board's project, and the
+# pane reports with `dispatch post` plus a peer message to that session.
 ctx="$(jq -nc --arg ticket "$ticket" --arg url "$url" --arg path "$path" --arg repo "$(repo_dir "$home")" \
-  --arg branch "$branch" --arg base "$base" --arg main "$report_to" --arg pane "$pane" \
-  --arg inbox "$TW_INBOX/$ticket.md" --arg other "$other_desc" \
-  '{ticket:$ticket,url:$url,path:$path,repo:$repo,branch:$branch,base:$base,main_pane:$main,inbox_file:$inbox,other_repo:$other,pane:$pane}')"
-brief="$(python3 "$HERE/compose.py" brief "$cli" "$ctx")"
+  --arg branch "$branch" --arg base "$base" --arg main "$report_to" --arg ws "$space" --arg pane "$pane" \
+  --arg agent "$name" --arg other "$other_desc" \
+  '{ticket:$ticket,url:$url,path:$path,repo:$repo,branch:$branch,base:$base,main_pane:$main,workspace:$ws,other_repo:$other,pane:$pane,agent:$agent}')"
+brief="$(python3 "$HERE/compose.py" brief "$cli" "$ctx")" || { fail "$name in $pane: self-brief could not be composed"; exit 1; }
 if [ "$dry" = 1 ]; then
   show "$(python3 "$HERE/compose.py" dispatch || echo dispatch)" send --backend herdr "$pane" "<self-brief below, as a file>"
   printf -- '----- self-brief for %s -----\n%s\n----- end -----\n' "$name" "$brief"

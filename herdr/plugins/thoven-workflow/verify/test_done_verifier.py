@@ -311,52 +311,12 @@ class PullRequestTest(unittest.TestCase):
         self.assertEqual(self.check(gh_view("CLOSED", [])), ("fail", "PR #336 is closed"))
 
 
-class ReportTest(unittest.TestCase):
-    def setUp(self):
-        self.inbox = tempfile.mkdtemp()
-        patcher = patch.object(verifier.tw, "INBOX", self.inbox)
-        patcher.start()
-        self.addCleanup(patcher.stop)
-        self.addCleanup(subprocess.run, ["rm", "-rf", self.inbox])
-
-    def drop(self, name, text):
-        path = os.path.join(self.inbox, name)
-        with open(path, "w") as f:
-            f.write(text)
-        return path
-
-    def test_a_ticket_prefixed_file_that_is_not_the_report_is_not_undelivered(self):
-        for name, text in (("THV-1188-verify.md", "VERIFIED THV-1188\n"),
-                           ("THV-1188-fixes.md", "DONE THV-1188\n"),
-                           ("THV-1188-verifier-62.md", "FINDINGS THV-1188\n")):
-            with self.subTest(name=name):
-                path = self.drop(name, text)
-                self.assertIsNone(verifier.check_report("THV-1188"))
-                os.remove(path)
-
-    def test_exact_report_without_its_own_status_line_is_not_undelivered(self):
-        for text in ("# THV-1188 step 1\nresearch notes\n", "DONE THV-1189\n", "DONE THV-11880\n",
-                     "notes first\nDONE THV-1188\n",
-                     "[thoven verify] THV-1188 pane w5A:p29 reported done 3 times and still: x.\n"):
-            with self.subTest(text=text):
-                self.drop("THV-1188.md", text)
-                self.assertIsNone(verifier.check_report("THV-1188"))
-
-    def test_real_undelivered_report_fails(self):
-        for text in ("DONE THV-1188 (fix round 1)\n\n## Acceptance\n",
-                     "\n\n  DONE_WITH_CONCERNS THV-1188\n", "BLOCKED THV-1188 needs the API key\n"):
-            with self.subTest(text=text):
-                path = self.drop("THV-1188.md", text)
-                self.assertEqual(verifier.check_report("THV-1188"), f"report not delivered: {path}")
-
-
 class VerifyRoutingTest(unittest.TestCase):
     def test_pending_kinds_from_processes_and_tree_do_not_fail_the_pane(self):
         with patch.object(verifier, "check_processes", return_value=("pending", "waiting on a background run: sleep 60")), \
              patch.object(verifier, "repo_info", return_value=("/tree", "scheduling/thv-1188", "THV-1188")), \
              patch.object(verifier, "check_dirty", return_value=("pending", "merge in progress, 4 files")), \
-             patch.object(verifier, "check_pr", return_value=None) as check_pr, \
-             patch.object(verifier, "check_report", return_value=None):
+             patch.object(verifier, "check_pr", return_value=None) as check_pr:
             result = verifier.verify({"pane_id": "w5A:p29", "agent": "claude", "cwd": "/tree"})
         self.assertEqual(result, ("pending", ["waiting on a background run: sleep 60", "merge in progress, 4 files"], "THV-1188"))
         check_pr.assert_called_once_with("/tree", "scheduling/thv-1188", True)
@@ -365,8 +325,7 @@ class VerifyRoutingTest(unittest.TestCase):
         with patch.object(verifier, "check_processes", return_value=("fail", "1 live process: next-server (v14.2.35) (pid 310)")), \
              patch.object(verifier, "repo_info", return_value=("/tree", "scheduling/thv-1188", "THV-1188")), \
              patch.object(verifier, "check_dirty", return_value=("pending", "merge in progress, 4 files")), \
-             patch.object(verifier, "check_pr", return_value=None), \
-             patch.object(verifier, "check_report", return_value=None):
+             patch.object(verifier, "check_pr", return_value=None):
             result = verifier.verify({"pane_id": "w5A:p29", "agent": "claude", "cwd": "/tree"})
         self.assertEqual(result, ("fail", ["1 live process: next-server (v14.2.35) (pid 310)", "merge in progress, 4 files"], "THV-1188"))
 
@@ -388,10 +347,9 @@ class UsageLimitTest(unittest.TestCase):
     def setUp(self):
         self.state = tempfile.mkdtemp()
         self.addCleanup(subprocess.run, ["rm", "-rf", self.state])
-        for name, value in (("STATE", self.state), ("INBOX", os.path.join(self.state, "inbox"))):
-            patcher = patch.object(verifier.tw, name, value)
-            patcher.start()
-            self.addCleanup(patcher.stop)
+        patcher = patch.object(verifier.tw, "STATE", self.state)
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def done(self, screen):
         def run(argv, cwd=None, timeout=20):

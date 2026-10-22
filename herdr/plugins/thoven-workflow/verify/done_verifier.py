@@ -265,43 +265,6 @@ def check_pr(top, branch, dirty):
     return None
 
 
-def own_escalation(name):
-    """Our own escalation drop (tell_main fallback) shares the ticket tag; it is
-    not the pane's undelivered report."""
-    try:
-        with open(os.path.join(tw.INBOX, name)) as f:
-            return f.read(15) == "[thoven verify]"
-    except Exception:
-        return False
-
-
-# Mirrors the cockpit's inboxFile (claude/plugins/thoven-cockpit/hooks/dispatch.ts): an inbox file
-# is an undelivered report only when it is named <ticket>.md and its first non-empty line is that
-# ticket's own status line. The folder also holds research drops and -verify/-fixes notes.
-STATUS_WORDS = ("DONE_WITH_CONCERNS", "DONE", "NEEDS_CONTEXT", "BLOCKED", "VERIFIED", "FINDINGS")
-
-
-def undelivered_report(name, ticket):
-    if name.lower() != f"{ticket}.md".lower() or own_escalation(name):
-        return False
-    try:
-        with open(os.path.join(tw.INBOX, name)) as f:
-            head = next((line for line in f if line.strip()), "")
-    except Exception:
-        return False
-    words = "|".join(STATUS_WORDS)
-    return re.match(rf"[ \t]*(?:{words})[ \t]+{re.escape(ticket)}\b", head) is not None
-
-
-def check_report(ticket):
-    if not ticket or not os.path.isdir(tw.INBOX):
-        return None
-    left = [f for f in os.listdir(tw.INBOX) if undelivered_report(f, ticket)]
-    if left:
-        return f"report not delivered: {os.path.join(tw.INBOX, left[0])}"
-    return None
-
-
 # ------------------------------------------------------------------ verify
 
 def verify(pane):
@@ -320,9 +283,6 @@ def verify(pane):
             pr = check_pr(top, branch, bool(dirty))
             if pr:
                 (fails if pr[0] == "fail" else pends).append(pr[1])
-    r = check_report(ticket)
-    if r:
-        fails.append(r)
     status = "fail" if fails else ("pending" if pends else "ok")
     return status, fails + pends, ticket
 
@@ -385,15 +345,9 @@ def is_main(pane_id):
     return False
 
 
-def dispatch_home():
-    return os.environ.get("THOVEN_DISPATCH_HOME") or os.path.expanduser("~/.local/state/thoven/dispatch")
-
-
 def dispatch_registered(pane_id):
-    """True when `dispatch spawn` registered this pane; same key as dispatch_lib.store.pane_key."""
-    import glob
-    key = "herdr-" + re.sub(r"[^A-Za-z0-9._-]", "_", pane_id)
-    return bool(glob.glob(os.path.join(glob.escape(dispatch_home()), "*", "panes", key + ".json")))
+    """True when `dispatch spawn` registered this pane."""
+    return tw.registration_path(pane_id) is not None
 
 
 def in_scope(pane_id):
@@ -464,7 +418,7 @@ def on_event():
                         f"{MAX_NUDGES + 1} times and still: {'; '.join(reasons)}. "
                         f"Nudged {MAX_NUDGES}x; needs you."), pane_id)
                     internal["escalated"] = True
-                    tw.log(LOG, f"{pane_id} escalated -> {where}")
+                    tw.log(LOG, f"{pane_id} escalated -> {where or 'toast only'}")
         tw.set_badge(pane_id, tw.SRC_VERIFY, TOKEN, agent, badge_text(result, reasons))
         internal["badged"] = True
         tw.write_json(ipath, internal)

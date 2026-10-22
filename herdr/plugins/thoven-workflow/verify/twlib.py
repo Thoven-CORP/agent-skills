@@ -1,10 +1,11 @@
 """Shared Python helpers for thoven.workflow (verify/ and watchdog/).
 
-Mirrors lib/common.sh: the same state dir, report routing and inbox, so bash and
+Mirrors lib/common.sh: the same state dir and report routing, so bash and
 Python modules read and write the same places. Nothing here raises on a herdr or
 ps failure; callers get None / {} and decide.
 """
 import datetime
+import glob
 import json
 import os
 import re
@@ -13,7 +14,6 @@ import subprocess
 STATE = os.environ.get("HERDR_PLUGIN_STATE_DIR") or os.path.expanduser(
     "~/.local/state/herdr/plugins/thoven.workflow")
 HERDR = os.environ.get("HERDR_BIN_PATH") or "herdr"
-INBOX = os.path.join(os.environ.get("TMPDIR") or "/tmp", "dispatch", "out")
 
 # Badge source ids. Each module owns its own metadata source so clearing one
 # never wipes the other's token.
@@ -26,7 +26,7 @@ def now_iso():
 
 
 def ensure_dirs(*subdirs):
-    for d in (STATE, INBOX) + tuple(os.path.join(STATE, s) for s in subdirs):
+    for d in (STATE,) + tuple(os.path.join(STATE, s) for s in subdirs):
         os.makedirs(d, exist_ok=True)
 
 
@@ -132,19 +132,58 @@ def report_targets(pane_id=None, workspace=None):
     return [t for t in out if t and t != pane_id]
 
 
+def dispatch_home():
+    return os.environ.get("THOVEN_DISPATCH_HOME") or os.path.expanduser("~/.local/state/thoven/dispatch")
+
+
+def registration_path(pane_id):
+    """The Registration `dispatch spawn` wrote for a herdr pane, or None. Same key as dispatch_lib.store.pane_key."""
+    key = "herdr-" + re.sub(r"[^A-Za-z0-9._-]", "_", pane_id)
+    found = glob.glob(os.path.join(glob.escape(dispatch_home()), "*", "panes", key + ".json"))
+    return found[0] if found else None
+
+
+def dispatch_bin():
+    """`dispatch` from the checkout this plugin is linked from, else the installed skill."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    for path in (os.environ.get("TW_DISPATCH_BIN") or "",
+                 os.path.normpath(os.path.join(here, "..", "..", "..", "..", "skills", "dev", "dispatch-work",
+                                               "scripts", "dispatch")),
+                 os.path.expanduser("~/.agents/skills/dispatch-work/scripts/dispatch")):
+        if path and os.path.exists(path):
+            return path
+    return None
+
+
+def post_alert(pane_id, text):
+    """An ALERT entry on the pane's Project board when `dispatch spawn` registered it; its path, or None."""
+    path = registration_path(pane_id) if pane_id else None
+    reg = (read_json(path, {}) or {}) if path else {}
+    script = dispatch_bin()
+    if not (reg.get("project") and reg.get("ticket") and script):
+        return None
+    try:
+        p = subprocess.run([script, "post", reg["project"], "--ticket", reg["ticket"], "--kind", "alert",
+                            "--status", "ESCALATION", "--from", "thoven.workflow"],
+                           input=text + "\n", capture_output=True, text=True, timeout=20)
+    except Exception:
+        return None
+    if p.returncode != 0:
+        return None
+    return p.stdout.strip() or None
+
+
 def tell_main(tag, text, pane_id=None, workspace=None):
-    """Python twin of tw_tell_main: prompt the first reachable target, else drop the text in the
-    inbox and toast. Returns the pane that took it, or the inbox path."""
+    """Python twin of tw_tell_main: prompt the first reachable target, else post an ALERT to the
+    pane's board when it is dispatch-registered, and toast. Returns the pane that took it, the
+    entry path, or None. `tag` names the toast."""
     for target in report_targets(pane_id, workspace):
         ok, _ = herdr_ok("agent", "prompt", target, text)
         if ok:
             return target
-    os.makedirs(INBOX, exist_ok=True)
-    path = os.path.join(INBOX, f"{tag}.md")
-    with open(path, "w") as f:
-        f.write(text + "\n")
-    notify("thoven: no one to report to", f"Saved to {path}", "request")
-    return path
+    entry = post_alert(pane_id, text)
+    notify(f"thoven: {tag}: no one to report to", f"Posted to the board: {entry}" if entry else text, "request")
+    return entry
 
 
 # ---------------------------------------------------------------- badges
