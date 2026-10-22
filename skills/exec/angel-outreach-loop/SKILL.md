@@ -1,6 +1,8 @@
 ---
 name: angel-outreach-loop
-description: Research and draft workflow for Thoven's angel fundraising sprint. Use when the user says "start [prospect name]", "next prospect", "/angel-outreach", "put [prospect] on hold", or references a High-priority prospect in the Notion Angel CRM and asks for research, a draft, or a triage disposition (Pass / On Hold / Redirect). ALSO use for hands-off batch runs — trigger "/angel-outreach-loop:auto", "auto mode", "batch mode", "run the whole batch", "draft all of them", "do the next 10 without me" — which curates the queue, drafts every email, runs a fact-parity sub-agent check, updates Notion, and posts all drafts in chat for one final review. Enforces paginated CRM queries, verified column writes, On Hold + Hold Until handling, and cross-session history logging.
+description: >-
+  Research and draft workflow for Thoven's angel fundraising sprint. Use when the user says "start [prospect name]", "next prospect", "/angel-outreach", "put [prospect] on hold", or references a High-priority prospect in the Notion Angel CRM and asks for research, a draft, or a triage disposition (Pass / On Hold / Redirect). ALSO use for hands-off batch runs — trigger "/angel-outreach-loop:auto", "auto mode", "batch mode", "run the whole batch", "draft all of them", "do the next 10 without me" — which curates the queue, drafts every email, runs a fact-parity sub-agent check, updates Notion, and posts all drafts in chat for one final review. Enforces paginated CRM queries, verified column writes, On Hold + Hold Until handling, and cross-session history logging. Manual-only since 2026-10-22: angel work is dormant (Grok Angel owns it); invoke by name.
+disable-model-invocation: true
 ---
 
 # Angel Outreach Loop
@@ -26,13 +28,14 @@ Past examples and approved patterns are reference material, not templates to clo
 - **If user provides their own opener words, use them.** When the user dictates a draft or starter phrase in their own voice, clean it up minimally and build the full email around it. Do not rewrite it into a "better" version.
 
 **Fixed-template rules (middle of email — verbatim):**
-- **Middle paragraph stays verbatim.** Mission + traction + advisors + raise. Only the four numbers swap. This is the actual product pitch — it stays consistent.
-- **Ask line, website line, sign-off, default subject stay verbatim.** See `feedback_strict_outreach_template.md` for the exact text. These are tested.
+- **Middle paragraph stays verbatim.** Mission + traction + school pilot + advisors + raise. Only the five variables swap: teachers `[X]`, applying `[Y]`, pilot students `[P]`, raise `[Z]`, committed `[W]`. The one canonical copy is `references/standard-template.md` § Standard Middle Paragraph. Copy the middle from that file every time, never from a prior draft, an example, or memory. Andres 2026-04-30: *"I have said many times the middle paragraph never changes just the opener and the bottom."*
+- **Ask line, website line, sign-off, default subject stay verbatim.** The exact text is in `references/standard-template.md`. These are tested.
 - **Prospect type determines middle paragraph variant.** Operator-angels get the standard middle ($150k/$50k default). VC/GP prospects get the VC-nature variant ($300k/$50k stretch + thesis-wrap paragraph).
 
 **Opener + closer rules (principles — write fresh):**
-- **Opener anti-patterns (still hard rules):** No bio recap (don't describe their company back to them), no performative research signals ("I found your podcast"), no surgical parallels ("you built X, I build Y"). These are the failure modes, not a prescribed structure.
-- **No prescribed first words.** "I came across" is one good opener — not the only one. Write what's true to THIS prospect.
+- **Opener anti-patterns (still hard rules):** No bio recap (don't describe their company or career back to them), no performative research signals ("I found your podcast"), no surgical parallels ("you built X, I build Y"). These are the failure modes, not a prescribed structure.
+- **Default opener shape:** *"I came across X, and it resonates with what I'm building, so I wanted to reach out."* X is one thing (a company, a product, their work), named once and never described. Depart from it only when another shape is truer to this prospect (personal use, known-company lead-in).
+- **Write "built", "founded" or "co-founded" only after you confirm a founder role** on LinkedIn or a primary source. Otherwise write "your work on X" or "early at X". Garrett Smallwood (2026-08-06) was a PM and ops lead at Redbeacon, not its founder, and six more drafts made the same overclaim.
 - **No closer chain-of-thought table lookups.** If you have a real Thoven challenge that fits this prospect's specific experience, weave it in. Don't pull from a hash table.
 - **Reference past drafts when one cleanly fits.** Not mandatory. If the prospect calls for something fresh, write fresh.
 - **Preserve user voice tightly.** Light polish only when user provides a draft: typos, voice-to-text errors, grammatical tightening. Never restructure paragraphs or add framings the user didn't mention.
@@ -88,28 +91,34 @@ If you generate 2+ rounds of opener options and the user keeps rejecting them: *
 
 ### Kickoff (the one allowed upfront touch)
 
-Confirm the four traction numbers ONCE before starting: teachers onboarded, musicians/music teachers applying to teach last month (NOT MAU — supply/demand framing, see `feedback_strict_outreach_template.md`), raise size, committed. This is non-negotiable even in auto mode — file-sourced numbers are never trusted (see `feedback_no_file_sourced_specifics.md` + root `CLAUDE.md` drafting rules). Confirming once at kickoff is the *input* to the run, not a mid-run pause. If Andres supplied the numbers (or a batch size) in the invocation, use those and don't re-ask. Default batch size = **10** unless he gives a number.
+Confirm all five middle-paragraph variables ONCE before starting: teachers onboarded `[X]`, musicians/music teachers applying to teach last month `[Y]` (NOT MAU, supply/demand framing), school-pilot students `[P]` and the pilot clause wording (it still carries a `[VERIFY]` mark in `references/standard-template.md`), raise size `[Z]`, committed `[W]`. This is non-negotiable even in auto mode: file-sourced numbers are never trusted (root `CLAUDE.md` drafting rules). Confirming once at kickoff is the *input* to the run, not a mid-run pause. If Andres supplied the values (or a batch size) in the invocation, use those and don't re-ask. Default batch size = **10** unless he gives a number.
+
+**Pre-batch checks (before curating, once per batch):**
+- **Credits.** Read the live InMail credit count (LinkedIn composer, or the latest `Fundraising/linkedin-send-runs/` log) and the Apollo credit balance. At zero InMail credits, run the email-only path: draft only prospects with a confirmed email, and leave LinkedIn-only prospects in queue with a Notes line saying why. At zero Apollo credits, do not queue prospects that still need an email found. The 2026-08-06 queue held 57 prospects behind a credit gate nobody checked.
+- **Prior contact, per prospect.** Search Gmail for `to:{email}` and for the full name, and check LinkedIn message history. Confirm any hit with `get_thread`, because search results truncate. A prior Andres message means the prospect moves to `Outreach Sent` (with the real date) or to `outreach-followup`. Never write a new cold draft for them. Prior contacts were re-drafted on 2026-06-02, 07-22 and 08-10.
+- **Gating words, per prospect.** Scan `Notes`, `Personalization Hook` and `Next Action` for: DO NOT SEND, verify, Cant message, identity doubt, or a related person already in the CRM (a sibling, a co-founder). Resolve the gate in this run or Pass the prospect with a Notes stamp. Never carry a gated card forward to Ready to Send (2026-08-05 "DO NOT SEND until verified", 2026-08-06 Kopf).
 
 **Personal-use check (added 2026-05-20).** A personal-use opener ("I used [product] when I was learning to code…") is the strongest hook there is, but only Andres knows what he's used. Two-part handling: (1) at kickoff, when you present the curated batch, scan it for broad-reach consumer EdTech/learning products and ask Andres in one line which (if any) he has personally used; (2) the drafter returns a `personal-use-candidate: {product}` flag for any such prospect — collect those flags and, if Andres confirmed use, swap the safe "I came across…" opener for the personal-use shape before saving. Confirmed-used as of 2026-05-20: MasterClass, Quizlet, Codecademy (plus plausibly Desmos, Khan Academy). Never invent personal history — if Andres doesn't confirm, keep the default opener.
 
 ### Auto Phase A — Curate (no pause)
 
 Run the Phase A query exactly as documented below (paginated, client-side Stage + Hold filters). Then, instead of waiting for batch confirmation, **auto-apply** the triage rules and record every decision for the end report:
-- **Auto-skip + log** (do not draft, surface in final report): direct teacher-side music competitors (`feedback_competitor_risk_flag.md`); prospects whose page body says defer / already-contacted; On Hold within window; clear tier-mismatch (pivoted out of EdTech/marketplace entirely).
+- **Auto-skip + log** (do not draft, surface in final report): direct teacher-side music competitors (`references/workflow-steps.md` Step 3); prospects whose page body says defer / already-contacted; prior contact found by the pre-batch check; an unresolved gating word; On Hold within window; clear tier-mismatch (pivoted out of EdTech/marketplace entirely).
 - **Auto-proceed:** everyone else, ranked by score/priority. Take the top N (default 10).
 - Still APPEND the disposition stamp to `Notes` and the history log for every skip (verified write) — the audit trail matters even when no human confirmed it.
 
 ### Auto Phase B — Draft loop (dispatch drafters in parallel)
 
-Dispatch the **`angel-outreach-drafter`** subagent — one per prospect on the GO list, in parallel batches (send multiple Task calls in a single turn). Each drafter receives a prospect card (name + CRM background + contact info + prospect type) AND the four kickoff traction numbers, and returns a finished draft with an angle, a personalization hook, a contact path, and any flags. The drafter does the per-prospect heavy lifting that the rigid flow did serially:
+Dispatch the **`angel-outreach-drafter`** subagent — one per prospect on the GO list, in parallel batches (send multiple Task calls in a single turn). Each drafter receives a prospect card (name + CRM background + contact info + prospect type) AND the five confirmed kickoff variables, and returns a finished draft with an angle, a personalization hook, a contact path, and any flags. The drafter does the per-prospect heavy lifting that the rigid flow did serially:
 - Runs the LinkedIn current-role check (correctness check, not a gate).
 - Runs the connection reality check and picks the single most honest angle (no surgical parallels, no bio recap).
-- Writes the opener + verbatim middle paragraph ("digital-native music academy," kickoff numbers) + collapsed-or-one-topic closer, then a humanizer pass.
+- Writes the opener + the middle paragraph copied from `references/standard-template.md` (the drafter reads the middle only from that file) with the kickoff variables + the closer, then a humanizer pass.
 - Returns a SKIP flag instead of a draft for competitors / tier-mismatch / numbers-missing.
 
 **Why a dedicated subagent + parallel dispatch:** auto mode's whole point is throughput. The drafter encapsulates the voice/template/anti-pattern rules and runs N prospects concurrently instead of one serial loop. The drafter has read-only research tools only — it structurally cannot write to Notion or send, which keeps those operations under the main agent's control.
 
 **The main agent (you) owns what the drafter cannot:**
+- **Audit every returned draft before saving it.** (1) Opener: does it recite the prospect's bio, company or career back to them? If so, rewrite it to the default shape, *"I came across X, and it resonates with what I'm building, so I wanted to reach out."* (2) "built" / "founded" / "co-founded": is the founder role confirmed? If not, change it to "your work on X" or "early at X". (3) Middle paragraph: does it match `references/standard-template.md` word for word, with the pilot clause? Bio-recap openers recurred across seven sessions (05-14 to 08-06; Andres 07-30: "straight slop").
 - **Per returned draft, do the VERIFIED Notion write** — Stage = Ready to Send, write Outreach Draft + Personalization Hook + `date:Drafted At:start` = today + Notes stamp (one atomic write), re-fetch to confirm (including `Drafted At` == today), append history-log row. The drafter never writes to Notion; you do.
 - **Honor every SKIP flag** the drafter returns — apply the disposition (Passed / log) with a Notes stamp + history row.
 - **Roll up contact-path flags** for the final report.
@@ -174,6 +183,7 @@ Run ONCE per skill invocation, before any per-prospect work.
    - Drop rows where `Hold Until` is set AND `Hold Until > today` (parked prospects awaiting their revisit window)
 
 2. Fetch each remaining candidate's page body
+2.5. Run the **pre-batch checks** (credits, prior contact, gating words) from Auto Mode § Kickoff. They apply in every mode. A prior-contact hit or an unresolved gating word goes into the batch summary as a proposed `Outreach Sent` / Pass, never into the GO list.
 3. Present body content verbatim to user in a single batch summary
 4. Wait for user's batch confirmation: which to mark Passed, which to redirect, which to proceed, which to put On Hold
 5. **Apply confirmed Stage updates in batch — VERIFIED WRITE.** For each disposition:
@@ -207,7 +217,7 @@ For each prospect on the GO list, run Steps 1-16 sequentially:
    - If LinkedIn shows pivot away from EdTech entirely (e.g., to film/arts/real estate): flag tier-mismatch and consider Pass.
    - If CRM email is tied to the old company (e.g., `name@oldcompany.com`): treat as stale — clear it in Step 15 and route to LinkedIn DM.
    If `mcp__exa__*` is not connected (it is optional; not connected as of 2026-10-22), run the same check with `WebSearch` (`site:linkedin.com/in "{name}" {company}`) plus `WebFetch`, and note the source.
-   Crunchbase/Tracxn/RocketReach/AeroLeads/The Org all lag LinkedIn by 6–18 months on role changes. LinkedIn is ground truth. See `feedback_linkedin_current_role_check.md`.
+   Crunchbase/Tracxn/RocketReach/AeroLeads/The Org all lag LinkedIn by 6–18 months on role changes. LinkedIn is ground truth. Record whether the prospect actually founded each company you might name: the opener may say "built" or "founded" only for a confirmed founder role.
 5. Fact verification → flag unverified claims
 6. Email hunt (verified or candidates)
 7. Light research (3-5 facts, 1-2 articles, company briefing)
@@ -256,7 +266,7 @@ For each prospect on the GO list, run Steps 1-16 sequentially:
 
 11. **Write the opener and closer fresh. Middle paragraph stays verbatim. Ask line + website + sign-off follow the COLLAPSED-CLOSER pattern (see below).**
 
-    **Hook structure (Per `feedback_hook_structure_why_what_ask.md`):** The opener has three jobs only:
+    **Hook structure:** The opener has three jobs only:
     1. **WHY** I'm reaching out (the specific connection to the prospect)
     2. **WHAT** I'm reaching out about at the high level — general "overlap with what I'm working on" (NEVER describe Thoven; the middle paragraph owns that)
     3. **ASK setup** — "so I wanted to reach out"
@@ -266,22 +276,23 @@ For each prospect on the GO list, run Steps 1-16 sequentially:
     2. Does the opener describe the prospect's company or background back to them? → Remove it.
     3. Does it cite a specific research artifact (podcast, interview, article, post)? → Remove or reframe as shape ("your story" not "the 2023 EdTech Insiders episode").
     4. Does it state a parallel explicitly ("you built X, I build Y")? → Let the parallel be implied.
-    5. If the user provided their own opener phrasing: preserve it. Do NOT rewrite into a "better" version. Minimal cleanup only.
+    5. Does it say "built", "founded" or "co-founded" about a company where the founder role is not confirmed? → Change it to "your work on X" or "early at X".
+    6. If the user provided their own opener phrasing: preserve it. Do NOT rewrite into a "better" version. Minimal cleanup only.
 
-    **Personal-experience hook variant (see `feedback_personal_experience_hook.md`):** If Andres personally used the prospect's product (Desmos, Khan Academy, Quizlet, Photomath, similar broad-reach K-12 EdTech), use this shape instead of "I came across":
+    **Personal-experience hook variant:** If Andres personally used the prospect's product (Desmos, Khan Academy, Quizlet, Photomath, similar broad-reach K-12 EdTech), use this shape instead of "I came across":
     > *"I used [product] a lot growing up, and it was a huge part of my education. Now that I'm building in the space myself, I wanted to reach out to someone whose work I actually learned from."*
     Only use when Andres confirms he actually used it. Don't invent personal history.
 
-    **Collapsed closer + ask pattern (see `feedback_closer_ask_collapse_pattern.md`):** The closer paragraph and canonical ask line are collapsed into ONE paragraph:
-    > *"I think you'd have great insights into what I'm building and could provide a ton of value and advice. If you have time in the next couple of weeks, I'd love to connect, show you what we're building, and get your feedback."*
+    **Default closer (since 2026-07-15):** *"I think you'd have a great perspective about what I am building."* It replaced the AI-flavored "I think you'd have great insights on [topic]" across the 07-15 send batch. The closer and the ask sit in ONE paragraph; follow the closer with the single ask sentence *"If you have time in the next couple of weeks, I'd love to connect, show you what we're building, and get your feedback."* The full closer section is `references/standard-template.md` § Standard Closer.
 
     **This intentionally deviates from the strict template's verbatim ask line** ("20-30 minutes... connect" → "connect, show you what we're building, and get your feedback"). Note in the per-prospect Notes stamp as "Intentional deviation from verbatim template."
 
     **Closer rules:**
-    - **NO "Given your background" prefix** (see `feedback_drop_given_your_background.md`). Start directly with the substance. Also avoid "Given your experience," "Given what you've built," "Based on your background." All fluff.
-    - **NO "chat"** — use "connect" (see `feedback_no_chat_use_connect.md`).
-    - If you have a real Thoven challenge that fits this prospect's specific experience, you can replace the generic closer with a specific one. Don't manufacture a challenge to add depth.
-    - **The closer is NOT deterministic — write it with judgment, don't apply a fixed stem.** Per Andres 2026-05-20: stop freezing the closer into one phrasing (e.g. always "One thing I'm working through is X, and..."). Follow an approved *shape* and tone, vary naturally. Approved shapes: (1) **founder-journey + topic** — *"I'm still early in my founder journey, and given your background I'd love the chance to connect. I think you'd have great insights on [topic]."*; (2) **topic-value + connect** — *"I think you'd have great insights on building the demand side, and I'd love to connect and get your perspective."*; (3) **collapsed generic** when no topic stands out. Always: humble peer-to-peer tone, a real specific topic the prospect could speak to, "connect" not "chat," no em dashes/"--" asides, vary across the batch. "given your background" is fine woven into the founder-journey shape, not as a bare leading prefix. See `feedback_closer_ask_collapse_pattern.md`.
+    - **NO "Given your background" prefix.** Start directly with the substance. Also avoid "Given your experience," "Given what you've built," "Based on your background." All fluff.
+    - **NO "chat"** — use "connect".
+    - **No rarity claims** in the closer either: never "puts you in a rare position", "one of the few".
+    - If you have a real Thoven challenge that fits this prospect's specific experience, you can replace the default closer with a specific one. Don't manufacture a challenge to add depth.
+    - **Never a fixed stem like "One thing I'm working through is X, and..."** (Andres 2026-05-20). Alternatives to the default, when this prospect calls for one: (1) **founder-journey** — *"I'm still early in my founder journey, and given your background I'd love the chance to connect."*; (2) **one specific topic** — *"I think you'd have a great perspective on building the demand side."* Always: humble peer-to-peer tone, "connect" not "chat," no em dashes/"--" asides, one ask only.
 12. Humanizer pass (invoke `humanizer` skill)
 13. Traction verification (confirm numbers in session, never from files)
 14. Fundraising hint placement check
@@ -360,7 +371,7 @@ This block is the canonical contract every angel-CRM skill references (`prospect
 - **Drafter stamps `Drafted At`; sender stamps `Last Contact` + flips `Stage` atomically.** `Drafted At` (date) = when the draft was written. `Last Contact` (date) = when it was sent. Never flip `Stage` to a sent state without `Delivery Method` + `Last Contact` in the same patch.
 - **No skill sends or reuses a Ready-to-Send draft whose `Drafted At` is > 30 days old (or empty) — re-draft or surface it first.** A rotted draft carries stale traction numbers and framing.
 - **Query the CRM only via paginated `mcp__notion__API-query-data-source`, never `mcp__claude_ai_Notion__notion-query-data-sources` rows mode (successor to the retired `notion-query-database-view`), which silently stops at 100 rows.**
-- **Canonical verbatim-template source of truth = `feedback_strict_outreach_template.md`.** Other template/pattern docs (`references/example-drafts.md`, `references/approved-patterns.md`, `Fundraising/outreach-templates.md`, etc.) are voice/pattern reference only — never the fixed-text authority.
+- **Canonical verbatim-template source of truth = this skill's `references/standard-template.md`.** (The old `feedback_strict_outreach_template.md` memory file is gone from Claude memory; a Grok copy survives in the vault but is not canonical.) Other template/pattern docs (`references/example-drafts.md`, `references/approved-patterns.md`, `Fundraising/outreach-templates.md`, etc.) are voice/pattern reference only — never the fixed-text authority.
 
 ## Cross-Session History Log
 
@@ -380,25 +391,22 @@ This log is a recovery tool, not the primary state. Notion CRM remains the sourc
 
 **When to append:** end of Phase A (every disposition), end of Phase C (every send), and end of any per-prospect Phase B that ends in a redirect or skip.
 
-## Memory Files — Review if Relevant
+## Rules that used to live in memory files
 
-Path: `/Users/andresmartinez/.claude/projects/-Users-andresmartinez-Vaults-Executive-Assistant/memory/`
+The `feedback_*.md` memory files this skill once pointed at no longer exist on disk. Their rules now live in the skill itself:
 
-**Always check (per-prospect, every time):**
-- `feedback_strict_outreach_template.md` — fixed middle paragraph + ask + website + sign-off + canonical subject line (only these stay verbatim — opener and closer are NOT templated)
-- `feedback_no_file_sourced_specifics.md` — never pull traction numbers from memory; confirm in session
-- `feedback_competitor_risk_flag.md` — defer prospects who run direct music-education competitors
-
-**Review if the prospect type calls for it:**
-- `feedback_vc_prospect_pattern.md` — VC/GP variant: thesis-hook + thesis-wrap + investor-and-founder closer (apply when prospect is a fund GP)
-- `feedback_thesis_connection_hook.md` — for sophisticated investors with public writing, lead with thesis not bio
-- `feedback_esa_toggle_rule.md` — drop ESA for thesis-driven SV angels; keep for impact/regional
-
-**Voice references (loose principles, not strict rules):**
-- `feedback_no_ai_style_outreach_writing.md` — voice rules (no AI tells)
-- `feedback_outreach_draft_polish.md` — light polish only when user provides draft
-- `feedback_no_chat_use_connect.md` — use "connect", not "chat"
-- `feedback_outreach_hook_specificity.md` — make connections concrete; this memory contains some prescriptive rules that the current skill loosens (see meta-rule)
+| Rule | Where it lives now |
+|---|---|
+| Fixed middle paragraph, ask, website line, sign-off, subject | `references/standard-template.md` |
+| Never pull traction numbers from files; confirm in session | Kickoff above; `references/workflow-steps.md` Step 13 |
+| Defer direct music-education competitors | `references/workflow-steps.md` Step 3 |
+| VC/GP variant (thesis hook, thesis wrap, larger raise) | `references/example-drafts.md` #7; `references/standard-template.md` |
+| Lead sophisticated investors with their thesis, not their bio | `references/approved-patterns.md` § thesis-investor |
+| ESA toggle | `references/workflow-steps.md` Step 15 |
+| Raise line sits after the traction sentence | `references/workflow-steps.md` Step 14 |
+| Weak-draft indicators | `references/workflow-steps.md` Step 9 |
+| Andres writes the words; light polish only on his drafts | Core Rules above; `references/workflow-steps.md` Step 8 and Step 11 |
+| "connect", never "chat"; no closer phrase reused across a batch | Step 11 closer rules above |
 
 ## Reference Drafts (reference material, NOT templates to clone)
 

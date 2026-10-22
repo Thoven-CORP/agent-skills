@@ -1,6 +1,8 @@
 ---
 name: prospect-scorer
-description: Scores angel investor prospects 0-10 for Thoven using the calibrated rubric derived from 36 sent outreach records. Use when scoring new CRM entries, validating batch-enrich output, or recalibrating priorities.
+description: >-
+  Scores angel investor prospects 0-10 for Thoven using the calibrated rubric derived from 36 sent outreach records. Use when scoring new CRM entries, validating batch-enrich output, or recalibrating priorities. Manual-only since 2026-10-22: angel work is dormant (Grok Angel owns it); invoke by name.
+disable-model-invocation: true
 ---
 
 # Prospect Scorer — Thoven Angel CRM
@@ -64,6 +66,8 @@ Added 2026-07-22 after the graphscout-20260709 batch surfaced only 3 of 15 as wo
 
 Before scoring, confirm the prospect is a **founder, an exec-with-a-real-exit, or a known/active angel investor** — i.e. someone who actually writes angel checks. Employees, individual contributors, and non-exec staff (e.g. a "Product Designer" or "Engineer" at a startup they did **not** found) are **DISQUALIFIED regardless of how relevant the company is** — they don't write angel checks. If the role cannot be confirmed as founder / exec-with-exit / investor, **do not score High** — flag for verification instead.
 
+**High requires documented check-writing evidence.** A prospect scores `High` only with C = 2: a named deal or portfolio company, an angel network or syndicate membership, or public records of post-exit investing. A founder or operator without that evidence, however strong on A and B, caps at `Medium` and gets the Notes flag `ADVICE ASK — no check-writing evidence found`. Outreach to them is an advice ask, not a raise ask, until evidence turns up. The cap is part of the rubric, so it no longer depends on someone overriding the score by hand. (2026-07-22: only 3 of 15 graph-scout prospects were real check-writers, and 0 of 11 converted. 2026-08-06: the rubric scored David Kopf 8 with no confirmed angel activity, and only a manual override held him at Medium.)
+
 > Cautionary example: **Vani Mehta / Sawyer** — a Product Designer (IC), not a founder or investor. Sawyer is a highly relevant kids-enrichment marketplace, but Mehta is not a check-writer and should have been rejected before scoring.
 
 ### (b) Vertical / mission-fit weighting (cap raw marketplace overlap)
@@ -78,7 +82,7 @@ Weight **education / family / learning / kids-enrichment / mission adjacency ABO
 
 | Score | Priority |
 |-------|----------|
-| 7-10  | High     |
+| 7-10  | High (only with C = 2; otherwise Medium + `ADVICE ASK` flag) |
 | 5-6   | Medium   |
 | 1-4   | Low      |
 | 0     | Low + PASS FLAG |
@@ -94,7 +98,7 @@ Weight **education / family / learning / kids-enrichment / mission adjacency ABO
 | Sol Kennedy | 4 | 2 | 2 | 1 | 9 | High |
 | Hardeep Gulati | 3 | 3 | 2 | 1 | 9 | High |
 | Kashif Devani | 3 | 2 | 2 | 1 | 8 | High |
-| Gavin Schiffres | 3 | 2 | 1 | 1 | 7 | High (≥7 band, updated 2026-06-15) |
+| Gavin Schiffres | 3 | 2 | 1 | 1 | 7 | Medium + ADVICE ASK (C = 1; was High under the 2026-06-15 band, before the 2026-10-22 check-writing rule) |
 | Andrew Neumann | 3 | 2 | 1 | 0 | 6 | Medium |
 | Vanessa Wilkins | 2 | 2 | 2 | 1 | 7 | High (Future School Lab = nonprofit → A:2; ≥7 band 2026-06-15) |
 | Aishwarya Balaji | 3 | 2 | 2 | 1 | 8 | High (Build Academy = EdTech product → A:3) |

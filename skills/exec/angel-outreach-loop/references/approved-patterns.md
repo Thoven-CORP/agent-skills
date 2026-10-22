@@ -41,7 +41,7 @@ The specificity is what makes a challenge-reference work. "Cold-starting the tea
 - **Over-templated (also rejected now):** the same "One thing I'm working through is X, and I think you'd have a great read on it" stem on all ten drafts.
 - **Right — pick an approved shape and vary it:** founder-journey + topic (*"I'm still early in my founder journey, and given your background I'd love the chance to connect. I think you'd have great insights on [topic]."*), or topic-value + connect (*"I think you'd have great insights on building the demand side, and I'd love to connect and get your perspective."*), or the collapsed generic.
 
-See `feedback_closer_ask_collapse_pattern.md` for the full set of approved shapes and the non-determinism principle.
+The current default closer (since 2026-07-15) and the approved shapes are in `standard-template.md` § Standard Closer.
 
 ---
 
@@ -197,7 +197,9 @@ Use the "perspective" framing (lived experience inside music economy) rather tha
 **Reference prospect:** Eran Egozy (Harmonix / MIT)
 **Opener:** Named Harmonix in opener → repeated in closer would be redundant.
 **Approved alternative closer (founder's journey variant):**
-> "I'm still early in my founder's journey and looking for people who can give us real perspective and insight. I think your background puts you in a rare position to do that. I'd love to get your take on what we're building."
+> "I'm still early in my founder's journey and looking for people who can give us real perspective and insight. I'd love to get your take on what we're building."
+
+*(The original 2026-05-17 version had a middle sentence, "I think your background puts you in a rare position to do that." Retired 2026-10-22: it breaks the rarity ban.)*
 
 **When to use:** Opener already anchors to the prospect's company/work. Repeating it in the closer sounds padded. Use this "founder's journey" framing instead — it shifts from "you have expertise in X" to "I'm seeking your specific perspective." Still ends with "I'd love to get your take on what we're building."
 
@@ -210,7 +212,7 @@ Use the "perspective" framing (lived experience inside music economy) rather tha
 **Locked pattern (Greg Gunn / Sidharth Kakkar / Pramod Sharma — all approved 2026-05-18):**
 
 ```
-I came across [one specific anchor about prospect], and there's a lot of overlap with what I'm working on. [One-line rare-combo/perspective plant about THIS prospect specifically — what makes their perspective distinctive]. So I wanted to reach out.
+I came across [one specific anchor about prospect], and there's a lot of overlap with what I'm working on. So I wanted to reach out.
 ```
 
 **Anti-patterns to remove (every opener):**
@@ -227,7 +229,7 @@ I came across [one specific anchor about prospect], and there's a lot of overlap
 
 - **Pramod Sharma:** *"I came across what you built at Osmo, and there's a lot of overlap with what I'm working on. You're one of the few founders to build a K-8 learning product that families actually bought at scale, so I wanted to reach out."*
 
-Full rule: `memory/feedback_hook_structure_why_what_ask.md`
+*The "You're one of the few..." sentences in the Sidharth and Pramod examples above predate the 2026-05-20 rarity ban. Do not copy them; the hook ends at "what I'm working on." The default opener shape is now in `standard-template.md` § Hook Pattern.*
 
 ---
 
@@ -247,7 +249,6 @@ I used [product] a lot growing up, and it was a huge part of my education. Now t
 
 **Why it works:** For mission-driven founders (especially PBC operators like Eli), a real user testimonial from a fellow founder hits the heart of why they kept their product accessible. Founder-to-founder bond starts from genuine gratitude, not calculated outreach.
 
-Full rule: `memory/feedback_personal_experience_hook.md`
 
 ---
 
@@ -293,7 +294,7 @@ I think you'd have great insights into what I'm building and could provide a ton
 
 **Per-prospect Notes stamp:** When using this collapsed pattern, note in Notion: `"Intentional deviation from verbatim template: ask line modified per locked pattern — 'connect, show you what we're building, and get your feedback' replaces canonical '20-30 minutes... connect'."`
 
-Full rules: `memory/feedback_closer_ask_collapse_pattern.md`, `memory/feedback_drop_given_your_background.md`
+*Superseded as the default on 2026-07-15 by "I think you'd have a great perspective about what I am building." See `standard-template.md` § Standard Closer.*
 
 ---
 

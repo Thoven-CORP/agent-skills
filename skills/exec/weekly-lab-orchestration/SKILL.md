@@ -1,7 +1,8 @@
 ---
 name: weekly-lab-orchestration
 description: >-
-  Use when the user says "/lab-week", "run the lab week", "weekly lab", "orchestrate the lab", or sits down for the weekly lab session — runs the weekly Microschool Lab sync: reads live state, convenes the persistent exec cabinet (Chief of Staff + COO + Partnerships/Growth + Analyst), grills priorities, RECONCILES the week's big rocks against the existing Lab Board backlog (reprioritize / rewrite / supersede existing rows; create only the genuine-new delta), and proposes big rocks + reconcile change-set + dated orientation write-up + Capture-Inbox triage. Brownfield, not greenfield: the board is a standing backlog. Hands only net-new big-things to lab-task-writer. ONE lab only.
+  Use when the user says "/lab-week", "run the lab week", "weekly lab", "orchestrate the lab", or sits down for the weekly lab session — runs the weekly Microschool Lab sync: reads live state, convenes the persistent exec cabinet (Chief of Staff + COO + Partnerships/Growth + Analyst), grills priorities, RECONCILES the week's big rocks against the existing Lab Board backlog (reprioritize / rewrite / supersede existing rows; create only the genuine-new delta), and proposes big rocks + reconcile change-set + dated orientation write-up + Capture-Inbox triage. Brownfield, not greenfield: the board is a standing backlog. Hands only net-new big-things to lab-task-writer. ONE lab only. Manual-only since 2026-10-22: the lab is on its maintenance floor; invoke by name.
+disable-model-invocation: true
 ---
 
 # Weekly Lab Orchestration
@@ -13,6 +14,11 @@ A conductor for running ONE current lab week-to-week. It answers "what's going o
 **Weekly Heartbeat — the engine's standing outputs.** For a continuous-engine lab (the live T1+T2 cold-email tracks), this run IS the engine's heartbeat. Beyond the backlog reconcile, every run produces four standing engine outputs: **read the funnel** (per-track research → classify → send → log → iterate → track → follow-up state) → **iterate the copy** (what the responses say to change) → **set the next geo pocket** (the rolling national geo-rotation: the affluent sub-pocket set to source next week) → **chase responders** (flag who's owed a follow-up). These are in addition to — not instead of — the brownfield reconcile below; the reconcile keeps the board honest, the heartbeat keeps the engine moving.
 
 **What this skill is NOT:** it does not deconstruct *new* big-things into tasks (that's `lab-task-writer`), does not decide strategy (the grill + Andres do), does not draft or send outreach (the `microschool-outreach-loop` skill will, once built — run-then-codify; the engine currently runs via a /goal), and does not touch fundraising or the inbox at large. Lab-oriented only. It DOES reprioritize, rewrite, and supersede existing board rows in place — that's the reconcile, and it's core.
+
+## Pitfalls
+
+- Confirm a lab thread's state with `get_thread` before you report it no-reply or follow-up-owed; `search_threads` truncates message lists and hides the latest messages. (LEARNINGS 2026-10-22)
+- Count a reply only when it comes from the prospect's own address; route a same-company sales or BD pitch to Andres instead of counting it as a responder. (LEARNINGS 2026-10-22)
 
 ## Trigger
 

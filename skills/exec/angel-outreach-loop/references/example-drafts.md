@@ -1,6 +1,8 @@
 # Reference Drafts — 2026-04-13 Batch
 
 > **READ THIS FILE FOR VOICE — cadence, warmth, sentence rhythm. NOT for the numbers or the traction/round wording.**
+> **Openers in these samples are older than the no-bio-recap and founder-role rules.** Where a sample opener recites the prospect's career or company back to them, or says "built"/"co-founding" without a confirmed founder role, the rule wins over the sample. The default opener shape is in `standard-template.md` § Hook Pattern.
+>
 > Some samples below were written before 2026-06-15 and still show the now-**STALE** phrasings **"50 MAU"** and **"$300k pre-seed."** Those wordings are BANNED as of the 2026-06-15 lock (`standard-template.md`): the second traction number is supply/demand framing — **"musicians/music teachers applying to teach last month,"** NEVER "MAU" — and the round is an **"angel round,"** NEVER "pre-seed." Copy the *voice* of these drafts; take the *middle-paragraph wording and numbers* only from `standard-template.md`.
 
 Six drafts from the first day of the angel outreach sprint. Each demonstrates a specific pattern. Use them as style references, not as templates to copy.
@@ -89,10 +91,10 @@ Six drafts from the first day of the angel outreach sprint. Each demonstrates a 
 
 **Pattern demonstrated:** Weave three distinct angles (serial founder + teacher-led parallel + helping teachers adopt tech) into a single coherent draft. User explicitly chose the order.
 
-**Quality:** Strong
+**Quality:** Medium (downgraded from Strong 2026-10-22: the opener is a bio recap)
 
 **Key moves:**
-- Opener (Angle 3 — serial founder): *"I saw your journey from co-founding Kyte Learning to joining Microsoft's EDU Insider program and now building Fields Education."*
+- Opener as sent (Angle 3 — serial founder), now an anti-example: *"I saw your journey from co-founding Kyte Learning to joining Microsoft's EDU Insider program and now building Fields Education."* It walks Brayden through his own career. Today's rewrite: *"I came across Fields Education, and it resonates with what I'm building, so I wanted to reach out."*
 - Middle-closer bridge (Angle 1 — teacher-led): *"One thing that stood out to me about Kyte was the 'teachers create it, teachers learn it' model, which is close to the teacher-led approach we're building at Thoven."*
 - Closer (Angle 2 — adoption / bringing newest tech): *"I'd love to connect and hear about your experience at both Kyte and Microsoft helping teachers embrace new technology. That's a big part of what we're trying to do: bring the newest tech to music education, a space that has stayed in the past for too long."*
 
@@ -167,6 +169,8 @@ Andres Martinez
 ---
 
 ## Shared Template Skeleton (all six)
+
+> **Stale middle paragraph.** The skeleton below shows the pre-2026-07-27 middle with no school-pilot clause, and its closer and sign-off are retired. Take the middle paragraph, closer and sign-off only from `standard-template.md`.
 
 ```
 Hi [First name],

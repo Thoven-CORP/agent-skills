@@ -62,6 +62,13 @@ Use the guide to understand:
 
 After reading the guide, draft the email matching the appropriate tone and referencing relevant examples.
 
+**Rules that hold for every email (they win over any older guide example):**
+- **No em dashes.** Use a comma, a period, or two sentences. Scan the finished draft for "—" and "--" before presenting it.
+- **"connect", never "chat"** ("I'd love to connect", not "I'd love to chat").
+- **Scheduling replies propose one specific open slot.** Find it with Google Calendar `suggest_time` (`mcp__claude_ai_Google_Calendar__suggest_time`) and offer that one time, for example "Does Tuesday at 2:00 PM ET work?". Never send a list of availability windows: the 2026-08-05 list-of-times email to Jonas Tempel went unanswered. When a booking link fails (the 2026-06-24 Calendly error), fall back to the same one-slot proposal.
+- **Warm replies to an advisor or partner** open by referencing the last call or conversation. Cut hard metrics, role titles, recaps of what they built, location references, "one-on-one", and any line that could read as snark. (2026-07-16, 07-17 and 07-18, when Acton Main needed two rounds of live edits.)
+- **Biweekly updates** (investor, teacher or parent) follow [references/biweekly-update.md](references/biweekly-update.md). Read it before drafting any biweekly.
+
 ### Step 5: Review & Refine
 
 Present the draft and ask:

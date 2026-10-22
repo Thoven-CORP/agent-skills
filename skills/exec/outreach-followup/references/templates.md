@@ -2,7 +2,7 @@
 
 These are the canonical email bodies the `outreach-followup` skill uses. Mirrors Templates 4 and 6 in `Fundraising/outreach-templates.md`. If those templates change, update this file too.
 
-`{first_name}` is the only substitution. Keep all other text exactly as-is — voice rules per `feedback_cold_outreach_followup_voice.md` and `feedback_no_chat_use_connect.md`.
+`{first_name}` is the only substitution. Keep all other text exactly as-is. The frozen text is the voice rule: say "connect", never "chat".
 
 ---
 

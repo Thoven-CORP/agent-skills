@@ -103,8 +103,6 @@ Scan the prospect's current and recent roles for direct music-education competit
 
 Exception: prospect exited the competitor 3+ years ago AND is now purely an investor, or Andres explicitly overrides.
 
-Full rule: `memory/feedback_competitor_risk_flag.md`
-
 ---
 
 ## Step 4: LinkedIn Current-Role Verification
@@ -132,8 +130,6 @@ Full rule: `memory/feedback_competitor_risk_flag.md`
 - **Sidharth Kakkar:** CRM said "co-founder Freckle" → LinkedIn showed CEO of Woodrow (Mar 2026, 2 months in). Freckle → Subscript → Woodrow trajectory entirely missed by CRM.
 - **Lynda Weinman:** CRM said "on hiatus" → actually President of Santa Barbara International Film Festival + co-founded Maker House ceramics studio. Pivoted out of EdTech entirely. Tier-mismatch pass.
 
-**Full rule:** `memory/feedback_linkedin_current_role_check.md`
-
 ---
 
 ## Step 5: Fact Verification Check
@@ -150,8 +146,6 @@ Compare the CRM-listed background against public sources. Mass-scraper data is o
 - Flag the specific claim
 - Provide the verified alternative
 - Recommend skipping the unverified specific in the draft
-
-Full rule: `memory/feedback_no_file_sourced_specifics.md`
 
 ---
 
@@ -215,7 +209,7 @@ Keep the total raw material under ~800 words.
 
 **When:** Between Step 7 (light research) and Step 8 (angles). The full VOICE read of `example-drafts.md` is mandatory (Step 8 pre-step); this *similarity match* is optional — do it only when a prior draft or pattern obviously fits this prospect's shape.
 
-**Purpose:** Reuse proven language when it genuinely fits, without forcing a fit. Most prospects are new-pattern cases — write fresh. (The mandatory two-source citation was removed 2026-05-18 because forcing a match produced clinical drafts — see `feedback_outreach_skill_loosen_opener_closer.md`.)
+**Purpose:** Reuse proven language when it genuinely fits, without forcing a fit. Most prospects are new-pattern cases — write fresh. (The mandatory two-source citation was removed 2026-05-18 because forcing a match produced clinical drafts.)
 
 ### Two sources to scan (when relevant)
 
@@ -242,7 +236,7 @@ If nothing obviously fits, say so in one line and write fresh in Step 8. Do NOT 
 
 ### REQUIRED PRE-STEP: Read example-drafts.md in full — for VOICE
 
-Before listing any angles, read `references/example-drafts.md` end-to-end **every prospect, every time.** This file contains 7 sent drafts that landed (6 operator-angel + 1 VC-nature) plus a shared template skeleton. **Read it to absorb the VOICE — cadence, warmth, sentence rhythm — so this draft sounds like Andres.** This is calibration, NOT mechanical matching: you are not selecting a template to clone, and you do NOT have to cite which variant you matched (the mandatory-citation rule was removed 2026-05-18 because it produced clinical drafts — see `feedback_outreach_skill_loosen_opener_closer.md`). Skipping this read is the most common protocol violation and produces drafts that drift toward cold, clinical phrasings.
+Before listing any angles, read `references/example-drafts.md` end-to-end **every prospect, every time.** This file contains 7 sent drafts that landed (6 operator-angel + 1 VC-nature) plus a shared template skeleton. **Read it to absorb the VOICE — cadence, warmth, sentence rhythm — so this draft sounds like Andres.** This is calibration, NOT mechanical matching: you are not selecting a template to clone, and you do NOT have to cite which variant you matched (the mandatory-citation rule was removed 2026-05-18 because it produced clinical drafts). Skipping this read is the most common protocol violation and produces drafts that drift toward cold, clinical phrasings.
 
 ### Canonical variants (reference vocabulary — NOT a required citation)
 
@@ -259,7 +253,7 @@ These labels are useful shorthand for talking about shapes. Pull one ONLY when a
 
 > *"As a founder early in my journey in EdTech, I'd love to connect and [prospect-specific ask], get your perspective and advice, and just to be able to learn from your journey."*
 
-This warm peer-positioning frame is the default for ALL operator-angel drafts (Carlos / Goldman / Herman / Brayden patterns). Variations from this cadence are allowed (per `feedback_outreach_hook_specificity.md` — closers cannot recycle phrases verbatim across prospects), but the warmth, founder-peer positioning, and "learn from your journey" energy must remain. Cold/clinical closers like *"Your read would be especially valuable"* or *"Would mean a lot to get your read"* drift away from this and are protocol violations unless the prospect-specific context demands a different shape.
+This warm peer-positioning frame is the default for ALL operator-angel drafts (Carlos / Goldman / Herman / Brayden patterns). Variations from this cadence are allowed (closers cannot recycle phrases verbatim across prospects), but the warmth, founder-peer positioning, and "learn from your journey" energy must remain. Cold/clinical closers like *"Your read would be especially valuable"* or *"Would mean a lot to get your read"* drift away from this and are protocol violations unless the prospect-specific context demands a different shape.
 
 ### Procedure
 
@@ -281,7 +275,7 @@ This warm peer-positioning frame is the default for ALL operator-angel drafts (C
 
 If tempted to write a sentence, stop and describe the move abstractly instead.
 
-Full rules: `memory/feedback_no_ai_style_outreach_writing.md`, `references/example-drafts.md`
+Voice reference: `references/example-drafts.md`
 
 ---
 
@@ -296,8 +290,6 @@ Scan for these indicators before user invests time drafting:
 5. **Missing audience evidence leverage** — no Thoven-specific hook to audience insight
 
 If 2+ indicators trigger, label the prospect `WEAK DRAFT RISK` in the assessment. Surface the specific weakness AND suggest rescue approaches (audience evidence, specific product decisions, warm intro gating).
-
-Full rule: `memory/feedback_weak_outreach_draft_indicators.md`
 
 ---
 
@@ -342,8 +334,6 @@ Reference the challenge-reasoning chain in `references/approved-patterns.md` for
 
 **Do NOT apply this upgrade if:** the prospect is VC/GP (use thesis-wrap paragraph instead), or the opener already grounds in a founder's-journey variant (Eran Egozy pattern — see approved-patterns.md).
 
-Full rule: `memory/feedback_outreach_draft_polish.md`
-
 ---
 
 ## Step 12: Humanizer Pass
@@ -368,6 +358,7 @@ Before saving, confirm the traction numbers with Andres in session:
 
 - `X teachers onboarded` — current number
 - `Y musicians/music teachers applying to teach last month` — current number (NOT MAU)
+- `P students in the school pilot` — current number, plus the pilot clause wording (still marked `[VERIFY]` in `standard-template.md`)
 - `$Z angel round` — current raise size
 - `$W committed` — current committed amount
 
@@ -375,18 +366,11 @@ Before saving, confirm the traction numbers with Andres in session:
 
 If the draft uses a specific number that hasn't been confirmed this session, stop and ask: "Should this still say $150k angel round with $50k committed, or have the numbers moved?"
 
-Full rule: `memory/feedback_no_file_sourced_specifics.md`
-
 ---
 
 ## Step 14: Fundraising Hint Placement Check
 
-Ensure the draft includes a one-line fundraising status line immediately after the traction sentence in the product paragraph.
-
-**Correct placement:**
-```
-We've onboarded [X] teachers so far, with over [Y] more musicians and music teachers applying to teach with us in just the last month, and we're being advised by people from the Chan Zuckerberg Initiative, Khan Academy, and Clever. We're raising a $[Z] angel round, with $[W] already committed.
-```
+Ensure the draft includes the one-line fundraising status sentence ("We're raising a $[Z] angel round, with $[W] already committed.") as the last sentence of the middle paragraph, after the traction and advisor sentences. Copy the whole middle paragraph from `references/standard-template.md` § Standard Middle Paragraph; do not retype it from this file or from memory.
 
 **Incorrect placements:**
 - In the opener (reads like a pitch from word one)
@@ -394,8 +378,6 @@ We've onboarded [X] teachers so far, with over [Y] more musicians and music teac
 - In the closer / ask (confuses the advice frame)
 
 If the user's draft doesn't have the hint, ask if they want it added. Do not silently insert.
-
-Full rule: `memory/feedback_fundraising_hint_placement.md`
 
 ---
 
@@ -416,8 +398,6 @@ Check whether ESA traction line should be in the draft based on the prospect typ
 - Example: Heather Gilker, Keri-routed prospects
 
 When uncertain, default to dropping ESA for exited EdTech operators.
-
-Full rule: `memory/feedback_esa_toggle_rule.md`
 
 ---
 
@@ -612,6 +592,6 @@ Before starting the next prospect, mark the next `Outreach: [Name]` task as `in_
 - **Citing unverified facts in drafts** — even if they're in the CRM
 - **Re-running humanizer after it's done** — its output is final
 - **Over-structuring the response** — tight beats comprehensive, especially after user has signaled "too long"
-- **Recycling closer phrases across prospects** — see `feedback_outreach_hook_specificity.md`
+- **Recycling closer phrases across prospects** — vary every closer across a batch
 - **Logging to history before Phase A confirmation** — the log captures decisions, not proposals
 - **Skipping the example-drafts.md voice read** — reading the 7 sent drafts in full BEFORE listing angles is mandatory every prospect, every time (Step 8 pre-step). Skipping it is the most common protocol violation and produces clinical, peer-cold closers that drift away from the canonical *"As a founder early in my journey in EdTech, I'd love to connect and... get your perspective and advice, and just to be able to learn from your journey."* cadence. Read it for VOICE — you do NOT have to cite which variant you matched (forced citation was removed 2026-05-18 because it made drafts mechanical). Reading it AFTER the user complains is too late.

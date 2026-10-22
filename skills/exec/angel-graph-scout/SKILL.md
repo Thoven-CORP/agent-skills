@@ -1,6 +1,8 @@
 ---
 name: angel-graph-scout
-description: Discover non-obvious angel prospects for Thoven by graph traversal from anchor companies, persisting to the local SQLite graph. Use when the user says "scout angels", "find new angels", "run angel-graph-scout", "graph traversal prospecting", or wants net-new angel prospects beyond what query-seeded prospect-finder reaches. Drives the code loop scout_round.py and emits a paste-ready /goal for the unattended run.
+description: >-
+  Discover non-obvious angel prospects for Thoven by graph traversal from anchor companies, persisting to the local SQLite graph. Use when the user says "scout angels", "find new angels", "run angel-graph-scout", "graph traversal prospecting", or wants net-new angel prospects beyond what query-seeded prospect-finder reaches. Drives the code loop scout_round.py and emits a paste-ready /goal for the unattended run. Manual-only since 2026-10-22: angel work is dormant (Grok Angel owns it); invoke by name.
+disable-model-invocation: true
 ---
 
 # Angel Graph Scout

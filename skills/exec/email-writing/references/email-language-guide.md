@@ -161,22 +161,9 @@ Andres Martinez
 1. **Greeting**: "Hi [Name],"
 2. **Acknowledgment**: Thank them for reaching out or reference connection
 3. **Direct response**: Answer their question or address their ask
-4. **Logistics**: Availability, next steps
+4. **Logistics**: One specific proposed time (from Google Calendar `suggest_time`), next steps
 5. **Forward-looking close**: "Looking forward to..."
 6. **Signature**: "Best, Andres Martinez"
-
-### Example Email: Initial Response
-
-Hi Sebastian,
-
-Thank you for reaching out; my father mentioned your conversations.
-
-I have good availability Monday through Wednesday between 9:00 AM and 3:00 PM EST. Please let me know what day and time work best for you, Nico, and Roque, and I will be happy to accommodate on my end.
-
-I look forward to our conversation.
-
-Best,
-Andres Martinez
 
 ### Example Email: Delayed Response/Apology
 
@@ -213,5 +200,5 @@ Andres Martinez
 2. **Be specific**: Use concrete numbers, dates, and examples
 3. **Show appreciation**: Always thank people for their time/support
 4. **End forward**: Close with next steps or looking-forward statements
-5. **Use em dashes**: For asides and explanations (—like this)
+5. **No em dashes**: Use a comma, a period, or a second sentence instead
 6. **Bold for emphasis**: Use **bold** for key terms and section headers

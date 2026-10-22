@@ -1,6 +1,8 @@
 ---
 name: prospect-finder
-description: Find ICP-fit angel investor prospects using Exa search, dedup against Notion CRM + seen history, and present qualified batches for approval. Use when user says "find prospects", "run prospect finder", "prospect search", or "find angels".
+description: >-
+  Find ICP-fit angel investor prospects using Exa search, dedup against Notion CRM + seen history, and present qualified batches for approval. Use when user says "find prospects", "run prospect finder", "prospect search", or "find angels". Manual-only since 2026-10-22: angel work is dormant (Grok Angel owns it); invoke by name.
+disable-model-invocation: true
 ---
 
 > **Mass mode available:** For bulk prospecting (50+ per wave, targeting 300+), use `/prospect-finder-mass` instead. It dispatches parallel subagents across web search, list scraping, acquisition mining, and Exa.

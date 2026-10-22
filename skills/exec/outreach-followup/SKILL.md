@@ -1,6 +1,8 @@
 ---
 name: outreach-followup
-description: Batch-create Gmail draft replies for stale cold investor outreach. Queries the Notion Angel CRM using the Follow-up Date formula (Stage=Outreach Sent + Intro Path=Cold + Email valid + Delivery Method not LinkedIn + Follow-up Date past today), self-heals empty Last Contact fields from Gmail thread state, and drafts Touch 1 (soft bump) at Day +6 or Touch 3 (door-open close) at Day +20 as a reply in the original thread. Drafts only — Andres reviews and sends manually. Use when user says "follow-up batch", "draft follow-ups", "send follow-up batch", or "outreach followup".
+description: >-
+  Batch-create Gmail draft replies for stale cold investor outreach. Queries the Notion Angel CRM using the Follow-up Date formula (Stage=Outreach Sent + Intro Path=Cold + Email valid + Delivery Method not LinkedIn + Follow-up Date past today), self-heals empty Last Contact fields from Gmail thread state, and drafts Touch 1 (soft bump) at Day +6 or Touch 3 (door-open close) at Day +20 as a reply in the original thread. Drafts only — Andres reviews and sends manually. Use when user says "follow-up batch", "draft follow-ups", "send follow-up batch", or "outreach followup". Manual-only since 2026-10-22: angel work is dormant (Grok Angel owns it); invoke by name.
+disable-model-invocation: true
 ---
 
 # Cold Outreach Follow-Up Automation
@@ -16,6 +18,11 @@ Generates Gmail draft replies for stale cold investor outreach using Template 4 
 Manual invocation only. Cloud routine path was evaluated 2026-04-27 and ruled out — `mcp__claude_ai_Gmail__create_draft` does not support `threadId`, so a remote agent cannot create threaded reply drafts. Local-only `mcp__gws__gmail` is the load-bearing dependency.
 
 Default batch cap: **25 prospects per run** (hard limit, prevents first-run flood).
+
+## Pitfalls
+
+- Confirm a thread's state with a full-thread fetch (`get_thread`, or `mcp__gws__gmail` `users.threads.get`) before you call it no-reply, not-sent or follow-up-owed; `search_threads` truncates message lists. (LEARNINGS 2026-10-22)
+- Count a reply only when it comes from the prospect's own address; route a sales or BD pitch from someone else at their company to Andres instead of marking the row Replied. (LEARNINGS 2026-10-22)
 
 ## MCP server used
 
@@ -95,7 +102,7 @@ For each remaining eligible prospect, run these checks. First failed check = ski
 
 ### 3a. Do-not-draft markers (CRM Notes field)
 
-If `Notes` contains `[DO NOT DRAFT]` or `[COMPETITOR]` (case-insensitive), skip with reason `do_not_draft`. Per `feedback_competitor_risk_flag.md`.
+If `Notes` contains `[DO NOT DRAFT]` or `[COMPETITOR]` (case-insensitive), skip with reason `do_not_draft`. `[COMPETITOR]` marks a prospect who runs or advises a direct music-education competitor (see `angel-outreach-loop/references/workflow-steps.md` Step 3).
 
 ### 3b. Find Gmail thread
 
@@ -103,7 +110,7 @@ If `Notes` contains `[DO NOT DRAFT]` or `[COMPETITOR]` (case-insensitive), skip 
 
 ### 3c. Reply check
 
-Fetch full thread. If ANY message has `sender != andres@thoven.co` AND `sender != mailer-daemon@googlemail.com`, the prospect (or someone) replied. Skip with reason `replied_but_crm_stale`.
+Fetch the full thread (never judge from search output). If any message comes from the prospect's own address, the prospect replied. Skip with reason `replied_but_crm_stale`. A message from someone else (a colleague's sales or BD pitch from the same company, an assistant, a forward) is not a reply from the prospect: do not set `Replied` and do not draft a bump; list it for Andres in the run report's Errors section with the sender and a snippet. (2026-06-25: a same-company BD pitch was counted as the prospect's reply.)
 
 **Then WRITE it — do not only report it.** Set `Stage` = `Replied` and prepend to `Next Action`:
 
@@ -129,7 +136,7 @@ Use `mcp__gws__gmail` `users.drafts.list` with `params: {userId: "me", q: "in:dr
 
 Compute days-since-**original**-send (the earliest `andres@thoven.co` message in the thread, not the most recent). If **> 90 days**, skip with reason `too_stale_to_bump` regardless of message count.
 
-A "just bumping this in case it got buried" reply months later reads as out-of-touch, and the original email's traction/framing is stale by then. To re-engage, send a fresh current-traction draft (often already on the CRM card) or mark Passed — do **not** send the frozen bump. Still backfill `Last Contact` in Phase 2 so the CRM is honest. Per Andres 2026-05-22 (Rajen Sheth, 310-day thread); cutoff set at 90 days. See `feedback_followup_staleness_cap.md`.
+A "just bumping this in case it got buried" reply months later reads as out-of-touch, and the original email's traction/framing is stale by then. To re-engage, send a fresh current-traction draft (often already on the CRM card) or mark Passed — do **not** send the frozen bump. Still backfill `Last Contact` in Phase 2 so the CRM is honest. Per Andres 2026-05-22 (Rajen Sheth, 310-day thread); cutoff set at 90 days.
 
 **Stale underlying draft:** do not draft a follow-up on top of a rotted draft. This 90-day original-send cap is the follow-up analog of the canonical > 30-day `Drafted At` draft-staleness rule (see `angel-outreach-loop`'s canonical date-stamp contract): once the underlying outreach draft is stale, re-draft with current traction rather than bumping the old thread.
 
@@ -394,6 +401,6 @@ In scheduled mode, no chat output — the report file is the only artifact.
 
 - `references/templates.md` — frozen Touch 1 body
 - `Fundraising/outreach-templates.md` — full template library
-- Memory: `feedback_cold_outreach_followup_voice.md` — voice rules
-- Memory: `feedback_competitor_risk_flag.md` — `[DO NOT DRAFT]` / `[COMPETITOR]` semantics
+- Voice: the frozen bodies in `references/templates.md` are the voice rules; never rewrite them
+- `[DO NOT DRAFT]` / `[COMPETITOR]` semantics: Phase 3a above
 - Plan: `~/.claude/plans/create-a-plan-in-witty-quill.md` — full architecture rationale

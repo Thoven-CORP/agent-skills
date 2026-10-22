@@ -5,6 +5,22 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-22 — write-owner contract names Grok Lab; /lab end merges instead of clobbering
+
+> reflect · 2026-10-22 · ea-vault · skill-gap · applied · seen 1
+
+**What happened.** The write-owner contract listed `/lab end`, `weekly-lab-orchestration`, `/engine` and `lab-task-writer`, but not Grok Lab. Per `Agent Knowledge/Agents/README.md`, Grok Lab owns the lab bookends and the engine reconcile.
+**Why.** The contract was written before the Grok bots took over, so a Claude `/lab end` would treat its own view as the only writer and replace Grok Lab's Hub sections.
+**What changed.** Grok Lab has its own row in the contract, listing the surfaces it writes (Hub derived sections, board hygiene, Outreach Tracker reconcile and Gmail label, GSD rows under "ESA + Microschools"). A new rule says `/lab end` reads current content first, merges any Grok Lab write newer than the session start, and never edits Grok-owned GSD rows.
+
+## 2026-10-22 — after a gap of more than 7 days, sweep Gmail and Drive before trusting the board
+
+> reflect · 2026-10-22 · ea-vault · skill-gap · applied · seen 1
+
+**What happened.** On 2026-08-19, after a 9-day gap, the board looked quiet while Drive showed the Path of Life pilot live with 19 students.
+**Why.** `/lab start` reads only the Hub, the log HEAD and the board, and none of those had caught up with the live pilot.
+**What changed.** New `## Pitfalls` line: when the session-log HEAD is more than 7 days old, sweep Gmail and Drive for active partners and live pilots before trusting the board.
+
 ## 2026-10-22 — vault refresh: maintenance floor, Mem0 optional, repo is canonical
 
 > reflect · 2026-10-22 · vault-refresh · tooling · applied · seen 1

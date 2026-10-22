@@ -69,8 +69,8 @@ Fetch the GSD hub with `mcp__claude_ai_Notion__notion-fetch`, pick the data sour
 
 **Command**: "check todos"
 
-1. **Read todo.md** (do NOT query Notion -- no auto-sync)
-2. **Display combined view** from what's already in the file:
+1. **Read Claude EA's own GSD rows** (Owner/Who = `Claude EA`, read-only; see "GSD rows" below), then **read todo.md**. Never sync Notion rows into todo.md.
+2. **Display combined view** — the GSD rows first, then what's in the file:
    ```
    Personal Todos:
    - Call dentist
@@ -85,7 +85,7 @@ Fetch the GSD hub with `mcp__claude_ai_Notion__notion-fetch`, pick the data sour
 - Read and display only "## Active" section from todo.md
 
 **Command**: "check notion tasks"
-- Query the GSD hub's data sources with `mcp__claude_ai_Notion__notion-query-data-sources` and display results (this is the only command that reads from Notion)
+- Query the GSD hub's data sources with `mcp__claude_ai_Notion__notion-query-data-sources` and display results, Claude EA's own rows (Owner/Who = `Claude EA`) first
 
 ### Completing Todos
 
@@ -96,7 +96,10 @@ Fetch the GSD hub with `mcp__claude_ai_Notion__notion-fetch`, pick the data sour
    `~~[x] [task]~~ - YYYY-MM-DD`
 3. **If task not found**: Ask user to clarify which task to complete
 
-**Important**: Completing a `[Notion]` task only marks it locally in todo.md. The user manages Notion task status directly in Notion. Do NOT attempt to update Notion.
+**GSD rows (the live Notion queue since 2026-10-22).** Completing a `[Notion]` task marks it in todo.md. For the Notion side:
+1. **Read Claude EA's own rows first.** Query the GSD OKR Tracker (`collection://2076c461-0760-8228-803f-07e52f6bfcd2`) for rows whose Owner/Who is `Claude EA`, and show them alongside todo.md. Read each row's latest note before acting on it.
+2. **Write handoffs in the root format, with Andres's approval.** Propose the write and wait for his yes. A note opens with a `YYYY-MM-DD ET:` prefix and ends with an `OPEN QUESTIONS:` block. Add each new dated entry on top of the row's notes; never rewrite older entries. Status flips follow the same approval.
+3. **Never edit rows owned by a Grok agent** (Owner/Who = `Grok CoS`, `Grok Angel`, `Grok Lab`, and the others in `Agent Knowledge/Agents/README.md`). If one of their rows needs a change, tell Andres.
 
 ## No Automatic Notion Sync
 

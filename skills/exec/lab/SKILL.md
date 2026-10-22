@@ -9,6 +9,10 @@ Per-session bookends for any strategy lab: **`start`** (orient + detect drift), 
 
 **This skill is NOT:** weekly strategy/prioritization (that's `weekly-lab-orchestration` — cabinet + grill + big rocks), and NOT deconstructing a big thing into tasks (that's `lab-task-writer`). If `start` surfaces "we need to decide what matters this week," hand to `weekly-lab-orchestration`. If it surfaces "this big thing needs tasks," hand to `lab-task-writer`. Stay in your lane: orient and keep surfaces honest.
 
+## Pitfalls
+
+- On `/lab start`, when the session-log HEAD is more than 7 days old, sweep Gmail and Drive for active partners and live pilots before you trust the board, and report what the board is missing. (LEARNINGS 2026-10-22)
+
 ## Lean architecture principle
 
 **The agent's context window is the constraint.** Every surface the skill reads at session start consumes context that could be used for actual work. The Hub page is the primary read surface — it must stay lean (<40 objects) so `/lab start` loads fast and leaves room for the task brief. History grows forever but is never fully loaded at session start — only the HEAD (the TOP entry) is read.
@@ -42,6 +46,9 @@ Per-session bookends for any strategy lab: **`start`** (orient + detect drift), 
 | **`weekly-lab-orchestration`** | Lab Execution Board (re-sequence / rewrite / supersede) · New rows via `lab-task-writer` · **vault** weekly orientation file | Hub derived blocks · cadence · `current_focus` · session log mid-flight — **hand those to `/lab end` (or invoke the lab-end fan-out checklist once at the close of the WLO run, same one-gate contract)** |
 | **`/engine`** | Outreach Tracker · Gmail labels/threads · geo Worked ledger **only when a metro was actually worked this run** | Hub Stage Tracker / Resume / Recent decisions · cadence · `current_focus` · session log. After Tracker/geo changes: remind to `/lab end`. |
 | **`lab-task-writer`** | New board rows + page-body briefs | Derived Hub / vault summaries |
+| **Grok Lab** (Grok bot, see `Agent Knowledge/Agents/README.md` and `grok/profiles/lab.md`) | Runs its own lab bookends and `/engine` reconcile: Hub Stage Tracker / Resume here / Recent decisions, board hygiene, Outreach Tracker reconcile rows and the lab Gmail label, plus GSD OKR Tracker rows under the "ESA + Microschools" initiative | New sourcing unless Andres reopens it; sends |
+
+**Grok Lab writes the same surfaces as `/lab end`.** Before a Claude `/lab end` replaces a Hub section or flips a board or Tracker row, read what is there now. If a Grok Lab write is newer than this session's start (check `last_edited_time`, or a Grok-dated Resume / decision line), merge its content into the new text instead of overwriting it, and name the merge in the fan-out proposal. Never edit GSD rows whose Owner/Who is a Grok agent.
 
 Drift is structurally impossible when every summary is *derived from the board* instead of *hand-maintained alongside it*, and **only `/lab end` fans out those summaries**. The **manifest enumerates every surface**, so the skill can never silently skip one.
 

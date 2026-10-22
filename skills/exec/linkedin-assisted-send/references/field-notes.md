@@ -45,7 +45,7 @@ Some 2nd-degree profiles show only **Connect** (no Message button), and the "•
 
 ## Warm-intro rule (the Ben Kornell lesson)
 
-A large fraction of good angels share mutual connections with Andres (recurring connectors: **Vipul, Rob, Jeff**). Cold-InMailing someone you have a warm path to wastes the warm path and a credit. **Surface mutuals before sending** — ideally a single up-front list at run-start so Andres pulls warm-intro candidates, then send the rest. A mutual ≠ a confirmed warm intro (don't set Intro Path=Warm); it's a lead for Andres to judge. See memory `feedback_check_mutuals_before_linkedin_send` and `feedback_intro_path_warm_only_if_confirmed`.
+A large fraction of good angels share mutual connections with Andres (recurring connectors: **Vipul, Rob, Jeff**). Cold-InMailing someone you have a warm path to wastes the warm path and a credit. **Surface mutuals before sending** — ideally a single up-front list at run-start so Andres pulls warm-intro candidates, then send the rest. A mutual ≠ a confirmed warm intro (don't set Intro Path=Warm); it's a lead for Andres to judge.
 
 ## Source artifacts (this skill was distilled from)
 

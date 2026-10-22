@@ -1,6 +1,6 @@
 ---
 name: daily-work-log
-description: Generate end-of-day work journal entries. Use when user says "eod", "end of day", or "daily log". Marks completed todos, creates daily entry, updates current_focus.md (active state), appends a tagged session entry to minor_memory.md, and flags major decisions for major_memory_archive escalation (with user confirmation). Also supports RECONCILE MODE ("eod reconcile", "reconcile memory", "memory audit") that cross-references new state against the canonical memory files and auto-fixes stale / contradictory / dangling / done-vs-not-done drift — flagging (never inventing) facts only Andres knows.
+description: Generate end-of-day work journal entries. Use when user says "eod", "end of day", or "daily log". Marks completed todos, creates daily entry, updates the current_focus.md snapshot, appends a tagged session entry to minor_memory.md, and flags major decisions for major_memory_archive escalation (with user confirmation). Also supports RECONCILE MODE ("eod reconcile", "reconcile memory", "memory audit") that cross-references new state against the canonical memory files and auto-fixes stale / contradictory / dangling / done-vs-not-done drift — flagging (never inventing) facts only Andres knows.
 ---
 
 # Daily Work Log (Executable)
@@ -24,8 +24,12 @@ Capture the day, mark completed todos, create daily entry, and update ALL releva
 
 Read in parallel:
 - `todo.md` — get active todos
-- `Agent Knowledge/Memory/current_focus.md` — current active work state
+- `Agent Knowledge/Memory/current_focus.md` — a dated snapshot of the center of gravity (not live state)
 - `Daily Work/YYYY-MM-DD.md` — check if today's log already exists
+
+**Then read today live (the default since 2026-10-22).** The local fleet sensors that used to write feed files were retired on 2026-10-22, so no feed refreshes itself. Pull today's events from Google Calendar, today's sent and received threads from Gmail, today's commits from `git log --since=midnight` in the vault and any repo Andres worked in, and the GSD OKR Tracker rows (`collection://2076c461-0760-8228-803f-07e52f6bfcd2`) edited today.
+
+**Stale-source rule.** If any source you read (a feed file, a sensor output, an earlier log, `current_focus.md`) is dated more than one day before today, name its date once ("the last feed is from 2026-08-14") and do not copy its content into today's log. Fill the section from the live reads above, or leave it empty. An empty section is correct; a replayed one is wrong. (2026-08-15 to 08-18 replayed the 08-14 snapshot, 2026-08-06 to 08-13 replayed 06-04, and 31 of 42 logs carried content over.)
 
 ### Step 2: Show Context & Ask
 
@@ -45,7 +49,7 @@ For each completed item mentioned:
 
 ### Step 4: Generate Daily Log
 
-If file exists for today → append new section. If new → create with full structure.
+If file exists for today → append new section. If new → create with full structure. Every bullet must come from today's live reads or from what Andres said in Step 2; apply the stale-source rule from Step 1.
 
 ```markdown
 # Daily Work - [Day, Month Date, Year]
@@ -102,7 +106,7 @@ Review what was completed today and what's now active. Update `Agent Knowledge/M
 - Update status text on continuing projects
 - Keep file under 3KB
 
-`current_focus.md` is the live active state. Do NOT add session log entries here.
+`current_focus.md` is a snapshot, not the live state. The live state is the GSD OKR Tracker (`collection://2076c461-0760-8228-803f-07e52f6bfcd2`); read it before you edit focus bullets, and change a bullet only for something Andres confirmed this session or the Tracker shows. Do NOT add session log entries here.
 
 ### Step 5.5: Reconcile drift (run every EOD)
 

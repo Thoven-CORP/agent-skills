@@ -1,6 +1,8 @@
 ---
 name: apollo-enrich
-description: Batch-find verified work emails for prospects via Apollo's people bulk_match API, then log them to the Notion Angel CRM and route misses to LinkedIn. Use when the user says "enrich emails", "find emails for the ready-to-send angels", "apollo enrich", "batch find emails", "/apollo-enrich", or when angel-outreach-loop has Ready-to-Send prospects with no email that need a deliverable address before an email send. Reads name + company + LinkedIn URL, returns found/locked/unmatched per prospect. Apollo is the accurate source; never fabricate or pattern-guess an address.
+description: >-
+  Batch-find verified work emails for prospects via Apollo's people bulk_match API, then log them to the Notion Angel CRM and route misses to LinkedIn. Use when the user says "enrich emails", "find emails for the ready-to-send angels", "apollo enrich", "batch find emails", "/apollo-enrich", or when angel-outreach-loop has Ready-to-Send prospects with no email that need a deliverable address before an email send. Reads name + company + LinkedIn URL, returns found/locked/unmatched per prospect. Apollo is the accurate source; never fabricate or pattern-guess an address. Manual-only since 2026-10-22: angel work is dormant (Grok Angel owns it); invoke by name.
+disable-model-invocation: true
 ---
 
 # Apollo Enrich
@@ -66,6 +68,8 @@ Show the user a found/missed table before writing. For each `found`:
 - Append a Notes stamp: `--- APOLLO-ENRICH {date} --- email {addr} (status: {email_status}) via bulk_match`.
 - Re-fetch and confirm the write landed (verified-write protocol).
 
+**Company: resolve before you write.** If this run writes or corrects the CRM `Company` field, take the company from the person's email signature (a real thread with them) or their current LinkedIn role. Never take it from Apollo's organization match or the email domain alone. If the name matches more than one person (another CRM row with the same name, or an Apollo match at a different company than the CRM says), flag the collision in the results table and in a Notes line, and write neither `Company` nor `Email` until Andres picks. (Mis-saved Company: Gutkovich twice on 2026-06-24, Feuer on 06-19, Mark Go on 08-05.)
+
 For each `locked` / `unmatched`: leave `Delivery Method` = `LinkedIn`, append a Notes stamp noting Apollo had no deliverable email. Do not change the draft.
 
 ### 4. Hand back
@@ -77,5 +81,5 @@ Report: N found (with addresses), N locked, N unmatched, and which stay LinkedIn
 - **Never fabricate or pattern-guess an email.** Only `status: found` addresses are real. `locked`/`unmatched` → LinkedIn, full stop.
 - **Key never in args/logs/chat.** Env var only.
 - **Verified writes only** to the CRM; re-fetch to confirm.
-- **Date-stamp contract — stay in your lane.** The CRM has two date columns owned by other skills: `Drafted At` (draft stamp, owned by the drafter, `angel-outreach-loop`) and `Last Contact` (send stamp, owned by the sender, `angel-outreach-loop` / `linkedin-assisted-send`). Apollo-enrich touches ONLY `Email`, `Delivery Method`, and `Notes` — it NEVER writes `Stage`, `Last Contact`, or `Drafted At`.
+- **Date-stamp contract — stay in your lane.** The CRM has two date columns owned by other skills: `Drafted At` (draft stamp, owned by the drafter, `angel-outreach-loop`) and `Last Contact` (send stamp, owned by the sender, `angel-outreach-loop` / `linkedin-assisted-send`). Apollo-enrich touches ONLY `Email`, `Delivery Method`, `Notes`, and `Company` (only after the Company resolve rule above) — it NEVER writes `Stage`, `Last Contact`, or `Drafted At`.
 - **Credits:** each matched reveal consumes ~1 Apollo credit; `bulk_match` is capped at 10 people/call and 600 calls/hour. The script already chunks to 10 and paces.

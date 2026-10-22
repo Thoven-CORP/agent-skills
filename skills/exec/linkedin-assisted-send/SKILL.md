@@ -1,6 +1,8 @@
 ---
 name: linkedin-assisted-send
-description: Sends the Thoven angel CRM's "Ready to Send" outreach drafts over LinkedIn (InMail or connected DM), one prospect at a time, with composer-based dedup, character-exact paste-verify, a mutual-connection / warm-intro check, InMail-credit budgeting, verified Notion writes, and a supervisor log. Use when the user asks to send the ready-to-send angels on LinkedIn, run or resume a LinkedIn send batch, or invokes /linkedin-assisted-send. Runs assisted (user clicks send) by default, or autonomous (Claude clicks) only with explicit per-run authorization — never auto-sends otherwise.
+description: >-
+  Sends the Thoven angel CRM's "Ready to Send" outreach drafts over LinkedIn (InMail or connected DM), one prospect at a time, with composer-based dedup, character-exact paste-verify, a mutual-connection / warm-intro check, InMail-credit budgeting, verified Notion writes, and a supervisor log. Use when the user asks to send the ready-to-send angels on LinkedIn, run or resume a LinkedIn send batch, or invokes /linkedin-assisted-send. Runs assisted (user clicks send) by default, or autonomous (Claude clicks) only with explicit per-run authorization — never auto-sends otherwise. Manual-only since 2026-10-22: angel work is dormant (Grok Angel owns it); invoke by name.
+disable-model-invocation: true
 ---
 
 # LinkedIn Assisted Send
@@ -34,13 +36,15 @@ A batch send is long, interruptible, and freeze-prone, so wrap it in **goal mode
 
 **Draft-staleness gate (`Drafted At`).** Pull each scoped page's `Drafted At` (the drafter's stamp; `angel-outreach-loop` writes it at Ready to Send). Per the canonical date-stamp contract, no skill sends a Ready-to-Send draft whose `Drafted At` is empty or more than 30 days old. For any such prospect, **flag it to Andres and do NOT send** — surface it for re-draft (route back to `angel-outreach-loop`) rather than shipping a draft with stale traction numbers. Fresh-drafted cards (`Drafted At` ≤ 30 days) send normally.
 
+**Middle-paragraph diff gate (every draft, regardless of age).** A fresh `Drafted At` does not mean a current middle paragraph: on 2026-06-01 drafts still said "100+" after the number moved to 120, on 2026-06-10 May-21 drafts went out with old numbers, and on 2026-07-27 the school-pilot clause was added mid-batch. At run start, read the canonical middle from `angel-outreach-loop/references/standard-template.md` § Standard Middle Paragraph and confirm its five variables (teachers, applying, pilot students, raise, committed) with Andres in session. Then diff each draft's middle paragraph against that confirmed text, word for word. Any mismatch: fix the middle in the paste body and in the CRM `Outreach Draft` (verified write) before sending, and say which drafts changed. Never send a middle you have not diffed.
+
 ## Per-prospect loop
 
 Copy this checklist per prospect and check off as you go (it prevents skipping a gate on a long run):
 
 ```
 {Name}: [ ] identity verified  [ ] mutual-check (pause if mutuals)  [ ] composer open + dedup
-        [ ] channel resolved  [ ] pre-filled (transform applied)  [ ] paste-verified (body + subject)
+        [ ] channel resolved  [ ] middle diffed vs canonical  [ ] pre-filled (transform applied)  [ ] paste-verified (body + subject)
         [ ] sent + corroborated top-of-inbox  [ ] Notion write  [ ] logged
 ```
 
@@ -50,7 +54,7 @@ For each prospect, in score order:
 2. **Mutual-connection / warm-intro check — BEFORE sending.** Read the "X is a mutual connection" / "followed by" line. **If mutuals exist, do NOT cold-send — surface to Andres** for a warm-intro decision (warm intro > cold InMail, saves a credit). A mutual is a lead, not a confirmed intro; Andres decides. *(Ben Kornell was cold-InMailed despite warm paths, 2026-05-21 — don't repeat it.)*
 3. **Open composer (Message button) + dedup.** If a prior Andres→prospect thread exists → already-sent → `Outreach Sent`, log, **do not resend**. Use the composer, NEVER inbox scroll (inbox lazy-loads ~10 threads and hides the rest).
 4. **Resolve channel:** connected → free DM (no Subject field); 2nd/3rd-degree w/ Message button → **InMail** (Subject field, costs a credit); **Connect-only** (only "Connect", no Message) → can't InMail even on Premium → email fallback or `On Hold`.
-5. **Pre-fill + paste transform.** CRM draft is an email. **InMail:** canonical subject in Subject field; body = `Hi {First},` → `Andres Martinez`, dropping the `Subject:` line and `[Sources…]` footer. **DM:** no subject, same body. **Type line breaks with `shift+Return` — a raw Enter SENDS.**
+5. **Pre-fill + paste transform.** Use the middle paragraph that passed the diff gate. CRM draft is an email. **InMail:** canonical subject in Subject field; body = `Hi {First},` → `Andres Martinez`, dropping the `Subject:` line and `[Sources…]` footer. **DM:** no subject, same body. **Type line breaks with `shift+Return` — a raw Enter SENDS.**
 6. **Paste-verify (copy-error guard).** Screenshot; confirm body matches the draft character-for-character AND the Subject field is populated. The window can resize mid-type and shift coordinates → a missed Subject click; re-click + retype if empty.
 7. **Send.** Assisted: Andres clicks. Autonomous: click send yourself.
 8. **Corroborate + record.** Confirm the thread is top-of-inbox with a timestamp → verified Notion write (below) → append to supervisor log.
