@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# SessionStart: put the andres-mode skill in context for a session in ~/thoven or ~.
+# Three main sessions on 2026-10-21/22 never loaded it, so its rules went unread; the description
+# alone did not fire reliably (THV-1361). Silent elsewhere and when the skill is not installed.
+#   claude, codex  SessionStart, matcher startup|clear|compact; plain stdout becomes context.
+payload="$(cat)"
+cwd="$(printf '%s' "$payload" | jq -r '.cwd // empty' 2>/dev/null)"
+[ -n "$cwd" ] || cwd="$PWD"
+case "$cwd" in
+  "$HOME" | "$HOME/thoven" | "$HOME"/thoven/*) ;;
+  *) exit 0 ;;
+esac
+skill="$HOME/.agents/skills/andres-mode/SKILL.md"
+[ -f "$skill" ] || exit 0
+printf 'The andres-mode skill (%s) is loaded for this session by a SessionStart hook. Follow it as if you had invoked it.\n\n' "$skill"
+awk 'NR == 1 && /^---$/ { fm = 1; next } fm && /^---$/ { fm = 0; next } !fm' "$skill"

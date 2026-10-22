@@ -63,6 +63,12 @@ plugin searches only on a session's first prompt, and a ticket named mid-session
 rulings matter most. It reuses the plugin's scope and its per-session "already shown" record, so
 nothing is injected twice. It is silent on any failure: recall is a bonus, never a gate.
 
+`thoven-andres-mode` runs on `SessionStart` (startup, clear, compact) in Claude and Codex. For a
+session in `~/thoven` or `~`, it prints the installed andres-mode skill, which both CLIs add to
+context. The skill's description alone did not fire: three main sessions on 2026-10-21 and 10-22
+never loaded it. Codex could not have, because `scripts/apply-skill-visibility.sh` had switched it
+off; it is now in that script's visible core. `bin/thoven-andres-mode-test` covers it.
+
 `thoven-graph-first` runs before `Grep`, `Glob` and `Bash`. Once per session,
 when a search pattern is a bare symbol and the repo has a `graphify-out/` graph,
 it notes that the graph traces relationships a text search cannot follow. It is
