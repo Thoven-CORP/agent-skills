@@ -43,10 +43,10 @@ class Gates:
     def live_work(self) -> list[str]:
         return self.mux.live_work(self.reg.pane)
 
-    def has_report(self) -> bool:
-        launched = parse_iso(self.reg.launched_at)
+    def has_report(self, since: str | None = None) -> bool:
+        after = max(parse_iso(self.reg.launched_at), parse_iso(since)) if since else parse_iso(self.reg.launched_at)
         return any(e.kind in (EntryKind.REPORT, EntryKind.QUESTION, EntryKind.HANDOFF)
-                   and parse_iso(e.at) > launched
+                   and parse_iso(e.at) > after
                    for _, e in store.entries(self.reg.project, ticket=self.reg.ticket))
 
     def dirty(self) -> list[str]:
@@ -101,6 +101,8 @@ def step(reg: Registration, watch: dict, status: Status, now: datetime.datetime,
                   f"working with no change since {w['fingerprint_since']}, cpu {'?' if cpu is None else cpu}%")
 
     if state in ACTIVE:
+        if prev not in ACTIVE or not w.get("active_since"):
+            w["active_since"] = stamp
         w["settle_since"] = w["live_since"] = None
         w["pending"] = False
     elif state in SETTLED:
@@ -123,14 +125,16 @@ def settle(reg: Registration, w: dict, now: datetime.datetime, gates, alert) -> 
     w["pending"], w["live_since"] = False, None
     dirty, limit = gates.dirty(), gates.limit_line()
     dirty_text = f"{len(dirty)} uncommitted: " + "; ".join(dirty[:5]) if dirty else ""
+    since = w.get("active_since")
+    reported = gates.has_report(since)
     if reg.cli == "codex":
-        alert("SETTLED", episode, "codex settled. report: " + ("yes" if gates.has_report() else "no")
+        alert("SETTLED", episode, "codex settled. report: " + ("yes" if reported else "no")
               + "; dirty: " + (dirty_text or "no") + "; limit: " + (limit or "no"))
         return
-    if not gates.has_report():
-        alert("SETTLED_NO_REPORT", episode, f"settled with no REPORT, QUESTION or HANDOFF entry since {reg.launched_at}")
-    if dirty:
-        alert("DIRTY", episode, f"{reg.tree}: {dirty_text}")
+    # Shared integration trees always carry other sessions' edits, so a dirty tree only matters without a report.
+    if not reported:
+        alert("SETTLED_NO_REPORT", episode, f"settled with no REPORT, QUESTION or HANDOFF entry since "
+              f"{since or reg.launched_at}" + (f"; {reg.tree}: {dirty_text}" if dirty else ""))
     if limit:
         alert("LIMIT", episode, limit)
 

@@ -102,17 +102,32 @@ class Settle(TickCase):
         self.tick(reg, working(), 20)
         self.assertEqual(self.tick(reg, done(), 60), ["SETTLED_NO_REPORT"])
 
-    def test_dirty_tree_and_limit_line_alert_beside_a_report(self):
+    def test_a_dirty_tree_beside_a_report_is_quiet_and_a_limit_line_still_alerts(self):
         reg = self.reg()
         self.run = FakeRunner({("git",): Result(0, " M app.rb\n?? new.txt\n", "")})
         self.mux.screen = "working\nYou've hit your usage limit · resets at 5pm\n"
         self.tick(reg, working(), 0)
         self.report(reg)
-        self.assertEqual(self.tick(reg, done(), 60), ["DIRTY", "LIMIT"])
+        self.assertEqual(self.tick(reg, done(), 60), ["LIMIT"])
         bodies = {e.status: e.body for _, e in store.entries("proj") if e.kind == EntryKind.ALERT}
-        self.assertEqual(bodies["DIRTY"], "build-thv-1 (rex block:a): /nonexistent: 2 uncommitted:  M app.rb; ?? new.txt")
         self.assertEqual(bodies["LIMIT"], "build-thv-1 (rex block:a): You've hit your usage limit · resets at 5pm")
         self.assertEqual(self.run.calls[0], ["git", "-C", "/nonexistent", "status", "--porcelain"])
+
+    def test_a_dirty_tree_rides_the_no_report_alert(self):
+        reg = self.reg()
+        self.run = FakeRunner({("git",): Result(0, " M app.rb\n", "")})
+        self.tick(reg, working(), 0)
+        self.assertEqual(self.tick(reg, done(), 60), ["SETTLED_NO_REPORT"])
+        body = [e.body for _, e in store.entries("proj") if e.kind == EntryKind.ALERT][0]
+        self.assertTrue(body.endswith("; /nonexistent: 1 uncommitted:  M app.rb"), body)
+
+    def test_a_fix_round_that_settles_without_a_new_report_alerts(self):
+        reg = self.reg()
+        self.tick(reg, working(), 0)
+        self.report(reg, 30)
+        self.assertEqual(self.tick(reg, done(), 60), [])
+        self.tick(reg, working("w3"), 120)
+        self.assertEqual(self.tick(reg, done("d3"), 180), ["SETTLED_NO_REPORT"])
 
     def test_codex_settle_always_alerts_settled_with_gate_results(self):
         reg = self.reg(cli="codex")

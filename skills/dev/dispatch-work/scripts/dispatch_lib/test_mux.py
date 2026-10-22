@@ -46,11 +46,16 @@ class RexNormalisationTable(unittest.TestCase):
             with self.subTest(name):
                 self.assertEqual(normalise_rex(records, process).state, want)
 
-    def test_blocked_carries_kind_msg_and_root_fingerprint(self):
+    def test_blocked_carries_kind_msg_and_the_newest_update_as_fingerprint(self):
         st = normalise_rex([rec("working", at="T1"), rec("blocked", id="a", kind="permission", msg="approve Bash: rm",
                                                           at="T2")], CLAUDE)
         self.assertEqual((st.state, st.kind, st.msg, st.updated_at, st.fingerprint),
-                         (State.BLOCKED, "permission", "approve Bash: rm", "T1", "T1"))
+                         (State.BLOCKED, "permission", "approve Bash: rm", "T2", "T2"))
+
+    def test_a_subagent_update_moves_the_fingerprint_while_the_root_is_still(self):
+        st = normalise_rex([rec("working", at="2026-10-22T11:00:00-04:00"),
+                            rec("working", id="sub", at="2026-10-22T11:09:00-04:00")], CLAUDE)
+        self.assertEqual(st.fingerprint, "2026-10-22T11:09:00-04:00")
 
 
 class RexMuxCalls(unittest.TestCase):

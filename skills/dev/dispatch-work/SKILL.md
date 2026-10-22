@@ -151,8 +151,7 @@ An alert line names the pane and the cause:
 | `FROZEN` | Read further back. A long test run or `waiting for verification lock` is fine. A hung tool: `dispatch interrupt <pane>`, then ask for status. |
 | `GONE` | The agent exited. Spawn a fresh pane on the same brief plus `Resume from <last commit>.` |
 | `LIMIT` | Tell Andres the reset time in one line. After it, check `git -C <tree> status` for a half-done merge or rebase, then message the pane `continue`. |
-| `SETTLED_NO_REPORT` | Message the pane: `Post your REPORT entry and message me your status line.` |
-| `DIRTY` | Message the pane to commit its paths or say why they stay uncommitted. |
+| `SETTLED_NO_REPORT` | Message the pane: `Post your REPORT entry and message me your status line.` The alert lists the tree's uncommitted files; a dirty tree beside a report is the verifier's concern, not an alert, because shared trees carry other sessions' edits. |
 | `LIVE_WORK` | A background job still runs under the pane. It re-checks on its own; act only if it repeats. |
 | `SETTLED` (Codex) | Read the pane's REPORT entry with `dispatch board <project> --ticket THV-x`, then handle it as the status table says. |
 

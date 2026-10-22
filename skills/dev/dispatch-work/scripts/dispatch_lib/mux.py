@@ -65,7 +65,8 @@ def normalise_rex(records: list[dict], process: dict | None) -> Status:
     if not fg or fg.get("name") in SHELLS or (fg.get("argv0") or "").lstrip("-") in SHELLS:
         return Status(State.GONE)
     root = next((r for r in records if not r.get("id")), None)
-    updated = (root or {}).get("updated_at") or max((r.get("updated_at", "") for r in records), default=None)
+    # Newest across the tree: a main waiting on subagents leaves its root record untouched.
+    updated = max((r.get("updated_at") or "" for r in records), default="") or None
     if not records:
         return Status(State.UNKNOWN)
     states = [r.get("state") for r in records]
