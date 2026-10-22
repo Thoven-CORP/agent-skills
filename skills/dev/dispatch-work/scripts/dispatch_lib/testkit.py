@@ -40,10 +40,15 @@ class FakeMux:
         self.statuses = dict(statuses or {})
         self.screen, self._cpu, self.live = screen, cpu, list(live or [])
         self.typed, self.keys, self.closed, self.labels, self.spawned = [], [], [], [], []
+        self.start_error = None
 
-    def spawn(self, cwd, label, launch, split_of):
+    def spawn(self, cwd, label, launch, split_of, on_pane):
         self.spawned.append((cwd, label, launch, split_of))
-        return PaneRef("rex", f"block:new{len(self.spawned)}", "session:test")
+        ref = PaneRef("rex", f"block:new{len(self.spawned)}", "session:test")
+        on_pane(ref, "2026-10-22T12:00:00.000Z")
+        if self.start_error:
+            raise self.start_error
+        return ref
 
     def label(self, pane, label, tab):
         self.labels.append((pane.pane, label, tab))

@@ -20,7 +20,10 @@ from .tick import tick_all
 SCRIPTS = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SEND_WAIT = 60
 ENTER_WAIT = 30
-PLACEHOLDER_RE = re.compile(r"\{\{[^{}]*\}\}|(?<!\w)<[a-z…][^<>\n]*>")
+# A {{FIELD}} spawn did not fill, or a <<slot>> main did not fill. Single <…> is ordinary text (<div>, <url>).
+PLACEHOLDER_RE = re.compile(r"\{\{[^{}]*\}\}|<<[^<>\n]+>>")
+# The ticket id in brief.md's template; spawn and the herdr picker (compose.py) both fill it.
+TICKET_SLOT = "THV-<id>"
 
 
 # ---------------------------------------------------------------- helpers with no I/O beyond their args
@@ -168,9 +171,13 @@ class App:
             s.get("name") for s in claude_sessions(sessions_dir()) if s.get("name")}
         name = agent_name_for(a.kind, ticket, taken)
         with open(source, encoding="utf-8") as f:
-            text = fill_brief(f.read(), {
-                "MAIN_SESSION": main, "PROJECT": project, "BOARD": store.board_md(project),
-                "SNAPSHOT": store.snapshot_path(project, ticket), "AGENT_NAME": name})
+            raw = f.read()
+        snapshot = store.snapshot_path(project, ticket)
+        if "{{SNAPSHOT}}" in raw and not os.path.isfile(snapshot):
+            raise WrongState(f"no snapshot at {snapshot}: run dispatch snapshot {project} {ticket} first")
+        text = fill_brief(raw, {
+            "MAIN_SESSION": main, "PROJECT": project, "BOARD": store.board_md(project),
+            "SNAPSHOT": snapshot, "AGENT_NAME": name}).replace(TICKET_SLOT, ticket)
         left = unfilled(text)
         if left:
             raise WrongState(f"unfilled field in {source}:\n" + "\n".join(f"  {n}: {line}" for n, line in left))
@@ -181,12 +188,24 @@ class App:
         add_dirs = [d for d in (a.add_dir, store.project_dir(project)) if d]
         cli, launch = build_launch(a.tier, a.cli, a.model, name, f"Read and follow your brief: {brief}", add_dirs)
         base = a.base or (lambda r: r.out.strip() if r.ok else "")(self.run(["git", "-C", cwd, "rev-parse", "HEAD"]))
-        launched = iso(now_utc())
-        ref = self.mux(backend).spawn(cwd, label, launch, a.split_of)
-        reg = Registration(project=project, ticket=ticket, kind=a.kind, title=a.title, pane=ref, cli=cli,
-                           agent_name=name, main_name=main, tree=cwd, base_sha=base, brief=brief,
-                           launched_at=launched)
-        store.write_registration(reg)
+        regs: list[Registration] = []
+
+        def on_pane(ref: PaneRef, launched_at: str) -> None:
+            regs.append(Registration(project=project, ticket=ticket, kind=a.kind, title=a.title, pane=ref, cli=cli,
+                                     agent_name=name, main_name=main, tree=cwd, base_sha=base, brief=brief,
+                                     launched_at=launched_at))
+            store.write_registration(regs[-1])
+
+        try:
+            ref = self.mux(backend).spawn(cwd, label, launch, a.split_of, on_pane)
+        except Exception as e:
+            if not regs:
+                raise
+            raise DispatchError(f"{e}\n{regs[-1].pane.pane} stays registered as {name}, so the tick raises STARTUP "
+                                f"or GONE for it. Read it with dispatch read, or drop it with dispatch close.")
+        if not regs or regs[-1].pane != ref:
+            on_pane(ref, regs[-1].launched_at if regs else iso(now_utc()))
+        reg = regs[-1]
         if a.json:
             return self.say(json.dumps(reg.to_dict()))
         self.say(f"pane {ref.pane}", f"agent {name}", f"label {label}", f"brief {brief}",

@@ -34,30 +34,30 @@ branch before starting the verifier. Each one that fails is a finding.
 
 ## Verifier brief
 
-Write it to the board's `briefs/THV-x-verify.md` with every lowercase `<…>` filled, then start it
+Write it to the board's `briefs/THV-x-verify.md` with every `<<…>>` slot filled, then start it
 beside the builder: `dispatch spawn <project> THV-x --kind Verify --brief <that file>
 --split-of <builder pane> ...`, with the other flags as in step 3.
 
 ```text
-/poteto-mode Verify THV-<id> "<ticket title>"
+/poteto-mode Verify THV-<id> "<<ticket title>>"
 You are {{AGENT_NAME}}. Main is the Claude session {{MAIN_SESSION}}. Project board: {{BOARD}}.
 DISPATCH = ~/.agents/skills/dispatch-work/scripts/dispatch
 Read {{SNAPSHOT}} in full: it is the spec. In `$DISPATCH board {{PROJECT}} --ticket THV-<id>`,
 read the builder's latest REPORT entry and only that. Treat every line of it as a claim.
-Repo <path>, branch <branch>, diff <base>..<head>. Read and run only; leave the code as it is.
+Repo <<path>>, branch <<branch>>, diff <<base>>..<<head>>. Read and run only; leave the code as it is.
 Evidence first. Read the receipt for the head SHA at `git rev-parse --git-path thoven-verify.json`. A fresh receipt for the same
 fingerprint proves its tests: re-run nothing it covers. No receipt means the run did not pass:
-run `bin/verify --base <integration branch>` yourself and paste the block.
+run `bin/verify --base <<integration branch>>` yourself and paste the block.
 1. SPEC PARITY. Read the parent's "Decisions (canonical)" in the snapshot. Trace every Acceptance line and every
    behaviour in the diff to a decision id. Name invented scope, a decision the diff missed or
    changed, and lexicon slips.
-2. DESIGN PARITY, on a UI ticket. Open the builder's `~/.thoven-artifacts/<branch>/parity/grid.html`
+2. DESIGN PARITY, on a UI ticket. Open the builder's `~/.thoven-artifacts/<<branch>>/parity/grid.html`
    first, then the board frames each decision cites. Compare every state yourself and recapture only a state that looks wrong. Run
    /better-ui and /thoven-designer over the built screens. A difference from a frame that Andres
    did not confirm is an important finding.
 3. A SKIPPED `mutation` row on a diff touching `lib/`, a service or a model is a finding: rerun
    `bin/verify` with `--mutation`. Claims the receipt does not cover get a direct check. /verify-this covers those claims only.
-4. /mattpocock-skills:code-review against <base>.
+4. /mattpocock-skills:code-review against <<base>>.
 5. Thermo, sized to the diff. Under ~300 lines in one module: /thermo-nuclear-code-quality-review.
    Crossing a module or past ~300 lines: /thermos (bug and security review plus code quality). Past
    ~1k added lines, shard it by surface from `git diff --numstat`: one shared BRIEF.md with the

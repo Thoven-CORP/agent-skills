@@ -120,6 +120,17 @@ class HerdrMuxCalls(unittest.TestCase):
 
 
 
+class RexSpawn(unittest.TestCase):
+    def test_the_pane_is_reported_as_soon_as_it_exists(self):
+        run = FakeRunner({("rex", "window", "new"): Result(0, json.dumps({"block_ids": ["block:n"]}), "")})
+        seen = []
+        launch = Launch("claude", "build-thv-1", ("claude",), "go")
+        with mock.patch.dict(os.environ, {"REX_SESSION": "session:s"}):
+            ref = RexMux(run).spawn("/tree", "Build · x (THV-1)", launch, None, lambda r, t: seen.append(r))
+        self.assertEqual(seen, [ref])
+        self.assertEqual(ref, PaneRef("rex", "block:n", "session:s"))
+
+
 class HerdrSpawn(unittest.TestCase):
     def test_the_opening_prompt_rides_agent_start_and_nothing_is_typed(self):
         tab = Result(0, json.dumps({"result": {"root_pane": {"pane_id": "w9:p3"}}}), "")
@@ -127,12 +138,25 @@ class HerdrSpawn(unittest.TestCase):
         launch = Launch(kind="claude", name="build-thv-1", argv=("claude", "-n", "build-thv-1", "--model", "haiku"),
                         prompt="Read and follow your brief: /b.md")
         with mock.patch.dict(os.environ, {"HERDR_WORKSPACE_ID": "w9", "HERDR_BIN": "herdr"}):
-            ref = HerdrMux(run).spawn("/tree", "Build · x (THV-1)", launch, None)
+            ref = HerdrMux(run).spawn("/tree", "Build · x (THV-1)", launch, None, lambda r, t: None)
         self.assertEqual(ref, PaneRef("herdr", "w9:p3", "w9"))
         start = next(c for c in run.calls if c[1:3] == ["agent", "start"])
         self.assertEqual(start[start.index("--") + 1:],
                          ["-n", "build-thv-1", "--model", "haiku", "Read and follow your brief: /b.md"])
         self.assertEqual([c for c in run.calls if c[1:3] in (["agent", "prompt"], ["agent", "send-keys"])], [])
+
+    def test_a_failed_agent_start_still_reported_the_pane(self):
+        tab = Result(0, json.dumps({"result": {"root_pane": {"pane_id": "w9:p3"}}}), "")
+        run = FakeRunner({("herdr", "tab", "create"): tab, ("herdr", "agent", "start"): Result(1, "", "boom")})
+        seen = []
+        launch = Launch(kind="claude", name="build-thv-1", argv=("claude",), prompt="go")
+        with mock.patch.dict(os.environ, {"HERDR_WORKSPACE_ID": "w9", "HERDR_BIN": "herdr"}):
+            with self.assertRaisesRegex(MuxError, "herdr agent start failed in w9:p3: boom"):
+                HerdrMux(run).spawn("/tree", "Build · x (THV-1)", launch, None, lambda r, t: seen.append(r))
+        self.assertEqual(seen[0], PaneRef("herdr", "w9:p3", "w9"))
+        start = next(i for i, c in enumerate(run.calls) if c[1:3] == ["agent", "start"])
+        create = next(i for i, c in enumerate(run.calls) if c[1:3] == ["tab", "create"])
+        self.assertLess(create, start)
 
 
 if __name__ == "__main__":

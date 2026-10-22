@@ -1,12 +1,13 @@
 # The brief
 
-Copy the block below to the board's `briefs/THV-x.md` and replace every lowercase `<…>` slot,
-writing `none` where nothing applies. The snapshot is the spec, so the brief adds only what the
+Copy the block below to the board's `briefs/THV-x.md` and replace every `<<…>>` slot, writing
+`none` where nothing applies. The snapshot is the spec, so the brief adds only what the
 snapshot cannot know. Process rules every pane follows live in [standing.md](standing.md); the
 brief points there.
 
-`dispatch spawn` fills the `{{…}}` fields and refuses a line that still holds a lowercase `<…>`,
-so keep each slot on one line. UPPERCASE words (STATUS, ENTRY_PATH, REPORT_FILE, HANDOFF_FILE,
+`dispatch spawn` fills the `{{…}}` fields and every `THV-<id>` with the ticket, and refuses a line
+that still holds a `{{…}}` or `<<…>>`. A slot may hold any words but stays on one line. Single angle
+brackets are ordinary text (`Array<string>`, `<div>`). UPPERCASE words (STATUS, ENTRY_PATH, REPORT_FILE, HANDOFF_FILE,
 ONE LINE) are the pane's to fill: leave them.
 
 - DECISIONS: each parent decision id with the board frame the parent cites for it
@@ -18,22 +19,22 @@ ONE LINE) are the pane's to fill: leave them.
 - For a Codex pane write `$poteto-mode`.
 
 ```text
-/poteto-mode <playbook> THV-<id> "<ticket title>"
+/poteto-mode <<playbook>> THV-<id> "<<ticket title>>"
 
 You are {{AGENT_NAME}}. Main is the Claude session {{MAIN_SESSION}}. Project board: {{BOARD}}.
 DISPATCH = ~/.agents/skills/dispatch-work/scripts/dispatch
 
-FITS       <one line: where this ticket sits in its parent issue and what it unblocks>
+FITS       <<one line: where this ticket sits in its parent issue and what it unblocks>>
 SPEC       {{SNAPSHOT}}. Read it in full first. It holds the ticket, its comments and the parent's
            decisions as main read them. Build it as written. When the snapshot and the code
            disagree, or the snapshot needs a choice it does not make, ASK.
-DECISIONS  <decision ids, each with its board frame>
+DECISIONS  <<decision ids, each with its board frame>>
 DECIDED IN CHAT
-           <labelled chat rulings, one per line>
+           <<labelled chat rulings, one per line>>
            Build to "Andres ruled" lines. Treat the others as defaults you may overturn with a
            reason in your report.
-RULES      <binding rules for the files this pane writes, with exemptions>
-DESIGN     <no UI, or the board path, the frames above, and every screen and state they show, async included>
+RULES      <<binding rules for the files this pane writes, with exemptions>>
+DESIGN     <<no UI, or the board path, the frames above, and every screen and state they show, async included>>
            Bring each frame to life as the decisions describe it, at visual parity and full
            fidelity: layout, spacing, type, every state, and motion where the frame shows it. Values come from design-system tokens; use the shared component
            where one exists, and build a missing one with /building-components. Loading, empty,
@@ -43,17 +44,17 @@ DESIGN     <no UI, or the board path, the frames above, and every screen and sta
            hug, stretch, reflow at other widths) follows component best practice; match the
            frame at its own width and give the reason in one line. A difference from a frame
            that Andres confirmed cites its ruling; any other difference is a defect you fix.
-WHERE      Repo <path>, branch <branch>, base <sha>. <parallel panes and their Paths, or none>
-KNOWN      <interfaces, rulings and commits from earlier tickets this one builds on>
-ACCESS     <the skill lines from skills.md this ticket reaches, each with its moment>
+WHERE      Repo <<path>>, branch <<branch>>, base <<sha>>. <<parallel panes and their Paths, or none>>
+KNOWN      <<interfaces, rulings and commits from earlier tickets this one builds on>>
+ACCESS     <<the skill lines from skills.md this ticket reaches, each with its moment>>
            Tools: graphify for callers and impact, Context7 for vendor docs, control-cli and
            control-ui for a running app, tier-5 subagents for wide reads.
-DONE WHEN  <the ticket's Done when, verbatim or by pointer>
-           Seams: <where the tests sit>. Proof goes red before your change and green after it.
+DONE WHEN  <<the ticket's Done when, verbatim or by pointer>>
+           Seams: <<where the tests sit>>. Proof goes red before your change and green after it.
            Verify per `~/.agents/skills/verify/SKILL.md`: lint and types, the touched test files
            one per run, the design scan suite on any component or token diff,
            `__tests__/mail-link-routes.test.ts` on a diff that adds or moves a route, and
-           `bin/verify --base <integration branch>` once before DONE with its block in the report.
+           `bin/verify --base <<integration branch>>` once before DONE with its block in the report.
 STANDING   Read ~/.agents/skills/dispatch-work/references/standing.md now and follow it.
 
 ASK
@@ -97,8 +98,8 @@ overlap. Post it as a CORRECTION entry, then send the same text to the builder b
 (Codex: `dispatch send <pane> <file>` once it is idle):
 
 ```text
-FIX ROUND <n>/3 THV-<id>. Base for this round: <sha>.
-<each open finding, verbatim, with file:line>
+FIX ROUND <<n>>/3 THV-<<id>>. Base for this round: <<sha>>.
+<<each open finding, verbatim, with file:line>>
 Fix these only. Re-run the tests that cover each fix and name them. Copy follows
 design/lexicon/LEXICON.md, and focus and accessibility fixes use the existing Thoven components.
 On a UI fix, capture each touched state at 1440 and 390 before and after; a change beyond the

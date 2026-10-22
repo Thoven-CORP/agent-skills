@@ -116,8 +116,9 @@ in Linear, then come back.
    Record the base SHA there (`git -C <path> rev-parse HEAD`). Review diffs start there. Never let
    herdr or Rex create the worktree.
 2. `scripts/dispatch spawn <project> THV-x --kind <K> --title "<title>" --cwd <path> --tier <n> --base <sha>`.
-   It fills the `{{…}}` fields and refuses a brief with any `<…>` left. A ticket that spans both
-   repos gets one pane: spawn in the frontend tree and add `--add-dir <backend tree>`. A sub-issue
+   It fills the `{{…}}` fields and `THV-<id>`, and refuses a brief with a `{{…}}` or `<<…>>` slot
+   left, or one that reads `{{SNAPSHOT}}` before the snapshot exists. When the agent fails to start,
+   the pane stays registered, so STARTUP or GONE reports it. A ticket that spans both repos gets one pane: spawn in the frontend tree and add `--add-dir <backend tree>`. A sub-issue
    adds `--split-of <pane>`. Add `--cli codex` only when Andres named Codex.
 3. On the first dispatch in this Project, label main's own pane (`$REX_BLOCK` in Rex, `$HERDR_PANE_ID` in herdr): `scripts/dispatch label <pane> Meta "<Project>" --tab`.
 4. Move the ticket to **In Progress** with `set-status.js`.

@@ -7,10 +7,10 @@ import os
 import re
 import time
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Callable, Protocol
 
 from . import procs
-from .model import Backend, DispatchError, PaneRef, State, Status, UsageError
+from .model import Backend, DispatchError, PaneRef, State, Status, UsageError, iso, now_utc
 from .runner import Result, Runner
 
 # Rex's error for a block that no longer exists. A missing session or a missing `rex` must raise instead.
@@ -32,7 +32,10 @@ class Launch:
 
 
 class Mux(Protocol):
-    def spawn(self, cwd: str, label: str, launch: Launch, split_of: str | None) -> PaneRef: ...
+    def spawn(self, cwd: str, label: str, launch: Launch, split_of: str | None,
+              on_pane: Callable[[PaneRef, str], None]) -> PaneRef:
+        """Open a pane and start the agent. on_pane(ref, launched_at) runs as soon as the pane id exists and
+        again when the agent starts, so a spawn that fails later still leaves the pane registered."""
     def label(self, pane: PaneRef, label: str, tab: bool) -> None: ...
     def status(self, pane: PaneRef) -> Status: ...
     def read(self, pane: PaneRef, lines: int) -> str: ...
@@ -102,11 +105,12 @@ class RexMux:
             return None
         return _json(res, f"rex block call {method}")
 
-    def spawn(self, cwd, label, launch, split_of):
+    def spawn(self, cwd, label, launch, split_of, on_pane):
         session = os.environ.get("REX_SESSION")
         if not session:
             raise UsageError("REX_SESSION is unset: run dispatch spawn from main's Rex pane")
         cmd = [*launch.argv, launch.prompt]
+        launched = iso(now_utc())
         if split_of:
             out = _json(self._rex("split", "-s", session, "-b", split_of, "--split=right", "--focus=false",
                                   "--keep-open", "--label", label, "-c", cwd, "--json", "--", *cmd),
@@ -115,6 +119,7 @@ class RexMux:
             out = _json(self._rex("window", "new", "-s", session, label, "-c", cwd, "--focus=false",
                                   "--keep-open", "--json", "--", *cmd), "rex window new")
         ref = PaneRef("rex", out["block_ids"][0], session)
+        on_pane(ref, launched)
         self._rex("block", "rename", "-s", session, ref.pane, label)
         return ref
 
@@ -201,7 +206,7 @@ class HerdrMux:
             raise MuxError(f"herdr {what} failed: {(res.err or res.out).strip()[:300]}")
         return res
 
-    def spawn(self, cwd, label, launch, split_of):
+    def spawn(self, cwd, label, launch, split_of, on_pane):
         workspace = os.environ.get("HERDR_WORKSPACE_ID")
         if split_of:
             out = _json(self._h("pane", "split", split_of, "--direction", "right", "--cwd", cwd, "--no-focus"),
@@ -214,11 +219,13 @@ class HerdrMux:
                                 "--no-focus"), "herdr tab create")
             pane = out["result"]["root_pane"]["pane_id"]
         ref = PaneRef("herdr", pane, workspace or pane.split(":")[0])
+        on_pane(ref, iso(now_utc()))
         self._h("pane", "rename", pane, label)
         # agent start needs the shell at its prompt; wait until the shell has drawn something.
         self._h("pane", "wait-output", pane, "--regex", r"\S", "--timeout", "15000", timeout=20)
         # The opening prompt rides in argv and is never typed: a typed Enter answers whatever dialog is up, and
         # the folder-trust dialog defaults to "No, exit". A prompt in argv waits behind the dialog instead.
+        on_pane(ref, iso(now_utc()))
         res = self._h("agent", "start", launch.name, "--kind", launch.kind, "--pane", pane, "--timeout", "120000",
                       "--", *launch.argv[1:], launch.prompt, timeout=130)
         if not res.ok and "agent_not_ready" not in res.out + res.err:
