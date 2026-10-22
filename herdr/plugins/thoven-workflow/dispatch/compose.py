@@ -8,6 +8,7 @@ Both come from the dispatch-work skill at runtime, so nothing here names a model
   compose.py flags <cli> <model> [effort]   NUL-separated argv after `--` for `herdr agent start`
   compose.py meta <cli> <model> [effort]    kind, label, model (TSV)
   compose.py brief <cli> <json>             the self-brief text; <json> carries ticket/where/main fields
+  compose.py dispatch                       path of the dispatch-work `dispatch` CLI (exit 1 if none)
 """
 import json
 import os
@@ -67,12 +68,12 @@ def standing_and_report(ticket, main_pane, inbox_file):
     return tail
 
 
-def label_script():
-    """label.sh from the checkout this plugin is linked from, else the installed skill (THV-1064)."""
+def dispatch_script():
+    """`dispatch` from the checkout this plugin is linked from, else the installed skill (THV-1064)."""
     here = os.path.dirname(os.path.abspath(__file__))
     for path in (
-        os.path.normpath(os.path.join(here, "..", "..", "..", "..", "skills", "dev", "dispatch-work", "scripts", "label.sh")),
-        os.path.expanduser("~/.agents/skills/dispatch-work/scripts/label.sh"),
+        os.path.normpath(os.path.join(here, "..", "..", "..", "..", "skills", "dev", "dispatch-work", "scripts", "dispatch")),
+        os.path.expanduser("~/.agents/skills/dispatch-work/scripts/dispatch"),
     ):
         if os.path.exists(path):
             return path
@@ -95,12 +96,13 @@ def brief(cli, ctx):
         "\n           repo by exact path."
         if other else ""
     )
-    script = label_script()
+    script = dispatch_script()
     kinds = "plan -> Plan, build -> Build, design -> Design, review -> Review"
     if script:
-        label_cmd = f'bash {script} {ctx.get("pane") or "$HERDR_PANE_ID"} <Kind> "<ticket title>" {t} --tab   ({kinds})'
+        label_cmd = (f'{script} label --backend herdr {ctx.get("pane") or "$HERDR_PANE_ID"} <Kind> "<ticket title>" {t}'
+                     f' --tab   ({kinds})')
     else:
-        label_cmd = f"(label.sh not found; skip labelling and say so in your MODE message)"
+        label_cmd = "(dispatch not found; skip labelling and say so in your MODE message)"
     # First line carries the task: Devin drops a prompt whose first line is only a slash command.
     head = f"{prefix}poteto-mode {t}: read the ticket and all its comments in Linear, pick a mode, label your tab, tell the dispatcher, then work."
     body = f"""
@@ -137,8 +139,13 @@ def main():
             print(f"{ag.cli_spec(cfg, cli)['kind']}\t{ag.label(cfg, cli, model, effort)}\t{model}")
     elif cmd == "brief" and len(args) == 2:
         sys.stdout.write(brief(args[0], json.loads(args[1])))
+    elif cmd == "dispatch" and not args:
+        script = dispatch_script()
+        if not script:
+            sys.exit("compose: dispatch not found in the checkout or the installed dispatch-work skill")
+        print(script)
     else:
-        sys.stderr.write("usage: compose.py flags|meta <cli> <model> [effort] | brief <cli> <json>\n")
+        sys.stderr.write("usage: compose.py flags|meta <cli> <model> [effort] | brief <cli> <json> | dispatch\n")
         sys.exit(2)
 
 

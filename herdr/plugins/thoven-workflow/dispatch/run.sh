@@ -143,18 +143,22 @@ ctx="$(jq -nc --arg ticket "$ticket" --arg url "$url" --arg path "$path" --arg r
   '{ticket:$ticket,url:$url,path:$path,repo:$repo,branch:$branch,base:$base,main_pane:$main,inbox_file:$inbox,other_repo:$other,pane:$pane}')"
 brief="$(python3 "$HERE/compose.py" brief "$cli" "$ctx")"
 if [ "$dry" = 1 ]; then
-  show "$TW_HERDR" agent prompt "$name" "<self-brief below>"
+  show "$(python3 "$HERE/compose.py" dispatch || echo dispatch)" send --backend herdr "$pane" "<self-brief below, as a file>"
   printf -- '----- self-brief for %s -----\n%s\n----- end -----\n' "$name" "$brief"
 else
   "$TW_HERDR" agent wait "$name" --until idle --until done --timeout 60000 >/dev/null 2>&1 || true
-  # A long brief can land in Claude Code's input box after the submit key, so it sits there unsent
-  # and the pane stays idle (THV-981, 2026-10-03). Confirm the agent started; press Enter once if not.
-  if ! "$TW_HERDR" agent prompt "$name" "$brief" --wait --until working --until blocked --timeout 30000 >/dev/null 2>&1; then
-    log "$name did not start on the brief; pressing Enter"
-    "$TW_HERDR" agent send-keys "$name" enter >/dev/null 2>&1 || true
-    "$TW_HERDR" agent wait "$name" --until working --until blocked --until done --timeout 30000 >/dev/null 2>&1 ||
-      { fail "$name in $pane never started on the brief; it may sit unsent in the input box"; exit 1; }
+  # dispatch send refuses a busy pane, waits for WORKING and presses Enter once when a long brief
+  # sits unsent in Claude Code's input box (THV-981).
+  dispatch_bin="$(python3 "$HERE/compose.py" dispatch)" || { fail "dispatch CLI not found; brief not sent"; exit 1; }
+  brief_file="$(mktemp)"
+  printf '%s\n' "$brief" > "$brief_file"
+  if ! sent="$(HERDR_BIN="$(command -v "$TW_HERDR")" "$dispatch_bin" send --backend herdr "$pane" "$brief_file" 2>&1)"; then
+    rm -f "$brief_file"
+    fail "$name in $pane never started on the brief: $(tail -n 1 <<<"$sent")"
+    exit 1
   fi
+  rm -f "$brief_file"
+  log "$sent"
 fi
 
 where="$label ($pane)"
