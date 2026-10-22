@@ -7,11 +7,12 @@ New entries on top. Each one: what happened, why, what changed.
 
 ## 2026-10-08 — Grill scope is the Project plus his paste
 
-> reflect · 2026-10-08 · memory:feedback_brainstorm_scope_is_project_plus_paste · correction · applied · seen 1
+> reflect · 2026-10-08 · memory:feedback_brainstorm_scope_is_project_plus_paste · 39a12a43 · correction · applied · seen 2
 
 **What happened.** In the Live Lesson Portal brainstorm the agent put "audio modes" on the list from an old Notion signal, grilled Andres on it and proposed a retest. He had already resolved it: "this is not the item we are brainstorming".
 **Why.** The agent's own research list leaked into a scope he had set as "the scope is in the project and in the things I pasted".
 **What changed.** Pitfall line: re-derive the item list from the Project description and his paste before each round. When his numbering seems to point outside that scope, map it to the in-scope item.
+**2026-10-22 (reflect).** Seen again in 39a12a43 on 10-19, a grill round on his feedback: "q7) I am a bit confused by this question what does this relate to… q8) no, this was not part of the feedback." The Pitfall line now also says the agent's own findings go in a separate list labelled as its own.
 
 ## 2026-09-14 — Read prior rulings before asking
 

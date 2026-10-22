@@ -506,7 +506,7 @@ BUILDING
 BRANCHES AND PULL REQUESTS
 - Branch, PR and worktree rules: `~/thoven/agent-skills/enforcement/rules/thoven-law.md`.
   `thoven-worktree create <fe|be> <area> <id>` gives `<area>/thv-<id>`, the same name in both repos.
-- Open a held PR into `main`. On Andres's "merge it", backend first: `gh pr merge --auto --squash`.
+- Open a held PR into `main`. On Andres's "merge it", backend first. The method follows the PR's role (thoven-law.md "Branches and PRs"): a ticket squashes (`gh pr merge --auto --squash`), and an integration branch landing in `main` or a catch-up of `main` merges with `--merge`. Name source, target and method in the go line.
 - Put `THV-<id>` in the commit message with no magic word. `Fixes` auto-closes Linear. Merge does not own Done.
 - Write Ready if a surface still needs his eyes. Write Done when the job is finished. Main merges UI after Andres sees the evidence images.
 - `--auto` merges once the `CI` check passes. Run `/loop-on-ci` when CI goes red.

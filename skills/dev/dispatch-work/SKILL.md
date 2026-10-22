@@ -143,6 +143,12 @@ A status line from the pane arrives as a message in main's own pane:
 | `NEEDS_CONTEXT THV-x` | Answer with `scripts/send.sh`. Re-arm. |
 | `BLOCKED THV-x` | Context gap: answer and re-send. Too hard: fresh pane one tier up. Too big: split the ticket. Product call: ask Andres, word for word. |
 
+**A fix round or a binding correction goes as a file.** Write it to `$TMPDIR/dispatch/<THV-x>-fix-<n>.md`
+and send it with `scripts/send.sh`. On a pane that is still working, `herdr agent send-keys <pane> esc`
+first. Never type a follow-up into a busy pane: a queued message waits for the whole turn and can land
+after DONE. Hold the verifier until the pane has answered the file. The files are the record Andres
+reads.
+
 A watcher exit with no status line means the pane went **stale**. Investigate before anything
 else. Read `herdr agent read <pane> --source recent-unwrapped --lines 80` and name the cause:
 

@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-22 — corrections to a busy pane go as a brief file, never a typed follow-up
+
+> reflect · 2026-10-22 · memory:project_codex_queued_addendum_lands_late · d9f3ef92 · broken-rule · applied · seen 2
+
+**What happened.** On 10-09 two spec addenda queued into running Codex panes landed after both panes reported DONE, and the verifier had to be held. On 10-16 main typed two addenda into the THV-1303 pane and Andres said "ensure these fixes are being verified and run correctly instead of prompting in the same pane. I want to keep track."
+**Why.** The lesson lived only in a Claude memory, which panes and Codex never read, and step 4 had no rule for how a correction reaches a working pane.
+**What changed.** Step 4: a fix round or binding correction is written to a file and sent with `scripts/send.sh`, after `esc` on a working pane, and the verifier waits until the pane has answered it.
+
 ## 2026-10-13 — a route change runs the repo-wide guard tests
 
 > reflect · 2026-10-13 · memory:feedback_briefs_run_repo_guard_tests · skill-gap · applied · seen 1

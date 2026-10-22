@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-22 — merge lines name the method; "where are we" walks the user's list; one-file visual explainers; keep the user's voice
+
+> reflect · 2026-10-22 · 889d1f76 · 39a12a43 · ec30f47b · 01a151d4 · 93f7415c · broken-rule · applied · seen 3
+
+**What happened.** Four lessons from the 10-15..10-22 window. (1) Merge go-lines named the direction but never the method; #256 (282 commits) was squashed without the method ever reaching Andres ("Are you saying merging into main or main into the integration", 889d1f76). Seen 3. (2) Status reports blurred his list: "Did we not solve the hour expiry… give me ticket numbers with what was actually done, list items that have been missed" (codex 01a151d4); the same ask in 39a12a43, 889d1f76 and ec30f47b. Seen 4. (3) Visual explainers came back as boxed prose or scattered files: "put it all in one html easy to review", "something more like… floating-surfaces.html", "highly visual not in terms of using boxes". Seen 3. (4) Polishing his launch draft cut his tone and offered several drafts: "you lost some of the context I wrote… maybe just give me one draft" (codex 01a151d4). Seen 1. On 10-22 main also ran a lighter git-history pass in place of the /reflect he named ("launch the full /reflect or /thoven-reflect"); that raises the 2026-08-28 entry.
+**Why.** The merge line covered direction only. "Open with a plain report of where things stand" was too generic to produce an item-by-item map. No rule covered explainer format or draft polishing. Main sessions are not loading andres-mode at start (backlog), so the run-the-named-skill Pitfall never reached the session.
+**What changed.** Delegation merge line now names source, target and method. Replies gains "Where are we walks the user's own list", the one-file visual explainer rule, and the keep-their-voice rule (a step, since Pitfalls is at its ten-line cap).
+
 ## 2026-10-20 — an understanding question gets the answer, then the turn ends
 
 > reflect · 2026-10-20 · memory:feedback_list_before_question · correction · applied · seen 1
@@ -267,7 +275,7 @@ New entries on top. Each one: what happened, why, what changed.
 
 ## 2026-08-28 — run the skill he names
 
-> reflect · 2026-08-28 · memory:feedback_run_the_skill_he_named · correction · applied · seen 1
+> reflect · 2026-08-28 · memory:feedback_run_the_skill_he_named · 93f7415c · correction · applied · seen 2
 
 **What happened.** Andres asked for `/interrogate` on a build plan. A session ran three same-model reviewers instead and argued interrogate was redundant. He corrected: "What I wanted you to run was to run /interrogate on the plan as well".
 **Why.** A named skill is an instruction. Interrogate's value was model diversity, which same-model reviewers on different axes do not give.

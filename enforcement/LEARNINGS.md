@@ -5,9 +5,25 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-22 — zsh aborts on unmatched globs
+
+> reflect · 2026-10-22 · d631 · c775 · tooling · applied · seen 2
+
+**What happened.** About 24 commands this week died with `(eval):1: no matches found` on unquoted globs such as `grep --include=*.ts` and `ls dir*`; the reflect run that found it hit it too.
+**Why.** The harness shell is zsh, where an unmatched glob is an error, not a literal.
+**What changed.** `~/thoven/CLAUDE.md` (source `.workspace/CLAUDE-root.md`) Environment fact: quote glob arguments or use `rg -g`.
+
+## 2026-10-22 — The merge method follows the PR's role; landed integration branches retire
+
+> reflect · 2026-10-22 · 39a12a43 · 889d1f76 · ec30f47b · 93f7415c · broken-rule · applied · seen 3
+
+**What happened.** On 10-15 Andres approved a plan that said "Ask Scheduling and the Portal to merge into main with a plain merge, not a squash." That ruling lived only in THV-1305's description, so the sessions that merged #256 (282 commits) and #318 (403 commits) squashed them. Later Private Lessons catch-ups traced conflicts to a 470-file commit with no THV id. On 10-19 he said the landed integration branch "should also likely be finally removed", and on 10-22 he asked "do we have a default between squash merging and normal merging".
+**Why.** The law named one method for every PR into `main`, and said nothing about an integration branch's end of life. A ruling written only in a ticket never reaches the session that merges.
+**What changed.** thoven-law.md "Branches and PRs": a table of merge method by PR role (ticket squashes; catch-up and integration landing use `--merge`), every merge go names source, target and method, and a landed integration branch retires (registry row and tree removed, follow-ups on `origin/main`). WORKFLOW.md "merge it" line mirrors it. A wrapper script was rejected: the registry lists a ticket branch as integration and misses Private Lessons, so it would pick the wrong method both ways.
+
 ## 2026-10-11 — A catch-up PR of main merges with --merge
 
-> reflect · 2026-10-11 · memory:feedback_name_merge_direction · correction · applied · seen 1
+> reflect · 2026-10-11 · memory:feedback_name_merge_direction · 889d1f76 · 93f7415c · correction · applied · seen 3
 
 **What happened.** A command merged main into a branch cut from the Private Lessons integration branch to pick up fixes for red shards. Andres stopped it ("are you merging this feature into main? I never said I want that") and approved the catch-up once the direction was explained.
 **Why.** A squash-merged catch-up loses the ancestry, so main no longer shows as merged into the integration branch.
