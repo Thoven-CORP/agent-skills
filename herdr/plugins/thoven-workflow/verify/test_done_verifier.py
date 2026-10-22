@@ -178,11 +178,22 @@ class BackgroundWaitTest(ProcessFixture):
             (301, 300, 300, "node bin/verify --base origin/main"),
             (302, 301, 300, f"{PY} {FE}/scripts/verify/diff-lock.py {NODE} {FE}/scripts/verify/diff.mjs --base origin/main"),
             (303, 302, 303, f"{NODE} {FE}/scripts/verify/diff.mjs --base origin/main"),
-            (304, 303, 304, f"{PNPM} exec vitest run diff-structural.test.mjs --retry=0"),
-            (305, 304, 305, f"node {FE}/node_modules/.bin/../vitest/vitest.mjs run diff-structural.test.mjs --retry=0"),
+            (304, 303, 304, f"{PNPM} exec vitest related ./__tests__/lib/radius-tokens.test.ts --run --retry=0"),
+            (305, 304, 305, f"node {FE}/node_modules/.bin/../vitest/vitest.mjs related ./__tests__/lib/radius-tokens.test.ts --run"),
             (306, 304, 306, PNPM_GUARD.format(305)),
         ]), ("pending", "waiting on 5 background runs: diff-lock.py node diff.mjs --b, "
-                        "diff.mjs --base main, pnpm.mjs exec vitest run diff- …"))
+                        "diff.mjs --base main, pnpm.mjs exec vitest related r …"))
+
+    def test_the_agents_own_run_of_the_verify_engine_tests_still_fails(self):
+        # verify.log THV-1131: one vitest pid outlived several diff.mjs pids, so the engine was the
+        # subject of the agent's own test run, not its parent.
+        self.assertEqual(self.check([
+            (300, 200, 300, SNAP.format("pnpm exec vitest run scripts/verify/diff-structural.test.mjs")),
+            (301, 300, 300, f"{PNPM} exec vitest run scripts/verify/diff-structural.test.mjs"),
+            (302, 301, 302, PNPM_GUARD.format(303)),
+            (303, 301, 303, f"node {FE}/node_modules/.bin/../vitest/vitest.mjs run scripts/verify/diff-structural.test.mjs"),
+            (304, 303, 304, f"{NODE} {FE}/scripts/verify/diff.mjs --base main"),
+        ]), ("fail", "2 live processes: pnpm.mjs exec vitest run diff- (pid 301), vitest.mjs run diff-structural (pid 303)"))
 
     def test_backend_bin_verify_with_ci_fast_child_is_pending(self):
         self.assertEqual(self.check([
