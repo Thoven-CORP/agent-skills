@@ -7,7 +7,7 @@ set -uo pipefail
 GUARD="$(cd "$(dirname "$0")/.." && pwd)/hooks/thoven-guard-bash"
 TMP="$(cd "$(mktemp -d)" && pwd -P)"
 SESSION="guard-test-$$"
-trap 'rm -rf "$TMP" "/tmp/claude-thoven/$SESSION" "/tmp/thv984-escape-$$"' EXIT
+trap 'rm -rf "$TMP" "/tmp/claude-thoven/$SESSION" "/tmp/claude-thoven/$SESSION-other" "/tmp/thv984-escape-$$"' EXIT
 export HOME="$TMP"
 WT="$TMP/thoven/frontend-thv-1"
 mkdir -p "$WT"
@@ -227,6 +227,35 @@ expect "stash push -u of an untracked file is denied" "$(decision claude "git st
 expect "restore of a clean directory is denied" "$(decision claude "git restore lib" "$RR")" "deny"
 expect "restore \$f is denied" "$(decision claude 'for f in clean.txt; do git restore $f; done' "$RR")" "deny"
 expect "pnpm vitest run 2>&1 | tail stays a whole suite" "$(decision claude "pnpm vitest run 2>&1 | tail")" "deny"
+
+# branch -D of a branch this session created (THV-1361). Each starts at ahead, so it holds a commit
+# that is not on origin and gh finds no merged PR: only the session's own record can allow it.
+as_session() { run claude "$(jq -nc --arg c "$1" --arg d "$REPO" --arg s "$2" '{session_id:$s,cwd:$d,tool_input:{command:$c}}')" | sed 's/^rc=0 //' | jq -r '.hookSpecificOutput.permissionDecision // "allow"'; }
+expect "a chain that creates then deletes a branch is allowed" "$(decision claude "git branch scratch/x ahead && git log -1 scratch/x && git branch -D scratch/x")" "allow"
+g -C "$REPO" branch scratch/x ahead
+expect "branch -D of a branch this session created is allowed" "$(decision claude "git branch -D scratch/x")" "allow"
+decision claude "git branch unpushed-commit ahead" >/dev/null
+expect "branch -D of a branch that existed before the session's git branch <name> is denied" "$(decision claude "git branch -D unpushed-commit")" "deny"
+OTHER="$TMP/thoven/other"
+g init -q -b main "$OTHER" && g -C "$OTHER" commit -q --allow-empty -m init
+decision claude "git branch scratch/y" "$OTHER" >/dev/null
+g -C "$OTHER" branch scratch/y && g -C "$REPO" branch scratch/y ahead
+expect "branch -D of a name the session created in another repo is denied" "$(decision claude "git branch -D scratch/y")" "deny"
+decision claude "git checkout -b scratch/co ahead" >/dev/null
+g -C "$REPO" branch scratch/co ahead
+expect "branch -D of a branch made by checkout -b is allowed" "$(decision claude "git branch -D scratch/co")" "allow"
+decision claude "git switch -c scratch/sw ahead" >/dev/null
+g -C "$REPO" branch scratch/sw ahead
+expect "branch -D of a branch made by switch -c is allowed" "$(decision claude "git branch -D scratch/sw")" "allow"
+decision claude "git worktree add ../wt-scratch -b scratch/wt ahead" "$TMP/thoven/wt-clean" >/dev/null
+g -C "$TMP/thoven/wt-clean" worktree add -q ../wt-scratch -b scratch/wt ahead
+expect "branch -D in the main checkout of a branch worktree add -b made from a linked tree is allowed" "$(decision claude "git branch -D scratch/wt")" "allow"
+decision claude "git branch scratch/s ahead" >/dev/null
+g -C "$REPO" branch scratch/s ahead
+expect "branch -D of a branch another session created is denied" "$(as_session "git branch -D scratch/s" "$SESSION-other")" "deny"
+as_session "git branch scratch/n ahead" "" >/dev/null
+g -C "$REPO" branch scratch/n ahead
+expect "a call with no session id records no branch" "$(as_session "git branch -D scratch/n" "")" "deny"
 
 [ "$failed" -eq 0 ] || exit 1
 echo "all passed"
