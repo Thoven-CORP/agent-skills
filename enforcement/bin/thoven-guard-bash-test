@@ -204,5 +204,29 @@ expect "rspec on a spec with 2>&1 is allowed" "$(decision claude "bundle exec rs
 expect "echo text piped to bash is judged" "$(decision claude "echo \"git stash push\" | bash")" "deny"
 expect "a 20 KB heredoc returns within 5 s" "$(fast $'python3 - <<\'PY\'\n'"$(printf 'print("step")  # bundle exec rspec, git stash push, x | y; z\n%.0s' $(seq 330))"$'\nPY')" "allow"
 
+# Undoing your own files (THV-1361). Every edited file here is dirty, so only the edited list can
+# allow it; clean.txt and lib/ are clean, other.txt is another session's dirty file.
+RR="$TMP/thoven/shared"
+g init -q -b main "$RR"
+mkdir -p "$RR/db" "$RR/lib"
+for f in tsconfig.json db/structure.sql a.txt b.txt clean.txt other.txt lib/x.txt; do echo x >"$RR/$f"; done
+g -C "$RR" add . && g -C "$RR" commit -q -m files
+for f in tsconfig.json db/structure.sql a.txt b.txt other.txt; do echo y >>"$RR/$f"; done
+echo new >"$RR/untracked.txt"
+printf "$RR/%s\n" tsconfig.json db/structure.sql a.txt b.txt >>"/tmp/claude-thoven/$SESSION/edited"
+expect "restore <edited> 2>/dev/null is allowed" "$(decision claude "git restore tsconfig.json 2>/dev/null" "$RR")" "allow"
+expect "restore <edited> > /dev/null 2>&1 is allowed" "$(decision claude "git restore a.txt b.txt > /dev/null 2>&1" "$RR")" "allow"
+expect "restore <edited> 2>&1 | tail is allowed" "$(decision claude "git restore db/structure.sql 2>&1 | tail -2" "$RR")" "allow"
+expect "restore ./<edited> is allowed" "$(decision claude "git restore ./tsconfig.json" "$RR")" "allow"
+expect "checkout -- <edited> >/dev/null is allowed" "$(decision claude "git checkout -- a.txt >/dev/null" "$RR")" "allow"
+expect "stash push -- <edited> 2> err.log is allowed" "$(decision claude "git stash push -- b.txt 2> err.log" "$RR")" "allow"
+expect "restore <another session's file> 2>/dev/null is denied" "$(decision claude "git restore other.txt 2>/dev/null" "$RR")" "deny"
+expect "sed -i then restore of a clean file is allowed" "$(decision claude "sed -i '' s/x/z/ clean.txt; git restore clean.txt" "$RR")" "allow"
+expect "sed -i then restore of another session's dirty file is denied" "$(decision claude "sed -i '' s/x/z/ other.txt; git restore other.txt" "$RR")" "deny"
+expect "stash push -u of an untracked file is denied" "$(decision claude "git stash push -u -- untracked.txt" "$RR")" "deny"
+expect "restore of a clean directory is denied" "$(decision claude "git restore lib" "$RR")" "deny"
+expect "restore \$f is denied" "$(decision claude 'for f in clean.txt; do git restore $f; done' "$RR")" "deny"
+expect "pnpm vitest run 2>&1 | tail stays a whole suite" "$(decision claude "pnpm vitest run 2>&1 | tail")" "deny"
+
 [ "$failed" -eq 0 ] || exit 1
 echo "all passed"
