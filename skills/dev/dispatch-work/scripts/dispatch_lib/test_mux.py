@@ -5,7 +5,7 @@ from unittest import mock
 
 import testkit  # noqa: F401
 from dispatch_lib.model import PaneRef, State
-from dispatch_lib.mux import HerdrMux, Launch, RexMux, normalise_rex, screen_fingerprint
+from dispatch_lib.mux import HerdrMux, Launch, MuxError, RexMux, normalise_rex, screen_fingerprint
 from dispatch_lib.runner import Result
 from testkit import FakeRunner
 
@@ -69,6 +69,19 @@ class RexMuxCalls(unittest.TestCase):
         run = FakeRunner({("rex", "block", "call"): Result(3, "", 'Error: block target "block:x" not found')})
         self.assertEqual(RexMux(run).status(PaneRef("rex", "block:x", "session:s")).state, State.GONE)
 
+    def test_a_missing_session_or_rex_binary_raises_instead_of_reading_as_gone(self):
+        for err in ('Error: session target "session:s" not found', "zsh: command not found: rex"):
+            with self.subTest(err):
+                run = FakeRunner({("rex", "block", "call"): Result(1, "", err)})
+                with self.assertRaises(MuxError):
+                    RexMux(run).status(PaneRef("rex", "block:x", "session:s"))
+
+    def test_paste_waits_through_the_injected_sleep_before_enter(self):
+        slept, run = [], FakeRunner()
+        RexMux(run, sleep=slept.append).type_text(PaneRef("rex", "block:x", "session:s"), "hi")
+        self.assertEqual(slept, [0.5])
+        self.assertEqual(run.calls[-1], ["rex", "send-key", "-s", "session:s", "-b", "block:x", "enter"])
+
     def test_status_reads_process_then_records(self):
         run = FakeRunner({
             ("rex", "block", "call", "-s", "session:s", "-b", "block:x", "process"): Result(0, json.dumps(CLAUDE), ""),
@@ -106,9 +119,6 @@ class HerdrMuxCalls(unittest.TestCase):
         self.assertNotEqual(a, c)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class HerdrSpawn(unittest.TestCase):
     def test_the_opening_prompt_rides_agent_start_and_nothing_is_typed(self):
@@ -123,3 +133,7 @@ class HerdrSpawn(unittest.TestCase):
         self.assertEqual(start[start.index("--") + 1:],
                          ["-n", "build-thv-1", "--model", "haiku", "Read and follow your brief: /b.md"])
         self.assertEqual([c for c in run.calls if c[1:3] in (["agent", "prompt"], ["agent", "send-keys"])], [])
+
+
+if __name__ == "__main__":
+    unittest.main()

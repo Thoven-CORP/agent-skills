@@ -13,6 +13,8 @@ from . import procs
 from .model import Backend, DispatchError, PaneRef, State, Status, UsageError
 from .runner import Result, Runner
 
+# Rex's error for a block that no longer exists. A missing session or a missing `rex` must raise instead.
+REX_BLOCK_GONE_RE = re.compile(r'block target "[^"]*" not found', re.I)
 SHELLS = {"zsh", "bash", "sh", "fish", "dash", "login", "tcsh", "csh", "ksh", "nu"}
 
 
@@ -85,8 +87,8 @@ def normalise_rex(records: list[dict], process: dict | None) -> Status:
 class RexMux:
     KEYS = {"enter": "enter", "esc": "escape", "escape": "escape", "ctrl+c": "ctrl+c"}
 
-    def __init__(self, run: Runner):
-        self.run = run
+    def __init__(self, run: Runner, sleep=time.sleep):
+        self.run, self.sleep = run, sleep
 
     def _rex(self, *args, input=None, timeout=20) -> Result:
         return self.run(["rex", *args], input=input, timeout=timeout)
@@ -96,7 +98,7 @@ class RexMux:
         if args is not None:
             argv.append(json.dumps(args))
         res = self._rex(*argv)
-        if not res.ok and "not found" in (res.err + res.out).lower():
+        if not res.ok and REX_BLOCK_GONE_RE.search(res.err + res.out):
             return None
         return _json(res, f"rex block call {method}")
 
@@ -150,7 +152,7 @@ class RexMux:
         body = json.dumps({"block_id": pane.pane, "event": {"type": "paste", "payload": {"text": text}}})
         self._ok(self._rex("api", "call", "-s", pane.session, "block.event", "-", input=body), "rex paste")
         # An Enter that lands while the TUI is still ingesting the paste becomes a newline in the box.
-        time.sleep(0.5)
+        self.sleep(0.5)
         self.key(pane, "enter")
 
     def key(self, pane, key):
@@ -159,7 +161,7 @@ class RexMux:
 
     def close(self, pane):
         res = self._rex("block", "close", "-s", pane.session, pane.pane)
-        if not res.ok and "not found" not in (res.err + res.out).lower():
+        if not res.ok and not REX_BLOCK_GONE_RE.search(res.err + res.out):
             raise MuxError(f"rex block close failed: {res.err.strip()[:300]}")
 
     def _agent_pid(self, pane):

@@ -18,7 +18,13 @@ FROZEN_AFTER = 600
 FROZEN_CPU = 5.0
 LIVE_GRACE = 600
 TICK_ERROR_AFTER = 4
-LIMIT_RE = re.compile(r"limit reached|resets at|usage limit|weekly limit", re.I)
+# The CLIs' own banners, at the start of a line after at most a glyph and indent: Claude "⎿ You've hit your
+# limit · resets 3pm", "⎿ 5-hour limit reached ∙ resets 3pm", "⎿ Claude usage limit reached. Your limit will
+# reset at 5pm"; Codex "■ You've hit your usage limit." A report quoting one is indented under a label.
+LIMIT_RE = re.compile(r"^\W{0,8}(?:you['’]ve hit your (?:usage )?limit\b|claude usage limit reached\b|"
+                      r"(?:[\w-]+ ){0,2}limit reached\b)", re.I)
+# A banner sits just above the input box and status line; anything higher is scrollback.
+LIMIT_TAIL = 12
 ACTIVE = (State.WORKING, State.BLOCKED)
 SETTLED = (State.DONE, State.IDLE)
 
@@ -67,8 +73,8 @@ class Gates:
 
     def limit_line(self) -> str | None:
         def check():
-            screen = self.mux.read(self.reg.pane, 30)
-            return next((line.strip() for line in screen.splitlines() if LIMIT_RE.search(line)), None)
+            lines = [line for line in self.mux.read(self.reg.pane, 40).splitlines() if line.strip()][-LIMIT_TAIL:]
+            return next((line.strip() for line in lines if LIMIT_RE.search(line)), None)
         return self._soft("limit_line", check, None)
 
 

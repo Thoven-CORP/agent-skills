@@ -299,6 +299,45 @@ def boom(message):
     return raise_
 
 
+PROMPT = "\n╭────╮\n│ >  │\n╰────╯\n  ? for shortcuts\n"
+BANNERS = {
+    "claude": "⏺ Committed 3 files.\n\n  ⎿  You've hit your limit · resets 3pm (America/New_York)\n"
+              "     /upgrade to increase your usage limit.\n",
+    "claude old": "  ⎿  Claude usage limit reached. Your limit will reset at 5pm (America/New_York).\n",
+    "claude 5-hour": "  ⎿  5-hour limit reached ∙ resets 3pm\n",
+    "claude weekly": "  ⎿  Opus weekly limit reached ∙ resets Oct 24, 9am\n",
+    "codex": "■ You've hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit "
+             "https://chatgpt.com/codex/settings/usage to purchase more credits or try again in 2 hours 13 minutes.\n",
+}
+NOT_BANNERS = {
+    "report prose": "Rulings      the API quota resets at 5pm, so I batched calls\n"
+                    "Noticed      the usage limit page in settings has no tests\n",
+    "quoted banner in a report": "  Noticed   - You've hit your usage limit is untranslated in es.json\n",
+    "banner far up the screen": "  ⎿  5-hour limit reached ∙ resets 3pm\n" + "".join(f"line {n}\n" for n in range(20)),
+}
+
+
+class Limit(TickCase):
+    def settle_with_report(self, screen):
+        reg = self.reg()
+        self.mux.screen = screen + PROMPT
+        self.tick(reg, working(), 0)
+        self.report(reg, 30)
+        return self.tick(reg, done(), 60)
+
+    def test_each_cli_limit_banner_alerts(self):
+        for name, banner in BANNERS.items():
+            with self.subTest(name):
+                self.setUp()
+                self.assertEqual(self.settle_with_report(banner), ["LIMIT"])
+
+    def test_limit_words_in_a_report_or_far_up_the_screen_do_not(self):
+        for name, screen in NOT_BANNERS.items():
+            with self.subTest(name):
+                self.setUp()
+                self.assertEqual(self.settle_with_report(screen), [])
+
+
 class GateFailures(TickCase):
     def test_a_failing_gate_still_records_the_settle_and_notes_the_error(self):
         reg = self.reg()
