@@ -128,7 +128,11 @@ changes to upstream skills live here, as a string patch in
 
 `bin/thoven-worktree create <fe|be> <area> <n>` is the one way a ticket worktree
 gets made: `~/thoven/<repo>-thv-<n>` on `<area>/thv-<n>` from `origin/main`, with
-the env file copied, dependencies installed and backend storage blobs linked. Git
+the env file copied, dependencies installed and backend storage blobs linked. With
+`--project`, the first Build ticket cuts the Project's tree instead: `~/thoven/<repo>-<slug>`
+on its registry row's branch, else `<slug>/integration`, pushed to origin. A Project branch
+counts only when origin has it, so a local-only one (merged and deleted, or never pushed) is
+refused, never reused. Git
 carries none of those into a new worktree, and Claude's own `--worktree` names
 the branch `worktree-<name>`, so both repos wire `hook` mode as Claude's
 `WorktreeCreate` and `bootstrap` as Cursor's and the Codex app's setup step. A

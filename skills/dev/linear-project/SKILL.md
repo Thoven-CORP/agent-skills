@@ -62,11 +62,13 @@ or assume template edits sync projects or create documents. Do not create issue 
 
 When the Project will build code, add two items to the proposal: the integration branch name
 (pattern `<project-slug>/integration`) and the repos it touches (fe, be). After Andres confirms,
-write both in the Project's Sources of truth, because Linear is the source of truth. Then run
+write both in the Project's Sources of truth, because Linear is the source of truth. When the
+confirmed name differs from the slug `thoven-worktree` derives from the Project name, run
 `~/thoven/agent-skills/enforcement/bin/thoven-worktree register-project <project> <fe|be> <branch>`
 for each repo. The registry is a cache of the branch name, and committing its row is a normal
 agent-skills commit. Setup creates no worktree and pushes nothing. The first Build ticket cuts the
-tree, since a pnpm install costs about 1.5 GB and a design-only Project never needs it.
+tree and pushes the branch, since a pnpm install costs about 1.5 GB and a design-only Project never
+needs it.
 
 ## Hand off
 
