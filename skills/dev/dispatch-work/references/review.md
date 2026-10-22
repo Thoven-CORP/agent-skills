@@ -9,7 +9,9 @@ work is reviewed by a Sonnet subagent of main with the same brief.
 1. Rerun only the files the builder touched, one per run, and compare with the report.
 2. On a UI ticket, open every parity image and show Andres. `SKILL.md` close step 6.1 uploads them
    after he confirms.
-3. Merge backend before the frontend that reads it. UI merges after Andres sees the evidence.
+3. Merge backend before the frontend that reads it, and only when the backend change is backward
+   compatible: a newly required request field stays optional until the frontend that sends it is on
+   staging. UI merges after Andres sees the evidence.
 4. The verify cadence is andres-mode "Check your own work": `bin/verify --base <integration branch>` once before DONE, CI on the integration PR.
 
 ## Working if
@@ -49,7 +51,8 @@ run `bin/verify --base <integration branch>` yourself and paste the block.
    did not confirm is an important finding.
 3. A SKIPPED `mutation` row on a diff touching `lib/`, a service or a model is a finding: run with `--mutation`. Claims the receipt does not cover get a direct check. /verify-this covers those claims only.
 4. /mattpocock-skills:code-review against <base>.
-5. /thermo-nuclear-code-quality-review when the diff crosses a module or passes ~300 lines. Past
+5. Thermo, sized to the diff. Under ~300 lines in one module: /thermo-nuclear-code-quality-review.
+   Crossing a module or past ~300 lines: /thermos (bug and security review plus code quality). Past
    ~1k added lines, shard it by surface from `git diff --numstat`: one shared BRIEF.md with the
    rules and the pinned head, one small findings file per shard, sonnet for structural and
    lower-risk shards.
@@ -60,10 +63,19 @@ Write findings into your reply and into the ticket's one evidence folder
 Reply to main with herdr agent prompt {{MAIN_PANE}} "VERIFIED THV-<id>" or "FINDINGS THV-<id>",
 then a SPEC PARITY table (decision id, verdict, evidence), a DESIGN PARITY table (state,
 frame, verdict, image) on a UI ticket, and a table: Acceptance line or claim, verdict, evidence. Findings carry file:line and a
-severity: critical, important or minor.
+severity: critical (data loss, security, a broken core flow), important (a user hits it in the
+normal flow, or a difference from a frame Andres did not confirm) or minor (everything else: rare
+edge cases, test nits, style).
 
 <builder's report, pasted>
 ```
+
+## Every PR put to Andres
+
+A PR main asks Andres to merge has had, on its final diff, /mattpocock-skills:code-review, thermo
+sized as in verifier step 5, and /deslop. That includes hotfix, follow-up and CI-fix PRs that never
+had a verifier pane. The go line reports the result in one line. After a wave of ticket merges
+into an integration branch, run one /deslop and thermo pass over the merged range.
 
 ## Handling findings
 

@@ -23,6 +23,8 @@ owns its half, and the brief tells the pane which half is main's.
 - Settle a proto sizing or layout edge case during a build by the rule Andres already set, write it into RULINGS and tell him in one line. Ask him only a product call no rule covers. (LEARNINGS 2026-09-27)
 - Give a minor fix, fix round or review pass a clean existing tree, and check `df -h /` and `memory_pressure` before you start heavy panes. (LEARNINGS 2026-10-11)
 - List the ticket's Linear comments right before `gh pr merge`. A ruling newer than the last commit holds the merge until the diff applies it. (LEARNINGS 2026-10-03)
+- On a UI or copy ticket, show Andres the before and after at the builder's first DONE, so his notes ride fix round 1 and the verifier runs once on the final diff. (LEARNINGS 2026-10-22)
+- After every `gh pr merge`, read back `gh pr view <n> --json state,mergeCommit`: a nonzero exit means unknown (`--delete-branch` fails after a good merge when a worktree holds the branch), and a PR already clean merges without `--auto`. (LEARNINGS 2026-10-22)
 
 ## Roles
 
@@ -40,7 +42,9 @@ edits the pane's code. Fixes go back to a pane.
 **Linear and the cockpit.** Main moves status with `~/.agents/skills/workspace/tools/set-status.js`, cockpit open or not. The
 cockpit's ↻ for `started`, `pr` and `merged` clears on its next Linear read, within 5 minutes. A
 `report` ↻ and a pane-gone row wait for Andres: his ↻ or `u` is his approval to post the report
-comment, and it clears the row. Main leaves both to him and does not run `/workspace update`.
+comment, and it clears the row. Main leaves both to him and does not run `/workspace update`, but
+every merge or Done report ends with the pending Linear writes (status moves, the Project Update) as a
+one-line go, so Linear never goes stale without Andres knowing.
 
 ## Layout
 
@@ -71,6 +75,10 @@ second pane on the same tree.
 Then read [references/agents.md](references/agents.md). The ticket's complexity picks the tier,
 and `scripts/agents.py` says what that tier runs today. Several small same-shape tickets go to one pane as
 one dispatch.
+
+Before dispatching onto an integration branch, compare its `lefthook.yml` and `bin/verify` with
+`origin/main`. When they differ, offer Andres a catch-up merge of `main` (merge commit) as a go first:
+an old branch's pre-push hook runs checks `main` dropped, and panes end up pushing with `--no-verify`.
 
 **Done when:** the blockers are merged and no pane holds the ticket, and you can state the CLI, the
 model, the tier, and one line on why this tier.
@@ -130,8 +138,16 @@ In Progress.
 Arm `scripts/watch.sh <pane> [<pane>...]` with the Monitor tool, or as a background command. It
 exits on the first thing main must look at, and prints why. The watcher is the only poll: a
 `sleep` loop in main's shell costs a turn per tick and the harness refuses long ones. Keep doing main's own work meanwhile. Every exit wakes main.
-Every wake ends with one plain-English line to Andres saying what happened and what main did,
-then the watcher re-armed on every pane still live.
+A `HEARTBEAT` exit re-arms silently. Andres gets one plain-English line only for `SETTLED`,
+`BLOCKED`, `GONE`, `FROZEN` or a pane status line: what happened and what main did. Then re-arm on
+every pane still live.
+
+When the harness kills a watcher (memory pressure, a stopped task), re-arm at once with herdr's own
+wait, which is lighter: `herdr agent wait <pane> --until done --until blocked` as a background
+command, one per pane. Tell Andres in one line. Never leave a live pane unwatched until he asks.
+
+On every wake, also list `$TMPDIR/dispatch/out/`. A file there is a status line whose send failed
+(main was at a dialog): handle it as if it had arrived, then delete it.
 
 A status line from the pane arrives as a message in main's own pane:
 
@@ -156,6 +172,7 @@ else. Read `herdr agent read <pane> --source recent-unwrapped --lines 80` and na
 | -- | -- |
 | Approval or question dialog (`blocked`) | Answer it when it is inside the brief's scope. Otherwise ask Andres. |
 | Provider, rate-limit or network error | Wait two minutes and send `continue`. Still failing: restart the agent in the same pane with the brief and its last commit. |
+| Usage-limit banner ("limit reached", "resets at") | Read the reset time off the screen and tell Andres in one line. Arm a background wait until then. After it, run `git -C <tree> status` for a half-done merge or rebase in each stopped pane, then send `continue`. Andres never has to say the limits are back. |
 | Turn ended without a status line | Send: `Reply with your status line now: DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT or BLOCKED.` |
 | Shell prompt, agent gone (`GONE`) | Restart the agent in the same pane. Send the brief plus `Resume from <last commit>.` |
 | `working` with a frozen screen (`FROZEN`) | Read further back. A long test run or `waiting for verification lock` is fine: re-arm. A hung tool: `herdr agent send-keys <pane> esc`, then ask for status. |
@@ -179,12 +196,16 @@ what the receipt covers.
 After the verifier passes, show Andres the evidence table and, on a UI ticket, the parity images. On his confirmation:
 
 1. Move the ticket to **Done** with one comment: the evidence table, the `THOVEN_VERIFY` block and
-   the merged SHA. Done means merged and a user can reach it. On a UI ticket, upload the parity
+   the merged SHA. Done means the job is finished and merged into its target, the Project's
+   integration branch or `main`. The comment and the report say where it lives: "Done on
+   `<branch>`, reaches staging when the branch lands", or "Done on `main`, on staging". On a UI ticket, upload the parity
    images to the issue and place them on the board beside their frames.
 2. Minor findings are fixed on the branch before Done, or dropped with the reason in that comment.
    They never become tickets. Each `Noticed` line of the report, a problem outside the ticket's
    code, goes as one line into an existing grouped Linear issue, or a new issue only when none fits.
-3. `herdr pane close` every pane this dispatch opened. Close the tab when it is empty.
+3. `herdr pane close` every pane this dispatch opened. Close the tab when it is empty. Remove the
+   ticket's own tree with `thoven-worktree remove` (it drops the tree's databases), never a live
+   integration tree, and delete the ticket's merged branches locally and on origin.
 4. After Andres has looked at the evidence, delete `$TMPDIR/dispatch/<THV-x>.md`,
    `~/.thoven-artifacts/THV-<id>/evidence/` and any file the dispatch wrote outside the repo.
 

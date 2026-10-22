@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-22 — CI red is real until proven a flake; the session he talks to does the work
+
+> reflect · 2026-10-22 · 19da0b54 · 889d1f76 · a010cb0c · 01a151d4 · broken-rule · applied · seen 3
+
+**What happened.** Agents called real CI failures flakes and took it back ("I was wrong to call it a flake", twice), and main's frontend CI stayed red for days with "nothing in this Project owns that". Separately, a main routed Andres's release tasks through another main's pane, and he said "stop messaging the live lesson panel handle everthign handle items in this chat".
+**Why.** The not-flaky fact lived in two project memories, not a procedure. No rule said which session owns work Andres hands it.
+**What changed.** Check your own work: a CI failure is real until the same SHA passes on rerun and the test passes on main's latest run, and red on main gets a named owner the same day. Delegation: the session he talks to does the work; another main's pane is read for state only.
+
 ## 2026-10-22 — merge lines name the method; "where are we" walks the user's list; one-file visual explainers; keep the user's voice
 
 > reflect · 2026-10-22 · 889d1f76 · 39a12a43 · ec30f47b · 01a151d4 · 93f7415c · broken-rule · applied · seen 3

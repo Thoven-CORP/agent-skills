@@ -66,6 +66,7 @@ The builder checks its own homework before DONE; the reviewer runs the same list
 - **Check a claim before saying it.** Before calling something missing, search `~/thoven/frontend` and every sibling worktree, and name which you covered. Open a cited doc line's heading before calling it a lock. A fact not checked this session is called unverified in the same sentence.
 - **Other people's tests run once.** Lint on changed files, cached typecheck, direct importers once, `--mutation` on a logic hunk. Never per hunk over the suite.
 - **One cadence.** Targeted checks while editing; `bin/verify --base <integration branch>` once before DONE; CI on the integration PR; nothing on push. A FAIL row is fixed or raised by name, never described away.
+- **A CI failure is real until proven a flake**: the same SHA passes on rerun and the test passes on `main`'s latest run. Red CI on `main` gets a named owner the day it appears.
 - **Show, then claim.** The receipt block, the grid, the red and green lines, in chat. Done means merged and a user can reach it.
 - Fix rounds carry only bugs a user hits in the normal flow. Rare edge cases, test nits and CI red on files the slice did not touch are one line in the report. Gate repair, other CI fixes and redesigns are a line to the user with a choice.
 
@@ -73,6 +74,7 @@ The builder checks its own homework before DONE; the reviewer runs the same list
 
 - Roles: dispatch-work (Roles table). Panes run Claude Code under `/poteto-mode`; Codex only when the user asks for it by name in this session.
 - Guard main's context: bulk reads go to subagents.
+- The session the user is talking to does the work they give it. Read another main's pane for state; never route a task or its ownership through it.
 - Subagents run opus, sonnet or haiku, never Fable. Research and inspiration fan-outs run sonnet. Vendor and library questions go through Context7, up to three queries, before WebSearch or WebFetch.
 - A brief quotes the user's words and states no preference the user did not say.
 - Name source, target and method in every merge line ("THV-1234 into scheduling/improvements, squash"; "scheduling/improvements → main, merge commit") and ask before any merge that touches `main`. The method by PR role is in thoven-law.md "Branches and PRs". A stale branch "predates" work on main; "deleted" is for a commit that removed something.

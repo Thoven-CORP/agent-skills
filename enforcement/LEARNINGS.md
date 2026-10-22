@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-22 — CI gates only PRs into main; backend-first needs backward compatibility; docs merge in the pass
+
+> reflect · 2026-10-22 · 39a12a43 · 889d1f76 · d9f3ef92 · a010cb0c · 01a151d4 · broken-rule · applied · seen 4
+
+**What happened.** #75's merge table said a ticket into an integration branch merges `--auto --squash`, "gated by the required CI check", but `ci.yml` in both repos runs only on PRs into `main` and `release/1.0`. Main hand-dispatched CI about 140 times and pushed about 60 throwaway `ci/*` branches. Backend #278 made `source_timezone` required and merged hours before the frontend that sends it, so staging refused every reschedule for six hours. Docs-only PRs waited for a merge question, and Andres said "just megre it now this is documentation" four times.
+**Why.** The table described a gate that does not exist, Review order said backend-first with no compatibility condition, and the table had no docs row.
+**What changed.** The law now says CI runs only on PRs into `main`: a ticket into an integration branch merges `--squash` on its verify block and verifier pass, and CI gates the landing. Docs-only PRs merge in the same pass. Backend-first holds only for a backward-compatible change. Andres chose this over turning CI on for integration branches.
+
 ## 2026-10-22 — zsh aborts on unmatched globs
 
 > reflect · 2026-10-22 · d631 · c775 · tooling · applied · seen 2
