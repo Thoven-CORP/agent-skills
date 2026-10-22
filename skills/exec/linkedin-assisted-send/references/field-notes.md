@@ -29,7 +29,7 @@ CRM `Outreach Draft` = a full email: `Subject: …` line, blank line, `Hi {First
 
 The footer `linkedin.com/in/<slug>` is sometimes a stale/partial vanity slug that 404s. When a profile 404s:
 1. LinkedIn people-search: `linkedin.com/search/results/people/?keywords=%22Full Name%22` (+ company).
-2. If that fails, `mcp__exa__linkedin_search_exa` "Full Name Company".
+2. If that fails, `mcp__exa__linkedin_search_exa` "Full Name Company" (optional; not connected as of 2026-10-22). Without Exa, use `WebSearch` `site:linkedin.com/in "Full Name" Company`.
 3. If still unresolved but they have a candidate email → email fallback (Gmail draft).
 4. If no profile and no email → `On Hold` with the reason in `Next Action`.
 Don't rabbit-hole: ~2 tries then fall back. (Matthew Pittinsky and Shailu Tipparaju both 404'd on 2026-05-21.)

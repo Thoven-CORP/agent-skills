@@ -5,7 +5,7 @@ description: Link-graph maintenance for the Executive Assistant vault. Builds an
 
 # vault-link: Vault Link-Graph Maintenance
 
-Adapted from claude-obsidian's wiki-lint + wiki-ingest patterns (Karpathy LLM Wiki) for the Executive Assistant vault at `/Users/andresmartinez/Vaults/Executive Assistant/`. The vault is an operational system, not a fresh wiki — work WITH its existing structure, never restructure it.
+Adapted from claude-obsidian's wiki-lint + wiki-ingest patterns (Karpathy LLM Wiki) for the Executive Assistant vault at `/Users/andresmartinez/Vaults/Executive-Assistant/`. The vault is an operational system, not a fresh wiki — work WITH its existing structure, never restructure it.
 
 ## Vault conventions (must hold)
 

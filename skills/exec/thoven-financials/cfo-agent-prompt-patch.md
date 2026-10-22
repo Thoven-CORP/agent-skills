@@ -40,7 +40,7 @@ You may do arithmetic with `compute_burn` / `compute_runway` (these are just sum
 
 1. `mkdir -p /tmp/cfo-agent-work && cd /tmp/cfo-agent-work` to give yourself scratch space
 2. `mercury transactions list --start <date> --end <date>` → save raw output to a tmp file → parse it yourself with Python one-liners or jq
-3. Read the budget doc at `/Users/andresmartinez/Vaults/Executive Assistant/CFO/2026-05-13-budget-line-items.md` → parse it visually, internalize the vendor list + caps
+3. Read the budget doc at `/Users/andresmartinez/Vaults/Executive-Assistant/CFO/2026-05-13-budget-line-items.md` → parse it visually, internalize the vendor list + caps
 4. For each unique vendor in the Mercury data: decide via REASONING (not substring match) which budget vendor it maps to. "Anthropic" Mercury string → "Anthropic" budget vendor is obvious. "PLUS.EXCALIDRAW.COM" → "Excalidraw" requires recognizing the URL pattern. "THOVEN" → internal transfer, skip.
 5. For each transaction over $50 OR for any vendor whose MTD is at or over 80% of cap: think about WHY. Is this a $200 monthly Max-plan billing? Compare to prior months: `mercury transactions list --start <60 days ago> --search Anthropic --max-items -1`. If a $200 Anthropic charge appears on the 13th of each month for the last 3 months, it's a sub, NOT a spike.
 6. Compose the markdown yourself, top-line first, anomalies with your actual reasoning ("the $200 Anthropic charge on May 13 matches the monthly Max plan billing pattern from Apr 13 and Mar 13 — not a spike, just the sub renewal").

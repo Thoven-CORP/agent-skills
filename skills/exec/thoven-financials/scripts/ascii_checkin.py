@@ -101,7 +101,7 @@ def main() -> int:
     try:
         analysis = build_checkin_analysis()
     except MercuryAuthError as e:
-        print(ascii_renderer.render_error("Mercury auth failed", f"Run `mercury login`: {e}"))
+        print(ascii_renderer.render_error("Mercury auth failed", f"OAuth session expired. Run `mercury login`: {e}"))
         return 1
     except MercuryCLIError as e:
         print(ascii_renderer.render_error("Mercury CLI error", str(e)))

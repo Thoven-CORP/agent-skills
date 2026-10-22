@@ -9,7 +9,7 @@ Conversational interface for managing the Thoven burn rate tracker spreadsheet.
 
 ## File Location
 
-`/Users/andresmartinez/Vaults/Executive Assistant/Thoven_Burn_Rate_Tracker.xlsx`
+`/Users/andresmartinez/Vaults/Executive-Assistant/Thoven_Burn_Rate_Tracker.xlsx`
 
 ## Core Operations
 
@@ -145,7 +145,7 @@ Log 20 categorized transactions?
 
 ### 7. Weekly CFO Report
 
-**User says:** "weekly cfo", "cfo report", "run cfo" — or invoked via `/schedule` routine Monday 7am ET.
+**User says:** "weekly cfo", "cfo report", "run cfo". The local Monday 7am launchd job (`co.thoven.cfo-weekly`, `scripts/run_cfo_agent.sh`) was retired 2026-10-22, so this report runs only when invoked by hand.
 
 **Process:**
 ```python
@@ -187,10 +187,14 @@ python3 -m scripts.weekly_report                                  # write real r
 
 **Setup (one-time):**
 - Mercury CLI: `curl -sSf https://cli.mercury.com/install.sh | sh`
-- Auth: `mercury login`
+- Auth: `mercury login` (browser OAuth session; it expires, see Troubleshooting below)
 - Verify: `mercury accounts list`
 
-**Scheduling:** Use `/schedule` skill to create a weekly routine that runs `python3 -m scripts.weekly_report` Monday 7am ET. Routine name: `cfo-weekly`.
+**Scheduling:** none is running. The local launchd job was retired 2026-10-22. To automate again, ask Andres first, then use the `/schedule` skill for a cloud routine. A cloud routine cannot reach the local `mercury` CLI session.
+
+## Troubleshooting Mercury CLI
+
+The `mercury` CLI (v0.7.2) authenticates with a browser OAuth session, not an API key. When it fails with an auth, login, credential or unauthorized error, the session has **expired**. Run `mercury login`, finish the browser flow, then check with `mercury accounts list`. Do not rotate a Mercury API key for this: the CLI does not read one. The `MERCURY_API_KEY` secret belongs only to the Cloudflare `notion-cfo-worker`.
 
 ## Natural Language Variations
 

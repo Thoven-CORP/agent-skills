@@ -1,8 +1,10 @@
 #!/bin/bash
-# CFO Weekly Analyst — launchd wrapper
+# CFO Weekly Analyst — headless wrapper
 # Invokes Claude headlessly to run the cfo-weekly-analyst subagent.
-# Triggered by ~/Library/LaunchAgents/co.thoven.cfo-weekly.plist (Mon 7am ET)
-# or manually: bash ~/.claude/skills/thoven-financials/scripts/run_cfo_agent.sh
+# The launchd trigger (~/Library/LaunchAgents/co.thoven.cfo-weekly.plist, Mon 7am ET)
+# was retired 2026-10-22. Run manually only:
+#   bash ~/.claude/skills/thoven-financials/scripts/run_cfo_agent.sh
+# Mercury auth failures mean the CLI's OAuth session expired: run `mercury login`.
 
 set -euo pipefail
 
@@ -35,7 +37,7 @@ Specifically:
 
 The subagent has explicit anti-shortcut rules in its system prompt. Trust it. Do not second-guess.
 
-If for any reason you cannot dispatch the subagent, write a failure stub to /Users/andresmartinez/Vaults/Executive Assistant/CFO/weekly-reports/failed-$(date +%Y-%m-%d)-cfo-report.md explaining the issue, and exit.'
+If for any reason you cannot dispatch the subagent, write a failure stub to /Users/andresmartinez/Vaults/Executive-Assistant/CFO/weekly-reports/failed-$(date +%Y-%m-%d)-cfo-report.md explaining the issue, and exit.'
 
 claude \
     --print \

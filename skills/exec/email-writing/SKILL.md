@@ -51,7 +51,7 @@ Get the specific recipient(s):
 **CRITICAL**: Before drafting, READ the email language guide to initialize context:
 
 ```
-Read: /Users/andresmartinez/Vaults/Executive Assistant/Agent Knowledge/Guides/email-language-guide.md
+Read: /Users/andresmartinez/Vaults/Executive-Assistant/Agent Knowledge/Guides/email-language-guide.md
 ```
 
 Use the guide to understand:

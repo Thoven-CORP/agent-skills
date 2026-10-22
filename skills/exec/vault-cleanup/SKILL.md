@@ -5,7 +5,7 @@ description: Archive old files from Obsidian vault Active folders. Use for month
 
 # Vault Cleanup & Archival
 
-Monthly maintenance for `/Users/andresmartinez/Vaults/Executive Assistant/` - moves stale files from Active/ to Archive/ folders.
+Monthly maintenance for `/Users/andresmartinez/Vaults/Executive-Assistant/` - moves stale files from Active/ to Archive/ folders.
 
 ## Vault Structure
 
@@ -53,4 +53,4 @@ After archival: "Archived X files. Research/Active: 60 files (was 74)."
 
 ---
 
-Archival rules detailed in `/Users/andresmartinez/Vaults/Executive Assistant/CLAUDE.md`
+Archival rules detailed in `/Users/andresmartinez/Vaults/Executive-Assistant/CLAUDE.md`

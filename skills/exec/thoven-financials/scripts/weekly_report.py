@@ -17,7 +17,7 @@ from analysis import compute_burn, mtd_by_vendor, detect_overages, detect_anomal
 from report_writer import render_report
 
 
-VAULT_ROOT = Path("/Users/andresmartinez/Vaults/Executive Assistant")
+VAULT_ROOT = Path("/Users/andresmartinez/Vaults/Executive-Assistant")
 WEEKLY_REPORTS_DIR = VAULT_ROOT / "CFO" / "weekly-reports"
 CFO_DIR = VAULT_ROOT / "CFO"
 

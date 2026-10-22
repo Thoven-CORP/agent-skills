@@ -27,9 +27,9 @@ Activate this skill when user says:
 
 ## File Locations
 
-- **Personal todos**: `/Users/andresmartinez/Vaults/Executive Assistant/todo.md`
-- **Notion Tasks database**: `1ac6c461-0760-8002-84c2-c5bd85cebc1c`
-- **Notion data source**: `collection://1ce6c461-0760-804d-81cf-000b3ee6a2e0`
+- **Personal todos**: `/Users/andresmartinez/Vaults/Executive-Assistant/todo.md`
+- **Notion GSD hub (live work surface since 2026-10-22)**: page `cbb6c461-0760-8325-bf6a-01344d41e228`; OKR Tracker data source `collection://2076c461-0760-8228-803f-07e52f6bfcd2`
+- **Legacy Notion Tasks database** (read-only history; do not add new rows): `1ac6c461-0760-8002-84c2-c5bd85cebc1c`, data source `collection://1ce6c461-0760-804d-81cf-000b3ee6a2e0`
 
 ## Workflow
 
@@ -47,7 +47,7 @@ Activate this skill when user says:
    - Engineering → **Do not add it anywhere from this skill.** Say it belongs in Linear (team `THV`)
      and offer to open an Issue there instead. The test (`SPEC-linear.md` §7.4): *would an agent
      claim this and open a branch?* If yes, it is a Linear Issue.
-   - Non-engineering Thoven admin → Add to Notion Tasks database using `mcp__plugin_Notion_notion__notion-create-task`
+   - Non-engineering Thoven admin → Add to the Notion GSD hub (page `cbb6c461-0760-8325-bf6a-01344d41e228`; OKR Tracker data source `collection://2076c461-0760-8228-803f-07e52f6bfcd2`). `mcp__claude_ai_Notion__notion-fetch` the hub first to pick the right data source, then create the row with `mcp__claude_ai_Notion__notion-create-pages`.
 
 3. **If uncertain**:
    - Ask user: "Is this personal, non-engineering Thoven admin, or engineering work?"
@@ -63,7 +63,7 @@ Activate this skill when user says:
 ```
 
 **Adding to Notion**:
-Use `Skill` tool with `Notion:notion-create-task` and natural language task description.
+Fetch the GSD hub with `mcp__claude_ai_Notion__notion-fetch`, pick the data source the item belongs in, then create the row with `mcp__claude_ai_Notion__notion-create-pages`. The old `Notion:notion-create-task` skill no longer exists.
 
 ### Checking Todos
 
@@ -85,7 +85,7 @@ Use `Skill` tool with `Notion:notion-create-task` and natural language task desc
 - Read and display only "## Active" section from todo.md
 
 **Command**: "check notion tasks"
-- Query Notion Tasks database directly and display results (this is the only command that reads from Notion)
+- Query the GSD hub's data sources with `mcp__claude_ai_Notion__notion-query-data-sources` and display results (this is the only command that reads from Notion)
 
 ### Completing Todos
 

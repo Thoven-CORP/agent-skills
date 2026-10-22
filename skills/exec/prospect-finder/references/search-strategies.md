@@ -1,5 +1,7 @@
 # Search Strategy Catalog
 
+> **Exa fallback:** `mcp__exa__*` is optional and is not connected as of 2026-10-22. If it is unavailable, run the same query with `WebSearch` and read results with `WebFetch` (for LinkedIn, search `site:linkedin.com/in "{name}" {company}`). Say in the output which source you used.
+
 Strategies are organized by type. Each subagent picks strategies from its assigned type. Strategies marked [SPENT] have been run and returned <2 qualified — deprioritize for 30 days.
 
 ## Type A: List Scraping (Web Search -> WebFetch -> Extract Names)

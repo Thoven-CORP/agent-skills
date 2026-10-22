@@ -15,7 +15,7 @@ Run ONCE per skill invocation, BEFORE entering Phase B on any prospect.
 
 ### Procedure
 
-1. Query CRM via `notion-query-database-view` against the default view URL
+1. Query the CRM with the paginated `mcp__notion__API-query-data-source` (data source `170c7a68-da78-46be-bf70-9ba05ed47334`, `page_size: 100`, follow `next_cursor` until `has_more` is false). Fallback: `mcp__claude_ai_Notion__notion-query-data-sources` in **view** mode against the default view URL, following `next_cursor`. Never rows mode (100-row cap). `notion-query-database-view` is retired.
 2. Filter results to: `Prioirty=High` AND (`Outreach Draft` empty/null) AND `Stage NOT IN [Outreach Sent, Passed, Ready to Send]`
 3. For each filtered candidate, call `notion-fetch` on the page ID and extract the `<content>` body block
 4. Build a numbered summary listing each prospect's name + body content verbatim
@@ -111,6 +111,8 @@ Full rule: `memory/feedback_competitor_risk_flag.md`
 
 **MANDATORY. Added 2026-05-18 after catching 3 stale prospects in a single session.** CRM Company/Background fields, Crunchbase, Tracxn, RocketReach, AeroLeads, and The Org all lag LinkedIn by 6–18 months on role changes. LinkedIn is the only ground-truth source.
 
+> **Exa fallback:** `mcp__exa__*` is optional and is not connected as of 2026-10-22. If it is unavailable, run the same query with `WebSearch` and read results with `WebFetch` (for LinkedIn, search `site:linkedin.com/in "{name}" {company}`). Say in the output which source you used.
+
 **How to run:**
 1. Call `mcp__exa__linkedin_search_exa` with a query like `"{prospect name} {known company} current role 2026"`.
 2. Read the FIRST result's "Current" role section. Compare to CRM Company/Background.
@@ -155,7 +157,7 @@ Full rule: `memory/feedback_no_file_sourced_specifics.md`
 
 ## Step 6: Email Hunt
 
-Use `mcp__exa__web_search_exa` and `mcp__exa__people_search_exa` to find the prospect's work email. Search queries:
+Use `mcp__exa__web_search_exa` and `mcp__exa__people_search_exa` to find the prospect's work email. If Exa is not connected (optional; not connected as of 2026-10-22), use `WebSearch` + `WebFetch` with the same queries. Search queries:
 
 - `"[Name] [Current Company] email contact"`
 - `"[Name] LinkedIn profile"` (may reveal contact info)

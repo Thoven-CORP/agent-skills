@@ -53,6 +53,8 @@ Return ONLY a JSON array. No commentary before or after. Each prospect:
 
 ## How to Search
 
+> **Exa fallback:** `mcp__exa__*` is optional and is not connected as of 2026-10-22. If it is unavailable, run the same query with `WebSearch` and read results with `WebFetch` (for LinkedIn, search `site:linkedin.com/in "{name}" {company}`). Say in the output which source you used.
+
 ### For Type A (List Scraping) strategies:
 1. Use `mcp__exa__web_search_exa` or `WebSearch` to find the article/list
 2. Use `WebFetch` on the URL to extract the page content

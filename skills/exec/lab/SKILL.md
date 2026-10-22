@@ -45,7 +45,13 @@ Per-session bookends for any strategy lab: **`start`** (orient + detect drift), 
 
 Drift is structurally impossible when every summary is *derived from the board* instead of *hand-maintained alongside it*, and **only `/lab end` fans out those summaries**. The **manifest enumerates every surface**, so the skill can never silently skip one.
 
-**Canonical skill path:** `~/.claude/skills/lab/SKILL.md` — keep `~/.agents/skills/lab/SKILL.md` in sync after every edit.
+**Canonical skill path:** `~/thoven/agent-skills/skills/exec/lab/SKILL.md` (the repo). Edit there, push to `main`, then reinstall per the repo README. `~/.agents/skills/lab` and `~/.claude/skills/lab` are installed copies; never hand-edit them.
+
+## Current state (2026-10-22)
+
+- **Microschool Lab is on the maintenance floor.** The Outbound engine is not an active front. Microschool work now runs as the **"ESA + Microschools" initiative** in the Notion GSD hub (`cbb6c461-0760-8325-bf6a-01344d41e228`; OKR Tracker `collection://2076c461-0760-8228-803f-07e52f6bfcd2`) and Linear.
+- **Never name "fire Naples sourcing" (or any new-metro sourcing) as the next step.** If the board or an old Resume-here line still says so, flag it as stale in the drift report and point the next action at the GSD initiative instead.
+- The local EA launchd automation (fleet, sensor and scheduled jobs) was **retired 2026-10-22**. Nothing refreshes lab surfaces in the background; a surface is only as current as the last `/lab end`.
 
 ## Step 1 — Load the manifest (always first)
 
@@ -136,7 +142,7 @@ Checklist from the manifest — tick every applicable row:
 - [ ] **Cadence `## STATUS BOARD`** — regenerate the **track table** (+ optional short "as of DATE" blurb). **Stop appending to the monolith callout.**
 - [ ] **`current_focus` Lab Engine paragraph** — regenerate from board
 - [ ] **Geo map Worked ledger** — only if metro state changed this session
-- [ ] **Memory pointer** — one-liner + link (not prose)
+- [ ] **Memory pointer** — one-liner + link (not prose), in the vault's `Agent Knowledge/Memory/` files or Claude auto-memory (Mem0 only if connected)
 - [ ] **`lab-registry` Status one-liner** — only on a real engine/week shift
 
 ### E — One approval gate → batch-write → verify matrix
@@ -162,7 +168,7 @@ These tools return **wrong-looking-but-plausible** results instead of errors. Vi
 - **Gmail `search_threads` truncates threads.** Never conclude "no reply" / "not sent" / "follow-up owed" from it — **always confirm with `get_thread`** before writing thread state to any surface. (2026-07-06; 2026-07-27 Wild Wisdom, where search hid both the follow-up and the prospect's reply.)
 - **Gmail label queries** need the hyphenated lowercase form (`label:microschool-lab`); other forms return zero results silently. A label miss means "unlabeled," never "no activity."
 - **Gmail searches exclude Trash by default.** Zero results on a row that claims a thread means *check Trash* (`includeTrash: true` / `in:anywhere`), not "never sent." (Acton West End, 2026-07-28: a 7/13 pass hidden in Trash kept the row reading Replied/Interested for 15 days.)
-- **mem0 `search_memories` is currently broken** (writes fine). Don't treat an empty mem0 result as evidence of nothing.
+- **Mem0 is retired from vault workflows (2026-10-22: quota full, search unreliable).** Use it only if it is connected, and never treat an empty Mem0 result as evidence of nothing. Durable notes go to the vault's `Agent Knowledge/Memory/` files or Claude auto-memory.
 - **When the user contradicts a derived finding, re-verify with the authoritative tool before defending it.** The surfaces are the thing being audited — they are not the evidence.
 - **Send write-back:** Gmail Sent alone ≠ done. Tracker must show `Stage=Sent` + `Send Date` + Touch timers (+ label). (2026-08-10 Orlando autonomous send.)
 

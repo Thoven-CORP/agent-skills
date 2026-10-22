@@ -147,7 +147,7 @@ Run ONCE per skill invocation, before any per-prospect work.
 
 > **Auto mode:** read "Auto Phase A" above — same query, but auto-apply dispositions instead of pausing for confirmation.
 
-1. **Pull High queue via PAGINATED query.** Use `mcp__notion__API-query-data-source` (NOT `mcp__claude_ai_Notion__notion-query-database-view` — that tool has no pagination params and silently caps at 100 rows, which caused the "same prospects keep surfacing" bug documented in `Fundraising/automation-playbook/errors-and-fixes.md` 2026-04-08 entry).
+1. **Pull High queue via PAGINATED query.** Use `mcp__notion__API-query-data-source` (NOT `mcp__claude_ai_Notion__notion-query-data-sources` in rows or sql mode — rows mode returns at most 100 rows with no cursor; only its view mode paginates via `next_cursor`. The retired `notion-query-database-view` tool had the same 100-row cap, which caused the "same prospects keep surfacing" bug documented in `Fundraising/automation-playbook/errors-and-fixes.md` 2026-04-08 entry).
 
    ```
    data_source_id: "170c7a68-da78-46be-bf70-9ba05ed47334"
@@ -206,6 +206,7 @@ For each prospect on the GO list, run Steps 1-16 sequentially:
    - If LinkedIn shows a role change <6 months old: flag as "fresh-exit/transition" — the angle may shift (post-exit timing window, capacity concern, or new competitor risk).
    - If LinkedIn shows pivot away from EdTech entirely (e.g., to film/arts/real estate): flag tier-mismatch and consider Pass.
    - If CRM email is tied to the old company (e.g., `name@oldcompany.com`): treat as stale — clear it in Step 15 and route to LinkedIn DM.
+   If `mcp__exa__*` is not connected (it is optional; not connected as of 2026-10-22), run the same check with `WebSearch` (`site:linkedin.com/in "{name}" {company}`) plus `WebFetch`, and note the source.
    Crunchbase/Tracxn/RocketReach/AeroLeads/The Org all lag LinkedIn by 6–18 months on role changes. LinkedIn is ground truth. See `feedback_linkedin_current_role_check.md`.
 5. Fact verification → flag unverified claims
 6. Email hunt (verified or candidates)
@@ -358,7 +359,7 @@ This block is the canonical contract every angel-CRM skill references (`prospect
 
 - **Drafter stamps `Drafted At`; sender stamps `Last Contact` + flips `Stage` atomically.** `Drafted At` (date) = when the draft was written. `Last Contact` (date) = when it was sent. Never flip `Stage` to a sent state without `Delivery Method` + `Last Contact` in the same patch.
 - **No skill sends or reuses a Ready-to-Send draft whose `Drafted At` is > 30 days old (or empty) — re-draft or surface it first.** A rotted draft carries stale traction numbers and framing.
-- **Query the CRM only via paginated `mcp__notion__API-query-data-source`, never the capped view tool (`notion-query-database-view`), which silently stops at 100 rows.**
+- **Query the CRM only via paginated `mcp__notion__API-query-data-source`, never `mcp__claude_ai_Notion__notion-query-data-sources` rows mode (successor to the retired `notion-query-database-view`), which silently stops at 100 rows.**
 - **Canonical verbatim-template source of truth = `feedback_strict_outreach_template.md`.** Other template/pattern docs (`references/example-drafts.md`, `references/approved-patterns.md`, `Fundraising/outreach-templates.md`, etc.) are voice/pattern reference only — never the fixed-text authority.
 
 ## Cross-Session History Log

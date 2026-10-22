@@ -39,7 +39,7 @@ Ask only the minimum needed to execute:
 Do NOT re-design settled decisions. If the user has already decided these things, skip this step.
 
 ### Step 4: Search Notion for Related Content
-Use `mcp__plugin_Notion_notion__notion-search` to find:
+Use `mcp__claude_ai_Notion__notion-search` to find:
 - Similar pages (check for duplicates)
 - Related databases or pages in the same Teamspace
 - Existing patterns you should follow

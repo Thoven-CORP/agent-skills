@@ -1,6 +1,6 @@
 ---
 name: weekly-cfo-checkin
-description: Run Thoven's weekly CFO check-in. Use when user says "weekly CFO", "CFO check-in", "CFO meeting", "how are we doing on budget", or "let's do our weekly finances". Renders a live ASCII KPI dashboard from Mercury (cash, weekly burn, runway, budget vs cap, anomalies) and reconciles it against the 7am agent's last report. Live data only — never the spreadsheet.
+description: Run Thoven's weekly CFO check-in. Use when user says "weekly CFO", "CFO check-in", "CFO meeting", "how are we doing on budget", or "let's do our weekly finances". Renders a live ASCII KPI dashboard from Mercury (cash, weekly burn, runway, budget vs cap, anomalies) and reconciles it against the latest report in CFO/weekly-reports/. Live data only — never the spreadsheet.
 ---
 
 # Weekly CFO Check-in
@@ -15,7 +15,7 @@ redesign killed. See `CFO/specs/2026-05-22-cfo-checkin-ascii-redesign-design.md`
 
 ## Step 1 — Render the dashboard
 
-Run the check-in. It lives in the `thoven-financials` skill so the 7am agent and
+Run the check-in. It lives in the `thoven-financials` skill so the weekly report and
 this live check-in share one engine (one definition of cash, burn, caps):
 
 ```bash
@@ -27,8 +27,10 @@ alignment holds in chat. Do not reformat it into a markdown table — the ASCII 
 *is* the deliverable.
 
 If it prints an error box (`⚠ Numbers are NOT shown`), the live pull failed.
-Surface the error, do NOT fall back to any other number, and tell Andres to run
-`mercury login` if it's an auth failure.
+Surface the error, do NOT fall back to any other number. An auth failure on the
+`mercury` CLI (v0.7.2) means its browser OAuth session expired, not that an API key
+was rotated: tell Andres to run `mercury login`, then re-run the check-in. The CLI
+does not use an API key, so do not suggest rotating one.
 
 ## Step 2 — One-line read + flags
 
@@ -36,8 +38,9 @@ After the box, add a short human read (2-4 lines max). Lead with whatever the
 data makes loudest:
 - **Cash / runway** is the headline whenever runway is low — say it plainly.
 - **OVER-cap vendors** float to the top of the budget section — call out the worst.
-- **Agent reconciliation** — if it shows "New overages" or "⚠ stale", the 7am
-  agent missed something; flag that the automation needs a look.
+- **Agent reconciliation** — if it shows "New overages" or "⚠ stale", the last
+  weekly report is behind. The 7am launchd agent was retired 2026-10-22, so stale
+  is expected; offer to run the `thoven-financials` weekly report by hand.
 
 ## Step 3 — End with a one-line verdict
 
@@ -50,14 +53,15 @@ data makes loudest:
 - **Cancel / change a budget cap** → edit the budget doc
   (`CFO/<latest>-budget-line-items.md`), the single source for vendor caps.
 - **Log a one-off expense or funding** → use the `thoven-financials` skill.
-- **Deeper weekly write-up** → the 7am agent's markdown lives in
-  `CFO/weekly-reports/`. This check-in reconciles against its latest.
+- **Deeper weekly write-up** → weekly reports live in `CFO/weekly-reports/`
+  (the 7am agent that wrote them was retired 2026-10-22; run `thoven-financials`
+  "weekly cfo" by hand). This check-in reconciles against the latest.
 
 ## Notes
 
 - **Accounts:** Mercury Checking + Savings (this report). Rho card spending is
   not yet in the Mercury feed — ask Andres if a Rho number is needed.
 - **Two windows by design:** budget-vs-cap is true month-to-date vs monthly cap;
-  "this week" is the last 7 days. The 7am agent uses a since-last-report window,
-  so the check-in can legitimately surface overages the agent's narrower window
+  "this week" is the last 7 days. The weekly report uses a since-last-report window,
+  so the check-in can legitimately surface overages the report's narrower window
   missed — that's the reconciliation working, not a bug.

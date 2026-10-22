@@ -1,7 +1,7 @@
 # Standard Outreach Template (Operator-Angel Variant)
 
 **This file covers the operator-angel template only.** For the thesis-hook variant (Template C, current best-performing format) and the follow-up sequence (Templates 4-6), read the full text in:
-`/Users/andresmartinez/Vaults/Executive Assistant/Fundraising/outreach-templates.md`
+`/Users/andresmartinez/Vaults/Executive-Assistant/Fundraising/outreach-templates.md`
 
 Template C has a different middle paragraph structure (no advisor line, different fundraising hint placement). Do NOT use the standard middle paragraph below for thesis-hook emails — it will be wrong.
 

@@ -9,7 +9,7 @@ from openpyxl import load_workbook
 from datetime import datetime, timedelta
 import os
 
-TRACKER_PATH = "/Users/andresmartinez/Vaults/Executive Assistant/Thoven_Burn_Rate_Tracker.xlsx"
+TRACKER_PATH = "/Users/andresmartinez/Vaults/Executive-Assistant/Thoven_Burn_Rate_Tracker.xlsx"
 
 # Known spreadsheet locations
 CASH_BALANCE_CELL = "B3"

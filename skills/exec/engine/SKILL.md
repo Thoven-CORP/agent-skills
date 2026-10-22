@@ -8,6 +8,8 @@ disable-model-invocation: true
 
 The Outbound engine is a **continuity state-machine, not a sourcing tool** — the work (find/draft/send) is trivial; staying current is the bottleneck. This skill is its **heartbeat: RECONCILE → RENDER → POINT.** Run it by hand at the start of any engine work session, as often as you want.
 
+> **Status (2026-10-22): maintenance floor.** The Outbound engine is no longer an active growth front. Microschool work now runs as the **"ESA + Microschools" initiative in the Notion GSD hub** (`cbb6c461-0760-8325-bf6a-01344d41e228`; OKR Tracker `collection://2076c461-0760-8228-803f-07e52f6bfcd2`) and Linear. Run `/engine` only to keep the Tracker honest (reconcile replies, flag due follow-ups on rows already sent). **Do not open a new metro or fire sourcing (Naples or any other) as the next step** unless Andres lifts the floor in-session; route new microschool work to the GSD initiative instead.
+
 Full design + the grill rationale: `Research/Strategic/Active/2026-06-27 - Microschool Lab — Outbound Engine Continuity Layer (engine command) Design.md`.
 
 ## Source of truth (the rule everything rests on)
@@ -28,7 +30,7 @@ Full design + the grill rationale: `Research/Strategic/Active/2026-06-27 - Micro
 Read `Agent Knowledge/Guides/lab-registry.md` → Microschool Lab. Surfaces this skill touches:
 - **Outreach Tracker** (the only data store): `4b37775f-ea5b-4cc6-8a0b-92ea8985f999`
 - **Geo-map Worked ledger** (current/next metro): `Strategy/GTM/Microschool Lab/Active/2026-06-23 - Microschool Lab — Geo Rotation Map (Outbound Engine).md`
-  - **Current week pointer (WLO 2026-08-10):** sending fronts = **Naples, FL** + **Phoenix pocket expansion** (Mesa/Tempe/Peoria/Surprise/Queen Creek; dedupe vs Wk-1). Follow-up front = **Orlando** Touch-1 due **2026-08-16**. Jacksonville dated after Naples. Still pick **ONE metro per `/engine` session** (Step 0.5) — the week has two fronts, the session has one.
+  - **Current week pointer:** retired 2026-10-22 (maintenance floor; see Status above). The old 2026-08-10 WLO pointer (Naples sending front, Phoenix expansion, Orlando follow-ups) is history, not a queue. Still pick **ONE metro per `/engine` session** (Step 0.5), and only a metro that already has `Sent` rows to reconcile or follow up.
 - **Gmail reader — use `mcp__gws__gmail` as PRIMARY.** It supports `page_all` for genuinely complete sweeps and does not truncate thread message lists, and it is the same API used to send. The `claude_ai_Gmail` connector is **fallback only**. The three silent-failure rules below apply to **both** readers.
 - **Gmail label** (lab outreach only, never whole inbox): `Microschool Lab` — **query it as `label:microschool-lab`** (hyphenated, lowercase). `label:"Microschool Lab"` and `label:Label_12` both return **zero results instead of erroring**.
 - **The four goal specs** (`/engine` routes to these; it never does their work itself). **STATUS CHECKED 2026-08-07: only the sourcing template actually exists on disk — the other three are cited here but were never created.** Same gap class as the `lab-roster-judge` agent file (cited everywhere, missing until 8/5). Until these exist, drafting/send/follow-up work has been done ad hoc in-session (e.g. the 2026-08-07 Orlando 13-row draft batch) rather than via a routed goal — that's a real gap, not a documentation lag; treat "route to the drafting template" as unavailable and fall back to doing the work directly until one of these gets built:
@@ -118,6 +120,8 @@ Regenerate the **control tower**. Print all six sections with live numbers from 
 ## Step 3 — POINT (route to exactly ONE goal)
 
 Determine the metro's current kanban stage from the Tracker, then name the ONE goal spec to fire. Priority: **send > follow-up-due > draft > find.**
+
+**Maintenance floor (2026-10-22):** only the send and follow-up rows below are live. If the only remaining move is drafting or sourcing a new metro, do not fire it; name "route to the GSD ESA + Microschools initiative" as the next action and stop.
 
 | Metro state | Fire |
 |---|---|

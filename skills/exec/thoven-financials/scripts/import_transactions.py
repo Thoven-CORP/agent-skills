@@ -10,7 +10,7 @@ import os
 from datetime import datetime
 from openpyxl import load_workbook
 
-TRACKER_PATH = "/Users/andresmartinez/Vaults/Executive Assistant/Thoven_Burn_Rate_Tracker.xlsx"
+TRACKER_PATH = "/Users/andresmartinez/Vaults/Executive-Assistant/Thoven_Burn_Rate_Tracker.xlsx"
 EXPENSES_START_ROW = 30
 
 BUDGET_CATEGORIES = [

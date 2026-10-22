@@ -16,7 +16,7 @@ Discovers angel investor prospects matching Thoven's ICP, deduplicates against t
 ## Phase 0: Load State
 
 1. Read `Fundraising/prospect-finder-seen.json` (create if missing — see template below)
-2. Query Notion Angel CRM for all existing names. Use the **paginated** `mcp__notion__API-query-data-source` on data source `170c7a68-da78-46be-bf70-9ba05ed47334` (`page_size: 100`, loop while `has_more == true` passing the prior `next_cursor` as `start_cursor`, accumulate ALL pages). Do NOT use `mcp__claude_ai_Notion__notion-query-database-view` — it silently caps at 100 rows, so a dedup read off it would miss existing prospects past row 100 and re-surface them as "new." This is the paginated pattern `angel-outreach-loop` standardizes on (see its canonical query contract).
+2. Query Notion Angel CRM for all existing names. Use the **paginated** `mcp__notion__API-query-data-source` on data source `170c7a68-da78-46be-bf70-9ba05ed47334` (`page_size: 100`, loop while `has_more == true` passing the prior `next_cursor` as `start_cursor`, accumulate ALL pages). Do NOT use `mcp__claude_ai_Notion__notion-query-data-sources` in rows mode (the successor to the retired `notion-query-database-view`) — it silently caps at 100 rows, so a dedup read off it would miss existing prospects past row 100 and re-surface them as "new." This is the paginated pattern `angel-outreach-loop` standardizes on (see its canonical query contract).
 3. Build **exclusion set** = all CRM names + all `seen.json` names (any verdict)
 
 ### seen.json template (first run)
@@ -73,6 +73,8 @@ Always cross-reference new queries against `queries_run` to avoid semantic dupli
 ---
 
 ## Phase 2: Discovery Loop
+
+> **Exa fallback:** `mcp__exa__*` is optional and is not connected as of 2026-10-22. If it is unavailable, run the same query with `WebSearch` and read results with `WebFetch` (for LinkedIn, search `site:linkedin.com/in "{name}" {company}`). Say in the output which source you used.
 
 ```
 target = 12  (configurable, default 10-15 range)

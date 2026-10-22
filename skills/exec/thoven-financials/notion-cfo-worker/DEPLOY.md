@@ -2,6 +2,8 @@
 
 Last updated: 2026-05-15
 
+> **2026-10-22:** the local launchd job (`co.thoven.cfo-weekly`) was retired with the rest of the EA launchd automation. The launchd rows below are history. Mercury **CLI** auth failures are an expired OAuth session (`mercury login`), not a rotated key; the API-key steps here apply only to this Worker's `MERCURY_API_KEY` secret.
+
 ## Status
 
 | Step | Done? |

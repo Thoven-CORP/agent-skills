@@ -4,7 +4,7 @@ from pathlib import Path
 from openpyxl import load_workbook
 
 
-TRACKER_DEFAULT = Path("/Users/andresmartinez/Vaults/Executive Assistant/Thoven_Burn_Rate_Tracker.xlsx")
+TRACKER_DEFAULT = Path("/Users/andresmartinez/Vaults/Executive-Assistant/Thoven_Burn_Rate_Tracker.xlsx")
 
 
 def read_tracker(path: Path = TRACKER_DEFAULT) -> dict:

@@ -37,7 +37,7 @@ Before any work, confirm the right CRM:
 
 ## Phase 0.5: Pause-flag check
 
-If the file `/Users/andresmartinez/Vaults/Executive Assistant/Fundraising/followup-paused.flag` exists, write a "paused" run report (with timestamp + the flag's contents) and exit cleanly. Do not draft anything.
+If the file `/Users/andresmartinez/Vaults/Executive-Assistant/Fundraising/followup-paused.flag` exists, write a "paused" run report (with timestamp + the flag's contents) and exit cleanly. Do not draft anything.
 
 This is the kill switch for holidays / frozen pipelines.
 
@@ -45,7 +45,7 @@ This is the kill switch for holidays / frozen pipelines.
 
 ## Phase 1: Query CRM for eligible prospects
 
-Use the **paginated** `mcp__notion__API-query-data-source` on data source `170c7a68-da78-46be-bf70-9ba05ed47334` (`page_size: 100`, loop while `has_more == true` passing the prior `next_cursor` as `start_cursor`, accumulate ALL pages). Do **NOT** use `mcp__claude_ai_Notion__notion-query-database-view` — that tool has no pagination and silently caps at 100 rows, which is what made the same prospects resurface and hid everything past row 100. This is the paginated pattern the `angel-outreach-loop` skill standardizes on (see its canonical query contract).
+Use the **paginated** `mcp__notion__API-query-data-source` on data source `170c7a68-da78-46be-bf70-9ba05ed47334` (`page_size: 100`, loop while `has_more == true` passing the prior `next_cursor` as `start_cursor`, accumulate ALL pages). Do **NOT** use `mcp__claude_ai_Notion__notion-query-data-sources` in rows or sql mode (rows mode returns at most 100 rows with no cursor; it replaced the retired `notion-query-database-view`, which had the same cap), which is what made the same prospects resurface and hid everything past row 100. This is the paginated pattern the `angel-outreach-loop` skill standardizes on (see its canonical query contract).
 
 Filter (apply client-side after accumulating all pages):
 
@@ -372,8 +372,8 @@ In scheduled mode, no chat output — the report file is the only artifact.
 |---|---|
 | CRM Database ID | `4fa3de45-9f8a-4ae2-8a1a-dc404fac5f24` |
 | CRM View ID | `4df68df7-63f3-40f8-b75e-f9a648ed2e68` |
-| Pause flag path | `/Users/andresmartinez/Vaults/Executive Assistant/Fundraising/followup-paused.flag` |
-| Run report dir | `/Users/andresmartinez/Vaults/Executive Assistant/Fundraising/followup-runs/` |
+| Pause flag path | `/Users/andresmartinez/Vaults/Executive-Assistant/Fundraising/followup-paused.flag` |
+| Run report dir | `/Users/andresmartinez/Vaults/Executive-Assistant/Fundraising/followup-runs/` |
 | Sender address | `andres@thoven.co` |
 | Per-run cap | 25 prospects |
 
