@@ -16,6 +16,12 @@ from testkit import FakeMux, FakeRunner, HomeCase, at, registration
 class Harness(HomeCase):
     def setUp(self):
         super().setUp()
+        # Tests may run inside a real Rex or herdr pane; none may see it.
+        env = patch.dict(os.environ)
+        env.start()
+        self.addCleanup(env.stop)
+        for name in ("REX_BLOCK", "REX_SESSION", "HERDR_PANE_ID", "HERDR_WORKSPACE_ID", "CLAUDE_CODE_SESSION_ID"):
+            os.environ.pop(name, None)
         self.mux = FakeMux()
         self.out, self.err = io.StringIO(), io.StringIO()
         self.now = 0.0
@@ -395,6 +401,17 @@ class PaneCommands(Harness):
         self.mux.statuses["block:a"] = Status(State.IDLE, updated_at="u1")
         self.assertEqual(self.cmd("send", "block:a", self.file), 3)
         self.assertEqual(self.mux.keys, [("block:a", "enter")])
+
+    def test_a_pane_id_in_two_backends_resolves_by_backend(self):
+        herdr = registration(pane="block:a", ticket="THV-2", agent_name="build-thv-2")
+        herdr = herdr.__class__(**{**herdr.__dict__, "pane": herdr.pane.__class__("herdr", "block:a", "w1")})
+        store.write_registration(herdr)
+        self.assertEqual(self.cmd("close", "block:a"), 3)
+        self.assertIn("block:a matches 2 registrations (build-thv-1, build-thv-2): pass --backend or the agent name",
+                      self.err.getvalue())
+        self.assertEqual(self.cmd("close", "block:a", "--backend", "herdr"), 0)
+        self.assertEqual(self.out.getvalue(), "closed block:a (build-thv-2)\n")
+        self.assertEqual([r.agent_name for r in store.registrations()], ["build-thv-1"])
 
     def test_key_presses_one_key_to_answer_a_dialog(self):
         self.assertEqual(self.cmd("key", "build-thv-1", "down"), 0)

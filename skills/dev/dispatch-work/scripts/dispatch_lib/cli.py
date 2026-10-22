@@ -124,11 +124,17 @@ class App:
         return BACKENDS[backend](self.run)
 
     def resolve(self, pane: str, backend: str | None = None) -> tuple[PaneRef, Registration | None]:
-        reg = store.find_registration(pane)
+        try:
+            b = backend or detect()
+        except UsageError:
+            b = None
+        session = (os.environ.get("REX_SESSION", "") if b == "rex" else os.environ.get("HERDR_WORKSPACE_ID", "")
+                   ) if b else None
+        reg = store.find_registration(pane, b, session)
         if reg:
             return reg.pane, reg
-        b = backend or detect()
-        session = os.environ.get("REX_SESSION", "") if b == "rex" else os.environ.get("HERDR_WORKSPACE_ID", "")
+        if b is None:
+            detect()
         return PaneRef(b, pane, session), None
 
     def main_name(self) -> str | None:

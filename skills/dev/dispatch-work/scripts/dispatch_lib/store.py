@@ -12,7 +12,7 @@ import secrets
 import shutil
 import tempfile
 
-from .model import (PROJECT_RE, Entry, EntryKind, PaneRef, Registration, UsageError, check_project,
+from .model import (PROJECT_RE, Entry, EntryKind, PaneRef, Registration, UsageError, WrongState, check_project,
                     check_ticket, iso, now_utc, parse_iso)
 
 
@@ -94,12 +94,22 @@ def registrations(project: str | None = None, on_skip=lambda path, why: None) ->
     return out
 
 
-def find_registration(pane: str) -> Registration | None:
-    """A Registration by pane id or agent name, across every project."""
-    for reg in registrations():
-        if pane in (reg.pane.pane, reg.agent_name):
-            return reg
-    return None
+def find_registration(pane: str, backend: str | None = None, session: str | None = None) -> Registration | None:
+    """A Registration by agent name, else by pane id across every project, narrowed by backend then session
+    when the id is in more than one. WrongState when it stays ambiguous."""
+    regs = registrations()
+    named = [r for r in regs if r.agent_name == pane]
+    if named:
+        return named[0]
+    found = [r for r in regs if r.pane.pane == pane]
+    for keep in (lambda r: backend is None or r.pane.backend == backend,
+                 lambda r: not session or r.pane.session == session):
+        if len(found) > 1:
+            found = [r for r in found if keep(r)] or found
+    if len(found) > 1:
+        raise WrongState(f"{pane} matches {len(found)} registrations ("
+                         + ", ".join(sorted(r.agent_name for r in found)) + "): pass --backend or the agent name")
+    return found[0] if found else None
 
 
 def is_registered(reg: Registration) -> bool:
