@@ -109,11 +109,29 @@ out="$("$TOOL" 2>/dev/null)"
 has_line "a current main says so" "$out" "$TMP/frontend: at origin/main"
 
 git -C "$TMP/backend" checkout -q -- file
+# Upstream adds a file at a path main holds untracked, so the fast-forward would overwrite it.
+(cd "$TMP/upstream-backend" && printf 'theirs\n' > collides && git add collides && git commit -qm collides && git push -q origin main)
+printf 'scratch\n' > "$TMP/backend/collides"
+out="$("$TOOL" 2>/dev/null)"
+expect "an untracked file in the incoming diff keeps main where it was" "$(head_of "$TMP/backend")" "$BE_HEAD"
+expect "that untracked file is kept" "$(cat "$TMP/backend/collides")" "scratch"
+has_line "that skip names the collision" "$out" \
+  "$TMP/backend: skipped, git merge --ff-only origin/main failed: error: The following untracked working tree files would be overwritten by merge:"
+rm "$TMP/backend/collides"
 printf 'scratch\n' > "$TMP/backend/untracked"
 out="$("$TOOL" 2>/dev/null)"
-expect "untracked file keeps main where it was" "$(head_of "$TMP/backend")" "$BE_HEAD"
-has_line "untracked file counts as unclean" "$out" "$TMP/backend: skipped, uncommitted changes"
+expect "only untracked files still fast-forward" "$(head_of "$TMP/backend")" "$(origin_main backend)"
+has_line "that fast-forward is reported" "$out" "$TMP/backend: fast-forwarded 2 commit(s) to origin/main"
+expect "the untracked file survives the fast-forward" "$(cat "$TMP/backend/untracked")" "scratch"
 rm "$TMP/backend/untracked"
+git -C "$TMP/backend" reset -q --hard "$BE_HEAD"
+# A staged file keeps main unclean while file's stale stat entry tempts a plain status to write.
+(cd "$TMP/backend" && printf 'staged\n' > staged && git add staged)
+touch -t 202001010000 "$TMP/backend/file"
+BE_INDEX="$(index_sum "$TMP/backend")"
+"$TOOL" >/dev/null 2>&1
+expect "a skipped main's index is not rewritten" "$(index_sum "$TMP/backend")" "$BE_INDEX"
+git -C "$TMP/backend" rm -q --cached staged && rm "$TMP/backend/staged"
 
 git -C "$TMP/backend" checkout -q -b spike
 out="$("$TOOL" 2>/dev/null)"

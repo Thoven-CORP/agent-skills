@@ -13,6 +13,8 @@
 #   warn                  message on stderr, exit 0, for tools whose stop cannot block (OpenCode)
 #   thoven-uncommitted [--dialect claude|codex|cursor|devin|warn]
 set -o pipefail
+# Read-only git: status never takes index.lock to refresh, so it cannot block another session's commit.
+export GIT_OPTIONAL_LOCKS=0
 
 dialect=claude
 [ "${1:-}" = "--dialect" ] && dialect="${2:-claude}"

@@ -18,6 +18,8 @@
 #   devin          PreToolUse, matcher ^exec$, with --dialect devin
 #   OpenCode       has no pre event wired to this script, so it keeps the session-start boundary.
 set -o pipefail
+# Read-only git: status never takes index.lock to refresh, so it cannot block another session's commit.
+export GIT_OPTIONAL_LOCKS=0
 
 dialect=claude
 pre=0
