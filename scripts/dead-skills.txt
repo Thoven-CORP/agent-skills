@@ -1,6 +1,6 @@
-# installed: 341
+# installed: 340
 # invoked: 37
-# never invoked: 304
+# never invoked: 303
 accessibility-check
 add-icon
 agent-browser
@@ -51,7 +51,6 @@ crawl
 create-migration
 create-verification-skill
 csharp-developer
-customer-obsession-design-thinking
 daily-work-log
 database-optimizer
 debugging-wizard

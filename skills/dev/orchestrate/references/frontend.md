@@ -113,7 +113,7 @@ domain row over a universal one. When two rows match equally, ask one question.
 | Market size, competitors, investors | `/market-research-vc-intelligence` |
 | Feature ideas, prioritisation, roadmap | `/product-strategy-brainstorming` |
 | Pedagogy, practice design, curriculum | `/edtech-learning-science` |
-| What the user actually needs | `/customer-obsession-design-thinking` |
+| Brainstorm or grill a feature, journey or flow; what matters most | `/product-fundamentals` |
 
 ## Chains
 
