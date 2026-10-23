@@ -62,6 +62,21 @@ PATCHES = [
         "the **writing-for-agents** skill (for authoring SKILL.md files)",
     ),
     (
+        "poteto-mode",
+        "[the Claude Code adapter](../../docs/harness/claude-code.md)",
+        "[the Claude Code adapter](~/thoven/agent-skills/enforcement/config/pstack-claude-code.md)",
+    ),
+    (
+        "ketchup",
+        "a Mermaid diagram, a chart or diagram from `/visualize`, or a generated image",
+        "an HTML page built with the **visual-artifacts** skill, a chart from the **dataviz** skill, or a generated image",
+    ),
+    (
+        "ketchup",
+        "Draw diagrams and charts from facts you have: a Mermaid diagram for how things connect and a `/visualize` chart for numbers.",
+        "Draw diagrams and charts from facts you have: one HTML page built with the **visual-artifacts** skill for how things connect, and a **dataviz** chart for numbers. Mermaid does not render in this terminal.",
+    ),
+    (
         "deslop",
         "description: Remove AI-generated code slop and clean up code style",
         "description: Remove AI-generated slop from the current branch's diff vs main — stray/over-explanatory comments, defensive try/catch on trusted paths, `any` casts that only silence types, needless deep nesting. Surgical and behavior-preserving. Use right after generating code, before review; pair with `thermo-nuclear-code-quality-review` for a structural pass.",
