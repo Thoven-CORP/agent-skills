@@ -30,6 +30,7 @@ Done when: `finish.mjs` printed its line with every diagram rendered, the file o
 - **Monochrome chrome.** Background, text, borders, nav, buttons, chips and inputs are black and white. Emphasis comes from weight, size and contrast. Colour lives in diagrams, charts, status chips, and `.stage` mini-stages that show real product UI, and it comes from the Thoven palette tokens (amber, sky, emerald, rose, purple, teal, indigo).
 - **Skimmable.** The lede states the point. Each heading is a claim. Tables and short bullets carry the detail, with real labels and data.
 - **Built up.** A structure with three or more moving parts gets a series of diagrams, each adding one part, the way the teach skill builds a picture.
+- **One scroll.** The page is the only thing that scrolls. Every box grows to its full content, long code and table cells wrap, and a wide diagram scales to the column. `finish.mjs` refuses `overflow: auto`, `overflow: scroll` and `max-height` in page styles.
 - **Fit the job.** Use only the components the content needs. A two-section page is fine.
 - **Workbook.** A page that asks questions carries no pre-filled answers. Mark `<html data-workbook="<key>">`, and `finish.mjs` adds autosave and Copy as Markdown.
 

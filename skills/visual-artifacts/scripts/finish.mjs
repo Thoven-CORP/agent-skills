@@ -52,6 +52,13 @@ html = html.replace(DIAGRAM, (whole, preAttrs, preBody, figAttrs, figSrc, offset
 // Any Pele failure stops the run before the file is touched
 if (errors.length) fail(errors.join('\n'));
 
+// The page is the only scroll: a box grows to fit its content
+const blank = (m) => m.replace(/[^\n]/g, '');
+const own = html.replace(between('artifact.css'), blank).replace(between('workbook.js'), blank);
+const scrolls = [...own.matchAll(/overflow(?:-[xy])?\s*:\s*(?:auto|scroll)|max-height\s*:/g)]
+  .map((m) => `  line ${own.slice(0, m.index).split('\n').length}: ${m[0]}`);
+if (scrolls.length) fail(`an inner scroll box; let it grow and the page scroll instead\n${scrolls.join('\n')}`);
+
 // Stylesheet
 if (between('artifact.css').test(html)) {
   html = html.replace(between('artifact.css'), () => block('artifact.css', css));
