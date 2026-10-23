@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-23 — product grills lose altitude and hide their assumptions
+
+> reflect + grill · 2026-10-23 · 0f23577b · 39a12a43 · correction · applied · seen 3
+
+**What happened.** In the ND credential and PL grills, rounds jumped between flows and into details (success states, acceptance emails) before what mattered or where the feature lives was settled. Andres: "Why are we diving ten steps ahead…", "when the fuck did we make all these assumptions? Wait this is not even what we're trying to solve for."
+**Why.** Grilling orders by dependency frontier, not altitude, and nothing kept assumptions visible. The customer-obsession skill that could have held the level fired once in ~60 sessions.
+**What changed.** New "Product thinking" section: top-down levels, a running assumptions list, a one-line direction flag. `product-fundamentals` replaces customer-obsession-design-thinking and carries the full method.
+
 ## 2026-10-22 — a workflow session outside ~/thoven never loaded andres-mode
 
 > reflect · 2026-10-22 · 708bf6f4 · broken-rule · applied · seen 2

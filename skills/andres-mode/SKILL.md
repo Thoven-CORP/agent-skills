@@ -39,6 +39,17 @@ Thoven work spans a frontend and a backend repo, run by a main session that disp
 - Lexicon: a "Session" is the unit, "Lessons" is the arrangement. Audiences are the student dashboard, the parent side, the adult student. Demo data uses Andres Martinez or real fixtures, never an invented name.
 - Group findings into the existing unit-of-work tickets. Keep the ticket count low. Debt, bugs and smells in code the ticket or feature owns are fixed on its branch in the same round. A problem outside it gets one line in an existing grouped Linear issue, or a new issue only when none fits. A product call goes to the user as a question.
 
+## Product thinking
+
+In a product brainstorm or grill:
+
+- Start from what we care about most and who for. Hold it in view every round.
+- Go top-down: what matters, where it lives, the flow, the moments, then the details. Never jump to emails or states while a level above is open.
+- Keep a running list of assumptions, each checked or unchecked.
+- Flag in one line, never redirect: we are polishing what doesn't matter, looking the wrong way, or leaning on an unchecked assumption.
+
+The full method is `product-fundamentals`.
+
 ## Parity
 
 Both checks run twice: in the brief before dispatch and as the reviewer's first two sections. `~/.agents/skills/dispatch-work/references/brief.md` and `~/.agents/skills/dispatch-work/references/review.md` carry the procedure.
