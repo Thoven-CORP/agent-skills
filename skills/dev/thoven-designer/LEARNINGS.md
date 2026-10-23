@@ -5,6 +5,30 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-22 — rhythm, popup footers, button states and icon tiles had no pointer
+
+> grill · 2026-10-22 · 39a12a43 · missing-pointer · applied · seen 1
+
+**What happened.** The homework wizard grill ran a rhythm audit and found off-grid vertical gaps
+that no check had caught. The drawers on the same surfaces hand-rolled their saving and error
+states, and set duo glyphs on white tiles. Andres ruled the craft rules belong in this skill, not
+in `interface-craft`: *"interface craft is not our skill; if anything we need to apply it to thoven
+designer, the edits."* He also ruled on Oct 22 that icons sit straight on their row or panel, a
+row's open action is a neutral 3D button rather than "Open ›" text, and the row highlight alone
+marks what is currently showing.
+**Why.** The rhythm and type rules (THV-1389) and the popup footer and overflow-edge rules
+(THV-1353) were settled in Linear but sat in no file this skill points at, so nothing sent a
+builder or critic to them. ThovenButton v2's state machine already had a canonical caller in
+the Send notes button, but nothing here named it, so each drawer drew its own spinner and error.
+**What changed.** A "Rulings held in Linear" section points at THV-1389 and THV-1353 with the files
+each lands in, and states that values reach code only through `rem()`. The `layout` row routes
+rhythm there and now names the real path, `design/layout.md`. Standing checks gained the save or
+send state machine and the icon and open-action rule. Pitfalls stay at ten: the rhythm line merged
+into the middle-dot line, the icon rule into the duo-glyph line, the open action into the ledge
+line, and the button caller into the visual-pass line.
+
+---
+
 ## 2026-10-22 — meet the tap minimum invisibly
 
 > reflect · 2026-10-22 · 39a12a43 · broken-rule · applied · seen 1

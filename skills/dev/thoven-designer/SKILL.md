@@ -21,11 +21,11 @@ Resizing the shell, the grid, or the neighbouring cards is a new decision that n
 ## Pitfalls
 
 - Use the assigned colour step as is, without converting, re-measuring or comparing it to stock Tailwind; a suspected palette inconsistency goes to its own ticket. (LEARNINGS 2026-08-17)
-- In a visual pass take layout, copy and flow from the proto, every state from `docs/design/async-states.md` and the shipped primitives, and every value from the nearest token; ask before adding a ramp role or hue, and keep every value visible to the scans. (LEARNINGS 2026-10-09)
+- In a visual pass take layout, copy and flow from the proto, every state from `docs/design/async-states.md` and the shipped primitives (a save or send action copies the Send notes button, see Standing checks), and every value from the nearest token; ask before adding a ramp role or hue, and keep every value visible to the scans. (LEARNINGS 2026-10-09, 2026-10-22)
 - When a decision and a proto or shipped component disagree, name the tier first; an enforced standard (the typefaces, anything with a token module and test) is a code defect, an emergent primitive means amend the decision, and Andres rules either way. (LEARNINGS 2026-08-28)
-- Give the ledge only to list rows that need action; every other row is flat, and each row shows the verb or the state pill, not both. (LEARNINGS 2026-08-11)
-- Render every stateful icon as a duo glyph through `components/ui/icon.tsx` with a hue, and count two paths in the rendered SVG before calling the UI done. (LEARNINGS 2026-09-30)
-- Put metadata in labelled rows or separate lines; join no facts with middle dots in UI, protos or copy. (LEARNINGS 2026-09-25)
+- Give the ledge only to list rows that need action; every other row is flat, and each row shows the verb or the state pill, not both. A row's open action is a neutral 3D button, and the row highlight alone marks what is currently showing. (LEARNINGS 2026-08-11, 2026-10-22)
+- Render every stateful icon as a duo glyph through `components/ui/icon.tsx` with a hue, sitting straight on its row or panel with no tile behind it, and count two paths in the rendered SVG before calling the UI done. (LEARNINGS 2026-09-30, 2026-10-22)
+- Check every vertical gap, line height, wrap, truncation and punctuation mark against THV-1389, and every popup footer and overflow edge against THV-1353, before calling a surface done; metadata goes in labelled rows or separate lines, with no middle dots joining facts. (LEARNINGS 2026-09-25, 2026-10-22)
 - Check every motion finding against `design/buttons.md` and `lib/press-tokens.ts` before relaying it, say who decided what, and give each verifier brief's MOTION section the same read. (LEARNINGS 2026-10-09)
 - Write one-screen acceptance as "fits without scrolling at every desktop viewport" and shrink the content until it does; phones may scroll the page. (LEARNINGS 2026-09-28)
 - When adding to a version Andres liked, give the new element one of that version's existing text styles and its spacing, at a peer's weight rather than a hero's. (LEARNINGS 2026-10-10)
@@ -60,7 +60,7 @@ and decide from those tables.
 | `buttons` | `lib/live-lesson-tokens.ts` (`thovenButtonTokens`) and `components/ui/thoven-button.tsx` |
 | `icons` | `lib/icon-tokens.ts` |
 | `motion` | `lib/motion-config.ts` |
-| `layout` | `docs/design/layout.md` |
+| `layout` | `design/layout.md`; vertical rhythm and type rules: [Rulings held in Linear](#rulings-held-in-linear) |
 | `lexicon` | frontend `design/lexicon/LEXICON.md` |
 | `components_ui` | `components/ui/` then [Does it already exist](references/sources.md#does-it-already-exist) |
 | `stack_md` | frontend `design/STACK.md` rule 7 |
@@ -68,6 +68,25 @@ and decide from those tables.
 
 **A ruling made this session is not in a file yet.** Check what this session already ruled
 before answering from files, then hand it to `workspace` `capture`.
+
+## Rulings held in Linear
+
+These rulings are settled but not yet in a token module or doc. Until the file in the last column
+carries them, the Linear issue is the source: open it and point at it, never restate it.
+
+| Concern | Source now | Lands in |
+|---|---|---|
+| Vertical rhythm and type rules: the rhythm rule for every gap and line height; wrapping, tracking, measure, punctuation, truncation | Linear THV-1389 | `design/layout.md` "Vertical rhythm" section and the type tests |
+| Popup footers and overflow edges: footer placement, phone layout, button height, the lone-button and two-3D-button cases, overflow fades instead of hairlines | Linear THV-1353 | `lib/dialog-tokens.ts` and `hooks/useScrollFadeMask.ts` |
+
+When drawing, critiquing or building a surface, measure every vertical gap and line height against
+THV-1389's rhythm rule, and every text block against its wrapping, tracking, measure, punctuation
+and truncation rules. Done when each gap is on the rhythm or listed as a finding with `file:line`.
+
+Every spacing or size value reaches code through `rem()` in `lib/density-tokens.ts`, so the 90%
+desktop scale (THV-1333) applies. A raw px vertical value is a defect.
+
+When the named file gains the ruling, repoint the row's source at that file and delete the row.
 
 After the file is open: say which lock tier the answer came from (token module plus test = enforced;
 `DESIGN.md` prose = declared). If the token module and a doc disagree, the doc is the bug.
@@ -130,4 +149,6 @@ The browser is Andres's, not a scratch surface.
 - Focus rings are `:focus-visible` only.
 - The 44px tap minimum comes from the transparent hit-area pseudo-element in `design/buttons.md` (Hit target row). Never enlarge a component's visible size to meet it.
 - Every component covers loading, empty, error and disabled before it is called done.
+- An action that saves or sends runs ThovenButton's full state machine: `loading` with `loadingLabel`, `success` with `successLabel`, and its error as a `role="alert"` footer line. Copy `components/teacher/private-lessons/session/SendNotesButton.tsx` with `components/teacher/private-lessons/session/useSendNotes.ts`, `components/teacher/private-lessons/session/sendErrorCopy.ts` and the send footer in `components/teacher/private-lessons/session/SessionBody.tsx` (on the private-lessons-rework integration branch until it merges to `main`). A hand-drawn spinner, chip or error style is a defect.
+- Icons sit straight on their row or panel; a duo glyph needs no tile behind it. A row's open action is a neutral 3D button (`variant="neutral"`), never "Open ›" text with a chevron, and the row highlight alone marks what is currently showing.
 - Values found by feel go through `dialkit` and land as a token module with a test at **Build**, not during Design. While a surface is still being designed the value lives in the proto.
