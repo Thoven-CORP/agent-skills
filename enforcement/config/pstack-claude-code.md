@@ -2,7 +2,7 @@
 
 pstack skills use Cursor names. In Claude Code, read this file once per session, then map each Cursor name in a skill with the tables below. If a Cursor field has no row, drop it and say so. Never pass a field or value the tool schema rejects.
 
-This is our copy of upstream `pstack/docs/harness/claude-code.md` (cursor/plugins `1b80080058`, 2026-10-17), changed for how pstack is installed here. Upstream assumes the pstack Claude plugin, with a `<pstack>` folder that holds `skills/` and `docs/`. Here `npx skills` installs each pstack skill on its own into `~/.agents/skills/<name>/`, linked from `~/.claude/skills/<name>`, and `docs/` is not installed. `enforcement/hooks/reapply-skill-patches.py` points poteto-mode at this file.
+This is our copy of upstream `pstack/docs/harness/claude-code.md` (cursor/plugins `1b80080058`, 2026-10-17), changed for how pstack is installed here. Upstream assumes the pstack Claude plugin, with a `<pstack>` folder that holds `skills/` and `docs/`. Here `npx skills` installs each pstack skill on its own into `~/.agents/skills/<name>/`, linked from `~/.claude/skills/<name>`, and `docs/` is not installed. `enforcement/hooks/reapply-skill-patches.py` points poteto-mode and poteto-help at this file.
 
 ## Tools
 

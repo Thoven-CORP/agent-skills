@@ -67,6 +67,31 @@ PATCHES = [
         "[the Claude Code adapter](~/thoven/agent-skills/enforcement/config/pstack-claude-code.md)",
     ),
     (
+        "poteto-help",
+        "[the Claude Code adapter](../../docs/harness/claude-code.md)",
+        "[the Claude Code adapter](~/thoven/agent-skills/enforcement/config/pstack-claude-code.md)",
+    ),
+    (
+        "poteto-help",
+        "- No `~/.cursor/rules/pstack-models.mdc` means `/setup-pstack` hasn't run for this user, so every role uses its default model.",
+        "- Models come from `~/.claude/pstack-models.md`, which Andres sets by hand. Point a model or budget question at that file, not at `/setup-pstack`.",
+    ),
+    (
+        "poteto-help",
+        "Rerun `/setup-pstack` and pick a smaller budget or cheaper models.",
+        "Lower the budget or the tiers in `~/.claude/pstack-models.md`.",
+    ),
+    (
+        "poteto-help",
+        "it also installs in Claude Code with `/plugin marketplace add cursor/plugins`, then `/plugin install pstack@cursor-plugins`. There, each command takes a `pstack:` prefix, such as `/pstack:poteto-mode`. The [Claude Code adapter](../../docs/harness/claude-code.md)",
+        "on this machine `npx skills` installs each pstack skill on its own, so a command has no `pstack:` prefix, such as `/poteto-mode`. The [Claude Code adapter](~/thoven/agent-skills/enforcement/config/pstack-claude-code.md)",
+    ),
+    (
+        "poteto-help",
+        "- `/loop` and `/create-skill` are Cursor built-ins.",
+        "- `/loop` is a Claude Code skill here. In place of Cursor's `/create-skill`, use the **writing-for-agents** skill.",
+    ),
+    (
         "ketchup",
         "a Mermaid diagram, a chart or diagram from `/visualize`, or a generated image",
         "an HTML page built with the **visual-artifacts** skill, a chart from the **dataviz** skill, or a generated image",
