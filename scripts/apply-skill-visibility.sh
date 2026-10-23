@@ -4,8 +4,10 @@
 # Every skill stays where `npx skills` put it, so `npx skills update` and the
 # Claude Code links keep working. Skills outside the allowlist are switched off
 # for Codex only, through a managed block of `[[skills.config]] enabled = false`
-# entries in ~/.codex/config.toml. Re-run `sync` after any `npx skills add` or
-# update. `activate <name>` switches one skill back on for Codex.
+# entries in ~/.codex/config.toml. A skill installed since the last sync stays on
+# and joins the activated list; only `deactivate <name>` switches it off. Re-run
+# `sync` after any `npx skills add` or update. `activate <name>` switches one
+# skill back on for Codex.
 set -euo pipefail
 
 skills_dir="${SKILLS_DIR:-$HOME/.agents/skills}"
@@ -80,6 +82,9 @@ is_auto_skill() {
   return 1
 }
 
+# Set by deactivate so the sync does not read the skill as newly installed.
+switching_off=""
+
 is_activated() {
   [[ -f "$active_list" ]] && grep -qxF "$1" "$active_list"
 }
@@ -126,6 +131,16 @@ unpark_all() {
     "$restored" "$trashed" "$trash" "$repointed"
 }
 
+# Paths the last sync switched off, inside the managed block.
+managed_paths() {
+  [[ -f "$codex_config" ]] || return 0
+  awk -v b="$begin_marker" -v e="$end_marker" '
+    $0 == b { keep = 1; next }
+    $0 == e { keep = 0; next }
+    keep && /^path = "/ { sub(/^path = "/, ""); sub(/"$/, ""); print }
+  ' "$codex_config"
+}
+
 # Paths already switched off by hand, outside the managed block.
 unmanaged_paths() {
   [[ -f "$codex_config" ]] || return 0
@@ -136,15 +151,28 @@ unmanaged_paths() {
   ' "$codex_config"
 }
 
+# Rewrites the managed block. Hand-written entries outside it are kept, except
+# those for the paths listed in the second file: an activated skill wins over
+# an old hand-written switch-off.
 write_block() {
-  local block_file="$1"
+  local block_file="$1" reclaim_file="$2"
   local tmp
   tmp="$(mktemp)"
   if [[ -f "$codex_config" ]]; then
-    awk -v b="$begin_marker" -v e="$end_marker" '
+    awk -v b="$begin_marker" -v e="$end_marker" -v reclaim="$reclaim_file" '
+      BEGIN { while ((getline line < reclaim) > 0) drop[line] = 1 }
       $0 == b { skip = 1; next }
       $0 == e { skip = 0; next }
-      !skip { lines[++n] = $0 }
+      skip { next }
+      dropping && $0 !~ /^\[/ { if ($0 == "") dropping = 0; next }
+      dropping { dropping = 0 }
+      header {
+        header = 0
+        p = $0; sub(/^path = "/, "", p); sub(/"$/, "", p)
+        if ($0 ~ /^path = "/ && (p in drop)) { n--; dropping = 1; next }
+      }
+      { lines[++n] = $0 }
+      $0 == "[[skills.config]]" { header = 1 }
       END { while (n > 0 && lines[n] == "") n--; for (i = 1; i <= n; i++) print lines[i] }
     ' "$codex_config" >"$tmp"
   fi
@@ -164,13 +192,21 @@ write_block() {
 sync_catalog() {
   local skill_dir skill_file skill_name path
   local visible=0 hidden=0
-  local block
+  local block reclaim
   block="$(mktemp)"
+  reclaim="$(mktemp)"
 
   unpark_all
 
   local handled
   handled="$(unmanaged_paths)"
+
+  # Before the first sync there is no block, so nothing can be told apart as
+  # new; the allowlist alone decides.
+  local had_block=0 previously_off
+  [[ -f "$codex_config" ]] && grep -qxF "$begin_marker" "$codex_config" && had_block=1
+  previously_off="$(managed_paths)"
+  local new_skills=()
 
   {
     printf '\n%s\n' "$begin_marker"
@@ -183,11 +219,19 @@ sync_catalog() {
         ((visible += 1))
         continue
       fi
+      path="$skills_dir/$skill_name/SKILL.md"
       if is_activated "$skill_name"; then
+        grep -qxF "$path" <<<"$handled" && printf '%s\n' "$path" >>"$reclaim"
         ((visible += 1))
         continue
       fi
-      path="$skills_dir/$skill_name/SKILL.md"
+      if ((had_block)) && [[ "$skill_name" != "$switching_off" ]] \
+        && ! grep -qxF "$path" <<<"$previously_off" && ! grep -qxF "$path" <<<"$handled"; then
+        printf '%s\n' "$skill_name" >>"$active_list"
+        new_skills+=("$skill_name")
+        ((visible += 1))
+        continue
+      fi
       ((hidden += 1))
       grep -qxF "$path" <<<"$handled" && continue
       printf '[[skills.config]]\npath = "%s"\nenabled = false\n\n' "$path"
@@ -195,9 +239,17 @@ sync_catalog() {
     printf '%s\n' "$end_marker"
   } >"$block"
 
-  write_block "$block"
-  rm -f "$block"
+  write_block "$block" "$reclaim"
+  local reclaimed
+  reclaimed="$(sed -e "s|^$skills_dir/||" -e 's|/SKILL.md$||' "$reclaim" | paste -sd ' ' -)"
+  rm -f "$block" "$reclaim"
   printf 'Codex catalog synced: %d model-visible, %d switched off in %s.\n' "$visible" "$hidden" "$codex_config"
+  if [[ -n "$reclaimed" ]]; then
+    printf 'Activated, so their hand-written switch-off was removed: %s.\n' "$reclaimed"
+  fi
+  if ((${#new_skills[@]})); then
+    printf 'New since the last sync, kept on: %s. Run deactivate <name> to switch one off.\n' "${new_skills[*]}"
+  fi
 }
 
 activate_skill() {
@@ -224,7 +276,7 @@ deactivate_skill() {
   fi
   grep -vxF "$skill_name" "$active_list" >"$active_list.tmp" || true
   mv "$active_list.tmp" "$active_list"
-  sync_catalog
+  switching_off="$skill_name" sync_catalog
   printf 'Switched %s off for Codex. Start a new Codex session to drop it.\n' "$skill_name"
 }
 

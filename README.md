@@ -102,7 +102,7 @@ After **any** `npx skills add` or update, run the script in step 4 above:
 bash ~/thoven/agent-skills/scripts/apply-skill-visibility.sh
 ```
 
-Every skill stays where `npx skills` installed it, so `npx skills update` and the Claude Code links keep working. The Pstack suite, `/qa-flow`, daily Thoven workflows, retained Better/Interface/Transitions/Emil design skills, and the Matt Pocock skills used routinely stay visible to Codex. The script switches the rest off for Codex only, with a managed block of `[[skills.config]] enabled = false` entries in `~/.codex/config.toml`, so they cannot exhaust its skills-context budget. Entries outside the block's markers are left alone.
+Every skill stays where `npx skills` installed it, so `npx skills update` and the Claude Code links keep working. The Pstack suite, `/qa-flow`, daily Thoven workflows, retained Better/Interface/Transitions/Emil design skills, and the Matt Pocock skills used routinely stay visible to Codex. The script switches the rest off for Codex only, with a managed block of `[[skills.config]] enabled = false` entries in `~/.codex/config.toml`, so they cannot exhaust its skills-context budget. Entries outside the block's markers are left alone. A skill installed since the last sync stays on: the script adds it to `~/.agents/.codex-activated-skills` and names it in its output. Switch it off with `deactivate <name>` if Codex does not need it.
 
 To use one of those skills in Codex, switch it on and start a new Codex session:
 
