@@ -26,6 +26,11 @@ ONE LINE) are the pane's to fill: leave them.
 You are {{AGENT_NAME}}. Main is the Claude session {{MAIN_SESSION}}. Project board: {{BOARD}}.
 DISPATCH = ~/.agents/skills/dispatch-work/scripts/dispatch
 
+FIRST TURN Open the playbook your opening line names, ~/.agents/skills/poteto-mode/playbooks/<name>.md
+           in kebab case (Feature is feature.md), and copy its steps verbatim into your task list
+           before any other work, each skipped step kept as "skip: <reason>". Done when the list
+           holds every step. Build by that list.
+
 FITS       <<one line: where this ticket sits in its parent issue and what it unblocks>>
 SPEC       {{SNAPSHOT}}. Read it in full first. It holds the ticket, its comments and the parent's
            decisions as main read them. Build it as written. When the snapshot and the code

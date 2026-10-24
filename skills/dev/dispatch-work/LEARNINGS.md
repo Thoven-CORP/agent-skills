@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-24 — the brief makes the builder open its playbook first
+
+> session · 2026-10-24 · 7c3d7896 · 09ad9b3a · correction · applied · seen 1
+
+**What happened.** On THV-1401 (PL5-S0) the builder launched with `/poteto-mode Feature THV-1401 ...`, so the skill loaded, but it never opened `playbooks/feature.md`, made no task list, ran no `/tdd` or `/thoven-designer`, and committed backend code. Its only Skill calls were 2 `/security-review` runs. Andres: "dispatch did not run poteto mode i never saw the skill incokcation".
+**Why.** Loading poteto-mode tells the agent to copy the matched playbook's steps, but the brief that follows is long and concrete, and the builder went straight to building from it.
+**What changed.** brief.md gains a FIRST TURN line under DISPATCH: open the named playbook and copy its steps verbatim into the task list before any other work, done when every step is listed. No Pitfall line, because every brief carries it.
+
 ## 2026-10-22 — spawn sends the brief's skill line, so poteto-mode loads
 
 > session · 2026-10-22 · 1509cf8d · 3dfd2928 · tooling · applied · seen 1
