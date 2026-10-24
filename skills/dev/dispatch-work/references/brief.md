@@ -66,8 +66,8 @@ DONE WHEN  <<the ticket's Done when, verbatim or by pointer>>
            in the report. Fix rounds never rerun it; main asks for the one final run before the PRs.
            An e2e or browser test runs as the one spec that covers your change, through the load
            gate, never the whole suite.
-           Skills run through the Skill tool at their moment: each ACCESS line, /tdd at each seam,
-           /deslop on your diff before each commit, /no-comments before DONE.
+           Skills run through the Skill tool at their moment: each ACCESS line and /tdd at each
+           seam. poteto-mode's playbook owns /deslop and /no-comments.
 STANDING   Read ~/.agents/skills/dispatch-work/references/standing.md now and follow it.
 
 ASK
@@ -116,8 +116,7 @@ FIX ROUND <<n>>/3 THV-<<id>>. Base for this round: <<sha>>.
 <<each open finding, verbatim, with file:line>>
 Fix these only. Re-run the tests that cover each fix and name them: those files one per run,
 plus typecheck and lint on the touched files. A UI fix runs only the browser test or parity state
-it touches. No bin/verify, no mutation sweep, no full e2e or browser suite this round.
-/deslop the fix diff before you commit. Copy follows
+it touches. No bin/verify, no mutation sweep, no full e2e or browser suite this round. Copy follows
 design/lexicon/LEXICON.md, and focus and accessibility fixes use the existing Thoven components.
 On a UI fix, capture each touched state at 1440 and 390 before and after; a change beyond the
 fixed element is a defect. Report as before.

@@ -71,7 +71,7 @@ run `bin/verify --base <<integration branch>>` yourself and paste the block.
 6. /deslop findings only.
 Round 2 and later: read the fix diff only, and run only the test files it touches or that cover
 it, one per run. No bin/verify, no mutation sweep, no e2e or browser suite, no re-sharded thermo:
-one /thermo-nuclear-code-quality-review and one /deslop over the fix diff.
+/thermo-nuclear-code-quality-review, /deslop and /mattpocock-skills:code-review over the fix diff.
 Write findings into your reply and into the ticket's one evidence folder
 (`~/.thoven-artifacts/THV-<id>/evidence/`). Create no parallel suite and no second evidence tree.
 Report as a builder does, with STATUS VERIFIED or FINDINGS:
