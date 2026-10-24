@@ -61,7 +61,13 @@ DONE WHEN  <<the ticket's Done when, verbatim or by pointer>>
            Verify per `~/.agents/skills/verify/SKILL.md`: lint and types, the touched test files
            one per run, the design scan suite on any component or token diff,
            `__tests__/mail-link-routes.test.ts` on a diff that adds or moves a route, and
-           `bin/verify --base <<integration branch>>` once before DONE with its block in the report.
+           `bin/verify --base <<integration branch>>` once per repo at your first DONE, with
+           `--mutation` when the diff changes logic in `lib/`, a service or a model, and its block
+           in the report. Fix rounds never rerun it; main asks for the one final run before the PRs.
+           An e2e or browser test runs as the one spec that covers your change, through the load
+           gate, never the whole suite.
+           Skills run through the Skill tool at their moment: each ACCESS line, /tdd at each seam,
+           /deslop on your diff before each commit, /no-comments before DONE.
 STANDING   Read ~/.agents/skills/dispatch-work/references/standing.md now and follow it.
 
 ASK
@@ -90,6 +96,7 @@ STATUS is DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT or BLOCKED. The body is the AS
   Verify       the THOVEN_VERIFY block
   Parity       UI tickets: the path of your parity `grid.html` (standing.md, Parity), and each
                difference from a frame: fixed, or confirmed with its ruling
+  Skills       each skill you invoked and when; a skipped ACCESS line names why
   Rulings      what you decided and why
   Noticed      one line per problem outside this ticket's code, for main's grouped Linear issue
 Label every claim measured, inferred or guess.
@@ -107,7 +114,10 @@ overlap. Post it as a CORRECTION entry, then send the same text to the builder b
 ```text
 FIX ROUND <<n>>/3 THV-<<id>>. Base for this round: <<sha>>.
 <<each open finding, verbatim, with file:line>>
-Fix these only. Re-run the tests that cover each fix and name them. Copy follows
+Fix these only. Re-run the tests that cover each fix and name them: those files one per run,
+plus typecheck and lint on the touched files. A UI fix runs only the browser test or parity state
+it touches. No bin/verify, no mutation sweep, no full e2e or browser suite this round.
+/deslop the fix diff before you commit. Copy follows
 design/lexicon/LEXICON.md, and focus and accessibility fixes use the existing Thoven components.
 On a UI fix, capture each touched state at 1440 and 390 before and after; a change beyond the
 fixed element is a defect. Report as before.

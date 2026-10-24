@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-24 — full checks run once, fix rounds run targeted tests
+
+> session · 2026-10-24 · 7c3d7896 · 09ad9b3a · 6c77d189 · correction · applied · seen 1
+
+**What happened.** THV-1401's frontend `bin/verify` started at least 6 times across one build and two fix rounds (evidence `fe-verify*.log`, about 4.5 min wall each, measured at 8c660e63b), and low memory killed 2 of them. The verifier also reran `--mutation` in both repos, about 22 min in the background. Main's fix-round messages asked for `bin/verify` each round, against the fix-round template's "re-run the tests that cover each fix". The builder never invoked /tdd, /deslop or /no-comments through the Skill tool. The verifier ran thermos, deslop and code-review as subagents. Andres: "i think we need smarter testing not full mutation sweets every time and we jsut need proper invocation of potetomode and the rother skills".
+**Why.** Neither the brief nor the review steps said where the full run belongs, so each round defaulted to it. The mutation step told the verifier to rerun rather than cite. Skill moments lived only in ACCESS, which the builder read as optional.
+**What changed.** brief.md DONE WHEN: `bin/verify` once per repo at first DONE (with `--mutation` on logic in `lib/`, a service or a model), never in fix rounds, and e2e or browser tests as the one covering spec. It also names the skill moments (/tdd, /deslop, /no-comments), and the REPORT gains a Skills row. The fix-round brief runs only the covering files plus typecheck and lint, and /deslops the fix diff. review.md: the verifier cites the builder's mutation row instead of sweeping, and round 2+ runs the fix diff's tests, one thermo-quality pass and one deslop. Main asks for one final `bin/verify` at the PR head when fixes landed after the block.
+
 ## 2026-10-24 — the brief makes the builder open its playbook first
 
 > session · 2026-10-24 · 7c3d7896 · 09ad9b3a · correction · applied · seen 1

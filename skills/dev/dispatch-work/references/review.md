@@ -16,7 +16,10 @@ framing nor main's.
 3. Merge backend before the frontend that reads it, and only when the backend change is backward
    compatible: a newly required request field stays optional until the frontend that sends it is on
    staging. UI merges after Andres sees the evidence.
-4. Cite the builder's `bin/verify` block rather than rerunning it. CI on the integration PR is the
+4. Cite the builder's `bin/verify` block rather than rerunning it. When fix rounds landed after
+   that block, ask the builder for one final `bin/verify` per repo at the head the PR will carry,
+   without `--mutation` unless a fix changed logic the first run's mutation row did not cover.
+   CI on the integration PR is the
    full run (andres-mode, "Check your own work").
 
 ## Working if
@@ -55,8 +58,10 @@ run `bin/verify --base <<integration branch>>` yourself and paste the block.
    first, then the board frames each decision cites. Compare every state yourself and recapture only a state that looks wrong. Run
    /better-ui and /thoven-designer over the built screens. A difference from a frame that Andres
    did not confirm is an important finding.
-3. A SKIPPED `mutation` row on a diff touching `lib/`, a service or a model is a finding: rerun
-   `bin/verify` with `--mutation`. Claims the receipt does not cover get a direct check. /verify-this covers those claims only.
+3. Cite the builder's `mutation` row; run no mutation sweep yourself. A SKIPPED row on a diff
+   that changes logic in `lib/`, a service or a model is a finding for the builder's next round.
+   A claim the receipt does not cover gets the one test file that covers it, or /verify-this for
+   that claim only.
 4. /mattpocock-skills:code-review against <<base>>.
 5. Thermo, sized to the diff. Under ~300 lines in one module: /thermo-nuclear-code-quality-review.
    Crossing a module or past ~300 lines: /thermos (bug and security review plus code quality). Past
@@ -64,7 +69,9 @@ run `bin/verify --base <<integration branch>>` yourself and paste the block.
    rules and the pinned head, one small findings file per shard, sonnet for structural and
    lower-risk shards.
 6. /deslop findings only.
-Round 2 and later: read the fix diff only.
+Round 2 and later: read the fix diff only, and run only the test files it touches or that cover
+it, one per run. No bin/verify, no mutation sweep, no e2e or browser suite, no re-sharded thermo:
+one /thermo-nuclear-code-quality-review and one /deslop over the fix diff.
 Write findings into your reply and into the ticket's one evidence folder
 (`~/.thoven-artifacts/THV-<id>/evidence/`). Create no parallel suite and no second evidence tree.
 Report as a builder does, with STATUS VERIFIED or FINDINGS:
