@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-25 — the skill never fired on drawings and protos
+
+> reflect · 2026-10-25 · 7c3d7896 · 389b9590 · 39a12a43 · broken-rule · applied · seen 3
+
+**What happened.** Protos and board variants reached Andres with design-system misses that this skill already covers. In 7c3d7896 he said "the button fro approve is on the wrong side according to /thoven-designer" and "it should use or gloabal radio box". In 389b9590 a drawing subagent's claim that the sort "uses the design system's own select" was passed on unchecked, and he said "the dropwdown is still nto correct /thoven-designer". He typed /thoven-designer himself in more than eight prompts that week. The skill loaded last in those sessions was better-interface.
+**Why.** The description fired on design-system questions and on hand-rolling, not on drawing or presenting a frame, so the popup-footer and component checks in the body never loaded before the drawing went out.
+**What changed.** The description now also fires when drawing, critiquing or presenting a proto, board frame, Paper screen or design variant, so it is checked against the shipped component before Andres sees it. Backlog: a design-run `RULES.md` reportedly sends critique to interface-craft and the pick to better-ui; it was not found.
+
 ## 2026-10-22 — rhythm, popup footers, button states and icon tiles had no pointer
 
 > grill · 2026-10-22 · 39a12a43 · missing-pointer · applied · seen 1

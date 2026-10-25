@@ -21,6 +21,9 @@ together.
   Run `bin/verify` plain, outside the gate: it holds its own machine lock. CI runs the full suite
   on the integration PR. Stop the servers you started after each step. Delete scratch you can regenerate. Route big logs and
   wide reads through a subagent and keep its summary.
+- When `bin/verify` comes back BLOCKED only because `origin/main` moved, merge main once and rerun
+  once. If main moves again, do not merge again: report the block as it came back, with every row
+  and the base SHA you merged. Further catch-up is main's call.
 - Dev server: it runs for the parity capture and stops after it. Start it and `rails s` plain, or
   through the load gate with `--check-only`, because a gated server holds a slot for its whole life.
   Use your own port, delete your `.next-*` folder when you stop, and leave uncommitted the

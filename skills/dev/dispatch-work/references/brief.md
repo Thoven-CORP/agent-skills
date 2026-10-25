@@ -56,12 +56,15 @@ KNOWN      <<interfaces, rulings and commits from earlier tickets this one build
 ACCESS     <<the skill lines from skills.md this ticket reaches, each with its moment>>
            Tools: graphify for callers and impact, Context7 for vendor docs, control-cli and
            control-ui for a running app, tier-5 subagents for wide reads.
-DONE WHEN  <<the ticket's Done when, verbatim or by pointer>>
+DONE WHEN  <<the ticket's Done when, by pointer>>. Its live lanes, perf runs and repeat parity
+           run only where no unit or request spec covers the line; list the rest as SKIPPED.
            Seams: <<where the tests sit>>. Proof goes red before your change and green after it.
            Verify per `~/.agents/skills/verify/SKILL.md`: lint and types, the touched test files
            one per run, the design scan suite on any component or token diff,
            `__tests__/mail-link-routes.test.ts` on a diff that adds or moves a route, and
-           `bin/verify --base <<integration branch>>` once per repo at your first DONE, with
+           `bin/verify --base <<integration branch>>` once per repo at your first DONE (frontend on a
+           two-repo ticket: prefix `THOVEN_BACKEND_PATH=<<paired backend tree>>` and
+           `NEXT_PUBLIC_API_BASE_URL=<<backend URL>>`, or the fixture rows come back BLOCKED), with
            `--mutation` when the diff changes logic in `lib/`, a service or a model, and its block
            in the report. Fix rounds never rerun it; main asks for the one final run before the PRs.
            An e2e or browser test runs as the one spec that covers your change, through the load

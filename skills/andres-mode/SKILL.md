@@ -17,15 +17,15 @@ Thoven work spans a frontend and a backend repo, run by a main session that disp
 - Map callers (exact import grep, graphify, route to handler) before ruling anything dead or deletable, and label each ruling verified or audit claim. (LEARNINGS 2026-09-03)
 - Resolve each merge conflict by product intent with its source, check blast radius past the conflicted lines, and state the oracle before the smallest test; a walkthrough is not proof. (LEARNINGS 2026-10-20)
 - Improve verification through skill text and check selection; hooks, receipt plumbing and watcher scripts are not the deliverable. (LEARNINGS 2026-10-19)
-- Ship internal tooling in agent-skills with one builder and a test run, fixing in this session with subagents; verifier panes, thermo rounds and live waves wait until the user asks. (LEARNINGS 2026-10-03)
-- Leave `disable-model-invocation` off a skill unless the user says that skill must never self-trigger, and search installed skills under `~/.agents/skills`, since `grep -r` skips the `~/.claude/skills` symlinks. (LEARNINGS 2026-08-20)
+- Ship internal tooling and any low-severity, well-understood fix light: one builder or one small PR, targeted tests, no fix loop, merge on green CI (a merge into `main` is still asked in one line); verifier panes, thermo rounds and live waves wait until the user asks. (LEARNINGS 2026-10-25)
+- Name each item in a status or remaining-work list by its feature in plain words, with what happened to it, its PR and its worktree; ticket ids go beside only when the user asks. (LEARNINGS 2026-10-25)
 
 ## Records
 
 - **Linear and the tldraw board are the only records.** Specs, decisions, rulings, evidence and status live in Linear. Designs live on the Project's `.tldraw` board.
 - **Local evidence stays until the user has seen it.** Upload to Linear, show it in chat, and delete the local copy only after the user says they have looked. (E1: seven "show me" asks in one slice after a close step deleted the folder.)
 - **The Linear parent holds the canonical decisions**, each with an id, a date and its board frame. Slice tickets cite ids and never restate them.
-- **A ruling changes the ticket description** with a dated marker, in the same turn it is given. A ruling that lives only in chat is not yet a ruling. (H6: panes re-asked rulings that were in chat and not in the parent.)
+- **A ruling amends the decision row it changes**, in the same turn and without asking, and removes every stale copy: explainer, board frame, proto, sibling slice rows. Add a row only when no row covers it; never a dated row beside the one it replaces. A ruling about where a kind of item goes is standing. A ruling that lives only in chat is not yet a ruling. (H6: panes re-asked rulings that were in chat and not in the parent.)
 - **After a Linear write, read it back** and report it in one line. Write no local receipt.
 - **The board is one living spec.** Edit it in place and change only the layer or frame the user named. Keep it on one page with nothing overlapping; an ADR, PRD or motion card holds 3-6 requirement lines. Each design-variant refinement goes in a new row beside the last, and superseded iterations go once an option is picked.
 - A dropped skill or tool loses every mention. No Retired list names it.
@@ -85,12 +85,13 @@ The builder checks its own homework before DONE; the reviewer runs the same list
 
 - Roles: dispatch-work (Roles table). Panes run Claude Code under `/poteto-mode`; Codex only when the user asks for it by name in this session.
 - Guard main's context: bulk reads go to subagents.
-- The session the user is talking to does the work they give it. Read another main's pane for state; never route a task or its ownership through it.
+- The session the user is talking to does the work they give it. Read another main's pane for state; never route a task or its ownership through it. Never message a session you did not spawn, not even for a lock or a handshake; coordinate a shared board or tree through git and file state.
 - Subagents run opus, sonnet or haiku, never Fable. Research and inspiration fan-outs run sonnet. Vendor and library questions go through Context7, up to three queries, before WebSearch or WebFetch.
 - A brief quotes the user's words and states no preference the user did not say.
 - Name source, target and method in every merge line ("THV-1234 into scheduling/improvements, squash"; "scheduling/improvements → main, merge commit") and ask before any merge that touches `main`. The method by PR role is in thoven-law.md "Branches and PRs". A stale branch "predates" work on main; "deleted" is for a commit that removed something.
+- Leave `disable-model-invocation` off a skill unless the user says that skill must never self-trigger, and search installed skills under `~/.agents/skills`, since `grep -r` skips the `~/.claude/skills` symlinks.
 - Check disk and memory before any dispatch. Below 5 GB free or above load 10, prune first; never a worktree for a minor fix. At most two build panes with browsers open at once; verify reads load and free memory itself and drops to one row when the box is busy.
-- Close a pane and prune its scratch when its work lands and the user has seen the evidence. Never remove unpushed work. Delete your own one-off probes and scratch scripts once you have checked them, and say so.
+- When work lands and the user has seen the evidence, close its pane, stop its dev servers, remove its worktrees, protos and scratch, and report it in one line; never offer. Never remove unpushed work. Delete your own one-off probes and scratch scripts once you have checked them, and say so.
 
 ## Replies
 
@@ -98,7 +99,9 @@ The builder checks its own homework before DONE; the reviewer runs the same list
 - **A question is not a work order.** Answer an understanding question in full from what is known and end the turn; the decision comes in a later turn. An investigation runs only when the user asks, in subagents; otherwise it goes on the owning ticket.
 - Lead with the finding or the next step. Eight lines or fewer for status. Plain product English, naming things by what they do. No ticket or decision ids in chat or a question, and no skill or hook names unless the user must act on them.
 - **"Where are we" walks the user's own list.** Fetch first (`gh pr list --state merged`, `git log origin/main`, the Linear tickets), then go item by item through what the user asked for: done with its PR, open with its PR, dropped, missed. Each part of a two-part ticket gets its own line, and ticket numbers appear when the user asks for them. This also opens the reply after a long autonomous stretch.
-- **Status is pushed, not polled.** When a pane reports, a verify finishes or a watcher fires with something to act on, one line reaches the user in that turn. Silence while something runs is a defect. (F1: 20+ polls.)
+- **Status is pushed, not polled.** When a pane reports, a verify finishes or a watcher fires with something to act on, one line reaches the user in that turn. Silence while something runs is a defect. (F1: 20+ polls.) With several parents live, keep the user on one: each reply names the parent in hand, and other parents' reports wait for the end of the step as one line.
+- **Restate before redrawing.** Multi-point design feedback comes back as a numbered list, with an ASCII sketch when the layout changes, and nothing is drawn until the user says yes.
+- **A research ask stays open until delivered.** The turn that closes the topic names each ask as delivered or dropped. A vendor comparison starts from the earlier sheet and scores every candidate on the user's criteria, rejects included.
 - **Standing or this time.** When the user waives or changes a rule, the reply names which it is in four words ("this slice only" or "standing from now"). Default is this time.
 - Stay in the current mode. Build mode raises no publish gates and creates no proto or design-gate tickets; slices build straight into the real components.
 - Do reversible in-scope work without asking. Ask only for a product decision or a merge into `main`, through the ask tool, with the recommendation first and its consequence in one line. Grill rounds go through the tool too, four questions per call at most, with previews for visual options; an HTML page is for looking. Once the user rules, do the safe parts and report any hazard beside the work in one or two sentences. No "want me to" at the end of a turn.

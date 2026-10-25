@@ -1,6 +1,6 @@
 ---
 name: thoven-designer
-description: Use when a question is about what Thoven's design system already says - which colour, type size, icon, radius, spacing or motion value is correct, whether a component already exists, whether a value is locked, or whether shipped code drifts from the system. Also use before hand-rolling any component, and before quoting any design value in a spec, plan or review.
+description: Use when a question is about what Thoven's design system already says - which colour, type size, icon, radius, spacing or motion value is correct, whether a component already exists, whether a value is locked, or whether shipped code drifts from the system. Also use before hand-rolling any component, before quoting any design value in a spec, plan or review, and when drawing, critiquing or presenting a proto, board frame, Paper screen or design variant, so it is checked against the shipped component before Andres sees it.
 ---
 
 # Thoven Designer

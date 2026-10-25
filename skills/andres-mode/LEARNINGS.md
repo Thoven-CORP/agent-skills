@@ -5,13 +5,61 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-25 — restate multi-point design feedback before redrawing
+
+> reflect · 2026-10-25 · 0f23577b · 389b9590 · 01a16fa4 · skill-gap · applied · seen 3
+
+**What happened.** Andres asked four times in three sessions for his feedback to be played back before anything was drawn: "Restate your understanding of my feedback. before drawing and tweaking I want you to mockup with ascii in chat" (0f23577b), "Restate my decisions so you can align" (389b9590). When the restate was skipped, the lightbox came back full-screen: "it should be small popup not the full screen".
+**Why.** No rule asked for a restate before a redraw, so each round went straight to drawing.
+**What changed.** Replies: "Restate before redrawing", a numbered list plus an ASCII sketch for layout, and nothing drawn until he says yes.
+
+## 2026-10-25 — a ruling amends its row and every stale copy
+
+> reflect · 2026-10-25 · 39a12a43 · 7c3d7896 · broken-rule · applied · seen 2
+
+**What happened.** Rulings were added as dated rows beside the rows they replaced: "for all the items we keep appending when a lot of decisions can be merged", and "In the explainer I still see email… it seems like we rejected for that" (39a12a43). A recap-switch ruling given on Oct 24 never reached a sibling slice's row (P83) or its brief, so the pane built the overruled Saving state.
+**Why.** Records said a ruling changes the ticket "with a dated marker", which reads as append. Root CLAUDE.md rule 8 (delete superseded decisions) and the frontend memory `project_amendment_passes_miss_copies` were not where a fresh session looks.
+**What changed.** Records: a ruling amends the row it changes in the same turn without asking, removes every stale copy (explainer, frame, proto, sibling rows), and adds a row only when none covers it.
+
+## 2026-10-25 — one parent at a time when several are live
+
+> reflect · 2026-10-25 · 39a12a43 · 7c3d7896 · correction · applied · seen 2
+
+**What happened.** With several parents in flight, each pane completion became its own message. Andres: "We're working on eight different features right now… Please just one at a time" (39a12a43), and "I don't know where we're at. I'm a little bit lost now" (7c3d7896).
+**Why.** "Status is pushed" said one line per event and nothing about which parent the user is on.
+**What changed.** "Status is pushed" now keeps him on one parent: each reply names it, and other parents' reports wait for the end of the step as one line.
+
+## 2026-10-25 — a research ask stays open until delivered
+
+> reflect · 2026-10-25 · 39a12a43 · 7c3d7896 · correction · applied · seen 2
+
+**What happened.** "I asked you to do additional research on the second guardian vendors and you did not come up with that research" (39a12a43). The follow-up answered a different question: "I am not looking for gaps that k-id fills i want to see the other vendors we checked… even the ones you said we not rigth in the initial sheet" (7c3d7896).
+**Why.** Nothing tracked an ask past the turn it was made, and the comparison started from the recommendation rather than the earlier sheet.
+**What changed.** Replies: a research ask stays open until delivered, the closing turn names each ask delivered or dropped, and a vendor comparison scores every candidate from the earlier sheet, rejects included.
+
+## 2026-10-25 — low-severity fixes ship in the light lane
+
+> reflect · 2026-10-25 · b40065c8 · skill-gap · applied · seen 1
+
+**What happened.** Andres typed the same recipe twice in one session for small fixes: "One small PR into main, targeted tests only, no fix loop, then merge."
+**Why.** The light-process Pitfall covered internal tooling only; the memory `rate-severity-before-fix-loops` sizes the effort but names no default lane.
+**What changed.** The 2026-10-03 Pitfall now covers any low-severity, well-understood fix: one small PR, targeted tests, no fix loop, merge on green CI, with a merge into main still asked in one line.
+
+## 2026-10-25 — a blank ask-tool answer is re-asked at once
+
+> reflect · 2026-10-25 · 39a12a43 · skill-gap · applied · seen 1
+
+**What happened.** The ask tool came back unanswered twice. Andres: "Ask me the questions again", and "Ask queask qution again its just my comptuer is slow".
+**Why.** A blank answer read as a decision to skip, not as a dropped prompt on a slow machine.
+**What changed.** Logged only: re-ask a blank or dismissed ask-tool result at once, in plain text with the same options.
+
 ## 2026-10-23 — product grills lose altitude and hide their assumptions
 
-> reflect + grill · 2026-10-23 · 0f23577b · 39a12a43 · correction · applied · seen 3
+> reflect + grill · 2026-10-23 · 0f23577b · 39a12a43 · d9f3ef92 · correction · applied · seen 4
 
 **What happened.** In the ND credential and PL grills, rounds jumped between flows and into details (success states, acceptance emails) before what mattered or where the feature lives was settled. Andres: "Why are we diving ten steps ahead…", "when the fuck did we make all these assumptions? Wait this is not even what we're trying to solve for."
 **Why.** Grilling orders by dependency frontier, not altitude, and nothing kept assumptions visible. The customer-obsession skill that could have held the level fired once in ~60 sessions.
-**What changed.** New "Product thinking" section: top-down levels, a running assumptions list, a one-line direction flag. `product-fundamentals` replaces customer-obsession-design-thinking and carries the full method.
+**What changed.** New "Product thinking" section: top-down levels, a running assumptions list, a one-line direction flag. `product-fundamentals` replaces customer-obsession-design-thinking and carries the full method. 2026-10-25: d9f3ef92 brought neurodivergent-learner features to a grill with no evidence and named a whiteboard button that does not ship ("is this actually like research backed… Since when do we have a whiteboard button?"); the assumptions list covers it.
 
 ## 2026-10-22 — a workflow session outside ~/thoven never loaded andres-mode
 
@@ -23,11 +71,11 @@ New entries on top. Each one: what happened, why, what changed.
 
 ## 2026-10-22 — CI red is real until proven a flake; the session he talks to does the work
 
-> reflect · 2026-10-22 · 19da0b54 · 889d1f76 · a010cb0c · 01a151d4 · broken-rule · applied · seen 3
+> reflect · 2026-10-22 · 19da0b54 · 889d1f76 · a010cb0c · 01a151d4 · 7c3d7896 · broken-rule · applied · seen 4
 
 **What happened.** Agents called real CI failures flakes and took it back ("I was wrong to call it a flake", twice), and main's frontend CI stayed red for days with "nothing in this Project owns that". Separately, a main routed Andres's release tasks through another main's pane, and he said "stop messaging the live lesson panel handle everthign handle items in this chat".
 **Why.** The not-flaky fact lived in two project memories, not a procedure. No rule said which session owns work Andres hands it.
-**What changed.** Check your own work: a CI failure is real until the same SHA passes on rerun and the test passes on main's latest run, and red on main gets a named owner the same day. Delegation: the session he talks to does the work; another main's pane is read for state only.
+**What changed.** Check your own work: a CI failure is real until the same SHA passes on rerun and the test passes on main's latest run, and red on main gets a named owner the same day. Delegation: the session he talks to does the work; another main's pane is read for state only. 2026-10-25: a main kept messaging the other Private Lessons main with a board "taking / free" handshake ("YOu keep messaging this other pane", 7c3d7896); the fix had gone only into a project memory. Delegation now bans messaging any session you did not spawn and coordinates shared boards through git.
 
 ## 2026-10-22 — merge lines name the method; "where are we" walks the user's list; one-file visual explainers; keep the user's voice
 
@@ -209,21 +257,21 @@ New entries on top. Each one: what happened, why, what changed.
 
 ## 2026-09-16 — delete your own scratch files
 
-> reflect · 2026-09-16 · memory:feedback_delete_scratch_files_without_asking · correction · applied · seen 1
+> reflect · 2026-09-16 · memory:feedback_delete_scratch_files_without_asking · 1509cf8d · broken-rule · applied · seen 2
 
 **What happened.** A probe script holding test login details was left as a to-do for Andres. He said "delete it, you do not need to wait for me there."
 **Why.** A one-off probe is the session's own mess.
-**What changed.** Step in Delegation, the "Close a pane" line: delete your own one-off probes and scratch scripts once checked, and say so.
+**What changed.** Step in Delegation, the "Close a pane" line: delete your own one-off probes and scratch scripts once checked, and say so. 2026-10-25: 1509cf8d ended on "Say if you want them removed" and Andres had to ask for the dev servers, worktrees and protos to go; the step now covers all three, reported in one line with no offer.
 
 ---
 
 ## 2026-09-14 — plain product language, no ids in chat
 
-> reflect · 2026-09-14 · memory:feedback_plain_language_reports_no_ticket_ids · broken-rule · applied · seen 2
+> reflect · 2026-09-14 · memory:feedback_plain_language_reports_no_ticket_ids · 39a12a43 · d9f3ef92 · b40065c8 · broken-rule · applied · seen 5
 
 **What happened.** On 09-07, after about 50 autonomous turns with no report, Andres could not follow references like ticket and decision ids: "You're speaking to me as if I have the full context of all of Linear". On 09-14 grill questions phrased as "settles ADR5, D1" got "Can you stop speaking to me in adr 5 and d1".
 **Why.** Ids point into context he does not carry. This holds even when a skill or brief asks to cite ledger rows; they belong in the ledger write.
-**What changed.** Step in Replies, the "Lead with the finding" line: a plain report after a long stretch; no ticket or decision ids in chat or a question.
+**What changed.** Step in Replies, the "Lead with the finding" line: a plain report after a long stretch; no ticket or decision ids in chat or a question. 2026-10-25: three more sessions led status lists with ids ("describe the tickets in actual words instead of jus thet e ticket number", 39a12a43); promoted to a Pitfall naming each item by feature, PR and worktree.
 
 ---
 
@@ -239,11 +287,11 @@ New entries on top. Each one: what happened, why, what changed.
 
 ## 2026-09-04 — once he rules, act
 
-> reflect · 2026-09-04 · memory:feedback_stop_re_asking_settled_scope · correction · applied · seen 1
+> reflect · 2026-09-04 · memory:feedback_stop_re_asking_settled_scope · 7c3d7896 · broken-rule · applied · seen 2
 
 **What happened.** Andres said "remove the feature flags". A scope question followed, then a question about one call site's cascade. He cut it off: "Just don't remove the fucking flag then. Just don't do it. Just do your edits." The cleanup was dropped.
 **Why.** Each extra round costs him a turn and reads as stalling.
-**What changed.** Step in Replies, the "Do reversible in-scope work" line: once the user rules, do the safe parts and report any hazard beside the work in one or two sentences.
+**What changed.** Step in Replies, the "Do reversible in-scope work" line: once the user rules, do the safe parts and report any hazard beside the work in one or two sentences. 2026-10-25: Andres said where non-core follow-ups go (the Followups parent) and was asked again hours later ("Dont file either… I said to put them under a parent issue called follwups", 7c3d7896). Records now says a ruling about where a kind of item goes is standing.
 
 ---
 

@@ -42,7 +42,9 @@ reconciliation ownership.
 1. Read [`references/PROJECT_SNAPSHOT.md`](references/PROJECT_SNAPSHOT.md). Its source order,
    evidence states, and ownership rules are binding.
 2. Resolve the current Linear Project from the named issue, session context, or cwd. If those
-   disagree, report `CONTRADICTED`; do not guess.
+   disagree, report `CONTRADICTED`; do not guess. A snapshot finding `Project folder could not be
+   resolved`, or a missing template, means the Project was never set up: run `$linear-project`
+   before any grill or design work, and never report it as expected.
 3. Fetch the Project's issues yourself, through the **Linear MCP connector**, then feed them to
    `map.js`. `map.js` never reaches for a Linear API key on its own.
 

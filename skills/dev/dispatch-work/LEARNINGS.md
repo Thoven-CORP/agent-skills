@@ -5,6 +5,30 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-25 — two heavy builders at once; rex timeouts mean overload
+
+> reflect · 2026-10-25 · 39a12a43 · 7c3d7896 · broken-rule · applied · seen 2
+
+**What happened.** On 10-23, four builders (THV-1383 to 1386) spawned together, and Claude Code killed 1383 at about 70 MB free. On 10-25 main asked Andres about the usage limit and about load 14 in one question. He answered "We are not out of claude", and three panes spawned at load 14 against the load-10 rule. Five builders then ran together, three panes raised TICK_ERROR "rex call timed out after 20s" at once, Andres posted HOLD, and all five hit LIMIT within seconds of it. THV-1379 ran for 4h26m. The TICK_ERROR row told main to blame the backend.
+**Why.** The 2026-10-11 Pitfall checked disk and memory once, at spawn, and could not see the load the panes add later. An answer to a bundled question was read as clearing both risks.
+**What changed.** The Pitfall now allows at most two heavy builders at once, staggers the rest, and re-reads disk, memory and load before each spawn. It also keeps the standing rule on any risk the answer did not settle. TICK_ERROR on several panes together now means overload, so prune or hold first. Backlog: tick's LIMIT/SETTLED_NO_REPORT double alert, FROZEN reading CPU only, and a `dispatch hold` state.
+
+## 2026-10-25 — the brief carries the paired backend tree and a targeted Done-when
+
+> reflect · 2026-10-25 · 8be42328 · 7c3d7896 · 39a12a43 · skill-gap · applied · seen 2
+
+**What happened.** Main typed `THOVEN_BACKEND_PATH=… NEXT_PUBLIC_API_BASE_URL=…` into fix rounds by hand (THV-1207, THV-1401), because without them the frontend fixture rows come back BLOCKED (`scripts/verify/diff.mjs`: "THOVEN_BACKEND_PATH is required"). Separately, the ticket's Done-when, copied in verbatim, brought full acceptance sweeps into first passes, and main had to send "GO, targeted (Andres, Oct 25): run the smallest set that proves this diff. Skip the full acceptance sweep."
+**Why.** DONE WHEN said "verbatim or by pointer" and named no environment for a two-repo verify, so the once-and-targeted rule of 2026-10-24 lost to the ticket's own list.
+**What changed.** brief.md DONE WHEN points at the ticket's Done-when. Live lanes, perf and repeat parity run only where no unit or request spec covers the line, and the rest are listed as SKIPPED. A frontend `bin/verify` on a two-repo ticket runs with the paired backend tree and API URL.
+
+## 2026-10-25 — a verify blocked by a moving main merges once
+
+> reflect · 2026-10-25 · 8be42328 · skill-gap · applied · seen 1
+
+**What happened.** A builder's `bin/verify` came back BLOCKED because `origin/main` moved, and it was on its second merge when main said "If main moves again during this run, do not merge again. Report the block as it comes back… and name the main SHA you merged."
+**Why.** Nothing told a pane when to stop chasing main.
+**What changed.** A step in standing.md says to merge once and rerun once. A second move is reported as it came back, with every row and the base SHA. It went into standing.md rather than the Pitfalls because Pitfalls is at its ten-line cap and panes read standing.md.
+
 ## 2026-10-24 — full checks run once, fix rounds run targeted tests
 
 > session · 2026-10-24 · 7c3d7896 · 09ad9b3a · 6c77d189 · correction · applied · seen 1

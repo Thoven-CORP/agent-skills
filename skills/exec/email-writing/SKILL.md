@@ -7,6 +7,10 @@ description: Write and send emails in Andres's voice. Use when user says "write 
 
 Write emails matching Andres's tone and style, organized by audience type.
 
+## Pitfalls
+
+- Start a product-update email from the last update email in Gmail and both repos' CHANGELOGs, and describe each feature by what the user can now do. (LEARNINGS 2026-10-25)
+
 ## Trigger Phrases
 
 - "write email", "draft email", "send email"

@@ -5,6 +5,14 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-10-25 — an unresolved Project folder means the Project was never set up
+
+> reflect · 2026-10-25 · 0f23577b · 7c3d7896 · skill-gap · applied · seen 2
+
+**What happened.** The snapshot reported "Project folder could not be resolved" and a missing STATE file. 7c3d7896 called this expected and went on grilling. Andres, in 0f23577b: "before we keep doing this did we ever setup the worktree using /linear-project".
+**Why.** The Recipe resolved the Project but said nothing about what that finding means.
+**What changed.** Recipe step 2: an unresolved Project folder or a missing template sends the session to `$linear-project` before any grill or design work, and the finding is never reported as expected.
+
 ## 2026-10-03 — A spec with no Writes to path goes into the ticket
 
 > reflect · 2026-10-03 · memory:feedback_spec_writes_to_ticket · correction · applied · seen 1
