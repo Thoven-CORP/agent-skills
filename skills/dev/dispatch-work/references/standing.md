@@ -35,8 +35,9 @@ together.
   uploads to the Linear issue and the board and then deletes. Point at a board frame or screenshot
   that already exists instead of saving a second copy. Your only test or verification files are
   the ticket's own red and green proof.
-- Parity, on a UI ticket, before DONE: `scripts/verify/parity-run.mjs` over designed states
-  only, as the verify skill says, plus a short video of the flow and the list of differences from the board.
+- Parity, on a UI ticket, before DONE: the Parity check on your PR shoots designed states only,
+  at each frame's width and 390, as the verify skill says. Add its grid, a short video of the flow and
+  the list of differences from the board.
 - Database (backend ticket): export the pane's own `DATABASE_URL` and `TEST_DATABASE_URL` in the
   same line as every backend command, `git commit` included.
 - Debt, bugs and smells in code this ticket or feature owns are fixed on this branch in the same

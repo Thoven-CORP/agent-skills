@@ -55,7 +55,7 @@ The full method is `product-fundamentals`.
 Both checks run twice: in the brief before dispatch and as the reviewer's first two sections. `~/.agents/skills/dispatch-work/references/brief.md` and `~/.agents/skills/dispatch-work/references/review.md` carry the procedure.
 
 - **Spec parity by decision id.** Trace every acceptance line and every behaviour in the diff to a parent decision id. Quote the parent, never a sub-issue's paraphrase.
-- **Visual parity on the real page.** Capture every state at 1440 and 390 beside its frame, plus a short video, on the route a user reaches. `scripts/verify/parity-run.mjs` makes the captures (the verify skill has the command); the verify skill carries the unmapped-surface step. A `/dev` or lab route, a component without its parent panel, or a re-render of the board is not parity.
+- **Visual parity on the real page.** Capture every state at its board frame's width and 390 beside its frame, plus a short video, on the route a user reaches. The Parity check on the PR makes the captures for designed surfaces only, the states the diff touches, and attaches the grid (the verify skill has the steps, including the unmapped-surface step). A `/dev` or lab route, a component without its parent panel, or a re-render of the board is not parity.
 - **An unconfirmed difference is a defect.** Fixed in the PR unless a Linear ruling or a chat line confirms it.
 - **The board frame beats written prose** on layout and flow. A frame binds what shows, not how it sizes.
 - **Fidelity means design-system tokens** through the shared component. Build a missing one with `building-components`.
@@ -72,7 +72,7 @@ Both checks run twice: in the brief before dispatch and as the reviewer's first 
 The builder checks its own homework before DONE; the reviewer runs the same list over the diff. The commands and their costs live in `~/.agents/skills/verify/SKILL.md`.
 
 - **Every behaviour in the diff has a decision line**: "decision Dn, frame Fn", quoting the parent. A behaviour with no line is scope, and comes out or goes to the user.
-- **Design is checked on the real page.** The route a user reaches, at 1440 and 390, beside its frame, looked at before DONE. Shared component where one exists; tokens, not values; the design scan suite green. A `/dev` route, a component without its panel, or a re-render of the board proves nothing.
+- **Design is checked on the real page.** The route a user reaches, at its frame's width and 390, beside its frame, looked at before DONE. Shared component where one exists; tokens, not values; the design scan suite green. A `/dev` route, a component without its panel, or a re-render of the board proves nothing.
 - **Red then green on the behaviour the ticket names**, in the file's own test. A test that passes with the change reverted is not a test.
 - **Check a claim before saying it.** Before calling something missing, search `~/thoven/frontend` and every sibling worktree, and name which you covered. Open a cited doc line's heading before calling it a lock. A fact not checked this session is called unverified in the same sentence.
 - **Other people's tests run once.** Lint on changed files, cached typecheck, direct importers once. Mutation runs on GitHub on PRs into `main`, and locally only when the user asks. Never per hunk over the suite.

@@ -30,8 +30,8 @@ branch before starting the verifier. Each one that fails is a finding.
 - Commits land on the named branch, by exact path, each ending in the ticket id.
 - `git diff --stat <base>..HEAD` touches the ticket's Paths, and every other file has a stated reason.
 - The report labels each claim measured, inferred or guess.
-- A UI ticket's report links a parity capture folder with every touched state at 1440 and 390
-  beside its board frame, and no blank image. A state with no board frame is not a parity row:
+- A UI ticket's report links the Parity check's grid with every touched state at its frame's
+  width and 390 beside its board frame, and no blank image. A state with no board frame is not a parity row:
   name it as off-design in the report instead.
 
 ## Verifier brief
@@ -52,7 +52,7 @@ whose claim you doubt, one per run; never `bin/verify`.
 1. SPEC PARITY. Read the parent's "Decisions (canonical)" in the snapshot. Trace every Acceptance line and every
    behaviour in the diff to a decision id. Name invented scope, a decision the diff missed or
    changed, and lexicon slips.
-2. DESIGN PARITY, on a UI ticket. Open the builder's `~/.thoven-artifacts/<<branch>>/parity/grid.html`
+2. DESIGN PARITY, on a UI ticket. Open the grid from the `parity-grid` artifact of the PR's Parity check
    first, then the board frames each decision cites. Compare every state yourself and recapture only a state that looks wrong. Run
    /better-ui and /thoven-designer over the built screens. A difference from a frame that Andres
    did not confirm is an important finding.

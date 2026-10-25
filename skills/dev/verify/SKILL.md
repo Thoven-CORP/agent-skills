@@ -22,7 +22,7 @@ Shape of the check follows the shape of the change. Lint on the changed files an
 ## Before DONE
 
 4. Callers: `pnpm run type-check` green, and the direct importers' test files once, by path (`pnpm exec vitest run <files>`). Never `vitest related` on a source file: it follows every import, and a shared component pulls most of the suite. Backend: the mapped specs plus the request spec of any controller touched.
-5. A UI ticket on a surface with a board frame: capture parity with `node scripts/verify/parity-run.mjs --map scripts/verify/parity-surfaces.json --out ~/.thoven-artifacts/<branch>/parity <route prefixes the diff touches>` and open `grid.html` in the DONE message. Parity compares built states with designed ones: each state in `scripts/verify/parity-surfaces.json` names the board frame file that depicts it. On an unmapped surface, add the both-width spec to `scripts/verify/parity-surfaces.json` before DONE, or say SKIPPED and why.
+5. A UI ticket on a surface with a board frame: push and open the PR. The Parity check shoots the states the diff touches, each at its board frame's width and at 390, and comments a link to its `parity-grid` artifact. Fetch it with `gh run download <run-id> -n parity-grid -D ~/.thoven-artifacts/<branch>/parity`, open `grid.html`, fix each difference, and link the grid in the DONE message. Each state in `scripts/verify/parity-surfaces.json` names its board frame `file` and that frame's desktop `width`; a state with no frame or no width is refused. On an unmapped surface, add the spec and its frames with their widths before DONE, or say SKIPPED and why. `bin/verify --full` runs the same capture locally, only when the user asks.
 6. Paste each command you ran and its pass line in the DONE report. That is the evidence. A failure is fixed or raised to the user by name, never described away. Builds, the whole suite, e2e suites and repeat sweeps are CI's, never local.
 
 ## Full verify: on request or at the parent
@@ -39,4 +39,4 @@ Run `/maintain-verification-skill` against this file: time each check on this ma
 
 ## Shared with andres-mode ("Check your own work")
 
-Spec line per behaviour, real route at 1440 and 390 beside the frame, shared components and tokens, show before asking. That list is the reviewer's first two sections too.
+Spec line per behaviour, real route at the frame's width and 390 beside the frame, shared components and tokens, show before asking. That list is the reviewer's first two sections too.
