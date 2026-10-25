@@ -26,7 +26,7 @@ Shape of the check follows the shape of the change. Lint on the changed files an
 6. Build only when it can break: `next build` when `app/**`, `next.config.*`, middleware or a server file changed. `bin/ci fast` when Gemfile, schema, routes or a controller changed.
 7. Run `bin/verify --base <integration branch>` once, plain (never through thoven-load-gate; it holds its own lock), and paste its `THOVEN_VERIFY` block in the DONE report verbatim, `THOVEN_VERIFY_BEGIN` through `THOVEN_VERIFY_END`. A shortened or retyped block cannot be checked. `concurrency: 1` in the block means the machine was busy. A FAIL row is fixed or raised to the user by name, never described away.
 
-On a mapped UI surface the `parity` row produces the grid: open `grid.html` in the DONE message. On an unmapped surface, add the both-width spec to `scripts/verify/parity-surfaces.json` before DONE, or say SKIPPED and why.
+On a mapped UI surface the `parity` row produces the grid: open `grid.html` in the DONE message. Parity compares built states with designed ones: each state in `scripts/verify/parity-surfaces.json` names the board frame file that depicts it, and the row FAILs naming any state without one. On an unmapped surface, add the both-width spec to `scripts/verify/parity-surfaces.json` before DONE, or say SKIPPED and why.
 
 ## Before merge
 
