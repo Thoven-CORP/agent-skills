@@ -40,8 +40,8 @@ a rebase ate a day of the onboarding prototype.)
   files overlap another live tree's dirty files, or the work is risky and long. From Claude,
   `claude --worktree <area>-thv-<n>` runs the same script.
 - Open a held PR into `main`, and merge it on Andres's "merge it", gated by the required `CI` check.
-  `CI` runs only on PRs into `main`: a ticket PR into an integration branch merges on its
-  test lines and the verifier's pass, and `CI` gates the integration branch when it lands.
+  `CI` runs the full suite on PRs into `main` and the affected tests on a ticket PR into an
+  integration branch, which merges on that targeted `CI`, its test lines and the verifier's pass.
   The method follows the PR's role:
 
   | PR | Merge |
