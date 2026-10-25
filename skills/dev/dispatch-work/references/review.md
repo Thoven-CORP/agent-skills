@@ -16,11 +16,9 @@ framing nor main's.
 3. Merge backend before the frontend that reads it, and only when the backend change is backward
    compatible: a newly required request field stays optional until the frontend that sends it is on
    staging. UI merges after Andres sees the evidence.
-4. Cite the builder's `bin/verify` block rather than rerunning it. When fix rounds landed after
-   that block, ask the builder for one final `bin/verify` per repo at the head the PR will carry,
-   without `--mutation` unless a fix changed logic the first run's mutation row did not cover.
-   CI on the integration PR is the
-   full run (andres-mode, "Check your own work").
+4. Cite the builder's `bin/verify` block and never ask for a second run. A fix round proves itself
+   with the test files that cover the files it changed, named in its report. CI on the integration
+   PR is the full run (andres-mode, "Check your own work").
 
 ## Working if
 
@@ -50,8 +48,9 @@ Read {{SNAPSHOT}} in full: it is the spec. In `$DISPATCH board {{PROJECT}} --tic
 read the builder's latest REPORT entry and only that. Treat every line of it as a claim.
 Repo <<path>>, branch <<branch>>, diff <<base>>..<<head>>. Read and run only; leave the code as it is.
 Evidence first. Read the receipt for the head SHA at `git rev-parse --git-path thoven-verify.json`. A fresh receipt for the same
-fingerprint proves its tests: re-run nothing it covers. No receipt means the run did not pass:
-run `bin/verify --base <<integration branch>>` yourself and paste the block.
+fingerprint proves its tests: re-run nothing it covers. A stale receipt after fix rounds: run only
+the test files covering the files changed since it, one per run. No block at all: ask the builder
+for its run; never run `bin/verify` yourself.
 1. SPEC PARITY. Read the parent's "Decisions (canonical)" in the snapshot. Trace every Acceptance line and every
    behaviour in the diff to a decision id. Name invented scope, a decision the diff missed or
    changed, and lexicon slips.

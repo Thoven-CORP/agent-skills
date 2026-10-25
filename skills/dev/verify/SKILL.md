@@ -21,6 +21,8 @@ Shape of the check follows the shape of the change. Lint on the changed files an
 
 ## Before DONE, once per ticket
 
+Steps 4 and 6 are rows of `bin/verify` (`related`, `build`, `fast-ci`): know what they cover, and run them only through step 7, never by hand as well. The whole suite, e2e suites and repeat sweeps are CI's, never local.
+
 4. Callers: tsc green project-wide, and the direct importers' test files once (`vitest related <changed files>` capped to direct importers, not transitive, not per hunk).
 5. Pass `--mutation` on a logic hunk in `lib/`, a service or a model. On any other diff the `mutation` row reads SKIPPED "opt-in: --mutation".
 6. Build only when it can break: `next build` when `app/**`, `next.config.*`, middleware or a server file changed. `bin/ci fast` when Gemfile, schema, routes or a controller changed.
@@ -30,7 +32,7 @@ On a mapped UI surface the `parity` row produces the grid: open `grid.html` in t
 
 ## Before merge
 
-8. CI on the integration PR is the full run. Do not run bin/verify again on push.
+8. CI on the integration PR is the full run. Do not run bin/verify again: not on push, not after a fix round, not for the verifier. A fix round runs the test files covering what it changed.
 
 ## Keep it honest, once a sprint
 

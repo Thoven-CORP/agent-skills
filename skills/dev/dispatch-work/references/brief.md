@@ -66,7 +66,8 @@ DONE WHEN  <<the ticket's Done when, by pointer>>. Its live lanes, perf runs and
            two-repo ticket: prefix `THOVEN_BACKEND_PATH=<<paired backend tree>>` and
            `NEXT_PUBLIC_API_BASE_URL=<<backend URL>>`, or the fixture rows come back BLOCKED), with
            `--mutation` when the diff changes logic in `lib/`, a service or a model, and its block
-           in the report. Fix rounds never rerun it; main asks for the one final run before the PRs.
+           in the report. It runs once per ticket: fix rounds and the verifier never rerun it, and there is
+           no final run; CI on the integration PR is the full run.
            An e2e or browser test runs as the one spec that covers your change, through the load
            gate, never the whole suite.
            Skills run through the Skill tool at their moment: each ACCESS line and /tdd at each
