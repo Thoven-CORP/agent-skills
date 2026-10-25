@@ -16,9 +16,9 @@ framing nor main's.
 3. Merge backend before the frontend that reads it, and only when the backend change is backward
    compatible: a newly required request field stays optional until the frontend that sends it is on
    staging. UI merges after Andres sees the evidence.
-4. Cite the builder's `bin/verify` block and never ask for a second run. A fix round proves itself
-   with the test files that cover the files it changed, named in its report. CI on the integration
-   PR is the full run (andres-mode, "Check your own work").
+4. Cite the builder's test lines and the PR's CI checks; never ask for `bin/verify` on a ticket. A
+   fix round proves itself with the test files that cover the files it changed, named in its report.
+   The full verify runs at the parent (andres-mode, "Check your own work").
 
 ## Working if
 
@@ -47,10 +47,8 @@ DISPATCH = ~/.agents/skills/dispatch-work/scripts/dispatch
 Read {{SNAPSHOT}} in full: it is the spec. In `$DISPATCH board {{PROJECT}} --ticket THV-<id>`,
 read the builder's latest REPORT entry and only that. Treat every line of it as a claim.
 Repo <<path>>, branch <<branch>>, diff <<base>>..<<head>>. Read and run only; leave the code as it is.
-Evidence first. Read the receipt for the head SHA at `git rev-parse --git-path thoven-verify.json`. A fresh receipt for the same
-fingerprint proves its tests: re-run nothing it covers. A stale receipt after fix rounds: run only
-the test files covering the files changed since it, one per run. No block at all: ask the builder
-for its run; never run `bin/verify` yourself.
+Evidence first: the builder's test lines and `gh pr checks` on the ticket PR. Rerun only a test file
+whose claim you doubt, one per run; never `bin/verify`.
 1. SPEC PARITY. Read the parent's "Decisions (canonical)" in the snapshot. Trace every Acceptance line and every
    behaviour in the diff to a decision id. Name invented scope, a decision the diff missed or
    changed, and lexicon slips.
@@ -58,10 +56,9 @@ for its run; never run `bin/verify` yourself.
    first, then the board frames each decision cites. Compare every state yourself and recapture only a state that looks wrong. Run
    /better-ui and /thoven-designer over the built screens. A difference from a frame that Andres
    did not confirm is an important finding.
-3. Cite the builder's `mutation` row; run no mutation sweep yourself. A SKIPPED row on a diff
-   that changes logic in `lib/`, a service or a model is a finding for the builder's next round.
-   A claim the receipt does not cover gets the one test file that covers it, or /verify-this for
-   that claim only.
+3. Run no mutation sweep; mutation runs with the full verify at the parent. A claim the builder's
+   test lines do not cover gets the one test file that covers it, or /verify-this for that claim
+   only.
 4. /mattpocock-skills:code-review against <<base>>.
 5. Thermo, sized to the diff. Under ~300 lines in one module: /thermo-nuclear-code-quality-review.
    Crossing a module or past ~300 lines: /thermos (bug and security review plus code quality). Past

@@ -61,13 +61,10 @@ DONE WHEN  <<the ticket's Done when, by pointer>>. Its live lanes, perf runs and
            Seams: <<where the tests sit>>. Proof goes red before your change and green after it.
            Verify per `~/.agents/skills/verify/SKILL.md`: lint and types, the touched test files
            one per run, the design scan suite on any component or token diff,
-           `__tests__/mail-link-routes.test.ts` on a diff that adds or moves a route, and
-           `bin/verify --base <<integration branch>>` once per repo at your first DONE (frontend on a
-           two-repo ticket: prefix `THOVEN_BACKEND_PATH=<<paired backend tree>>` and
-           `NEXT_PUBLIC_API_BASE_URL=<<backend URL>>`, or the fixture rows come back BLOCKED), with
-           `--mutation` when the diff changes logic in `lib/`, a service or a model, and its block
-           in the report. It runs once per ticket: fix rounds and the verifier never rerun it, and there is
-           no final run; CI on the integration PR is the full run.
+           `__tests__/mail-link-routes.test.ts` on a diff that adds or moves a route, and the direct
+           importers' test files by path. No `bin/verify` on a ticket: the full verify runs only
+           when Andres asks or at the parent, before the integration PR into `main`. CI on your PR
+           runs the affected tests. Paste each command and its pass line in the report.
            An e2e or browser test runs as the one spec that covers your change, through the load
            gate, never the whole suite.
            Skills run through the Skill tool at their moment: each ACCESS line and /tdd at each
@@ -97,7 +94,7 @@ STATUS is DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT or BLOCKED. The body is the AS
   Acceptance   one row per line: ✓/✗, evidence (file:line, command → result)
   Proof        command, red before, green after
   Commits      SHAs and git diff --stat against base
-  Verify       the THOVEN_VERIFY block
+  Checks       each command you ran and its pass line
   Parity       UI tickets: the path of your parity `grid.html` (standing.md, Parity), and each
                difference from a frame: fixed, or confirmed with its ruling
   Skills       each skill you invoked and when; a skipped ACCESS line names why

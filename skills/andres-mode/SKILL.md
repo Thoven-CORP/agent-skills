@@ -55,7 +55,7 @@ The full method is `product-fundamentals`.
 Both checks run twice: in the brief before dispatch and as the reviewer's first two sections. `~/.agents/skills/dispatch-work/references/brief.md` and `~/.agents/skills/dispatch-work/references/review.md` carry the procedure.
 
 - **Spec parity by decision id.** Trace every acceptance line and every behaviour in the diff to a parent decision id. Quote the parent, never a sub-issue's paraphrase.
-- **Visual parity on the real page.** Capture every state at 1440 and 390 beside its frame, plus a short video, on the route a user reaches. The `parity` row of `bin/verify` makes the captures; the verify skill carries the unmapped-surface step. A `/dev` or lab route, a component without its parent panel, or a re-render of the board is not parity.
+- **Visual parity on the real page.** Capture every state at 1440 and 390 beside its frame, plus a short video, on the route a user reaches. `scripts/verify/parity-run.mjs` makes the captures (the verify skill has the command); the verify skill carries the unmapped-surface step. A `/dev` or lab route, a component without its parent panel, or a re-render of the board is not parity.
 - **An unconfirmed difference is a defect.** Fixed in the PR unless a Linear ruling or a chat line confirms it.
 - **The board frame beats written prose** on layout and flow. A frame binds what shows, not how it sizes.
 - **Fidelity means design-system tokens** through the shared component. Build a missing one with `building-components`.
@@ -76,7 +76,7 @@ The builder checks its own homework before DONE; the reviewer runs the same list
 - **Red then green on the behaviour the ticket names**, in the file's own test. A test that passes with the change reverted is not a test.
 - **Check a claim before saying it.** Before calling something missing, search `~/thoven/frontend` and every sibling worktree, and name which you covered. Open a cited doc line's heading before calling it a lock. A fact not checked this session is called unverified in the same sentence.
 - **Other people's tests run once.** Lint on changed files, cached typecheck, direct importers once, `--mutation` on a logic hunk. Never per hunk over the suite.
-- **One cadence.** Targeted checks while editing; `bin/verify --base <integration branch>` once before DONE; CI on the integration PR; nothing on push. A FAIL row is fixed or raised by name, never described away.
+- **One cadence.** Targeted checks while editing and at DONE; CI on every PR, the affected tests into an integration branch and the full suite into `main`; the full `bin/verify` only when the user asks or once at the parent, before the integration PR into `main`; nothing on push. A FAIL row is fixed or raised by name, never described away.
 - **A CI failure is real until proven a flake**: the same SHA passes on rerun and the test passes on `main`'s latest run. Red CI on `main` gets a named owner the day it appears.
 - **Show, then claim.** The receipt block, the grid, the red and green lines, in chat. Done means merged and a user can reach it.
 - Fix rounds carry only bugs a user hits in the normal flow. Rare edge cases, test nits and CI red on files the slice did not touch are one line in the report. Gate repair, other CI fixes and redesigns are a line to the user with a choice.

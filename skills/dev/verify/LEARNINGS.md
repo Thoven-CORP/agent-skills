@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-25 — the full bin/verify runs on request or at the parent, not per ticket
+
+> session · 2026-10-25 · c6bb2950 · correction · applied · seen 1
+
+**What happened.** Hours after "once per ticket" shipped, Andres: "I don't think the full verify should run once per ticket, isn't that excessive… shouldn't the verify maybe full run when I ask for it or the parent calls for it." The week's numbers back him: 415 runs, 1,399+ min on the Mac, while the agents' own test runs were already path-scoped.
+**Why.** `bin/verify` was the per-ticket evidence format, so every ticket paid for its build, browser, knip and fixture rows whatever the diff was.
+**What changed.** Standing from now. A ticket's evidence is its targeted checks: lint, type-check, touched and direct-importer test files by path, and parity on a UI ticket through `scripts/verify/parity-run.mjs`, each command pasted with its pass line. CI runs on the PR. The full `bin/verify` (with `--mutation` on logic) runs only when Andres asks, or once at the parent, before the integration PR into `main`. verify, andres-mode, dispatch-work (brief, review, standing, the DONE table), the law and root CLAUDE.md all say so.
+
 ## 2026-10-25 — bin/verify runs once per ticket; no final run, no verifier rerun
 
 > session · 2026-10-25 · c6bb2950 · correction · applied · seen 1

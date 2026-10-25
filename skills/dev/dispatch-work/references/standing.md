@@ -18,7 +18,8 @@ together.
   Run e2e, build, stack and perf work through
   `/Users/andresmartinez/thoven/agent-skills/enforcement/bin/thoven-load-gate -- <cmd>`, which waits
   for free memory and a free slot. Exit 75 means the wait ran out: rerun once, then ask main.
-  Run `bin/verify` plain, outside the gate: it holds its own machine lock. CI runs the full suite
+  Run no full `bin/verify` unless the brief asks for it; when it does, run it plain, outside the
+  gate: it holds its own machine lock. CI runs the full suite
   on the integration PR. Stop the servers you started after each step. Delete scratch you can regenerate. Route big logs and
   wide reads through a subagent and keep its summary.
 - When `bin/verify` comes back BLOCKED only because `origin/main` moved, merge main once and rerun
@@ -34,7 +35,7 @@ together.
   uploads to the Linear issue and the board and then deletes. Point at a board frame or screenshot
   that already exists instead of saving a second copy. Your only test or verification files are
   the ticket's own red and green proof.
-- Parity, on a UI ticket, before DONE: the `parity` row of `bin/verify` over designed states
+- Parity, on a UI ticket, before DONE: `scripts/verify/parity-run.mjs` over designed states
   only, as the verify skill says, plus a short video of the flow and the list of differences from the board.
 - Database (backend ticket): export the pane's own `DATABASE_URL` and `TEST_DATABASE_URL` in the
   same line as every backend command, `git commit` included.

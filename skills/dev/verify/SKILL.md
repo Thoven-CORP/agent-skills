@@ -15,24 +15,23 @@ Shape of the check follows the shape of the change. Lint on the changed files an
 
 ## While editing
 
-1. `pnpm run type-check` and oxlint on your changed files (`bin/verify` lints changed files only; whole-repo lint is CI's). Backend: `bin/rubocop -- <changed files>`.
+1. `pnpm run type-check` and oxlint on your changed files (whole-repo lint is CI's). Backend: `bin/rubocop -- <changed files>`.
 2. The file's own test, red before the change and green after, on the behaviour the ticket names. Backend: the mapped spec file, plus the request spec of any controller touched.
 3. A component, token module or `globals.css` touched: `pnpm exec vitest run __tests__/*-scan.test.ts __tests__/*-tokens.test.ts __tests__/ledge-sweep.test.ts __tests__/type-roles.test.ts __tests__/palette.test.ts` (9 s).
 
-## Before DONE, once per ticket
+## Before DONE
 
-Steps 4 and 6 are rows of `bin/verify` (`related`, `build`, `fast-ci`): know what they cover, and run them only through step 7, never by hand as well. The whole suite, e2e suites and repeat sweeps are CI's, never local.
+4. Callers: `pnpm run type-check` green, and the direct importers' test files once, by path (`pnpm exec vitest run <files>`). Never `vitest related` on a source file: it follows every import, and a shared component pulls most of the suite. Backend: the mapped specs plus the request spec of any controller touched.
+5. A UI ticket on a surface with a board frame: capture parity with `node scripts/verify/parity-run.mjs --map scripts/verify/parity-surfaces.json --out ~/.thoven-artifacts/<branch>/parity <route prefixes the diff touches>` and open `grid.html` in the DONE message. Parity compares built states with designed ones: each state in `scripts/verify/parity-surfaces.json` names the board frame file that depicts it. On an unmapped surface, add the both-width spec to `scripts/verify/parity-surfaces.json` before DONE, or say SKIPPED and why.
+6. Paste each command you ran and its pass line in the DONE report. That is the evidence. A failure is fixed or raised to the user by name, never described away. Builds, the whole suite, e2e suites and repeat sweeps are CI's, never local.
 
-4. Callers: tsc green project-wide, and the direct importers' test files once (`vitest related <changed files>` capped to direct importers, not transitive, not per hunk).
-5. Pass `--mutation` on a logic hunk in `lib/`, a service or a model. On any other diff the `mutation` row reads SKIPPED "opt-in: --mutation".
-6. Build only when it can break: `next build` when `app/**`, `next.config.*`, middleware or a server file changed. `bin/ci fast` when Gemfile, schema, routes or a controller changed.
-7. Run `bin/verify --base <integration branch>` once, plain (never through thoven-load-gate; it holds its own lock), and paste its `THOVEN_VERIFY` block in the DONE report verbatim, `THOVEN_VERIFY_BEGIN` through `THOVEN_VERIFY_END`. A shortened or retyped block cannot be checked. `concurrency: 1` in the block means the machine was busy. A FAIL row is fixed or raised to the user by name, never described away.
+## Full verify: on request or at the parent
 
-On a mapped UI surface the `parity` row produces the grid: open `grid.html` in the DONE message. Parity compares built states with designed ones: each state in `scripts/verify/parity-surfaces.json` names the board frame file that depicts it, and the row FAILs naming any state without one. On an unmapped surface, add the both-width spec to `scripts/verify/parity-surfaces.json` before DONE, or say SKIPPED and why.
+7. `bin/verify --base <integration branch>` runs only when the user asks for it, or once at the parent, before the integration branch's PR into `main`, with `--mutation` when that diff changes logic in `lib/`, a service or a model. Run it plain (never through thoven-load-gate; it holds its own lock) and paste its `THOVEN_VERIFY` block verbatim, `THOVEN_VERIFY_BEGIN` through `THOVEN_VERIFY_END`. `concurrency: 1` in the block means the machine was busy. A FAIL row is fixed or raised to the user by name.
 
 ## Before merge
 
-8. CI on the integration PR is the full run. Do not run bin/verify again: not on push, not after a fix round, not for the verifier. A fix round runs the test files covering what it changed.
+8. CI runs the affected tests on a PR into an integration branch and the full suite on a PR into `main`. Nothing reruns on push or after a fix round: a fix round runs the test files covering what it changed.
 
 ## Keep it honest, once a sprint
 

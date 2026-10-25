@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-25 — the full bin/verify runs on request or at the parent, not per ticket
+
+> session · 2026-10-25 · c6bb2950 · correction · applied · seen 1
+
+**What happened.** Hours after "once per ticket" shipped, Andres: "I don't think the full verify should run once per ticket, isn't that excessive… shouldn't the verify maybe full run when I ask for it or the parent calls for it." The week's numbers back him: 415 runs, 1,399+ min on the Mac, while the agents' own test runs were already path-scoped.
+**Why.** `bin/verify` was the per-ticket evidence format, so every ticket paid for its build, browser, knip and fixture rows whatever the diff was.
+**What changed.** Standing from now. A ticket's evidence is its targeted checks: lint, type-check, touched and direct-importer test files by path, and parity on a UI ticket through `scripts/verify/parity-run.mjs`, each command pasted with its pass line. CI runs on the PR. The full `bin/verify` (with `--mutation` on logic) runs only when Andres asks, or once at the parent, before the integration PR into `main`. verify, andres-mode, dispatch-work (brief, review, standing, the DONE table), the law and root CLAUDE.md all say so.
+
 ## 2026-10-25 — bin/verify runs once per ticket; no final run, no verifier rerun
 
 > session · 2026-10-25 · c6bb2950 · correction · applied · seen 1
@@ -27,7 +35,7 @@ New entries on top. Each one: what happened, why, what changed.
 
 **What happened.** Main typed `THOVEN_BACKEND_PATH=… NEXT_PUBLIC_API_BASE_URL=…` into fix rounds by hand (THV-1207, THV-1401), because without them the frontend fixture rows come back BLOCKED (`scripts/verify/diff.mjs`: "THOVEN_BACKEND_PATH is required"). Separately, the ticket's Done-when, copied in verbatim, brought full acceptance sweeps into first passes, and main had to send "GO, targeted (Andres, Oct 25): run the smallest set that proves this diff. Skip the full acceptance sweep."
 **Why.** DONE WHEN said "verbatim or by pointer" and named no environment for a two-repo verify, so the once-and-targeted rule of 2026-10-24 lost to the ticket's own list.
-**What changed.** brief.md DONE WHEN points at the ticket's Done-when. Live lanes, perf and repeat parity run only where no unit or request spec covers the line, and the rest are listed as SKIPPED. A frontend `bin/verify` on a two-repo ticket runs with the paired backend tree and API URL.
+**What changed.** brief.md DONE WHEN points at the ticket's Done-when. Live lanes, perf and repeat parity run only where no unit or request spec covers the line, and the rest are listed as SKIPPED. A frontend `bin/verify` on a two-repo ticket runs with the paired backend tree and API URL. Later the same day the per-ticket `bin/verify` was dropped, so the env line went with it; the fixture rows run in the full verify at the parent.
 
 ## 2026-10-25 — a verify blocked by a moving main merges once
 

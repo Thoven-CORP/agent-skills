@@ -141,8 +141,8 @@ A peer message from a pane carries a status line and its entry path:
 
 | Status | Main does |
 | -- | -- |
-| `DONE THV-x` with its `THOVEN_VERIFY` block | Move the ticket to **Ready**. Go to step 5. |
-| `DONE THV-x` without the block | Not done. Reply `Paste the bin/verify block for this diff.` The ticket stays In Progress. |
+| `DONE THV-x` with its test lines | Move the ticket to **Ready**. Go to step 5. |
+| `DONE THV-x` without test lines | Not done. Reply `Paste each command you ran and its pass line.` The ticket stays In Progress. |
 | `DONE_WITH_CONCERNS THV-x` | Read the concerns. Correctness or scope concerns get a fix round first. Observations go to step 5. |
 | `NEEDS_CONTEXT THV-x` | Answer from Linear and this conversation, by peer message plus an ANSWER entry. A product call goes to Andres word for word; relay his answer and add it to the Linear parent. |
 | `BLOCKED THV-x` | Context gap: answer it. Too hard: fresh pane one tier up. Too big: split the ticket. Product call: ask Andres. |
@@ -181,7 +181,7 @@ feature slice or a review subagent for cleanup and hardening.
 
 After the verifier passes, show Andres the evidence table and, on a UI ticket, the parity images. On his confirmation:
 
-1. Move the ticket to **Done** with one comment: the evidence table, the `THOVEN_VERIFY` block and
+1. Move the ticket to **Done** with one comment: the evidence table, the test lines and
    the merged SHA. Done means the job is finished and merged into its target, the Project's
    integration branch or `main`. The comment and the report say where it lives: "Done on
    `<branch>`, reaches staging when the branch lands", or "Done on `main`, on staging". On a UI ticket, upload the parity

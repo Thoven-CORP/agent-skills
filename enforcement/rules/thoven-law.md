@@ -41,7 +41,7 @@ a rebase ate a day of the onboarding prototype.)
   `claude --worktree <area>-thv-<n>` runs the same script.
 - Open a held PR into `main`, and merge it on Andres's "merge it", gated by the required `CI` check.
   `CI` runs only on PRs into `main`: a ticket PR into an integration branch merges on its
-  `bin/verify` block and the verifier's pass, and `CI` gates the integration branch when it lands.
+  test lines and the verifier's pass, and `CI` gates the integration branch when it lands.
   The method follows the PR's role:
 
   | PR | Merge |
@@ -71,7 +71,7 @@ folders are scratch, deleted at close.
 **Spec parity.** A brief, a plan section or a review traces its work to parent decision ids and
 their frames. The verifier's report opens with SPEC PARITY.
 
-**Design parity.** A build that changes what a user sees captures every touched state, through the `parity` row of bin/verify where the surface is mapped, at 1440 and
+**Design parity.** A build that changes what a user sees captures every touched state, through `scripts/verify/parity-run.mjs` where the surface is mapped, at 1440 and
 390 beside its board frame, plus a short video. The images go to the Linear issue as a comment (the
 parent when the work has no issue) and onto the board beside their frames. A difference from a
 confirmed frame that Andres did not approve is a defect. A frame binds what shows (elements,
@@ -85,8 +85,9 @@ only to fix an issue it found at another viewport, in motion or in performance. 
 names that issue beside the change.
 
 **Targeted tests.** The verify cadence lives in `skills/andres-mode/SKILL.md`, "Check your own work":
-targeted checks while editing, `bin/verify --base <integration branch>` once per slice before DONE, CI
-on the integration PR, nothing reruns on push. Heavy work (e2e, builds, stacks, perf) runs through
+targeted checks while editing and at DONE, CI on every PR, the full `bin/verify --base <integration
+branch>` only when Andres asks or once at the parent before the integration PR into `main`, nothing
+reruns on push. Heavy work (e2e, builds, stacks, perf) runs through
 `~/thoven/agent-skills/enforcement/bin/thoven-load-gate -- <cmd>`. `bin/verify` runs plain, never
 through the gate: it holds its own machine lock. Stop the servers you started after each step, and
 delete scratch you can regenerate.
