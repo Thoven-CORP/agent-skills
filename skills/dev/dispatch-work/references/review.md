@@ -33,7 +33,8 @@ branch before starting the verifier. Each one that fails is a finding.
 - `git diff --stat <base>..HEAD` touches the ticket's Paths, and every other file has a stated reason.
 - The report labels each claim measured, inferred or guess.
 - A UI ticket's report links a parity capture folder with every touched state at 1440 and 390
-  beside its board frame, and no blank image.
+  beside its board frame, and no blank image. A state with no board frame is not a parity row:
+  name it as off-design in the report instead.
 
 ## Verifier brief
 

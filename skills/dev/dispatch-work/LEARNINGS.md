@@ -280,3 +280,15 @@ needs.
 **What changed.** Step edit in `references/review.md` verifier brief step 5: past about 1k added
 lines, shard the review by surface from `git diff --numstat`, with one shared BRIEF.md, one small
 findings file per shard, and sonnet for structural and lower-risk shards.
+
+> reflect · 2026-10-24 · THV-1372 · skill-gap · applied · seen 1
+
+**Parity ran on screens nobody designed.** THV-1372's "Where" list came from grepping "Homework", so
+it named legacy parent popups, the old To Review list and the original wizard's welcome-back. The
+builder shot parity of those, main showed the grid as evidence and merged #406. Andres: "We never
+designed that." Only the wizard line was in scope.
+
+**Why.** A parity grid of undesigned screens reads as design evidence when it is none.
+
+**How to apply.** Parity pairs a built state with its board frame. No frame, no parity row; a copy
+edit on such a screen gets one before/after line.

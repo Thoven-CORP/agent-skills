@@ -30,6 +30,7 @@ per pane: reports, corrections, alerts and tokens.
 - Give a minor fix, fix round or review pass a clean existing tree, and check `df -h /` and `memory_pressure` before you start heavy panes. (LEARNINGS 2026-10-11)
 - List the ticket's Linear comments right before `gh pr merge`. A ruling newer than the last commit holds the merge until the diff applies it. (LEARNINGS 2026-10-03)
 - On a UI or copy ticket, show Andres the before and after at the builder's first DONE, so his notes ride fix round 1 and the verifier runs once on the final diff. (LEARNINGS 2026-10-22)
+- Run parity only on surfaces with a board frame. A copy or rename edit to an undesigned or legacy screen gets a before/after line, never a parity shot, and a "Where" list comes from the board frames, never a word grep. (LEARNINGS 2026-10-24)
 - After every `gh pr merge`, read back `gh pr view <n> --json state,mergeCommit`: a nonzero exit means unknown (`--delete-branch` fails after a good merge when a worktree holds the branch), and a PR already clean merges without `--auto`. (LEARNINGS 2026-10-22)
 
 ## Roles
