@@ -117,8 +117,7 @@ PY_PATH
     fi
     ;;
   Bash)
-    # Preserve check commands for diagnostics. Command text alone does not
-    # satisfy the evidence hook; it validates the native runner's receipt.
+    # Preserve check commands for diagnostics.
     checks_regex='\b(tsc|rspec|vitest|jest|playwright|eslint|rubocop|contract-check|type-check|typecheck)\b|\b(npm|pnpm|yarn|bun)[[:space:]]+(run[[:space:]]+)?(test|lint|check)\b|\bnext[[:space:]]+lint\b|\brails[[:space:]]+(test|spec)\b'
     if [ -n "$command" ] && grep -qE "$checks_regex" <<<"$command"; then
       printf '%s\n' "$command" >> "$state/checks"

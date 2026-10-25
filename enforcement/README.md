@@ -26,7 +26,7 @@ harness that was not running it.
 
 ## Verification contract
 
-No Stop hook validates evidence (retired 2026-10-07, below). A done-claim carries the fresh `bin/verify` block per `skills/andres-mode/SKILL.md`, "Check your own work".
+No Stop hook validates evidence (retired 2026-10-07, below). A done-claim carries each targeted check's command and pass line per `skills/andres-mode/SKILL.md`, "Check your own work".
 
 JSON reports under the workspace's exact `~/thoven/archive/` document boundary do not count as code edits. Application JSON, workspace configuration, archived scripts and symlinks crossing that boundary still require verification.
 
@@ -80,7 +80,8 @@ tool calls 5228 to 0.
 
 `thoven-require-evidence` was retired on 2026-10-07 (THV-1153). It demanded a fresh `bin/verify`
 receipt for every edited repo at every `Stop`, which ran far too many checks and could never pass for
-files outside a repo. `bin/verify` runs once per slice before DONE, and nothing reruns on push.
+files outside a repo. A ticket runs targeted checks before DONE; the full `bin/verify` runs when Andres asks
+or once at the parent, and nothing runs on push.
 
 `graph-session-reminder` runs at `SessionStart` and says nothing unless this
 repo's graph is more than seven days behind its last commit, in which case it

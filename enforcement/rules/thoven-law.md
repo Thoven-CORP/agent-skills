@@ -47,7 +47,7 @@ a rebase ate a day of the onboarding prototype.)
   | PR | Merge |
   |---|---|
   | A ticket into `main` | `gh pr merge --auto --squash` |
-  | A ticket into an integration branch | `gh pr merge --squash` on the verify block and verifier pass |
+  | A ticket into an integration branch | `gh pr merge --squash` on green targeted CI and the verifier's pass |
   | Docs only (no code, config or tests) | squash in the same pass, like an agent-skills PR |
   | A catch-up of `main` into an integration branch | `--merge`, so `main` stays an ancestor |
   | An integration branch landing in `main` | `--auto --merge`, so each ticket's commit and THV id survive for later conflict resolution |

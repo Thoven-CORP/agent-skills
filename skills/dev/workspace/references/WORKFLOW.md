@@ -506,8 +506,9 @@ BUILDING
 BRANCHES AND PULL REQUESTS
 - Branch, PR and worktree rules: `~/thoven/agent-skills/enforcement/rules/thoven-law.md`.
   `thoven-worktree create <fe|be> <area> <id>` gives `<area>/thv-<id>`, the same name in both repos.
-- Open a held PR into `main`. On Andres's "merge it", backend first. The method follows the PR's role (thoven-law.md "Branches and PRs"): a ticket squashes (`gh pr merge --auto --squash` into `main`; into an integration branch, which `CI` never runs on, `--squash` on the verify block and verifier pass), a docs-only PR merges in the same pass, and an integration branch landing in `main` or a catch-up of `main` merges with `--merge`. Name source, target and method in the go line.
+- Open a held PR into `main`. On Andres's "merge it", backend first. The method follows the PR's role (thoven-law.md "Branches and PRs"): a ticket squashes (`gh pr merge --auto --squash` into `main`; into an integration branch, `--squash` on green targeted CI and the verifier's pass), a docs-only PR merges in the same pass, and an integration branch landing in `main` or a catch-up of `main` merges with `--merge`. Name source, target and method in the go line.
 - Put `THV-<id>` in the commit message with no magic word. `Fixes` auto-closes Linear. Merge does not own Done.
+- A ticket that takes more than one PR: an id in the branch name or PR title links that PR as closing, so its first merge moves the ticket to Done. Keep the id out of both and write `Part of THV-<id>` in the PR body, which links without closing. (2026-10-25: the test-cadence ticket closed on its first of five PRs.)
 - Write Ready if a surface still needs his eyes. Write Done when the job is finished. Main merges UI after Andres sees the evidence images.
 - `--auto` merges once the `CI` check passes. Run `/loop-on-ci` when CI goes red.
 - In the same comment, say what you did AND what you deliberately did not do.

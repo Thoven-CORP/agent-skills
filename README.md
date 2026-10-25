@@ -147,7 +147,7 @@ These detect which repo you are in and load only that side:
 
 If detection is ambiguous, the skill asks once.
 
-`verify` uses the same three steps in either repo: run `bin/verify`, paste its complete evidence block, and fix failing rows. Native diff selection replaces the former frontend/backend prose workflows.
+`verify` works the same way in either repo: run the targeted checks the diff selects, paste each command and its pass line, and fix what fails. The full `bin/verify` runs when Andres asks or once at the parent, before the integration PR into `main`.
 
 ### Renames (old → new)
 
