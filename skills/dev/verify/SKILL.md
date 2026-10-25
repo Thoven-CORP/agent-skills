@@ -27,7 +27,7 @@ Shape of the check follows the shape of the change. Lint on the changed files an
 
 ## Full verify: on request or at the parent
 
-7. `bin/verify --base <integration branch>` runs only when the user asks for it, or once at the parent, before the integration branch's PR into `main`, with `--mutation` when that diff changes logic in `lib/`, a service or a model. Run it plain (never through thoven-load-gate; it holds its own lock) and paste its `THOVEN_VERIFY` block verbatim, `THOVEN_VERIFY_BEGIN` through `THOVEN_VERIFY_END`. `concurrency: 1` in the block means the machine was busy. A FAIL row is fixed or raised to the user by name.
+7. `bin/verify --base <integration branch>` runs only when the user asks for it, or once at the parent, before the integration branch's PR into `main`. Mutation runs on GitHub, on PRs into `main` that change logic; locally `--mutation` runs only when the user asks for it. Run it plain (never through thoven-load-gate; it holds its own lock) and paste its `THOVEN_VERIFY` block verbatim, `THOVEN_VERIFY_BEGIN` through `THOVEN_VERIFY_END`. `concurrency: 1` in the block means the machine was busy. A FAIL row is fixed or raised to the user by name.
 
 ## Before merge
 

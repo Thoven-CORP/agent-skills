@@ -56,7 +56,7 @@ whose claim you doubt, one per run; never `bin/verify`.
    first, then the board frames each decision cites. Compare every state yourself and recapture only a state that looks wrong. Run
    /better-ui and /thoven-designer over the built screens. A difference from a frame that Andres
    did not confirm is an important finding.
-3. Run no mutation sweep; mutation runs with the full verify at the parent. A claim the builder's
+3. Run no mutation sweep; mutation runs on GitHub on the PR into `main`. A claim the builder's
    test lines do not cover gets the one test file that covers it, or /verify-this for that claim
    only.
 4. /mattpocock-skills:code-review against <<base>>.

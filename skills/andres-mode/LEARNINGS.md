@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-25 — mutation runs on GitHub; locally only on request
+
+> session · 2026-10-25 · c6bb2950 · correction · applied · seen 1
+
+**What happened.** Andres: "Should we also run mutations just on github", then "or we can have it as a local option… on my invocation." Mutation was the heaviest row of the full verify: 46 local runs in a week, one backend run 23 min.
+**Why.** Even once per parent, mutation reruns the tests per changed hunk, which a shared 16 GB Mac cannot absorb.
+**What changed.** Standing. Mutation runs in CI on PRs into `main` that change logic, report-only for two weeks and then required (THV-1433 T7; the job is a slice still to build). Locally `--mutation` runs only when Andres asks; the parent's full verify runs without it. verify, andres-mode and review.md say so.
+
 ## 2026-10-25 — the full bin/verify runs on request or at the parent, not per ticket
 
 > session · 2026-10-25 · c6bb2950 · correction · applied · seen 1
