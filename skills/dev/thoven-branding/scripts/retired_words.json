@@ -1,0 +1,104 @@
+[
+  {
+    "id": "marketplace",
+    "pattern": "\\bmarketplaces?\\b",
+    "say": "online music academy",
+    "why": "BRANDING.md 1 Category and 3 Name the category: Thoven is an online music academy a family joins"
+  },
+  {
+    "id": "browse",
+    "pattern": "\\bbrows(?:e|es|ed|ing)\\b",
+    "say": "explore, find your teacher",
+    "why": "BRANDING.md 2 Say this, Finding a teacher: explore and find your teacher"
+  },
+  {
+    "id": "near-me",
+    "pattern": "\\bnear\\s+(?:me|you)\\b",
+    "say": "online, from the comfort of home",
+    "why": "BRANDING.md 2 Say this, Where lessons happen: online, from the comfort of home"
+  },
+  {
+    "id": "local",
+    "pattern": "\\blocal\\s+(?:music\\s+|piano\\s+|guitar\\s+|violin\\s+)?(?:teachers?|lessons?|instructors?|tutors?|classes)\\b",
+    "say": "Thoven teachers, online, from the comfort of home",
+    "why": "BRANDING.md 2 Say this, Who teaches and Where lessons happen: Thoven teachers, online"
+  },
+  {
+    "id": "book-a-teacher",
+    "pattern": "\\bbook(?:s|ed|ing)?\\s+(?:a|an|your|the)\\s+(?:\\w+\\s+)?(?:teachers?|tutors?|instructors?)\\b",
+    "say": "find your teacher",
+    "why": "BRANDING.md 6 Call and 9 Header CTA: the call is Find your teacher"
+  },
+  {
+    "id": "studio",
+    "pattern": "\\bstudios?\\b",
+    "say": "Thoven teachers, or the academy (keep studio only in teacher-recruiting copy)",
+    "why": "BRANDING.md 3 Say their studio only to teachers: families join the academy"
+  },
+  {
+    "id": "accredited",
+    "pattern": "\\baccredit(?:ed|ation)?\\b",
+    "say": "online music academy",
+    "why": "BRANDING.md 2 Academy means the category: academy names the kind of place, never a credential"
+  },
+  {
+    "id": "certified",
+    "pattern": "\\bcertif(?:ied|icates?|ication)\\b",
+    "say": "a real teacher who gets them",
+    "why": "BRANDING.md 2 Academy means the category: describe what a kid gets in journey and real-teacher words"
+  },
+  {
+    "id": "diploma",
+    "pattern": "\\bdiplomas?\\b",
+    "say": "a journey, an adventure",
+    "why": "BRANDING.md 2 Academy means the category, and 4 Fun: we give up being the most academic"
+  },
+  {
+    "id": "school",
+    "pattern": "(?<!home-)(?<!home )\\bschools?\\b",
+    "say": "academy, when the word names Thoven",
+    "why": "BRANDING.md 1 Category: Thoven is an online music academy; the academy is the category, never a credential"
+  },
+  {
+    "id": "airbnb",
+    "pattern": "\\bairbnb\\b",
+    "say": "an online music academy built around each kid's journey",
+    "why": "BRANDING.md 8 Rejected: the Airbnb analogy pulls the framing back to a marketplace"
+  },
+  {
+    "id": "duolingo",
+    "pattern": "\\bduolingo\\b",
+    "say": "a music adventure your kid will love",
+    "why": "Internal trueline, kept off public copy; BRANDING.md 1 names the category in Thoven's own words"
+  },
+  {
+    "id": "juilliard",
+    "pattern": "\\bjuilliard\\b",
+    "say": "a real teacher who gets them",
+    "why": "BRANDING.md 4 Sliders (Mass appeal/Elite at 4) and 5 Outside the audience: the trophy-chasing parent"
+  },
+  {
+    "id": "music-passport",
+    "pattern": "\\bmusic\\s+passports?\\b",
+    "say": "what ships today: a real teacher and a music journey built around the kid",
+    "why": "BRANDING.md 3 Sell the Music Passport once it ships: a public claim needs a feature a parent can see"
+  },
+  {
+    "id": "diagnosis-label",
+    "pattern": "\\b(?:autis(?:m|tic)|adhd|add/adhd|down'?s?\\s+syndrome|special[\\s-]+needs?)\\b",
+    "say": "diverse learners, or name the support (a teacher who adapts to how the kid learns)",
+    "why": "BRANDING.md 3 Name the support, then let stories carry it: a diagnosis label speaks over the kid"
+  },
+  {
+    "id": "neurodivergent",
+    "pattern": "\\bneuro-?(?:divergent|divergence|diverse|diversity|atypical)\\b",
+    "say": "diverse learners",
+    "why": "BRANDING.md 2 Names: diverse learners is the working term everywhere, so brand and teacher search match"
+  },
+  {
+    "id": "follow-up-promise",
+    "pattern": "\\bfollow(?:s|ed|ing)?(?:[\\s-]+up)?(?:\\s+(?:with|on))?\\s+(?:[\\w']+\\s+){0,4}?(?:for\\s+|after\\s+|over\\s+)?(?:\\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|several|many)\\s+(?:weeks?|months?|years?)\\b",
+    "say": "what a parent can see today: a real teacher and a weekly rhythm",
+    "why": "BRANDING.md 3 Promise follow-up once a feature backs it: check-ins or progress reports ship first"
+  }
+]
