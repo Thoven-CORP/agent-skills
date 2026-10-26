@@ -1,8 +1,8 @@
 ---
 name: dispatch-work
 description: >-
-  Dispatch a Linear ticket to a coding agent in a Rex or herdr pane and bring it back verified. Use
-  when handing a ticket or slice to a pane, choosing which agent, model or CLI runs it, writing a
+  Dispatch a Linear ticket to a coding agent in a pane or subagent and bring it back verified. Use
+  when handing a ticket or slice to a builder, choosing which agent, model or CLI runs it, writing a
   dispatch brief, answering a pane's question or alert, or verifying and closing a pane's work.
 ---
 
@@ -126,7 +126,20 @@ in Linear, then come back.
 3. On the first dispatch in this Project, label main's own pane (`$REX_BLOCK` in Rex, `$HERDR_PANE_ID` in herdr): `scripts/dispatch label <pane> Meta "<Project>" --tab`.
 4. Move the ticket to **In Progress** with `set-status.js`.
 
-**Done when:** `scripts/dispatch status <pane>` shows WORKING and the ticket reads In Progress.
+**Subagent builder.** When Andres asks for a subagent instead of a pane, skip `dispatch spawn` and
+label nothing. Make the tree as in item 1, fill `{{…}}` by hand, and launch an Agent
+whose prompt is the filled brief, verbatim from its first skill line. In Claude Code use
+`general-purpose` with the Skill tool available. In Codex use a builder with file-read access and
+write `$poteto-mode` on the opening line. FIRST TURN explicitly loads poteto-mode for each harness;
+the opening line alone does not invoke a skill inside a subagent prompt. This builder owns the
+playbook. Its implementation delegates use the roles poteto-mode specifies.
+Replace pane communication with the REPORT block as its final message. It asks main through the
+host's available subagent channel and continues independent work; a product call still goes to main.
+Preserve the rest of the brief, including FIRST TURN. Move the ticket to In Progress.
+
+**Done when:** `scripts/dispatch status <pane>` shows WORKING and the ticket reads In Progress. For a
+subagent builder: its transcript shows poteto-mode loaded, its first message prints the native
+playbook's steps, and the ticket reads In Progress.
 
 ### 4. Watch
 

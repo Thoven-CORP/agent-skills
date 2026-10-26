@@ -5,6 +5,43 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-26 — load the skill explicitly in each harness, then prove execution
+
+> session · 2026-10-26 · 01a1797d · correction · applied · seen 1
+
+**What happened.** Andres noted that a subagent's opening `/poteto-mode` line is plain text,
+then asked to fix dispatch for both Codex and Claude Code. He also corrected the proposed skills
+table and asked to preserve pstack's native playbooks. A comparison with cursor/plugins at
+`9e88dad267e8991d26a6debc0db0d943d437104b` found 21 of 23 installed playbooks identical. The other
+two changed skill names only. The earlier builder had loaded poteto-mode but still skipped steps,
+so missing invocation cannot explain every execution failure.
+
+**Why.** FIRST TURN opened a playbook without first loading its owning skill. The brief also
+prescribed Claude Code's Skill tool for Codex. Low invocation counts had been treated as a reason
+to remove skills Andres wanted, instead of evidence that their routing needed work.
+
+**What changed.** brief.md loads poteto-mode through the Skill tool in Claude Code or a full
+SKILL.md read in Codex before implementation. Both follow the installed native playbook and its
+own skip allowances. The report and review require loading evidence and the work each routed
+skill produced. The subagent path keeps the filled brief and preserves product questions for
+main. The blanket verification skip gives way to targeted evidence on the matching surface.
+skills.md restores `/verify-this`, `/transitions-dev` and `/interface-craft`, adds
+`/vercel-react-best-practices`, `/typescript-best-practices`, `/better-accessibility`,
+`/thoven-branding`, `/blast-radius` and `/doc-freshness`, and keeps `/test-audit` and `/better-ui`.
+Motion implementation and review have separate moments. The API-design row names the installed
+`/api-designer` skill instead of an unavailable agent. `/verify` runs targeted checks per ticket;
+full `bin/verify` runs on Andres's request or once at the parent before integration into `main`.
+The earlier transcript counts remain historical observations, not the skill-selection policy.
+
+## 2026-10-26 — a subagent builder gets the brief verbatim and prints its playbook steps first
+
+> session · 2026-10-26 · 14531ef9 · correction · applied · seen 1
+
+**What happened.** Andres asked for subagents instead of panes on PL6 slice 1 (THV-1463). Main wrote the subagent's prompt by hand instead of passing the brief, so the FIRST TURN line became "copy its steps into your task list". The builder loaded poteto-mode and read `playbooks/feature.md`, then printed no step list, skipped `how` and `architect` with no skip line, and its transcript held 3 text lines in 90+ tool calls. It did run `/thoven-coppa-vpc-contracts`, `/safe-migrate` (both Thoven-CORP/agent-skills) and `/tdd` (pstack, cursor/plugins). Andres: "it should just use poteto mode" and "I thought we had fixed dispatch work".
+**Why.** The 10-24 fix lives in brief.md's FIRST TURN, and dispatch-work had no subagent path, so a hand-written prompt bypassed it. A task list inside a subagent is invisible, so nobody could check it.
+Andres then asked that a builder run poteto-mode as fully as the parent does and for an audit of skills.md. Across 58 builder transcripts (first message `/poteto-mode … THV-n`, Oct 10 to 26): 36 opened a playbook file, none printed a step list or wrote a "skip:" line, 4 ran `/how` or `/architect`, 20 ran `/deslop` and 7 `/no-comments`. Of the 19 table skills, 8 ran in no transcript (`/design-to-production`, `/pick-ui-library`, `/interface-craft`, `/transitions-dev`, `/qa-flow`, `/playwright-expert`, `/render-cli`, `/why`), and 2 ran once (`/typescript-best-practices`, `/verify-this`). The "cannot load" section was stale: `/blast-radius`, `/test-master` and `/typescript-best-practices` no longer set `disable-model-invocation`.
+**What changed.** brief.md: FIRST TURN prints the step list as the first message and runs every step as the parent does, `how` and `architect` included; the REPORT gains a Playbook row; the skills line leaves every non-ACCESS skill to poteto-mode's routing. review.md: a missing or partial Playbook row is a finding. skills.md: poteto-mode owns the process; the table keeps the 11 moments that fired or that Thoven work needs (`/test-audit` added, per root CLAUDE.md); the 10 rare ones and the stale section are gone. SKILL.md step 3: a subagent builder gets the filled brief verbatim from its `/poteto-mode` line on a `general-purpose` agent, with only the reporting changes a subagent needs.
+
 ## 2026-10-25 — the full bin/verify runs on request or at the parent, not per ticket
 
 > session · 2026-10-25 · c6bb2950 · correction · applied · seen 1

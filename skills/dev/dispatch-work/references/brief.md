@@ -19,6 +19,8 @@ ONE LINE) are the pane's to fill: leave them.
 - For a Codex pane write `$poteto-mode`. `dispatch spawn` sends the brief's first line as the
   pane's opening prompt, because inside the file it is only text, and refuses a brief that opens
   with anything but a skill line.
+- In a subagent prompt the opening skill line is text. Keep FIRST TURN intact so the builder
+  explicitly loads the skill in its own harness.
 
 ```text
 /poteto-mode <<playbook>> THV-<id> "<<ticket title>>"
@@ -26,10 +28,19 @@ ONE LINE) are the pane's to fill: leave them.
 You are {{AGENT_NAME}}. Main is the Claude session {{MAIN_SESSION}}. Project board: {{BOARD}}.
 DISPATCH = ~/.agents/skills/dispatch-work/scripts/dispatch
 
-FIRST TURN Open the playbook your opening line names, ~/.agents/skills/poteto-mode/playbooks/<name>.md
-           in kebab case (Feature is feature.md), and copy its steps verbatim into your task list
-           before any other work, each skipped step kept as "skip: <reason>". Done when the list
-           holds every step. Build by that list.
+FIRST TURN Load poteto-mode before task work. In Claude Code, invoke the Skill tool with
+           skill="poteto-mode" and args containing the playbook and task from the opening line.
+           If the harness already supplied its full instructions for this task, follow those.
+           In Codex, read ~/.agents/skills/poteto-mode/SKILL.md in full and follow it. Load skills
+           it routes to by reading their SKILL.md files in full, plus the references they require.
+           If loading fails, report BLOCKED with the tool or file error before implementation.
+           Open the playbook named by the opening line in ~/.agents/skills/poteto-mode/playbooks/,
+           using the filename its SKILL.md specifies. Copy its steps verbatim into your task list.
+           Print the list in your first message before code. Execute the native playbook as the
+           parent does, including its routed skills and delegation. The snapshot's decisions bind
+           the options architect weighs. Keep a skipped step as "skip: <reason>" only where the
+           native playbook allows it. Done when loading is evidenced and every step is printed.
+           The REPORT's Playbook row records each step's outcome and evidence.
 
 FITS       <<one line: where this ticket sits in its parent issue and what it unblocks>>
 SPEC       {{SNAPSHOT}}. Read it in full first. It holds the ticket, its comments and the parent's
@@ -56,19 +67,20 @@ KNOWN      <<interfaces, rulings and commits from earlier tickets this one build
 ACCESS     <<the skill lines from skills.md this ticket reaches, each with its moment>>
            Tools: graphify for callers and impact, Context7 for vendor docs, control-cli and
            control-ui for a running app, tier-5 subagents for wide reads.
-DONE WHEN  <<the ticket's Done when, by pointer>>. Its live lanes, perf runs and repeat parity
-           run only where no unit or request spec covers the line; list the rest as SKIPPED.
+DONE WHEN  <<the ticket's Done when, by pointer>>. Choose the smallest checks that prove each
+           changed behaviour on its matching surface. Reuse valid evidence for unchanged claims.
+           A unit or request spec alone does not prove visual parity or performance.
            Seams: <<where the tests sit>>. Proof goes red before your change and green after it.
            Verify per `~/.agents/skills/verify/SKILL.md`: lint and types, the touched test files
            one per run, the design scan suite on any component or token diff,
            `__tests__/mail-link-routes.test.ts` on a diff that adds or moves a route, and the direct
-           importers' test files by path. No `bin/verify` on a ticket: the full verify runs only
-           when Andres asks or at the parent, before the integration PR into `main`. CI on your PR
+           importers' test files by path. The full `bin/verify` runs only when Andres asks or once
+           at the parent, before the integration PR into `main`. CI on your PR
            runs the affected tests. Paste each command and its pass line in the report.
            An e2e or browser test runs as the one spec that covers your change, through the load
            gate, never the whole suite.
-           Skills run through the Skill tool at their moment: each ACCESS line and /tdd at each
-           seam. poteto-mode's playbook owns /deslop and /no-comments.
+           Load each ACCESS skill at its moment and each native skill when the playbook routes
+           to it. Use the Skill tool in Claude Code and the full SKILL.md in Codex, as above.
 STANDING   Read ~/.agents/skills/dispatch-work/references/standing.md now and follow it.
 
 ASK
@@ -97,7 +109,9 @@ STATUS is DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT or BLOCKED. The body is the AS
   Checks       each command you ran and its pass line
   Parity       UI tickets: the Parity check's `parity-grid` link on your PR (standing.md, Parity), and each
                difference from a frame: fixed, or confirmed with its ruling
-  Skills       each skill you invoked and when; a skipped ACCESS line names why
+  Playbook     each native step verbatim: done with evidence, or "skip: <reason>" where allowed
+  Skills       poteto-mode loading evidence, each routed or ACCESS skill loaded and when,
+               and the work it produced; a skipped ACCESS line names why
   Rulings      what you decided and why
   Noticed      one line per problem outside this ticket's code, for main's grouped Linear issue
 Label every claim measured, inferred or guess.
