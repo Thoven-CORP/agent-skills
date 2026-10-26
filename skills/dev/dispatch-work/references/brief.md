@@ -30,7 +30,9 @@ FIRST TURN Open the playbook your opening line names, ~/.agents/skills/poteto-mo
            in kebab case (Feature is feature.md), and copy its steps verbatim into your task list
            before any other work, each skipped step kept as "skip: <reason>". Print that list as
            your first message, so main and Andres see it before any code. Done when the list
-           holds every step and is printed. Build by that list. The REPORT's Playbook row repeats
+           holds every step and is printed. Build by that list, running every step as the parent
+           session does, `how` and `architect` included: the snapshot's decisions bind the options
+           `architect` weighs, and a step you skip names why. The REPORT's Playbook row repeats
            it with each step's outcome: done with its evidence, or the skip reason.
 
 FITS       <<one line: where this ticket sits in its parent issue and what it unblocks>>
@@ -69,8 +71,8 @@ DONE WHEN  <<the ticket's Done when, by pointer>>. Its live lanes, perf runs and
            runs the affected tests. Paste each command and its pass line in the report.
            An e2e or browser test runs as the one spec that covers your change, through the load
            gate, never the whole suite.
-           Skills run through the Skill tool at their moment: each ACCESS line and /tdd at each
-           seam. poteto-mode's playbook owns /deslop and /no-comments.
+           Skills run through the Skill tool: each ACCESS line at its moment, and every other
+           skill when poteto-mode's playbook routes to it.
 STANDING   Read ~/.agents/skills/dispatch-work/references/standing.md now and follow it.
 
 ASK

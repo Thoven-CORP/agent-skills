@@ -30,6 +30,8 @@ branch before starting the verifier. Each one that fails is a finding.
 - Commits land on the named branch, by exact path, each ending in the ticket id.
 - `git diff --stat <base>..HEAD` touches the ticket's Paths, and every other file has a stated reason.
 - The report labels each claim measured, inferred or guess.
+- The REPORT's Playbook row lists every step of the playbook the brief names, each done with its
+  evidence or skipped with a reason.
 - A UI ticket's report links the Parity check's grid with every touched state at its frame's
   width and 390 beside its board frame, and no blank image. A state with no board frame is not a parity row:
   name it as off-design in the report instead.
