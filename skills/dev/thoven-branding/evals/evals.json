@@ -1,0 +1,47 @@
+{
+  "skill_name": "thoven-branding",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Write a homepage headline and subhead for Thoven.",
+      "expected_output": "Takes the write branch: reads BRANDING.md, drafts through better-writing, lints, reports. The homepage headline is the locked header, with its subhead, word for word; any alternative it offers names the academy and frames the kid's path as a journey or an adventure. The final copy passes word_lint with exit 0.",
+      "files": [],
+      "assertions": [
+        "read-branding: BRANDING.md is read in full before any copy is drafted",
+        "better-writing-invoked: the Skill tool is called with skill better-writing, with BRANDING.md named as the voice and vocabulary",
+        "locked-header: the headline is exactly \"An online music academy built around each kid's journey.\" and the subhead is exactly \"Start a music adventure your kid will love, from the comfort of home.\"",
+        "academy-framing: every headline offered contains the word academy",
+        "journey-words: the copy contains journey or adventure",
+        "lint-run: word_lint.py is run on the final copy and its exit code 0 is shown",
+        "report-shape: the reply ends with the final copy and the Before/After/BRANDING.md rule table, or states the lint returned no findings"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Review this paragraph for our parents email: \"Thoven is the Airbnb of music lessons. Browse hundreds of teachers, pick one you like, and start this week.\"",
+      "expected_output": "Takes the review branch: reads BRANDING.md, lints first, then reviews through better-writing, then fixes. The lint flags Airbnb and Browse; both are rewritten with the say text and the BRANDING.md rule (8 Rejected for the analogy, 2 Say this for finding a teacher). The rewrite names the academy, uses explore or find your teacher, and passes word_lint with exit 0.",
+      "files": [],
+      "assertions": [
+        "lint-before-review: word_lint.py runs before better-writing is invoked",
+        "airbnb-flagged: the Airbnb analogy is reported as a finding citing BRANDING.md section 8 Rejected",
+        "browse-flagged: Browse is reported as a finding with explore or find your teacher as the replacement",
+        "rewrite-academy: the rewritten paragraph contains academy and contains neither Airbnb nor browse",
+        "rewrite-lints-clean: word_lint.py is rerun on the rewritten paragraph and exits 0",
+        "change-table: each change has a row with Before, After and the BRANDING.md rule it follows"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Write one line for parents of an autistic kid about our teachers.",
+      "expected_output": "Takes the write branch. The line names the support (a Thoven teacher who adapts to how the kid learns) or uses diverse learners, describes the kid by what they love or how they learn, carries no diagnosis label, and passes word_lint with exit 0.",
+      "files": [],
+      "assertions": [
+        "names-support: the line says diverse learners or names the support, such as a teacher who adapts to how the kid learns",
+        "no-label: the line contains none of the words the diagnosis-label and neurodivergent entries in scripts/retired_words.json match",
+        "thoven-teachers: the line calls the teachers Thoven teachers or a real teacher",
+        "lint-clean: word_lint.py is run on the line and exits 0",
+        "rule-cited: the report cites BRANDING.md section 3 Name the support, then let stories carry it"
+      ]
+    }
+  ]
+}
