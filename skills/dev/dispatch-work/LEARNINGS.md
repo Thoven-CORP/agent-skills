@@ -5,6 +5,34 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-26 — load the skill explicitly in each harness, then prove execution
+
+> session · 2026-10-26 · 01a1797d · correction · applied · seen 1
+
+**What happened.** Andres noted that a subagent's opening `/poteto-mode` line is plain text,
+then asked to fix dispatch for both Codex and Claude Code. He also corrected the proposed skills
+table and asked to preserve pstack's native playbooks. A comparison with cursor/plugins at
+`9e88dad267e8991d26a6debc0db0d943d437104b` found 21 of 23 installed playbooks identical. The other
+two changed skill names only. The earlier builder had loaded poteto-mode but still skipped steps,
+so missing invocation cannot explain every execution failure.
+
+**Why.** FIRST TURN opened a playbook without first loading its owning skill. The brief also
+prescribed Claude Code's Skill tool for Codex. Low invocation counts had been treated as a reason
+to remove skills Andres wanted, instead of evidence that their routing needed work.
+
+**What changed.** brief.md loads poteto-mode through the Skill tool in Claude Code or a full
+SKILL.md read in Codex before implementation. Both follow the installed native playbook and its
+own skip allowances. The report and review require loading evidence and the work each routed
+skill produced. The subagent path keeps the filled brief and preserves product questions for
+main. The blanket verification skip gives way to targeted evidence on the matching surface.
+skills.md restores `/verify-this`, `/transitions-dev` and `/interface-craft`, adds
+`/vercel-react-best-practices`, `/typescript-best-practices`, `/better-accessibility`,
+`/thoven-branding`, `/blast-radius` and `/doc-freshness`, and keeps `/test-audit` and `/better-ui`.
+Motion implementation and review have separate moments. The API-design row names the installed
+`/api-designer` skill instead of an unavailable agent. `/verify` runs targeted checks per ticket;
+full `bin/verify` runs on Andres's request or once at the parent before integration into `main`.
+The earlier transcript counts remain historical observations, not the skill-selection policy.
+
 ## 2026-10-26 — a subagent builder gets the brief verbatim and prints its playbook steps first
 
 > session · 2026-10-26 · 14531ef9 · correction · applied · seen 1
