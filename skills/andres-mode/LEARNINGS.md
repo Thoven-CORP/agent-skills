@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-25 — 390 parity runs with or without a phone frame
+
+> reflect · 2026-10-25 · c6bb2950 · correction · applied · seen 1
+
+**What happened.** Andres: "Mobile parity doesn't need to have a phone. It should always be there because we sometimes don't design for phones so it should always check for mobile compatibility especially on parent screens."
+**Why.** "390 beside the frame" read as if a 390 shot needed a phone frame. The Parity check already shoots 390 for every state.
+**What changed.** The Parity bullet here and verify step 5 say 390 is shot for every state, phone frame or not, parent screens most of all.
+
 ## 2026-10-25 — mutation runs on GitHub; locally only on request
 
 > session · 2026-10-25 · c6bb2950 · correction · applied · seen 1
