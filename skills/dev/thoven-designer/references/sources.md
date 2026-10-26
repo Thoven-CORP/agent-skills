@@ -141,7 +141,7 @@ Route to the narrow skill, not the broad one.
 | Layout | `better-layout` |
 | Accessibility | `better-accessibility` |
 | Interface patterns | `better-interface` |
-| UX copy | `better-writing` |
+| Copy a person reads: UX copy, a page, an email | `thoven-branding`, which runs `better-writing` with `BRANDING.md` |
 | Component polish | `better-ui` |
 | Choosing a library instead of hand-rolling | `pick-ui-library` |
 | **Building a new surface end to end** | **`building-components`** |
