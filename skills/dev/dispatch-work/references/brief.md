@@ -28,8 +28,10 @@ DISPATCH = ~/.agents/skills/dispatch-work/scripts/dispatch
 
 FIRST TURN Open the playbook your opening line names, ~/.agents/skills/poteto-mode/playbooks/<name>.md
            in kebab case (Feature is feature.md), and copy its steps verbatim into your task list
-           before any other work, each skipped step kept as "skip: <reason>". Done when the list
-           holds every step. Build by that list.
+           before any other work, each skipped step kept as "skip: <reason>". Print that list as
+           your first message, so main and Andres see it before any code. Done when the list
+           holds every step and is printed. Build by that list. The REPORT's Playbook row repeats
+           it with each step's outcome: done with its evidence, or the skip reason.
 
 FITS       <<one line: where this ticket sits in its parent issue and what it unblocks>>
 SPEC       {{SNAPSHOT}}. Read it in full first. It holds the ticket, its comments and the parent's
@@ -97,6 +99,7 @@ STATUS is DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT or BLOCKED. The body is the AS
   Checks       each command you ran and its pass line
   Parity       UI tickets: the Parity check's `parity-grid` link on your PR (standing.md, Parity), and each
                difference from a frame: fixed, or confirmed with its ruling
+  Playbook     each playbook step verbatim: done with its evidence, or "skip: <reason>"
   Skills       each skill you invoked and when; a skipped ACCESS line names why
   Rulings      what you decided and why
   Noticed      one line per problem outside this ticket's code, for main's grouped Linear issue

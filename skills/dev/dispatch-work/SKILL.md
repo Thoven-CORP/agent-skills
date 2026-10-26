@@ -126,7 +126,17 @@ in Linear, then come back.
 3. On the first dispatch in this Project, label main's own pane (`$REX_BLOCK` in Rex, `$HERDR_PANE_ID` in herdr): `scripts/dispatch label <pane> Meta "<Project>" --tab`.
 4. Move the ticket to **In Progress** with `set-status.js`.
 
-**Done when:** `scripts/dispatch status <pane>` shows WORKING and the ticket reads In Progress.
+**Subagent builder.** When Andres asks for a subagent instead of a pane, skip `dispatch spawn` and
+label nothing. Make the tree as in item 1, fill `{{…}}` by hand, and launch an Agent
+(`general-purpose`, which has the Skill tool; `poteto-agent` has none) whose prompt is the filled
+brief file, verbatim from its first line, the `/poteto-mode` skill line. Add only what a subagent
+changes: no SendMessage or `dispatch post` (the REPORT block is its final message), and on a
+question it takes the smallest default and lists it under Rulings. Never paraphrase the brief: the
+FIRST TURN line is the fix, and a rewritten prompt drops it. Move the ticket to In Progress.
+
+**Done when:** `scripts/dispatch status <pane>` shows WORKING and the ticket reads In Progress. For a
+subagent builder: its first message prints the playbook's steps with done or skip, and the ticket
+reads In Progress.
 
 ### 4. Watch
 

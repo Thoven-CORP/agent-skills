@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-26 — a subagent builder gets the brief verbatim and prints its playbook steps first
+
+> session · 2026-10-26 · 14531ef9 · correction · applied · seen 1
+
+**What happened.** Andres asked for subagents instead of panes on PL6 slice 1 (THV-1463). Main wrote the subagent's prompt by hand instead of passing the brief, so the FIRST TURN line became "copy its steps into your task list". The builder loaded poteto-mode and read `playbooks/feature.md`, then printed no step list, skipped `how` and `architect` with no skip line, and its transcript held 3 text lines in 90+ tool calls. It did run `/thoven-coppa-vpc-contracts`, `/safe-migrate` (both Thoven-CORP/agent-skills) and `/tdd` (pstack, cursor/plugins). Andres: "it should just use poteto mode" and "I thought we had fixed dispatch work".
+**Why.** The 10-24 fix lives in brief.md's FIRST TURN, and dispatch-work had no subagent path, so a hand-written prompt bypassed it. A task list inside a subagent is invisible, so nobody could check it.
+**What changed.** brief.md: FIRST TURN prints the step list as the first message, and the REPORT gains a Playbook row with each step's outcome. SKILL.md step 3: a subagent builder gets the filled brief verbatim from its `/poteto-mode` line on a `general-purpose` agent, with only the reporting changes a subagent needs.
+
 ## 2026-10-25 — the full bin/verify runs on request or at the parent, not per ticket
 
 > session · 2026-10-25 · c6bb2950 · correction · applied · seen 1
