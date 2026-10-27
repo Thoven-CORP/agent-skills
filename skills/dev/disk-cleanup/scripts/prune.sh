@@ -24,7 +24,7 @@ set -uo pipefail
 : "${HOME:?HOME must be set}"
 
 APPLY=0; [ "${1:-}" = "--apply" ] && APPLY=1
-TRANSCRIPT_DAYS="${TRANSCRIPT_DAYS:-30}"
+TRANSCRIPT_DAYS="${TRANSCRIPT_DAYS:-14}"
 freed=0
 
 ALLOWED_ROOTS="
