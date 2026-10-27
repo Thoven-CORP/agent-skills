@@ -90,7 +90,7 @@ The builder checks its own homework before DONE; the reviewer runs the same list
 - A brief quotes the user's words and states no preference the user did not say.
 - Name source, target and method in every merge line ("THV-1234 into scheduling/improvements, squash"; "scheduling/improvements → main, merge commit") and ask before any merge that touches `main`. The method by PR role is in thoven-law.md "Branches and PRs". A stale branch "predates" work on main; "deleted" is for a commit that removed something.
 - Leave `disable-model-invocation` off a skill unless the user says that skill must never self-trigger, and search installed skills under `~/.agents/skills`, since `grep -r` skips the `~/.claude/skills` symlinks.
-- Check disk and memory before any dispatch. Below 5 GB free or above load 10, prune first; never a worktree for a minor fix. At most two build panes with browsers open at once; verify reads load and free memory itself and drops to one row when the box is busy.
+- Check disk and memory before any dispatch. Below 5 GB free or above load 16, prune first (Andres, 2026-10-27: the limit of 10 "needs to be bumped up to like 15-18"); never a worktree for a minor fix. At most two build panes with browsers open at once; verify reads load and free memory itself and drops to one row when the box is busy.
 - When work lands and the user has seen the evidence, close its pane, stop its dev servers, remove its worktrees, protos and scratch, and report it in one line; never offer. Never remove unpushed work. Delete your own one-off probes and scratch scripts once you have checked them, and say so.
 
 ## Replies
