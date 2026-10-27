@@ -72,6 +72,16 @@ PATCHES = [
         "[the Claude Code adapter](~/thoven/agent-skills/enforcement/config/pstack-claude-code.md)",
     ),
     (
+        "create-formal-verification-skill",
+        "[the Claude Code adapter](../../docs/harness/claude-code.md)",
+        "[the Claude Code adapter](~/thoven/agent-skills/enforcement/config/pstack-claude-code.md)",
+    ),
+    (
+        "maintain-formal-verification-skill",
+        "[the Claude Code adapter](../../docs/harness/claude-code.md)",
+        "[the Claude Code adapter](~/thoven/agent-skills/enforcement/config/pstack-claude-code.md)",
+    ),
+    (
         "poteto-help",
         "- No `~/.cursor/rules/pstack-models.mdc` means `/setup-pstack` hasn't run for this user, so every role uses its default model.",
         "- Models come from `~/.claude/pstack-models.md`, which Andres sets by hand. Point a model or budget question at that file, not at `/setup-pstack`.",
