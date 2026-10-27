@@ -102,6 +102,14 @@ removed "$H/.codex/sessions/s1.jsonl"
 removed "$H/.cursor/chats/c1.db"
 
 echo
+# pnpm 11 keeps its own pinned binary inside the store, so `pnpm store prune` deletes it and every live
+# pane loses pnpm mid-run (2026-10-09 and again 2026-10-26).
+if grep -nE '^[^#]*pnpm[[:space:]]+store[[:space:]]+prune' "$SCRIPT" >/dev/null; then
+  bad "prune.sh runs pnpm store prune, which deletes the pinned pnpm"
+else
+  ok "prune.sh never runs pnpm store prune"
+fi
+
 echo "================================================"
 printf "  %d passed, %d failed\n" "$pass" "$fail"
 [ "$fail" -eq 0 ] && echo "  SAFETY CONTRACT HOLDS" || echo "  CONTRACT VIOLATED - DO NOT RUN prune.sh"
