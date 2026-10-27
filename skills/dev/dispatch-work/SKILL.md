@@ -22,6 +22,7 @@ per pane: reports, corrections, alerts and tokens.
 
 ## Pitfalls
 
+- Dispatch a Linear parent, or a chain of dependent tickets, as one pane with one branch and one PR per repo; append its tickets and fix rounds there instead of opening a PR per ticket, layer or fix. (LEARNINGS 2026-10-26)
 - Dispatch multi-file feature builds only. Make a small visual correction from Andres outside a live dispatch yourself, exactly as worded, and measure its computed style and geometry before you report. (LEARNINGS 2026-10-01)
 - Compare the ticket's flow wording with the board frames it names before you dispatch. The frame wins on what it shows, so fix the ruling and the ticket in Linear to match it first. (LEARNINGS 2026-10-09)
 - Scope every size or gate rule in a brief to the code the pane writes, and exempt generated artifacts, manifests, routes.rb and files already over the limit. (LEARNINGS 2026-10-09)
@@ -76,8 +77,10 @@ with the blocker named. A ticket already in a pane gets a handover, never a seco
 tree.
 
 Then read [references/agents.md](references/agents.md). The ticket's complexity picks the tier,
-and `scripts/agents.py` says what that tier runs today. Several small same-shape tickets go to one
-pane as one dispatch.
+and `scripts/agents.py` says what that tier runs today. A Linear parent, or a chain of tickets that
+build on each other, goes to one pane as one dispatch: one agent in both repos (`--add-dir`), one
+branch and one PR per repo, each ticket committed there and every fix appended. Several small
+same-shape tickets go the same way.
 
 Before dispatching onto an integration branch, compare its `lefthook.yml` and `bin/verify` with
 `origin/main`. When they differ, offer Andres a catch-up merge of `main` (merge commit) as a go first:

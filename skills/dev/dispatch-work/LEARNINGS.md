@@ -369,3 +369,16 @@ designed that." Only the wizard line was in scope.
 
 **How to apply.** Parity pairs a built state with its board frame. No frame, no parity row; a copy
 edit on such a screen gets one before/after line.
+
+> reflect · 2026-10-26 · THV-1389, THV-1310, THV-477, THV-1374 · process · applied · seen 1
+
+**Ceremony per PR cost two days.** THV-1389 shipped as 5 PRs, and homework (477) and material facts
+(1374) waited behind a separate catch-up PR (#443) through 4 CI rounds. Each PR repeated the local
+test loop, CI and review, so fixes surfaced one PR at a time. Andres: "We want PRs to be just a way
+for us to organise the worktrees ... one parent ticket to one PR."
+
+**Why.** One solo dev with agents on one machine: main dispatches, reviews and merges. A PR is a
+container for one unit of work, not a reviewer's ceremony.
+
+**How to apply.** Step 1: a parent or a dependent chain is one dispatch, one agent in both repos,
+one branch and one PR per repo. Commit per ticket and append fix rounds to the open PR.
