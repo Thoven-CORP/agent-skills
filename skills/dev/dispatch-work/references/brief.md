@@ -71,10 +71,12 @@ DONE WHEN  <<the ticket's Done when, by pointer>>. Choose the smallest checks th
            changed behaviour on its matching surface. Reuse valid evidence for unchanged claims.
            A unit or request spec alone does not prove visual parity or performance.
            Seams: <<where the tests sit>>. Proof goes red before your change and green after it.
-           Verify per `~/.agents/skills/verify/SKILL.md`: lint and types, the touched test files
-           one per run, the design scan suite on any component or token diff,
+           Verify per `~/.agents/skills/verify/SKILL.md`, once, at your first DONE: lint and types,
+           the touched test files one per run, the design scan suite on any component or token diff,
            `__tests__/mail-link-routes.test.ts` on a diff that adds or moves a route, and the direct
-           importers' test files by path. The full `bin/verify` runs only when Andres asks or once
+           importers' test files by path. A fix round runs only the test files it touched, once:
+           no type-check, oxlint or eslint sweep, no scan suite, no red-first rerun. CI on the PR
+           runs those. The full `bin/verify` runs only when Andres asks or once
            at the parent, before the integration PR into `main`. CI on your PR
            runs the affected tests. Paste each command and its pass line in the report.
            An e2e or browser test runs as the one spec that covers your change, through the load
