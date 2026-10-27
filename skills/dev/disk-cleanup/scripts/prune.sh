@@ -207,7 +207,7 @@ if [ "$TRANSCRIPT_DAYS" -gt 0 ]; then
 fi
 
 npm cache clean --force >/dev/null 2>&1
-pnpm store prune >/dev/null 2>&1
+# No `pnpm store prune`: pnpm 11 keeps its pinned binary in the store, and pruning it breaks every live pane.
 
 echo
 report "TOTAL RECLAIMABLE" "$freed"

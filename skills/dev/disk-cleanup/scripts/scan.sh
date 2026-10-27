@@ -105,7 +105,7 @@ kb=$(size_of "$HOME_DIR/.npm/_cacache");       emit "Cache: npm" "$kb" "$HOME_DI
 kb=$(size_of "$HOME_DIR/.cache/puppeteer");    emit "Cache: puppeteer" "$kb" "$HOME_DIR/.cache/puppeteer" "caution" "Browser binaries; clear if not running automation"
 kb=$(size_of "$HOME_DIR/.cargo/registry");     emit "Cache: cargo" "$kb" "$HOME_DIR/.cargo/registry" "safe" "Rust crate cache, re-fetched on build"
 kb=$(size_of "$HOME_DIR/.bun/install/cache");  emit "Cache: bun" "$kb" "$HOME_DIR/.bun/install/cache" "safe" "bun pm cache rm"
-kb=$(size_of "$HOME_DIR/Library/pnpm");        emit "Cache: pnpm" "$kb" "$HOME_DIR/Library/pnpm" "safe" "pnpm store prune"
+kb=$(size_of "$HOME_DIR/Library/pnpm");        emit "Cache: pnpm" "$kb" "$HOME_DIR/Library/pnpm" "review" "never pnpm store prune while panes run: it deletes the pinned pnpm"
 kb=$(size_of "$HOME_DIR/Library/Caches/go-build"); emit "Cache: go-build" "$kb" "$HOME_DIR/Library/Caches/go-build" "safe" "go clean -cache"
 
 # Next.js build caches — compiler output (NOT node_modules), disposable even on active
