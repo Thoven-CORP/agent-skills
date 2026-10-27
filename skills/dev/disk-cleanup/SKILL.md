@@ -24,7 +24,7 @@ Run it whenever the user says the problem keeps coming back.
 It is idempotent, skips any `.next/cache` whose dev server is live, and skips `~/.cache/uv`
 when a uv process is running. Prefer it over hand-rolled `rm` for everything it already covers;
 extend the script rather than running one-off deletions, so the next session inherits the fix.
-`TRANSCRIPT_DAYS` (default 30) bounds AI session-history retention; `TRANSCRIPT_DAYS=0` disables it.
+`TRANSCRIPT_DAYS` (default 14, set 2026-10-27) bounds AI session-history retention; `TRANSCRIPT_DAYS=0` disables it. The Monday launchd job sets the same value in `~/Library/LaunchAgents/co.thoven.disk-prune.plist`.
 A weekly launchd job at `~/Library/LaunchAgents/co.thoven.disk-prune.plist` runs it Mondays 9am.
 
 ### The safety contract (do not weaken this)
