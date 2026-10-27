@@ -5,6 +5,16 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-27 — the dispatch load limit of 10 was too low for this machine
+
+> correction · applied · seen 1
+
+**What happened.** With load at 12.7, main held a two-track dispatch to one builder at a time. Andres: "the limit of 10 needs to be bumped up to like 15-18".
+**Why.** On this 10-core Mac a 1-minute load of 10 to 13 is a normal working day with a few panes open, so a limit of 10 blocked work that the machine can carry.
+**What changed.** The Delegation bullet now says prune first above load 16, the middle of his range. `thoven-load-gate` keeps its own default of 12 for heavy jobs; that is a separate gate he did not name.
+
+---
+
 ## 2026-10-25 — 390 parity runs with or without a phone frame
 
 > reflect · 2026-10-25 · c6bb2950 · correction · applied · seen 1
