@@ -71,14 +71,14 @@ DONE WHEN  <<the ticket's Done when, by pointer>>. Choose the smallest checks th
            changed behaviour on its matching surface. Reuse valid evidence for unchanged claims.
            A unit or request spec alone does not prove visual parity or performance.
            Seams: <<where the tests sit>>. Proof goes red before your change and green after it.
-           Verify per `~/.agents/skills/verify/SKILL.md`, once, at your first DONE: lint and types,
-           the touched test files one per run, the design scan suite on any component or token diff,
-           `__tests__/mail-link-routes.test.ts` on a diff that adds or moves a route, and the direct
-           importers' test files by path. A fix round runs only the test files it touched, once:
-           no type-check, oxlint or eslint sweep, no scan suite, no red-first rerun. CI on the PR
-           runs those. The full `bin/verify` runs only when Andres asks or once
-           at the parent, before the integration PR into `main`. CI on your PR
-           runs the affected tests. Paste each command and its pass line in the report.
+           Verify each changed behaviour with `~/.agents/skills/verify-this/SKILL.md`: one
+           falsifiable claim per behaviour, baseline and treatment on the smallest surface it
+           routes to, one verdict each. This is the default at your first DONE and in every fix
+           round, and a fix round verifies only the claims it changed. The `verify` skill's check
+           list (lint and types sweeps, scan suites, importers' tests) runs only when main's brief
+           or Andres asks for it; CI on your PR runs it. The full `bin/verify` runs only when
+           Andres asks or once at the parent, before the integration PR into `main`. Paste each
+           command, its pass line and each verdict in the report.
            An e2e or browser test runs as the one spec that covers your change, through the load
            gate, never the whole suite.
            Load each ACCESS skill at its moment and each native skill when the playbook routes
