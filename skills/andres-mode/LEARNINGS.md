@@ -5,6 +5,10 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-28 — remote execution keeps the existing Git workflow
+
+In migration session 01a17981, Andres corrected the proposed transfer ceremony: "we already do PRs and branching." Changing execution host must preserve that workflow. Remote checks use saved changes and dedicated mirrors; coding continues in separate worktrees. A new PR or wholesale document sync is not a prerequisite. One unique session supports this correction.
+
 ## 2026-10-25 — 390 parity runs with or without a phone frame
 
 > reflect · 2026-10-25 · c6bb2950 · correction · applied · seen 1

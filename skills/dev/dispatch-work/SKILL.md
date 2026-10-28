@@ -17,7 +17,8 @@ when something is wrong. Main never polls.
 **Source:** `~/thoven/agent-skills/skills/dev/dispatch-work/`. Home copies are installs.
 `scripts/dispatch` runs every pane action and detects Rex or herdr from the pane it runs in. Its
 usage text is the syntax authority. First time on a machine: `scripts/dispatch fleet install`.
-Every pane action also lands in an events log that `clean` keeps, and `scripts/dispatch stats` reads it
+For a deliberate full pane-dispatch setup only; this is not a prerequisite for remote checks or
+ordinary Rex/SSH coding. Every pane action also lands in an events log that `clean` keeps, and `scripts/dispatch stats` reads it
 per pane: reports, corrections, alerts and tokens.
 
 ## Pitfalls
@@ -89,13 +90,19 @@ model, the tier, and one line on why this tier.
 ### 2. Snapshot, then compose the brief
 
 1. `scripts/dispatch snapshot <project> THV-x` saves the ticket, its comments and the parent's
-   decisions. The pane reads this file, never Linear: Linear is unreachable from many panes.
+   decisions. Read the Project brief, relevant linked document bodies and latest Update as well.
+   The command's ticket snapshot does not fetch all those sources. Include their governing content
+   and retrieval provenance using [handoff.md](../workspace/references/handoff.md). A URL alone
+   is insufficient. When the receiver has Linear access, re-read there; otherwise carry the actual
+   relevant content and disclose missing or stale context.
 2. Copy [references/brief.md](references/brief.md) to the board's `briefs/THV-x.md` and fill it.
    Carry what the ticket cannot know. Find earlier rulings with one mem0 search (`search_memories`,
    query: the ticket id, its title and the Project). A ruling the ticket lacks goes onto the Linear
    parent first, then re-run the snapshot. A ruling that lives only in this conversation goes in
    DECIDED IN CHAT with its label.
-3. Put every binding rule you hold into RULES now. A rule sent after dispatch arrives as an addendum
+3. Record execution mode and host, absolute worktree, branch/base HEAD and paired repository.
+   A remote coding tree must be outside every Mutagen test mirror. Preserve existing PR routing.
+4. Put every binding rule you hold into RULES now. A rule sent after dispatch arrives as an addendum
    the pane may read after it reports.
 
 Pick the ACCESS lines for this ticket from [references/skills.md](references/skills.md). When the

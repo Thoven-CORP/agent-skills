@@ -43,9 +43,8 @@ function normalizeLinear(input) {
 
 const MCP_FETCH_HINT = [
   "No Linear data supplied.",
-  "Fetch the Project's issues with the Linear MCP connector (mcp__claude_ai_Linear__list_issues),",
+  "Fetch the Project's issues with the available authorized Linear MCP connector,",
   "then re-run with --linear-json <file> or --stdin.",
-  "Do not use mcp__plugin_linear_linear__* — that connector is unauthorized.",
 ].join(" ");
 
 function linearNotSupplied(reason = MCP_FETCH_HINT) {

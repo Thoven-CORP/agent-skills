@@ -76,3 +76,16 @@ test('no issue at all is red', () => {
   assert.equal(r.ok, false);
   assert.ok(r.failures[0].startsWith('no-issue:'));
 });
+
+test('a Linear issue destination is resolved by Linear, not local file existence', () => {
+  const r = preflight({ ...thv63Claimed, writesTo: 'this ticket', writesToExists: false });
+  assert.equal(r.ok, true);
+});
+
+test('a Linear document needs confirmed access', () => {
+  const doc = { ...thv63Claimed, writesTo: 'https://linear.app/thoven/document/remote-plan-example', writesToExists: false };
+  assert.equal(preflight(doc).ok, false);
+  assert.equal(preflight({ ...doc, writesToExists: true }).ok, false);
+  assert.equal(preflight({ ...doc, writesToAccessible: true }).ok, true);
+  assert.equal(preflight({ ...doc, writesToExists: undefined }).ok, false);
+});

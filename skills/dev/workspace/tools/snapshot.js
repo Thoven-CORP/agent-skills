@@ -25,10 +25,10 @@ function deriveSnapshot({ identity, linear, git, projectState, workflow = null, 
   if (linear.state === S.ADVISORY) findings.push({ state: S.ADVISORY, code: "linear-input", message: linear.reason || MCP_FETCH_HINT });
   else if (linear.state === S.UNKNOWN) findings.push({ state: S.UNKNOWN, code: "linear", message: linear.reason || "Linear access unavailable" });
   else findings.push(sessionGate(current, { hasTickets: tickets.length > 0 }));
-  if (!identity.dir) findings.push({ state: S.UNKNOWN, code: "project-folder", message: "Project folder could not be resolved" });
-  if (!projectState.source) findings.push({ state: S.UNKNOWN, code: "project-state", message: "Project STATE.md is missing" });
-  else if (projectState.compatibility) findings.push({ state: S.ADVISORY, code: "compatibility-state", message: `Using audience-level compatibility input: ${projectState.source}` });
-  if (projectState.imbalances.length) findings.push({ state: S.CONTRADICTED, code: "imbalances", message: `${projectState.imbalances.length} unresolved imbalance(s)` });
+  if (!identity.name) findings.push({ state: S.UNKNOWN, code: "project-identity", message: "Name the Linear Project or resolve it from the issue" });
+  if (!projectState.source) findings.push({ state: S.ADVISORY, code: "project-state", message: "No optional local Project state; use the current Linear brief and documents" });
+  else if (projectState.compatibility) findings.push({ state: S.ADVISORY, code: "compatibility-state", message: `Historical context only: ${projectState.source}` });
+  if (projectState.imbalances.length) findings.push({ state: S.ADVISORY, code: "imbalances", message: `${projectState.imbalances.length} historical local imbalance(s); reconcile relevant claims with current Linear decisions` });
   const base = { project: identity, tickets, git, projectState, workflow, relatedSessions: related, findings, linearState: linear.state };
   const snapshotFingerprint = fingerprint(base);
   const blockers = findings.filter((item) => [S.BLOCKED, S.CONTRADICTED].includes(item.state));
@@ -36,18 +36,14 @@ function deriveSnapshot({ identity, linear, git, projectState, workflow = null, 
   return {
     ...base,
     snapshotFingerprint,
-    completionClaim: blockers.length ? S.BLOCKED : unknowns.length ? S.UNKNOWN : S.VERIFIED,
-    next: current
-      ? `${current.identifier}: ${current.title}`
-      : linear.state === S.ADVISORY
-        ? "Fetch this Project's issues via the Linear MCP connector (mcp__claude_ai_Linear__list_issues), then re-run map.js with --linear-json <file> or --stdin"
-        : linear.state === S.UNKNOWN
-          ? "Linear fetch failed; fetch via the Linear MCP connector (mcp__claude_ai_Linear__list_issues) and re-run map.js with --linear-json <file> or --stdin"
-          : !projectState.source || projectState.compatibility
-            ? "$feature-ledger open"
-            : tickets.length
-              ? "$feature-ledger reconcile"
-              : "$workspace capture",
+    completionClaim: blockers.length ? S.BLOCKED : (unknowns.length || linear.state !== S.VERIFIED) ? S.UNKNOWN : S.VERIFIED,
+    next: linear.state !== S.VERIFIED
+      ? MCP_FETCH_HINT
+      : current
+        ? `${current.identifier}: ${current.title}`
+        : tickets.length
+          ? "$feature-ledger reconcile"
+          : "Read the current Linear Project brief and issues; name any missing required context",
   };
 }
 

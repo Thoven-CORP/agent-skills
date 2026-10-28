@@ -5,6 +5,10 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-10-28 — Linear-only startup supersedes the local-folder prerequisite
+
+The current migration ruling makes Linear the project record. Missing local project folders or templates no longer establish missing setup. Recipe step 2 and the shared snapshot now accept a named Linear Project without local state. Inaccessible required Linear content still needs an explicit gap. This supersedes the recommendation in the 2026-10-25 entry below; its historical evidence remains intact.
+
 ## 2026-10-25 — an unresolved Project folder means the Project was never set up
 
 > reflect · 2026-10-25 · 0f23577b · 7c3d7896 · skill-gap · applied · seen 2
