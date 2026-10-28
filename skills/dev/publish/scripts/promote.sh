@@ -3,9 +3,9 @@
 #
 #   plan [--be SHA|keep] [--fe SHA|keep] [--rollback] [--schema-stays]
 #   snapshot ID    Neon branch of prod; required before backend when migrations are added
-#   backend  ID    thoven-api (health-gated), then thoven-worker
+#   backend  ID    thoven-api (health-gated), then thoven-worker, then Daily's webhook must be ACTIVE
 #   frontend ID    points thoven.co at the build of the pinned frontend SHA
-#   tag      ID    prod/<date>-<n> in both repos, then closes the release
+#   tag      ID    Daily's webhook must be ACTIVE; prod/<date>-<n> in both repos, then closes the release
 #   status         prints the open release
 #   abort    ID    closes the open release without tagging
 #
@@ -66,6 +66,8 @@ render_get() {
   curl -sS --max-time 30 --fail-with-body -H @<(printf 'Authorization: Bearer %s\n' "$RENDER_KEY") \
     "https://api.render.com/v1$1"
 }
+# shellcheck source=daily-webhook-gate.sh
+. "$(dirname "${BASH_SOURCE[0]}")/daily-webhook-gate.sh"
 vercel_api() { vercel api "$@" --scope "$VERCEL_SCOPE"; }
 
 live_commit() {
@@ -376,6 +378,8 @@ Pass --schema-stays only if the older code runs on the newer schema."
     [ "$worker" = "$BE" ] || deploy "$WORKER_ID" "$BE"
     [ "$(live_commit "$WORKER_ID")" = "$BE" ] || die "thoven-worker is not live on ${BE:0:9}"
     rel_set '.done.backend=true'
+    daily_webhook_gate
+    rel_set '.done.daily_webhook=true'
     say "backend on ${BE:0:9} (api healthy, worker live)"
     ;;
 
@@ -432,6 +436,8 @@ Pass --schema-stays only if the older code runs on the newer schema."
 
   tag)
     open_release
+    daily_webhook_gate
+    rel_set '.done.daily_webhook=true'
     BE=$(rel .be.to); FE=$(rel .fe.to)
     [ "$(live_commit "$API_ID")" = "$BE" ] && [ "$(live_commit "$WORKER_ID")" = "$BE" ] \
       || die "prod backend is not live on ${BE:0:9} on both services"
