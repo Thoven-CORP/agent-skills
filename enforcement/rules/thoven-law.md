@@ -63,13 +63,18 @@ a rebase ate a day of the onboarding prototype.)
   branch in a tree, never in a `main` checkout: `co.thoven.sync` fast-forwards the clean `main` checkouts every 30 minutes.
 - Production moves only through `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh`.
 
-**Where records live.** Linear is the source of truth, and the tldraw board is the source of truth
-for design. Decisions live in the Linear parent issue under "Decisions (canonical)", and each cites
-the board frame it rests on. Repo `decisions/api.md` keeps payload fields. Local plans and evidence
-folders are scratch, deleted at close.
+**Where records live.** Linear holds current Project briefs, accepted decisions, status, evidence
+pointers and handoffs. Read relevant document bodies, not only links. tldraw and Paper support
+design/brainstorming; accepted choices are recorded in Linear with their named design sources.
+Local technical runbooks, API/schema details and historical documents remain useful context.
+Missing local project folders, `STATE.md`, `PRD.md` or `CONTINUE_HERE.md` do not block startup.
+Preserve history and user-unseen evidence. Keep branches and PRs when moving hosts; remote checks
+use dedicated disposable mirrors, and coding uses separate worktrees. The shared handoff procedure
+is `skills/dev/workspace/references/handoff.md`.
 
 **Spec parity.** A brief, a plan section or a review traces its work to parent decision ids and
-their frames. The verifier's report opens with SPEC PARITY.
+any design sources the task names. Do not require a board for work without a design source.
+The verifier's report opens with SPEC PARITY.
 
 **Design parity.** A build that changes what a user sees captures every touched state, through the Parity check on its PR where the surface is mapped, at its board frame's width and
 390 beside the frame, plus a short video. The images go to the Linear issue as a comment (the

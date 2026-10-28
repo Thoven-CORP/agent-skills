@@ -3,21 +3,12 @@
 Every column here is load-bearing. A template filled in with the columns dropped is not this
 template.
 
-## Which level each template belongs to
+## Optional technical templates
 
-**The workflow and continuation state live at the Project.** Audience-level state remains a
-read-only compatibility input until each existing Project is migrated.
-
-| Template | Level | Copies |
-|---|---|---|
-| `CONTINUE_HERE.md` | **project** | one per Project |
-| `STATE.md` | **project** | one per Project |
-| `PRD.md` | **project** | one per Project |
-| `architecture.md` · `api.md` · `database.md` | **project**, in `decisions/` | one set per Project |
-| `DESIGN_PROJECT.md` | **project** | one per Project, renamed for what it designs: `DESIGN_DASHBOARD.md` |
-
-A Project's `PRD + Architecture` milestone is done when that Project's files are done. One `PRD.md`
-covering a whole audience could never reach 100%.
+Use a template only when the task explicitly calls for that local technical artifact. Linear holds
+current briefs, accepted decisions, status and handoffs. A Project can be ready without any of
+these files. Keep existing runbooks and historical documents; do not scaffold or migrate them as
+a startup requirement. The column guidance below applies when a template is deliberately used.
 
 ## In every file
 

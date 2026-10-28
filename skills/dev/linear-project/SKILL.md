@@ -13,6 +13,14 @@ Read the live [Project setup standard](https://linear.app/thoven/document/projec
 policy; link it rather than copying it into projects. If unavailable, disclose that gap and keep
 work at proposal level until the current standard can be verified.
 
+## Current project authority
+
+Linear holds current briefs, accepted decisions, status and handoffs. Read the relevant source
+bodies; listing links does not establish access. Existing local runbooks, code contracts and
+historical documents remain useful context. Missing local project folders or `STATE.md` files do
+not require Project setup. tldraw and Paper support design/brainstorming; accepted choices belong
+in Linear. Use [handoff.md](../workspace/references/handoff.md) for cross-session or host handoffs.
+
 ## Frame the project
 
 Read relevant existing projects, accepted decisions, linked artifacts and prior work first.

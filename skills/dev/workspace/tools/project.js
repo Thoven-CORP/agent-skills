@@ -18,7 +18,7 @@ function findProjectDir(start) {
 
 function resolveProject({ cwd = process.cwd(), explicitDir = null, explicitName = null } = {}) {
   const dir = explicitDir ? path.resolve(explicitDir) : findProjectDir(cwd);
-  return { dir, name: explicitName || (dir ? projectName(dir) : null), source: explicitDir ? "argument" : dir ? "cwd" : "unknown" };
+  return { dir, name: explicitName || (dir ? projectName(dir) : null), source: explicitName || explicitDir ? "argument" : dir ? "cwd" : "unknown" };
 }
 
 module.exports = { findProjectDir, projectName, resolveProject };

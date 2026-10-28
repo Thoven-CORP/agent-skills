@@ -1,6 +1,6 @@
 # WORKFLOW
 
-How work is tracked at Thoven. Linear holds state; authoritative artifacts hold the thinking.
+How work is tracked at Thoven. Linear holds current requirements, accepted decisions, state and handoffs. Technical and design sources remain linked context.
 
 **Project setup precedence (approved September 30, 2026).** For new Project setup or a scoped
 proposal to change an existing Project, use `$linear-project` and read the live
@@ -11,7 +11,11 @@ authoritative artifacts, including native Linear documents when appropriate. Exi
 tickets stay in place unless a scoped change is approved. Workspace owns ongoing native context
 and Project Updates; feature-ledger retains its artifact and reconciliation responsibilities.
 
-**A Linear issue links to a decision. It never restates one.**
+**A Linear issue links to its governing decision. Do not create a second current decision copy.**
+
+**Current records policy (2026-10-28).** Linear-first startup and §5 supersede the older local-folder
+examples below. No project file is a universal prerequisite. Retain existing technical/history
+material; do not scaffold it to satisfy an example or require bulk document sync.
 
 The numbered ledger rules that skills cite (rule 2 points at its source, rule 4 owners must exist,
 rule 9 prefer a script, rule 12 do not restate the prototype, rule 13 every surface has an authority)
@@ -73,7 +77,7 @@ or Work-tab names, not Issues.
 | **Done** | The issue's job is finished. Code executed. Design or PRD task complete. Merge is git and does not move this. |
 | **Canceled** | Closed without shipping. Cancel rather than delete, so the id keeps resolving. |
 
-Claim is `In Progress`. A `Writes to:` line names the ledger file. It does not pick a second lane.
+Claim is `In Progress`. A `Writes to:` line names the Linear record or deliberately selected technical artifact. It does not pick a second lane.
 
 ### Artifacts
 
@@ -82,10 +86,10 @@ Claim is `In Progress`. A `Writes to:` line names the ledger file. It does not p
 | **PRD** | The problem and who has it. Attaches to a Feature. |
 | **Spec** | What gets built, before how. |
 | **Plan** | The task breakdown. Produces Issues. |
-| **Ledger** | A Project's `decisions/`, `DESIGN_<PROJECT>.md` and protos. Lives beside the code. §5. |
+| **Ledger** | The Project's current accepted decision rows in Linear, with pointers to relevant technical and design sources. §5. |
 | **Decision** | One resolved choice, carrying an id, **pointing at its source**. |
 | **Proto** | A runnable HTML or React drawing. The contract for look and behaviour. Never markdown. **It is deleted the day its component ships**, with the surface's row repointed at `<component>@<commit>` — `feature-ledger` rule 15. A surface with two live artifacts has no contract. |
-| **Log** | The append-only feature trail in the current Project's `STATE.md`: why, resolutions, and where work stopped. |
+| **Log** | Issue comments and Project Updates in Linear: why, resolutions and where work stopped. |
 | **Map** | The rendered view of the current Project snapshot. Derived per invocation, never hand-edited or synchronized between skills. |
 
 ### Reserved words
@@ -118,8 +122,8 @@ demoable alone. Split an issue by repo and both suites can pass while the produc
 
 ### Starting a Feature
 
-`feature-ledger open` creates the Project and its milestones together, then scaffolds the local
-folder. **Choosing which milestones this Project gets is the triage step**, and it is the only
+`linear-project` proposes or updates the native Project brief, relevant documents and milestones.
+Local project folders and templates are optional. **Choosing which milestones this Project gets is the triage step**, and it is the only
 planning done up front: the milestone set says what this Feature needs, and its absence says what it
 does not.
 
@@ -138,11 +142,11 @@ it closes.
 ```
 ┌─ 1 · PRD + ARCHITECTURE ──────────────────────── lane: In Progress ───┐
 │   Every issue carries "Writes to:". Both repos' requirements land here.│
-│     problem, who has it, stories → PRD.md                              │
+│     problem, who has it, stories → Linear brief                              │
 │     ADRs, FE and BE              → decisions/architecture.md           │
 │     payload contract             → decisions/api.md                    │
 │     schema                       → decisions/database.md               │
-│   GATE  milestone 100%: every named path exists                        │
+│   GATE  accepted outputs meet their criteria                        │
 └────────────────────────────────────────────────────────────────────────┘
                                   ▼
 ┌─ 2 · DESIGN ──────────────────────────────────── lane: In Progress ───┐
@@ -299,84 +303,28 @@ owning gate. An owner that cannot be linked does not exist.
 
 ## 5. Where things live
 
-**Documents live in the repo and Linear links to them.** Never a second copy in a Linear Document.
-
-### The folders
-
-**The Project is where the workflow lives.** Every Project has the same shape, so "where are the api
-decisions for the dashboard" resolves without asking.
-
-```
-<audience>/                     A HOLDING AREA, not the workflow
-  CONTINUE_HERE.md              compatibility input until each Project migrates
-  STATE.md                      compatibility input until each Project migrates
-  IDEAS.md                      raw prose, undigested
-  drawings/                     sketches and protos not yet assigned to a Project
-  plans/                        thinking that has not become a Project yet
-  archive/                      snapshots, and every superseded row
-     ▲
-     New workflow state is not written at this level. Existing state remains
-     readable as advisory compatibility evidence until its Projects migrate.
-
-  projects/
-    <project>/                  ← THE WORKFLOW LIVES HERE
-      CONTINUE_HERE.md          one-screen restart point for this Project
-      STATE.md                  pointer coverage, commits, imbalances, feature log
-      PRD.md                    the problem, who has it, the user stories    E#
-      decisions/
-        architecture.md         ADRs, frontend and backend                 ADR#
-        api.md                  endpoints and payload fields                 A#
-        database.md             schema, migrations, indexes                 DB#
-      DESIGN_<PROJECT>.md       surfaces, status, owning gate, REJECTED       D#
-      drawings/                 this Project's protos. Never markdown
-      plans/                    implementation plans derived from authority
-```
-
-A Project's `PRD + Architecture` milestone has issues whose `Writes to:` lines name **that Project's**
-files. One `PRD.md` covering a whole audience could never be done, because each Project has its own
-problem and its own users' stories.
-
-**There is no Feature-level design doc.** A rule that spans Projects is a design-system rule and
-belongs in the repo-root `DESIGN.md`.
-
-**The prefix names the kind, and a kind runs one series across the audience.** `A3` is an `api.md`
-row; `D84` is a design row, in whichever Project owns that surface. A citation resolves by grep
-inside the audience folder, without context.
-
-`api.md` and `database.md` are the frontend-backend seam. Payload fields and schema decisions live
-there and nowhere else.
-
-**A design doc is named for what it designs**, so it never collides with the design-system hub at
-the repo root: `DESIGN_DASHBOARD.md` · `DESIGN_SCHEDULE.md` · `DESIGN_SHELL.md`.
-
-**Each doc is keyed by surface.** Every surface the Feature touches has a row naming what
-a builder must build from: a drawing, a route, or a component and the commit it was canon at. A
-surface with no row is a blocker, not a default. For anything visual the prototype is the source, so
-a row records the axis, the rule, the threshold and what was rejected, and points at the drawing for
-everything else.
-
-**The L4 proto lives in the app repo**, at `app/dev/<feature>/page.tsx`. The Project's `DESIGN_<PROJECT>.md` is what
-connects the folder to it, so its rows carry the real path.
-
-**Exactly one live artifact per surface.** The row names either a proto or a component, never both.
-When the component ships, the proto is retired and the row says so; retirement happens *because* a
-row retired it, never as a tidy-up. Retirement is **per surface**: a shared proto route hosting other
-surfaces still in flight starts mounting the real component instead of its own copy, and is deleted
-only when its last surface has shipped. `feature-ledger` rule 15 carries the procedure.
-
-**An issue names one surface, and every other surface on that screen is locked while it runs.** The
-component is fitted into its slot; the slot is not resized to fit the component. If it does not fit,
-that is a finding for Andres, not a licence to change the shell. `feature-ledger` rule 16.
+**Linear holds the current project record.** Read the current Project brief, parent decisions,
+relevant linked document bodies, native issues/milestones and latest Project Update. Links alone
+are not read evidence. Use the live Project setup standard through `linear-project` when changing
+setup. Missing local files do not imply that setup is missing.
 
 | Artifact | Home |
 |---|---|
-| `PRD.md`, specs | local, linked from the Project |
-| `decisions/api.md` | local, payload fields only. Agents grep it mid-task. Every other decision lives in the Linear parent issue |
-| `DESIGN_<PROJECT>.md`, protos | local. Protos are runnable |
-| `plans/*.md` | local. `superpowers:executing-plans` reads and ticks it |
-| `archive/` | local |
-| `STATE.md`, `CONTINUE_HERE.md` | Project-local, records only; Linear owns status |
-| status, assignee, the lock, the order | Linear |
+| Brief, requirements, accepted decisions, planning and handoffs | Linear Project documents, parent/issue records and Updates |
+| Status, assignee, ordering, milestones and dependencies | Native Linear fields |
+| Design and brainstorming | tldraw or Paper, referenced by Linear; accepted choices recorded in Linear |
+| Technical runbooks, API/schema details, executable plans and code | Owning repository when useful and explicitly selected |
+| Existing PRDs, `STATE.md`, `CONTINUE_HERE.md`, archives and evidence | Preserve as optional technical/history context; no mandatory copies |
+
+Maintain one governing decision per choice, with stable ids and pointers to its sources. Amend
+that decision when the user rules; do not append a competing current decision. Preserve historical
+records and rejected alternatives. An accepted design source binds the surface it shows. A code
+component establishes current implementation, not a superseding product requirement. A missing
+required design or document is a named context gap, not permission to invent it.
+
+Keep the existing Git branches and PR route across hosts. Use a dedicated disposable test mirror
+for remote checks and separate worktrees for remote coding. See
+[handoff.md](handoff.md) and [remote-check](../../remote-check/SKILL.md).
 
 ### Pure skill boundary and synthesis
 
@@ -393,23 +341,18 @@ bounded evidence only; they do not mutate shared Project state or Linear.
 
 The body stamp is §8 Location stamp (`Sits in:` · `Ledger:` · `Room:` · `Writes to:` · `Done when:`). This section is only the `Writes to:` routing rule.
 
-Every issue whose output is a document carries a literal line:
+An issue whose output is a document names its destination explicitly:
 
+```text
+Writes to: this ticket
+Writes to: https://linear.app/thoven/document/<document-id>
 ```
-Writes to: backend/docs/api/teacher-settings-decisions.md
-```
 
-**Done when** = the document at that path passes **its own `Done when` block**. Every template
-carries one, plus a `<!-- SCAFFOLD -->` marker that an untouched file still holds, so an empty
-scaffold fails the gate by construction. `grep -rl "SCAFFOLD" <feature>/` names every file still
-blank.
-
-An issue may carry more than one `Writes to:` line when its output genuinely lands in two places, as
-a Design issue's does: the proto route and the `DESIGN_<PROJECT>.md` row that points at it. Every listed path
-must resolve. The agent writes to the paths its issue names and never invents one.
-
-Paths point at `docs/<Surface>/` in the repo that owns the artifact. A
-hotfix gets an issue and a CHANGELOG line, no folder. New top-level folders are Andres's call.
+A deliberately selected technical artifact may instead name an existing repository path. Resolve
+Linear destinations with Linear access, not filesystem existence. A URL alone does not prove access.
+A genuinely required local path that is invalid remains an error. The output must satisfy its
+acceptance criteria; an empty file or document is not completion. New top-level folders remain
+Andres's call. Do not rewrite an existing task's destination merely to orient a session.
 
 ### Plans
 
@@ -419,20 +362,12 @@ hotfix gets an issue and a CHANGELOG line, no folder. New top-level folders are 
 One agent, one session: the plan stays a file and Linear sees one Issue. Multiple sessions:
 `/to-tickets` breaks it up and the plan keeps only the reasoning.
 
-### `CONTINUE_HERE.md`
+### Continuation
 
-Records only. Status lives in Linear.
-
-```markdown
-# CONTINUE HERE — <feature>
-
-Linear: THV-42          a pointer, never a copy
-Branch: teacher/thv-42-slug
-
-## What I was doing
-## What I tried that didn't work
-## Careful of
-```
+Record task handoffs in the relevant Linear issue or Project Update. Existing `CONTINUE_HERE.md`
+files remain readable history. They are not required startup inputs and are not automatically
+trimmed, rewritten or synchronized. Use [handoff.md](handoff.md) for actual read content and host,
+worktree, paired-repo and proof provenance.
 
 ---
 
@@ -485,7 +420,7 @@ A dogfood observation stays there; the bug it turns into is born in Linear.
 CLAIMING
 - Claim only from Todo. Anything past it is owned by another session.
   One issue = one agent session.
-- Claim is always In Progress. A "Writes to:" line names the ledger file.
+- Claim is always In Progress. A "Writes to:" line names the Linear record or deliberately selected technical artifact.
 - To claim: set In Progress, take the issue, comment which tool you are.
 - Start once the issue has a "Done when" line. If it has none, ask Andres in
   a comment.
@@ -493,7 +428,7 @@ CLAIMING
 DOCUMENTS
 - Grill with /grill-with-docs, then /architect. Protos and app/dev/ routes are in scope.
   Shipped product code waits for a Build issue.
-- Write to the path "Writes to:" names. Done when that file exists and says X. Then set Ready.
+- Write to the record or technical path "Writes to:" names. Done when its acceptance criteria pass, not merely when it exists. Then set Ready.
 - If the grill produces build work, run /to-tickets after Andres asks. /writing-plans still exists for a session plan.
 - New top-level docs/ folders are Andres's call. Ask in a comment.
 - Decisions live in the Linear parent issue. Link to one by id and board frame. Never restate one.
@@ -583,7 +518,7 @@ Done when: <checkable outcome>
 
 ### Meta vs Work panes — the scoping rule
 
-- **Meta, when used, organizes one Project.** It reads this space, the shared Project snapshot, this fat card, and this ledger. It writes only approved orchestration surfaces — Project `STATE.md` Log, Project `CONTINUE_HERE.md`, issue comments, prompts into panes, and rows in **this** folder. It never writes feature code or another Project's folder.
+- **Meta, when used, organizes one Project.** It reads this space, the shared Project snapshot, this fat card, and this ledger. It writes only approved orchestration surfaces — this Project's Linear records and prompts into panes. It never writes feature code or another Project's folder.
 - **Work panes are narrow**: one room, one job, a ticket when one exists. They
   do not run workspace or feature-ledger. They do not read each other or the plan
   doc beyond their brief. Andres owns those chats. Meta pastes into them only after
@@ -603,9 +538,9 @@ skill from spawn to close.
    `Design · Messages panel (THV-149)`. The **tab** stays the named room.
    After a recycle-and-Begin in the same pane, rename the pane **and** `/rename` the
    OpenCode session, or the next glance still says the old ticket.
-3. When Meta is present, it proposes Project `STATE.md` and `CONTINUE_HERE.md` updates from the
-   current snapshot. The main session applies them with any Linear mutation as one approved,
-   Project-scoped serial operation. Linear wins on disagreement.
+3. When Meta is present, it proposes the relevant Linear handoff or Project Update from the
+   current sources and snapshot. Main applies approved Project-scoped writes serially and reads
+   them back. Do not maintain required local state copies.
 4. A Work pane stays until Andres has seen the surface. Idle after work is a Meta
    recap + how-to-proceed, not an auto-Begin and not a recycle. Unsatisfied → he
    types in that pane, or Meta pastes his approved correction. Recycle only after

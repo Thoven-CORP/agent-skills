@@ -12,6 +12,10 @@ Anyone at Thoven who uses an AI coding agent on our repos. You need:
 2. Node.js so `npx` works.
 3. GitHub auth on your machine (`gh auth login` or SSH keys that can clone this repo).
 
+For a minimal Mac mini setup, use the selected release procedure in
+[remote-install.md](skills/dev/workspace/references/remote-install.md), rather than the full-catalog
+commands below. Publish the reviewed revision first.
+
 ## Install (once)
 
 ```bash
