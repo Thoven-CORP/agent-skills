@@ -4,7 +4,8 @@ set -uo pipefail
 
 dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROD_API=https://api.thoven.co
-PROD_ENV_GROUP=evg-test # shellcheck disable=SC2034
+# shellcheck disable=SC2034
+PROD_ENV_GROUP=evg-test
 SENTINEL=dk_sentinel_never_print
 failures=0
 
