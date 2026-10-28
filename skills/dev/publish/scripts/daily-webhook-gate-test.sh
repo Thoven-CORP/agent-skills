@@ -5,7 +5,7 @@ set -uo pipefail
 dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROD_API=https://api.thoven.co
 # shellcheck disable=SC2034
-PROD_ENV_GROUP=evg-test
+API_ID=srv-test
 SENTINEL=dk_sentinel_never_print
 failures=0
 
@@ -62,6 +62,32 @@ out=$( ( PATH="$tmp:$PATH" DAILY_API_KEY=$SENTINEL daily_webhook_gate ) 2>&1 )
 status=$?
 check "real fetch path refuses on FAILED" "$status" 1
 if grep -qF "$SENTINEL" <<<"$out"; then echo "FAIL: key printed"; failures=$((failures + 1)); else echo "PASS: key never appears in output or curl argv"; fi
+
+cat >"$tmp/curl" <<'STUB'
+#!/usr/bin/env bash
+case "$*" in *dk_sentinel_never_print*) echo "key leaked into curl argv" >&2; exit 9;; esac
+printf '[{"url":"https://api.thoven.co/webhooks/daily","uuid":"u-1","state":"ACTIVE","failedCount":0}]'
+STUB
+render_get() {
+  case "$1" in
+    "/services/$API_ID/env-vars?limit=100") printf '[{"envVar":{"key":"OTHER","value":"x"},"cursor":"c1"}]' ;;
+    *) return 1 ;;
+  esac
+}
+out=$( ( PATH="$tmp:$PATH" daily_webhook_gate ) 2>&1 )
+status=$?
+check "no DAILY_API_KEY in the environment and none on the service refuses" "$status" 1
+render_get() {
+  case "$1" in
+    "/services/$API_ID/env-vars?limit=100") jq -n '[range(100) | {envVar:{key:"K\(.)",value:"x"},cursor:"c\(.)"}]' ;;
+    "/services/$API_ID/env-vars?limit=100&cursor=c99") printf '[{"envVar":{"key":"DAILY_API_KEY","value":"%s"},"cursor":"c100"}]' "$SENTINEL" ;;
+    *) return 1 ;;
+  esac
+}
+out=$( ( PATH="$tmp:$PATH" daily_webhook_gate ) 2>&1 )
+status=$?
+check "key read from the service env vars (second page) passes on ACTIVE" "$status" 0
+if grep -qF "$SENTINEL" <<<"$out"; then echo "FAIL: key printed"; failures=$((failures + 1)); else echo "PASS: service-env key never appears in output or curl argv"; fi
 
 [ "$failures" = 0 ] || { echo "$failures failed"; exit 1; }
 echo "all passed"

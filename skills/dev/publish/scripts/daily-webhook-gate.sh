@@ -1,15 +1,18 @@
 # shellcheck shell=bash
-# Sourced by promote.sh. Needs die, render_get, PROD_API and PROD_ENV_GROUP from it.
+# Sourced by promote.sh. Needs die, say, retry, render_get, API_ID and PROD_API from it.
 # One Daily account serves every environment; its only production webhook is $PROD_API/webhooks/daily.
 # After 3 failed deliveries Daily marks a webhook FAILED and stops sending (THV-981, THV-1490).
 
 daily_api_key() {
-  local key=${DAILY_API_KEY:-}
-  if [ -z "$key" ]; then
-    key=$(retry render_get "/env-groups/$PROD_ENV_GROUP" | jq -r '.envVars[] | select(.key=="DAILY_API_KEY") | .value // empty') \
-      || die "cannot read DAILY_API_KEY from Render env group $PROD_ENV_GROUP; export DAILY_API_KEY and rerun"
-  fi
-  [ -n "$key" ] || die "no DAILY_API_KEY in the environment or Render env group $PROD_ENV_GROUP"
+  local key=${DAILY_API_KEY:-} page cursor=""
+  while [ -z "$key" ]; do
+    page=$(retry render_get "/services/$API_ID/env-vars?limit=100${cursor:+&cursor=$cursor}") \
+      || die "cannot read thoven-api's env vars from Render; export DAILY_API_KEY and rerun"
+    key=$(jq -r '[.[].envVar | select(.key=="DAILY_API_KEY") | .value // empty][0] // empty' <<<"$page")
+    [ "$(jq length <<<"$page")" = 100 ] || break
+    cursor=$(jq -r '.[-1].cursor' <<<"$page")
+  done
+  [ -n "$key" ] || die "no DAILY_API_KEY in the environment or on the thoven-api service env vars"
   printf '%s' "$key"
 }
 
