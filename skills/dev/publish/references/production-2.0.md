@@ -37,7 +37,7 @@ Its progress and done lines start with `== ` and show SHAs as their first 9 char
    ~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh backend <id>
    ```
 
-   It deploys `thoven-api`, waits for api.thoven.co to report the SHA healthy, then deploys `thoven-worker`. Done when it prints `backend on <sha9> (api healthy, worker live)`. An unchanged backend deploys nothing and only runs the health gate.
+   It deploys `thoven-api`, waits for api.thoven.co to report the SHA healthy, then deploys `thoven-worker`. Done when it prints `backend on <sha9> (api healthy, worker live)`. An unchanged backend deploys nothing and only runs the health gate. It then refuses unless Daily's production webhook (`https://api.thoven.co/webhooks/daily`) is ACTIVE, and prints the reactivation command for Andres to run; the script never reactivates it.
 
 7. **Backend smoke.** From a detached backend checkout of `<be-sha>` (`git -C ~/thoven/backend worktree add --detach ~/thoven/backend-publish-<be-sha7> <be-sha>`, then `bundle install` in it), with a dogfood teacher's JWT. The dogfood accounts are THV-707's, never a real teacher:
 
@@ -89,7 +89,7 @@ SKIPS
    ~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh tag <id>
    ```
 
-   It checks both services and thoven.co run the pinned SHAs, then pushes `prod/YYYY-MM-DD-N` to both repos and closes the release. Done when it prints `tagged prod/<date>-<n>; release <id> closed`. A rollback can only return to a SHA with a `prod/*` tag, so an untagged release is not a rollback target.
+   It checks both services and thoven.co run the pinned SHAs, refuses unless Daily's production webhook is ACTIVE, then pushes `prod/YYYY-MM-DD-N` to both repos and closes the release. Done when it prints `tagged prod/<date>-<n>; release <id> closed`. A rollback can only return to a SHA with a `prod/*` tag, so an untagged release is not a rollback target.
 
 11. **Report.** Per repo: the SHA, the `promote.sh` line that proved it, the tag, and each gate's result, with the tick list's items ticked. Say "production runs `<sha>`" only for a repo whose step printed its done line. Done when Andres has the report.
 
