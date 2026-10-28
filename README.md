@@ -12,9 +12,11 @@ Anyone at Thoven who uses an AI coding agent on our repos. You need:
 2. Node.js so `npx` works.
 3. GitHub auth on your machine (`gh auth login` or SSH keys that can clone this repo).
 
-For a minimal Mac mini setup, use the selected release procedure in
-[remote-install.md](skills/dev/workspace/references/remote-install.md), rather than the full-catalog
-commands below. Publish the reviewed revision first.
+For a new Mac or remote mini, use the [full development-environment guide](skills/dev/workspace/references/remote-install.md)
+and its [sanitized inventory](skills/dev/workspace/references/development-environment.json).
+They cover Thoven development skills, third-party sources, project-local skills, agent helpers,
+and user-scoped Claude plugins. Publish the reviewed revision first; updating Thoven alone does
+not install the third-party catalog on a new machine.
 
 ## Install (once)
 
@@ -188,7 +190,9 @@ Do **not** copy third-party or plugin skills in here. Those stay where they alre
 
 - `mattpocock/skills`, `Jeffallan/claude-skills`
 - `neondatabase/agent-skills`, `greensock/gsap-skills`, `heygen-com/hyperframes`
-- Claude Code plugins: `dev-pipeline`, `team-kit`, `superpowers`
+- `cursor/plugins` (pstack, deslop, verification helpers and thermos)
+- `emilkowalski/skills`, `jakubkrehel/skills`, `t3dotgg/tstack`
+- Claude Code plugins and their enabled state: see the [full installation guide](skills/dev/workspace/references/remote-install.md)
 
 Frontend/backend still keep **lockfile** copies of Neon / GSAP where the product needs them. Do not `git rm` those.
 
