@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Lists the dev servers and leftover dev tools on this machine. Stops nothing unless asked.
 
-  thoven-sweep                       table: pid, age, cpu, cwd, owner, command
+  thoven-sweep                       table sorted by CPU: pid, age, cpu, owner, cwd, command
   thoven-sweep --stop PID [PID...]   TERM, 10s, KILL, for pids that appear in the table
   thoven-sweep --stop-unowned        the same, for every row whose owner is "unowned"
 
 owner is the session id thoven-session-procs recorded for that pid and start time, else "unowned".
-Run it by hand; no schedule runs it. THOVEN_PROCS_HOME and THOVEN_PROCS_GRACE move the records
+It covers dev servers, the node processes behind them, and test runs (playwright test, vitest,
+bin/verify, e2e) with their workers and browsers. MCP servers are never listed. Run it by hand; no schedule runs it. THOVEN_PROCS_HOME and THOVEN_PROCS_GRACE move the records
 and the wait, as for the hook.
 """
 import argparse
@@ -60,15 +61,14 @@ def listing() -> list:
     while pid in table and pid not in skip:
         skip.add(pid)
         pid = table[pid][0]
-    hits = [p for p, (_, _, cmd) in table.items()
-            if p not in skip and (sp.SERVER.search(cmd) or sp.DEV_TOOL.search(cmd))]
+    hits = [p for p in sp.watched(table) if p not in skip]
     owned, st, cw = owners(), stats(hits), cwds(hits)
     rows = []
-    for p in sorted(hits):
+    for p in hits:
         age, cpu = st.get(p, ("?", "?"))
         rows.append({"pid": p, "start": table[p][1], "age": age, "cpu": cpu, "cwd": cw.get(p, "?"),
                      "owner": owned.get((p, table[p][1]), "unowned"), "command": table[p][2]})
-    return rows
+    return sorted(rows, key=lambda r: float(r["cpu"]) if r["cpu"] != "?" else -1, reverse=True)
 
 
 def main() -> int:

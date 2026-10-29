@@ -30,10 +30,33 @@ GRACE = float(os.environ.get("THOVEN_PROCS_GRACE", "10"))
 
 SERVER = re.compile(
     r"puma \d|\brails (s|server)\b|next-server|\bnext (dev|start)\b|\bvite\b|\bmailpit\b|\bsidekiq\b"
-    r"|solid_queue|\bbin/jobs\b|\bplaywright test\b|webpack-dev-server|\bforeman\b|\bcloudflared\b"
+    r"|solid_queue|\bbin/jobs\b|webpack-dev-server|\bforeman\b|\bcloudflared\b"
     r"|\b(pnpm|npm|yarn) (run )?dev\b|\bbin/dev\b|\bhttp\.server\b"
 )
-DEV_TOOL = re.compile(r"\bvitest\b|\bplaywright\b|agent-browser|chrome-headless-shell|\btsc --watch\b")
+TEST_RUN = re.compile(
+    r"\bplaywright test\b|playwright(-core)?/(lib|cli)|\bvitest\b|\bbin/verify\b|verify-engine|\be2e\b"
+)
+BROWSER = re.compile(r"chrome-headless-shell|Chrome for Testing|chromium|--headless", re.I)
+MCP = re.compile(r"-mcp\b|\bmcp-|/mcp\b|\bmcp\b")
+
+
+def watched(table: dict) -> list:
+    """Dev servers, the node processes behind them, and test runs with their workers and browsers.
+    MCP servers are excluded outright. A browser counts only under a test run."""
+    def match(pid):
+        cmd = table[pid][2]
+        return not MCP.search(cmd) and bool(SERVER.search(cmd) or TEST_RUN.search(cmd))
+
+    def under_test(pid):
+        seen = set()
+        while pid in table and pid not in seen:
+            seen.add(pid)
+            pid = table[pid][0]
+            if pid in table and not MCP.search(table[pid][2]) and TEST_RUN.search(table[pid][2]):
+                return True
+        return False
+
+    return [p for p in table if match(p) or (not MCP.search(table[p][2]) and BROWSER.search(table[p][2]) and under_test(p))]
 
 
 def process_table() -> dict:
@@ -113,8 +136,8 @@ def record(session_id: str, agent_id: str) -> None:
         return
     rows = read_records(path)
     known = {(r["pid"], r["start"]) for r in rows}
-    added = [pid for pid in descendants(table, root)
-             if SERVER.search(table[pid][2]) and (pid, table[pid][1]) not in known]
+    mine = set(descendants(table, root))
+    added = [pid for pid in watched(table) if pid in mine and (pid, table[pid][1]) not in known]
     for pid in added:
         rows.append({"pid": pid, "start": table[pid][1], "agent_id": agent_id, "command": table[pid][2][:200]})
         log(f"record session={session_id} agent={agent_id or '-'} pid={pid} {table[pid][2][:100]}")

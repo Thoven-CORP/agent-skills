@@ -115,6 +115,26 @@ class Record(Base):
         self.assertFalse((Path(self.home) / "session-procs" / "s3").exists())
 
 
+class Scope(Base):
+    def test_mcp_servers_are_never_watched_and_test_runs_are(self):
+        sys.path.insert(0, str(BIN))
+        import importlib.machinery, importlib.util
+        spec = importlib.util.spec_from_loader("sp", importlib.machinery.SourceFileLoader("sp", str(HOOK)))
+        sp = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(sp)
+        t = {1: (0, "s", "claude"),
+             2: (1, "s", "npm exec @playwright/mcp@latest"),
+             3: (2, "s", "node /x/node_modules/@playwright/mcp/cli.js --headless"),
+             4: (1, "s", "node /x/node_modules/.bin/playwright test --workers 2"),
+             5: (4, "s", "/x/chrome-headless-shell --headless"),
+             6: (1, "s", "node /x/node_modules/vitest/dist/workers/forks.js"),
+             7: (1, "s", "/x/chrome-devtools-mcp --headless"),
+             8: (1, "s", "/Applications/Chromium --headless"),
+             9: (1, "s", "puma 7.2.1 (tcp://0.0.0.0:3001)")}
+        self.assertEqual(sorted(sp.watched(t)), [4, 5, 6, 9])
+        self.assertEqual(sp.watched({}), [])
+
+
 class End(Base):
     def test_stops_recorded_sleep_and_spares_the_unrecorded_one(self):
         recorded, other = self.sleeper(), self.sleeper()
