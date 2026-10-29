@@ -27,7 +27,7 @@
     "globalLockedSourceGroups": 26,
     "globalFoldersWithoutLock": 41,
     "globalMissingLockedFolders": 12,
-    "canonicalDevelopmentSkills": 66,
+    "canonicalDevelopmentSkills": 67,
     "userPlugins": 29,
     "enabledUserPlugins": 17,
     "disabledUserPlugins": 12,
@@ -256,6 +256,10 @@
         "skillPath": "skills/dev/testing-runbook-generator/SKILL.md"
       },
       {
+        "name": "thoven-art",
+        "skillPath": "skills/dev/thoven-art/SKILL.md"
+      },
+      {
         "name": "thoven-branding",
         "skillPath": "skills/dev/thoven-branding/SKILL.md"
       },
@@ -303,7 +307,8 @@
         "name": "visual-artifacts",
         "skillPath": "skills/visual-artifacts/SKILL.md"
       }
-    ]
+    ],
+    "basedOnMainSha": "d87d4200306b71d53781dc132e0dfa2ff798f50e"
   },
   "globalLockedSkills": [
     {
@@ -3524,5 +3529,74 @@
       "scopeEvidence": "user config.toml",
       "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
     }
-  ]
+  ],
+  "destinationOptions": {
+    "claudeSessionStartPatchHook": {
+      "install": false,
+      "status": "deferred",
+      "reason": "Not required for initial Claude skill/plugin setup. Review necessary patches manually before any optional hook registration."
+    },
+    "codexSkillVisibilityConfiguration": {
+      "apply": false,
+      "status": "deferred",
+      "reason": "Codex sign-in and execution are deferred. Do not edit config.toml during initial Claude setup."
+    }
+  },
+  "projectHandoff": {
+    "selectedPair": null,
+    "status": "awaiting user choice; do not infer source pair from the current shell directory",
+    "verifiedCandidates": [
+      {
+        "project": "private-lessons-rework",
+        "frontend": {
+          "sourcePath": "~/thoven/frontend-private-lessons-rework",
+          "branch": "feature/private-lessons-rework",
+          "head": "43a37820b81fc40d1f1db5e28e5ff5901f519cc1",
+          "trackedDirtyCount": 0,
+          "untrackedCount": 0
+        },
+        "backend": {
+          "sourcePath": "~/thoven/backend-private-lessons-rework",
+          "branch": "feature/private-lessons-rework",
+          "head": "d6ae815b23824ea7f67cf0fc4daaa6627e8e0ed5",
+          "trackedDirtyCount": 0,
+          "untrackedCount": 0
+        }
+      },
+      {
+        "project": "student-dashboard-and-independent-learning",
+        "frontend": {
+          "sourcePath": "~/thoven/frontend-student-dashboard-and-independent-learning",
+          "branch": "student-dashboard-and-independent-learning/integration",
+          "head": "ade8ad7fa4900da1794bec30f75445cb20f2a285",
+          "trackedDirtyCount": 0,
+          "untrackedCount": 0
+        },
+        "backend": {
+          "sourcePath": "~/thoven/backend-student-dashboard-and-independent-learning",
+          "branch": "student-dashboard-and-independent-learning/integration",
+          "head": "1d790d851063a573c376d163720771c5b0fcaf43",
+          "trackedDirtyCount": 0,
+          "untrackedCount": 0
+        }
+      },
+      {
+        "project": "intro-call-learner-packet",
+        "frontend": {
+          "sourcePath": "~/thoven/frontend-intro-call-learner-packet",
+          "branch": "intro-call-learner-packet/integration",
+          "head": "397b91647fec11ca1f5204e96a9c5605bdf3730c",
+          "trackedDirtyCount": 7,
+          "untrackedCount": 14
+        },
+        "backend": {
+          "sourcePath": "~/thoven/backend-intro-call-learner-packet",
+          "branch": "intro-call-learner-packet/integration",
+          "head": "88fdff42adb748ae4f4010f3cc86fe9d99ca9faa",
+          "trackedDirtyCount": 0,
+          "untrackedCount": 0
+        }
+      }
+    ]
+  }
 }

@@ -9,7 +9,7 @@ selection is superseded. Keep Codex sign-in deferred.
 Read [development-environment.json](development-environment.json) before installing. Its snapshot
 contains 312 global skill folders, 283 lock entries across 26 sources, 30 project-local skill
 folders, and 29 user-scoped Claude plugins. Seventeen plugins are enabled and twelve are disabled.
-The source checkout contributes 66 canonical development skills, including the new remote-check.
+The source checkout contributes 67 canonical development skills, including the new remote-check.
 These are dated inventory counts, not a promise that every installed folder has a known upstream.
 
 The manifest records names, source paths, hashes, plugin versions, and enabled state. It includes
@@ -212,7 +212,12 @@ paths. Preserve unrelated edits and historical runbooks. Linear contains project
 tldraw and Paper are optional design aids. Read the governing document content before a handoff.
 Missing local STATE.md or project folders must not block orientation.
 
-Inspect the skill-patch and visibility scripts before applying them. Preserve useful adaptations
+The manifest's `destinationOptions` defers both the Claude session-start patch hook and Codex's
+visibility edits. Neither is required for the initial Claude install. Do not register that hook or
+edit Codex config.toml as part of this setup.
+
+If either option is deliberately resumed later, inspect the skill-patch and visibility scripts
+before applying them. Preserve useful adaptations
 without bringing back mandatory local documents, obsolete classifiers, or unwanted hooks. Do not
 run blanket enforcement installers. Keep the installed catalog complete; configure Codex's
 model-visible subset separately using the reviewed visibility procedure in the repository README.
@@ -228,7 +233,9 @@ model-visible subset separately using the reviewed visibility procedure in the r
 3. Prove Linear-only project orientation by reading actual relevant documents. Run one small
    requested check through the intended skill and return its exact command, result, and artifacts.
    Distinguish authenticated integration proof from installed-but-untested providers.
-4. Configure Mutagen for the chosen frontend/backend pair. Use dedicated disposable test mirrors;
+4. Read `projectHandoff` in the manifest. A null selectedPair means the user has not chosen a pair.
+   The candidate paths and HEADs are dated source snapshots, not transfer authorization.
+   Configure Mutagen for the chosen frontend/backend pair. Use dedicated disposable test mirrors;
    keep coding agents in separate Git worktrees. Follow [remote-check](../../remote-check/SKILL.md)
    for exclusions, a stable capture, targeted execution, artifacts, and reconnect proof.
 5. Return the installed-versus-expected report, pinned revisions, pending human sign-ins, host
