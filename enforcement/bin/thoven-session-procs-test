@@ -131,7 +131,11 @@ class Scope(Base):
              7: (1, "s", "/x/chrome-devtools-mcp --headless"),
              8: (1, "s", "/Applications/Chromium --headless"),
              9: (1, "s", "puma 7.2.1 (tcp://0.0.0.0:3001)")}
+        t[10] = (1, "s", "/bin/zsh -c source snap.sh && next-server (vlive) 400")
+        t[11] = (1, "s", "claude -p run next-server (v1)")
         self.assertEqual(sorted(sp.watched(t)), [4, 5, 6, 9])
+        t2 = {1: (0, "s", "claude"), 2: (1, "s", "claude -p x"), 3: (2, "s", "next-server (v1)"), 4: (1, "s", "puma 7 (tcp://x)")}
+        self.assertEqual(sp.descendants(t2, 1), [2, 4])
         self.assertEqual(sp.watched({}), [])
 
 

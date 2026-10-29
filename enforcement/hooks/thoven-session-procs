@@ -45,7 +45,7 @@ def watched(table: dict) -> list:
     MCP servers are excluded outright. A browser counts only under a test run."""
     def match(pid):
         cmd = table[pid][2]
-        return not MCP.search(cmd) and bool(SERVER.search(cmd) or TEST_RUN.search(cmd))
+        return argv0(cmd) not in ("zsh", "bash", "sh", "claude") and not MCP.search(cmd) and bool(SERVER.search(cmd) or TEST_RUN.search(cmd))
 
     def under_test(pid):
         seen = set()
@@ -88,7 +88,12 @@ def claude_ancestor(table: dict, pid: int):
     return None
 
 
+def argv0(command: str) -> str:
+    return os.path.basename(command.split(None, 1)[0]) if command.strip() else ""
+
+
 def descendants(table: dict, root: int) -> list:
+    """Everything under root except what hangs off a nested claude, which is that session's own."""
     children = {}
     for pid, (ppid, _, _) in table.items():
         children.setdefault(ppid, []).append(pid)
@@ -96,7 +101,8 @@ def descendants(table: dict, root: int) -> list:
     while stack:
         for child in children.get(stack.pop(), []):
             found.append(child)
-            stack.append(child)
+            if argv0(table[child][2]) != "claude":
+                stack.append(child)
     return found
 
 
