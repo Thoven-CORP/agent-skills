@@ -1,0 +1,208 @@
+#!/usr/bin/env python3
+"""Stops the dev servers a Claude Code session started, and only those.
+
+  thoven-session-procs record        PostToolUse, matcher Bash
+  thoven-session-procs end           SessionEnd
+  thoven-session-procs end --agent   SubagentStop
+
+record walks the process table from this session's claude process and writes the server-like
+descendants still alive to ~/.thoven/session-procs/<session_id> as pid, start time, agent_id
+and command. end sends TERM to the recorded processes, waits, then KILL, and checks the start
+time before each signal so a reused pid is never hit. A process the session did not start is
+never listed, so it is never touched. thoven-sweep imports this file for the matcher and stop().
+
+Test seams: THOVEN_PROCS_HOME moves ~/.thoven; THOVEN_PROCS_ROOT_PID names the session process
+instead of the claude ancestor; THOVEN_PROCS_GRACE is the TERM-to-KILL wait in seconds.
+"""
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+from datetime import datetime
+from pathlib import Path
+
+HOME = Path(os.environ.get("THOVEN_PROCS_HOME") or Path.home() / ".thoven")
+RECORDS = HOME / "session-procs"
+LOG = HOME / "session-procs.log"
+GRACE = float(os.environ.get("THOVEN_PROCS_GRACE", "10"))
+
+SERVER = re.compile(
+    r"puma \d|\brails (s|server)\b|next-server|\bnext (dev|start)\b|\bvite\b|\bmailpit\b|\bsidekiq\b"
+    r"|solid_queue|\bbin/jobs\b|webpack-dev-server|\bforeman\b|\bcloudflared\b"
+    r"|\b(pnpm|npm|yarn) (run )?dev\b|\bbin/dev\b|\bhttp\.server\b"
+)
+TEST_RUN = re.compile(
+    r"\bplaywright test\b|playwright(-core)?/(lib|cli)|\bvitest\b|\bbin/verify\b|verify-engine|\be2e\b"
+)
+BROWSER = re.compile(r"chrome-headless-shell|Chrome for Testing|chromium|--headless", re.I)
+MCP = re.compile(r"-mcp\b|\bmcp-|/mcp\b|\bmcp\b")
+
+
+def watched(table: dict) -> list:
+    """Dev servers, the node processes behind them, and test runs with their workers and browsers.
+    MCP servers are excluded outright. A browser counts only under a test run."""
+    def match(pid):
+        cmd = table[pid][2]
+        return not MCP.search(cmd) and bool(SERVER.search(cmd) or TEST_RUN.search(cmd))
+
+    def under_test(pid):
+        seen = set()
+        while pid in table and pid not in seen:
+            seen.add(pid)
+            pid = table[pid][0]
+            if pid in table and not MCP.search(table[pid][2]) and TEST_RUN.search(table[pid][2]):
+                return True
+        return False
+
+    return [p for p in table if match(p) or (not MCP.search(table[p][2]) and BROWSER.search(table[p][2]) and under_test(p))]
+
+
+def process_table() -> dict:
+    """pid -> (ppid, start, command). start is ps's lstart, which only a reused pid can change."""
+    out = subprocess.run(["ps", "-axo", "pid=,ppid=,lstart=,command="], capture_output=True, text=True).stdout
+    table = {}
+    for line in out.splitlines():
+        parts = line.split(None, 7)
+        if len(parts) < 8 or not (parts[0].isdigit() and parts[1].isdigit()):
+            continue
+        table[int(parts[0])] = (int(parts[1]), " ".join(parts[2:7]), parts[7])
+    return table
+
+
+def log(message: str) -> None:
+    HOME.mkdir(parents=True, exist_ok=True)
+    with LOG.open("a") as f:
+        f.write(f"{datetime.now().isoformat(timespec='seconds')} {message}\n")
+
+
+def claude_ancestor(table: dict, pid: int):
+    seen = set()
+    while pid in table and pid not in seen:
+        seen.add(pid)
+        ppid, _, command = table[pid]
+        if os.path.basename(command.split(None, 1)[0]) == "claude":
+            return pid
+        pid = ppid
+    return None
+
+
+def descendants(table: dict, root: int) -> list:
+    children = {}
+    for pid, (ppid, _, _) in table.items():
+        children.setdefault(ppid, []).append(pid)
+    found, stack = [], [root]
+    while stack:
+        for child in children.get(stack.pop(), []):
+            found.append(child)
+            stack.append(child)
+    return found
+
+
+def record_path(session_id: str):
+    if not session_id or "/" in session_id or session_id.startswith("."):
+        return None
+    return RECORDS / session_id
+
+
+def read_records(path: Path) -> list:
+    rows = []
+    for line in path.read_text().splitlines() if path.exists() else []:
+        try:
+            row = json.loads(line)
+            rows.append({"pid": int(row["pid"]), "start": str(row["start"]),
+                         "agent_id": row.get("agent_id") or "", "command": row.get("command", "")})
+        except (ValueError, KeyError, TypeError):
+            continue
+    return rows
+
+
+def write_records(path: Path, rows: list) -> None:
+    if not rows:
+        path.unlink(missing_ok=True)
+        return
+    path.write_text("".join(json.dumps(r) + "\n" for r in rows))
+
+
+def record(session_id: str, agent_id: str) -> None:
+    path = record_path(session_id)
+    if path is None:
+        return
+    table = process_table()
+    root = os.environ.get("THOVEN_PROCS_ROOT_PID")
+    root = int(root) if root and root.isdigit() else claude_ancestor(table, os.getppid())
+    if root is None:
+        return
+    rows = read_records(path)
+    known = {(r["pid"], r["start"]) for r in rows}
+    mine = set(descendants(table, root))
+    added = [pid for pid in watched(table) if pid in mine and (pid, table[pid][1]) not in known]
+    for pid in added:
+        rows.append({"pid": pid, "start": table[pid][1], "agent_id": agent_id, "command": table[pid][2][:200]})
+        log(f"record session={session_id} agent={agent_id or '-'} pid={pid} {table[pid][2][:100]}")
+    if added:
+        RECORDS.mkdir(parents=True, exist_ok=True)
+        write_records(path, rows)
+
+
+def stop(targets: list, why: str, grace: float = None) -> list:
+    """targets: [(pid, start)]. TERM, wait up to grace, KILL. Returns the pids that were signalled."""
+    grace = GRACE if grace is None else grace
+
+    def alive(pid, start):
+        entry = process_table().get(pid)
+        return entry is not None and entry[1] == start
+
+    signalled = []
+    for pid, start in targets:
+        if alive(pid, start):
+            try:
+                os.kill(pid, 15)
+                signalled.append((pid, start))
+                log(f"TERM pid={pid} {why}")
+            except OSError:
+                pass
+    deadline = time.time() + grace
+    while signalled and time.time() < deadline and any(alive(p, s) for p, s in signalled):
+        time.sleep(0.2)
+    for pid, start in signalled:
+        if alive(pid, start):
+            try:
+                os.kill(pid, 9)
+                log(f"KILL pid={pid} {why}")
+            except OSError:
+                pass
+    return [p for p, _ in signalled]
+
+
+def end(session_id: str, agent_id: str, agent_only: bool) -> None:
+    path = record_path(session_id)
+    if path is None or (agent_only and not agent_id):
+        return
+    rows = read_records(path)
+    mine = [r for r in rows if not agent_only or r["agent_id"] == agent_id]
+    stop([(r["pid"], r["start"]) for r in mine], f"session={session_id} agent={agent_id or '-'}")
+    write_records(path, [r for r in rows if r not in mine])
+
+
+def main(argv: list) -> int:
+    try:
+        payload = json.loads(sys.stdin.read() or "{}")
+        session_id = str(payload.get("session_id") or "")
+        agent_id = str(payload.get("agent_id") or "")
+        mode = argv[1] if len(argv) > 1 else ""
+        if mode == "record":
+            record(session_id, agent_id)
+        elif mode == "end":
+            end(session_id, agent_id, "--agent" in argv)
+    except Exception as exc:  # a hook must never block the tool
+        try:
+            log(f"error {type(exc).__name__}: {exc}")
+        except OSError:
+            pass
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

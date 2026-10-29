@@ -1,0 +1,206 @@
+#!/usr/bin/env python3
+"""Tests thoven-session-procs and thoven-sweep. The only processes signalled are sleeps this test starts."""
+import json
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+import unittest
+from pathlib import Path
+
+BIN = Path(__file__).resolve().parent
+HOOK = BIN.parent / "hooks" / "thoven-session-procs"
+SWEEP = BIN / "thoven-sweep"
+
+
+def start_of(pid):
+    out = subprocess.run(["ps", "-o", "lstart=", "-p", str(pid)], capture_output=True, text=True).stdout
+    return out.strip()
+
+
+def alive(pid):
+    return start_of(pid) != ""
+
+
+def reaped(proc, timeout=5):
+    try:
+        proc.wait(timeout)
+        return True
+    except subprocess.TimeoutExpired:
+        return False
+
+
+class Base(unittest.TestCase):
+    def setUp(self):
+        self.home = tempfile.mkdtemp(prefix="thoven-procs-test.")
+        self.env = dict(os.environ, THOVEN_PROCS_HOME=self.home, THOVEN_PROCS_GRACE="2")
+        self.procs = []
+
+    def tearDown(self):
+        for p in self.procs:
+            if p.poll() is None:
+                p.kill()
+                p.wait()
+        shutil.rmtree(self.home, ignore_errors=True)
+
+    def sleeper(self, name="sleep"):
+        p = subprocess.Popen(["bash", "-c", f'exec -a "{name}" sleep 300'])
+        self.procs.append(p)
+        time.sleep(0.3)
+        return p
+
+    def hook(self, args, payload, **env):
+        return subprocess.run([sys.executable, str(HOOK), *args], input=payload, capture_output=True, text=True,
+                              env=dict(self.env, **env))
+
+    def write_record(self, session, rows):
+        d = Path(self.home) / "session-procs"
+        d.mkdir(exist_ok=True)
+        (d / session).write_text("".join(json.dumps(r) + "\n" for r in rows))
+
+
+class HookInput(Base):
+    def test_empty_and_garbled_input_do_nothing(self):
+        for mode in (["record"], ["end"], ["end", "--agent"], []):
+            for payload in ("", "not json", "{}", '{"session_id": "../x"}', '{"session_id": ".hidden"}', "[1]"):
+                r = self.hook(mode, payload)
+                self.assertEqual(r.returncode, 0, (mode, payload, r.stderr))
+        self.assertFalse((Path(self.home) / "session-procs").exists())
+
+    def test_end_without_a_record_signals_nothing(self):
+        bystander = self.sleeper()
+        self.assertEqual(self.hook(["end"], json.dumps({"session_id": "nobody"})).returncode, 0)
+        self.assertTrue(alive(bystander.pid))
+
+
+class Record(Base):
+    def test_records_only_server_like_descendants_of_the_session(self):
+        mine = self.sleeper("next-server (v14.2.35)")
+        plain = self.sleeper("sleep")
+        outside = self.sleeper("next-server (v14.2.35)")
+        # the session root is a parent that owns mine and plain; outside has a different parent
+        parent = subprocess.Popen(["bash", "-c", 'bash -c \'exec -a "puma 7.2.1 (tcp://0.0.0.0:3001)" sleep 300\' & '
+                                   'sleep 300 & wait'])
+        self.procs.append(parent)
+        time.sleep(0.8)
+        r = self.hook(["record"], json.dumps({"session_id": "s1"}), THOVEN_PROCS_ROOT_PID=str(parent.pid))
+        self.assertEqual(r.returncode, 0, r.stderr)
+        rows = [json.loads(l) for l in (Path(self.home) / "session-procs" / "s1").read_text().splitlines()]
+        self.assertEqual(len(rows), 1, rows)
+        self.assertIn("puma", rows[0]["command"])
+        self.assertEqual(rows[0]["start"], start_of(rows[0]["pid"]))
+        self.assertNotIn(mine.pid, [x["pid"] for x in rows])
+        self.assertNotIn(outside.pid, [x["pid"] for x in rows])
+        pids = {r["pid"] for r in rows}
+        self.hook(["record"], json.dumps({"session_id": "s1", "agent_id": "a9"}), THOVEN_PROCS_ROOT_PID=str(parent.pid))
+        again = (Path(self.home) / "session-procs" / "s1").read_text().splitlines()
+        self.assertEqual(len(again), 1, "a second call must not duplicate or reassign")
+        subprocess.run(["pkill", "-P", str(parent.pid)])
+
+    def test_agent_id_is_recorded(self):
+        parent = subprocess.Popen(["bash", "-c", 'bash -c \'exec -a "next-server (v1)" sleep 300\' & wait'])
+        self.procs.append(parent)
+        time.sleep(0.8)
+        self.hook(["record"], json.dumps({"session_id": "s2", "agent_id": "agentA"}), THOVEN_PROCS_ROOT_PID=str(parent.pid))
+        row = json.loads((Path(self.home) / "session-procs" / "s2").read_text().splitlines()[0])
+        self.assertEqual(row["agent_id"], "agentA")
+        subprocess.run(["pkill", "-P", str(parent.pid)])
+
+    def test_server_outside_the_session_tree_records_nothing(self):
+        self.sleeper("next-server (v1)")
+        r = self.hook(["record"], json.dumps({"session_id": "s3"}), THOVEN_PROCS_ROOT_PID="999999")
+        self.assertEqual(r.returncode, 0)
+        self.assertFalse((Path(self.home) / "session-procs" / "s3").exists())
+
+
+class Scope(Base):
+    def test_mcp_servers_are_never_watched_and_test_runs_are(self):
+        sys.path.insert(0, str(BIN))
+        import importlib.machinery, importlib.util
+        spec = importlib.util.spec_from_loader("sp", importlib.machinery.SourceFileLoader("sp", str(HOOK)))
+        sp = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(sp)
+        t = {1: (0, "s", "claude"),
+             2: (1, "s", "npm exec @playwright/mcp@latest"),
+             3: (2, "s", "node /x/node_modules/@playwright/mcp/cli.js --headless"),
+             4: (1, "s", "node /x/node_modules/.bin/playwright test --workers 2"),
+             5: (4, "s", "/x/chrome-headless-shell --headless"),
+             6: (1, "s", "node /x/node_modules/vitest/dist/workers/forks.js"),
+             7: (1, "s", "/x/chrome-devtools-mcp --headless"),
+             8: (1, "s", "/Applications/Chromium --headless"),
+             9: (1, "s", "puma 7.2.1 (tcp://0.0.0.0:3001)")}
+        self.assertEqual(sorted(sp.watched(t)), [4, 5, 6, 9])
+        self.assertEqual(sp.watched({}), [])
+
+
+class End(Base):
+    def test_stops_recorded_sleep_and_spares_the_unrecorded_one(self):
+        recorded, other = self.sleeper(), self.sleeper()
+        self.write_record("s1", [{"pid": recorded.pid, "start": start_of(recorded.pid), "agent_id": "", "command": "sleep"}])
+        r = self.hook(["end"], json.dumps({"session_id": "s1"}))
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertTrue(reaped(recorded), "recorded sleep should be stopped")
+        self.assertTrue(alive(other.pid), "unrecorded sleep must survive")
+        self.assertFalse((Path(self.home) / "session-procs" / "s1").exists())
+        self.assertIn(f"TERM pid={recorded.pid}", (Path(self.home) / "session-procs.log").read_text())
+
+    def test_start_time_mismatch_is_never_signalled(self):
+        reused = self.sleeper()
+        self.write_record("s1", [{"pid": reused.pid, "start": "Mon Jan  1 00:00:00 2001", "agent_id": "", "command": "sleep"}])
+        self.hook(["end"], json.dumps({"session_id": "s1"}))
+        self.assertTrue(alive(reused.pid))
+
+    def test_sigterm_ignorer_is_killed_after_the_grace(self):
+        p = subprocess.Popen(["bash", "-c", "trap '' TERM; while :; do sleep 1; done"])
+        self.procs.append(p)
+        time.sleep(0.3)
+        self.write_record("s1", [{"pid": p.pid, "start": start_of(p.pid), "agent_id": "", "command": "loop"}])
+        self.hook(["end"], json.dumps({"session_id": "s1"}))
+        self.assertTrue(reaped(p), "KILL should follow the TERM grace")
+        self.assertIn(f"KILL pid={p.pid}", (Path(self.home) / "session-procs.log").read_text())
+
+    def test_subagent_stop_stops_only_that_agent(self):
+        a, b, main = self.sleeper(), self.sleeper(), self.sleeper()
+        row = lambda p, agent: {"pid": p.pid, "start": start_of(p.pid), "agent_id": agent, "command": "sleep"}
+        self.write_record("s1", [row(a, "A"), row(b, "B"), row(main, "")])
+        self.hook(["end", "--agent"], json.dumps({"session_id": "s1", "agent_id": "A"}))
+        self.assertTrue(reaped(a))
+        self.assertTrue(alive(b.pid) and alive(main.pid))
+        left = (Path(self.home) / "session-procs" / "s1").read_text().splitlines()
+        self.assertEqual(len(left), 2)
+        self.hook(["end", "--agent"], json.dumps({"session_id": "s1"}))
+        self.assertTrue(alive(b.pid) and alive(main.pid), "SubagentStop without an agent_id stops nothing")
+
+
+class Sweep(Base):
+    def sweep(self, *args):
+        return subprocess.run([sys.executable, str(SWEEP), *args], capture_output=True, text=True, env=self.env)
+
+    def test_lists_and_stops_nothing_without_flags(self):
+        p = self.sleeper("next-server (v14.2.35)")
+        r = self.sweep()
+        self.assertEqual(r.returncode, 0, r.stderr)
+        line = next(l for l in r.stdout.splitlines() if l.split()[:1] == [str(p.pid)])
+        self.assertIn("unowned", line)
+        self.assertTrue(alive(p.pid))
+
+    def test_stop_unowned_spares_owned_and_stop_pid_refuses_unlisted(self):
+        owned, unowned, plain = self.sleeper("next-server (v1)"), self.sleeper("next-server (v2)"), self.sleeper()
+        self.write_record("sess", [{"pid": owned.pid, "start": start_of(owned.pid), "agent_id": "", "command": "x"}])
+        r = self.sweep()
+        self.assertIn("sess", next(l for l in r.stdout.splitlines() if l.split()[:1] == [str(owned.pid)]))
+        r = self.sweep("--stop", str(plain.pid))
+        self.assertIn("not in the table", r.stderr)
+        self.assertTrue(alive(plain.pid))
+        self.sweep("--stop-unowned")
+        self.assertTrue(reaped(unowned))
+        self.assertTrue(alive(owned.pid))
+        self.sweep("--stop", str(owned.pid))
+        self.assertTrue(reaped(owned))
+        self.assertTrue(alive(plain.pid))
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=1)
