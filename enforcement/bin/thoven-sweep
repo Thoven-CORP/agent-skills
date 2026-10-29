@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+"""Lists the dev servers and leftover dev tools on this machine. Stops nothing unless asked.
+
+  thoven-sweep                       table: pid, age, cpu, cwd, owner, command
+  thoven-sweep --stop PID [PID...]   TERM, 10s, KILL, for pids that appear in the table
+  thoven-sweep --stop-unowned        the same, for every row whose owner is "unowned"
+
+owner is the session id thoven-session-procs recorded for that pid and start time, else "unowned".
+Run it by hand; no schedule runs it. THOVEN_PROCS_HOME and THOVEN_PROCS_GRACE move the records
+and the wait, as for the hook.
+"""
+import argparse
+import importlib.machinery
+import importlib.util
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+HOOK = Path(__file__).resolve().parent.parent / "hooks" / "thoven-session-procs"
+spec = importlib.util.spec_from_loader("session_procs", importlib.machinery.SourceFileLoader("session_procs", str(HOOK)))
+sp = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(sp)
+
+
+def owners() -> dict:
+    found = {}
+    if sp.RECORDS.is_dir():
+        for path in sp.RECORDS.iterdir():
+            for row in sp.read_records(path):
+                found[(row["pid"], row["start"])] = path.name + (f"/{row['agent_id']}" if row["agent_id"] else "")
+    return found
+
+
+def stats(pids: list) -> dict:
+    if not pids:
+        return {}
+    out = subprocess.run(["ps", "-o", "pid=,etime=,%cpu=", "-p", ",".join(map(str, pids))],
+                         capture_output=True, text=True).stdout
+    return {int(p[0]): (p[1], p[2]) for p in (line.split() for line in out.splitlines()) if len(p) == 3}
+
+
+def cwds(pids: list) -> dict:
+    if not pids:
+        return {}
+    out = subprocess.run(["lsof", "-a", "-d", "cwd", "-Fpn", "-p", ",".join(map(str, pids))],
+                         capture_output=True, text=True).stdout
+    found, pid = {}, None
+    for line in out.splitlines():
+        if line.startswith("p"):
+            pid = int(line[1:])
+        elif line.startswith("n") and pid is not None:
+            found[pid] = line[1:]
+    return found
+
+
+def listing() -> list:
+    table = sp.process_table()
+    skip, pid = set(), os.getpid()
+    while pid in table and pid not in skip:
+        skip.add(pid)
+        pid = table[pid][0]
+    hits = [p for p, (_, _, cmd) in table.items()
+            if p not in skip and (sp.SERVER.search(cmd) or sp.DEV_TOOL.search(cmd))]
+    owned, st, cw = owners(), stats(hits), cwds(hits)
+    rows = []
+    for p in sorted(hits):
+        age, cpu = st.get(p, ("?", "?"))
+        rows.append({"pid": p, "start": table[p][1], "age": age, "cpu": cpu, "cwd": cw.get(p, "?"),
+                     "owner": owned.get((p, table[p][1]), "unowned"), "command": table[p][2]})
+    return rows
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--stop", nargs="+", type=int, metavar="PID")
+    parser.add_argument("--stop-unowned", action="store_true")
+    args = parser.parse_args()
+
+    rows = listing()
+    print(f"{'PID':>7} {'AGE':>11} {'CPU':>5}  {'OWNER':<38} {'CWD':<40} COMMAND")
+    for r in rows:
+        print(f"{r['pid']:>7} {r['age']:>11} {r['cpu']:>5}  {r['owner']:<38.38} {r['cwd']:<40.40} {r['command'][:60]}")
+    if not rows:
+        print("(none)")
+
+    wanted = []
+    if args.stop:
+        by_pid = {r["pid"]: r for r in rows}
+        for pid in args.stop:
+            if pid in by_pid:
+                wanted.append(by_pid[pid])
+            else:
+                print(f"thoven-sweep: {pid} is not in the table, left alone", file=sys.stderr)
+    if args.stop_unowned:
+        wanted += [r for r in rows if r["owner"] == "unowned" and r not in wanted]
+    if wanted:
+        done = sp.stop([(r["pid"], r["start"]) for r in wanted], "thoven-sweep")
+        print(f"stopped: {' '.join(map(str, done)) or 'none'}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
