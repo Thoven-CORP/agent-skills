@@ -9,12 +9,12 @@
 #
 #   generic  (enrich: false) — no Thoven-side claims; instructor "To be assigned",
 #            enrollment panel shows an onboarding-in-progress note. Runs standalone:
-#              ruby .claude/skills/esa-receipt/scripts/generate_receipt.rb <config.json>
+#              ruby ~/.agents/skills/esa-receipt/scripts/generate_receipt.rb <config.json>
 #
 #   enriched (enrich: true) — pulls live prod enrollment data (teacher, class, wallet
 #            credits, intro/session slot). Must run under rails runner against prod:
 #              DATABASE_URL="$PROD_DATABASE_URL" bundle exec rails runner \
-#                .claude/skills/esa-receipt/scripts/generate_receipt.rb <config.json>
+#                ~/.agents/skills/esa-receipt/scripts/generate_receipt.rb <config.json>
 #
 # NEVER fabricates — any enriched field not found in the DB is left blank ("—"/"TBD")
 # and listed in a visible "fields not found" line on the receipt + stdout.
@@ -48,7 +48,8 @@ PAGE_BG = "#FDFCFB"
 BORDER  = "#E5E5E5"
 
 TZ_ABBR = { "America/New_York" => "ET", "America/Los_Angeles" => "PT",
-            "America/Chicago" => "CT", "America/Denver" => "MT" }.freeze
+            "America/Chicago" => "CT", "America/Denver" => "MT", "America/Boise" => "MT",
+            "America/Phoenix" => "MST" }.freeze
 
 order    = CFG.fetch("order")
 esa      = CFG.fetch("esa_holder")
@@ -97,8 +98,11 @@ def gather_enrichment(stu_cfg)
   credits  = CFG["credits_override"] || loads.sum(&:lessons_loaded)
   duration = loads.map(&:duration_minutes).compact.uniq.first || 30
 
-  req  = SimpleBookingRequest.where(student_id: student.id).order(:created_at).first
-  slot = SimpleBookingSlot.where(simple_booking_request_id: req&.id).order(:date, :start_time).first
+  # The next slot on or after the issue date; on a repeat family the first request's slot is
+  # months-old history. Falls back to the earliest slot when nothing is upcoming.
+  slots = SimpleBookingSlot.where(simple_booking_request_id: SimpleBookingRequest.where(student_id: student.id).select(:id))
+                           .order(:date, :start_time)
+  slot  = slots.where("date >= ?", ISSUE_DATE).first || slots.first
 
   missing << "Thoven account holder"               if holder.nil?
   missing << "assigned teacher"                    if teacher.nil?
@@ -158,7 +162,7 @@ enrich_html =
     intro = enr[:intro]
     intro_line =
       if intro
-        label = intro[:intro] ? "Intro call" : "Session"
+        label = intro[:intro] ? "Intro call" : (intro[:date] >= ISSUE_DATE ? "Next session" : "Session")
         "#{label}: #{fdate(intro[:date])} · #{ftime(intro[:start], intro[:tz])}"
       else
         "No session scheduled yet"
@@ -207,7 +211,7 @@ html = <<~HTML
     html,body { margin:0; padding:0; }
     body { font-family:'Montserrat',sans-serif; color:#{INK}; background:#{PAGE_BG};
            font-size:12.5px; line-height:1.5; }
-    .sheet { width:8.5in; min-height:11in; padding:0.7in 0.75in; margin:0 auto; background:#{PAGE_BG}; }
+    .sheet { width:8.5in; min-height:11in; padding:0.55in 0.75in; margin:0 auto; background:#{PAGE_BG}; }
     h1,h2,h3,.brandfont { font-family:'Fredoka',sans-serif; }
     .top { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #{ORANGE};
            padding-bottom:16px; }
@@ -236,7 +240,7 @@ html = <<~HTML
     table { width:100%; border-collapse:collapse; margin-bottom:6px; }
     thead th { text-align:left; font-family:'Fredoka'; font-size:10.5px; letter-spacing:.8px; text-transform:uppercase;
                color:#{SUBINK}; border-bottom:2px solid #{BORDER}; padding:0 0 8px; }
-    thead th.r, td.r { text-align:right; }
+    thead th.r, td.r { text-align:right; white-space:nowrap; padding-left:24px; }
     tbody td { padding:14px 0; border-bottom:1px solid #{BORDER}; vertical-align:top; }
     .desc .ttl { font-weight:700; font-size:13.5px; }
     .desc .sub { color:#{SUBINK}; font-size:11.5px; margin-top:3px; }
@@ -252,7 +256,7 @@ html = <<~HTML
     .enrich .g.single { display:block; }
     .enrich .g b { color:#{INK}; font-weight:600; }
     .missing { margin-top:14px; color:#b91c1c; font-size:11px; }
-    .foot { margin-top:34px; border-top:1px solid #{BORDER}; padding-top:14px; color:#{SUBINK}; font-size:10.5px; }
+    .foot { margin-top:24px; border-top:1px solid #{BORDER}; padding-top:14px; color:#{SUBINK}; font-size:10.5px; }
     .foot .biz { font-family:'Fredoka'; color:#{INK}; font-weight:600; font-size:12px; }
     .foot .note { margin-top:7px; font-style:italic; }
   </style></head><body>

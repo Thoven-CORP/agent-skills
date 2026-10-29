@@ -34,7 +34,10 @@ instrument, offering title + cadence, amount, quantity, and every identifier sho
 Identify the ESA channel — it sets `program` and `paid_label` (reference values below).
 
 ### 2. Check prod (read-only) to pick the mode
+Run every command from `~/thoven/backend`. `PGOPTIONS` makes each prod session read-only,
+so a stray write fails instead of landing.
 ```bash
+export PGOPTIONS="-c default_transaction_read_only=on"
 set -a && source .env && set +a && psql "$PROD_DATABASE_URL" -c "
 SELECT p.id, p.first_name, p.last_name, u.email FROM profiles p
 JOIN users u ON u.id = p.user_id WHERE lower(u.email) = '<parent email>';" -c "
@@ -42,6 +45,9 @@ SELECT id, first_name, last_name, archived_at FROM students
 WHERE lower(first_name) = '<first>' AND lower(last_name) = '<last>';"
 ```
 - Student exists **and** has an active enrollment with a teacher → **enriched** mode.
+- **Repeat family** (an earlier `odyssey_wallet_loads` row exists): enriched, and set
+  `"credits_override"` to the `lessons_loaded` of this order's load, since the script
+  otherwise sums every load the student ever had.
 - No account / no teacher selected yet → **generic** mode. Don't wait for enrollment —
   vendor portals have receipt deadlines; a generic receipt now beats a perfect one late.
 
@@ -73,15 +79,19 @@ Format phone numbers `(801) 635-5785`; amounts are integer cents. Leave unknown 
 ### 4. Generate
 ```bash
 # generic:
-ruby .claude/skills/esa-receipt/scripts/generate_receipt.rb .scratch/esa-receipts/<NO>.config.json
-# enriched (must be rails runner against prod, read-only):
+ruby ~/.agents/skills/esa-receipt/scripts/generate_receipt.rb .scratch/esa-receipts/<NO>.config.json
+# enriched (must be rails runner against prod, read-only via PGOPTIONS from step 2):
 set -a && source .env && set +a && DATABASE_URL="$PROD_DATABASE_URL" bundle exec rails runner \
-  .claude/skills/esa-receipt/scripts/generate_receipt.rb .scratch/esa-receipts/<NO>.config.json
+  ~/.agents/skills/esa-receipt/scripts/generate_receipt.rb .scratch/esa-receipts/<NO>.config.json
 ```
 The script writes `<RECEIPT_NO>.html` + `.pdf` and prints any enrichment fields it could
 not find. Enriched mode pulls: teacher + class, Thoven account holder (may differ from
 the ESA order holder — e.g. Questereit: father on Odyssey, mother on Thoven), wallet
-credits loaded, enrollment date, first intro/session slot.
+credits loaded, enrollment date, and the next session on or after the issue date (the
+earliest slot when none is upcoming).
+
+When the portal's phone has a missing digit, use the Thoven profile's number only if it
+starts with the same digits, and flag the swap in the hand-over.
 
 ### 5. Verify, then hand over
 Read the PDF (the Read tool renders it) and check: receipt number, parties, amount,
