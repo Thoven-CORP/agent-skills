@@ -22,6 +22,9 @@ together.
   gate: it holds its own machine lock. CI runs the full suite
   on the integration PR. Stop the servers you started after each step. Delete scratch you can regenerate. Route big logs and
   wide reads through a subagent and keep its summary.
+- Verification disk use: read [Verify: Verification disk budget](../../verify/SKILL.md#verification-disk-budget)
+  before any capture, temporary checkout, install or build, even when the brief selects
+  `verify-this` instead of the full check list. Carry this rule into verifier briefs too.
 - When `bin/verify` comes back BLOCKED only because `origin/main` moved, merge main once and rerun
   once. If main moves again, do not merge again: report the block as it came back, with every row
   and the base SHA you merged. Further catch-up is main's call.

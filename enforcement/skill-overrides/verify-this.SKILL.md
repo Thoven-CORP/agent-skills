@@ -48,6 +48,8 @@ Ask for a measurable claim first when the claim is vague ("the code is cleaner")
 
 ## Artifact layout
 
+Before capturing baseline or treatment, read [Verify: Verification disk budget](../verify/SKILL.md#verification-disk-budget). It applies independently of the check list in that skill: budget temporary runtime space, keep it separate from evidence, and clean up owned scratch on completion or failure. The layout below holds retained evidence only.
+
 When safe to write artifacts:
 
 ```text

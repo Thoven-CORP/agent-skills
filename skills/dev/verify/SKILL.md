@@ -13,6 +13,16 @@ Shape of the check follows the shape of the change. Lint on the changed files an
 - Verify a fix justified by one browser's behaviour in that browser, or name in the commit which browser the proof ran in. (LEARNINGS 2026-08-08)
 - Measure layout geometry from a headless Playwright script; when a visible browser is needed, restore its viewport in the same turn, and never report a measurement viewport as the user's screen. (LEARNINGS 2026-08-22)
 
+## Verification disk budget
+
+Apply before baseline/treatment captures, temporary checkouts, dependency installs or builds, including delegated checks.
+
+- Pick the smallest check that answers the claim. Reuse revision-matched CI evidence when it proves the same claim. A generated plan does not authorize extra local production builds: those need an explicit user request or the parent-level full-verify allowance below. Repeat builds only when the measured claim requires repetition, with a stated sample count and reason.
+- Before allocating, read free disk space on the execution host and estimate the additional peak from checkouts, dependencies, caches and captures together. State the temporary paths, estimated peak and per-run disk budget in the existing brief or reply. Leave at least 5 GB free after that estimate, or the higher reserve configured for the host. If the estimate is unknown or does not fit, use CI or an already authorized remote host, or report the check blocked. The load gate checks memory and CPU, not disk.
+- Keep disposable runtime files in a separately named, task-owned scratch directory outside retained evidence. Prefer an existing safe checkout or read-only Git inspection; create a temporary worktree only when executing a separate revision is necessary. Compare revisions serially where possible. Recheck disk space and scratch size between phases and repeats; stop starting work that would exceed the budget or reserve.
+- Retain revisions, commands, verdicts, relevant failure and success logs, and selected screenshots or recordings. Reuse captures. Save full traces, heap dumps and other large diagnostics only for a named unresolved claim, accounting for their size in the budget. Keep useful evidence until the user has seen it.
+- On success, failure or cancellation, stop your own processes and remove owned temporary checkouts, dependencies and build caches, including ordinary `.next/cache`. Inspect dirty and untracked paths, preserve needed probes and evidence, then use normal `git worktree remove` for temporary worktrees. Never force removal or delete shared, unpushed or unowned work. After interruption, the resuming parent completes cleanup before allocating again. Report retained evidence size and any leftover scratch with its owner and reason. Scratch cleanup does not wait for feature merge or evidence review.
+
 ## While editing
 
 1. `pnpm run type-check` and oxlint on your changed files (whole-repo lint is CI's). Backend: `bin/rubocop -- <changed files>`.
@@ -23,7 +33,7 @@ Shape of the check follows the shape of the change. Lint on the changed files an
 
 4. Callers: `pnpm run type-check` green, and the direct importers' test files once, by path (`pnpm exec vitest run <files>`). Never `vitest related` on a source file: it follows every import, and a shared component pulls most of the suite. Backend: the mapped specs plus the request spec of any controller touched.
 5. A UI ticket on a surface with a board frame: push and open the PR. The Parity check shoots the states the diff touches, each at its board frame's width and at 390, and comments a link to its `parity-grid` artifact. Fetch it with `gh run download <run-id> -n parity-grid -D ~/.thoven-artifacts/<branch>/parity`, open `grid.html`, fix each difference, and link the grid in the DONE message. Each state in `scripts/verify/parity-surfaces.json` names its board frame `file` and that frame's desktop `width`; a state with no frame or no width is refused. 390 is shot for every state whether or not the board has a phone frame, since it checks mobile compatibility on surfaces never designed for phones, parent screens most of all. On an unmapped surface, add the spec and its frames with their widths before DONE, or say SKIPPED and why. `bin/verify --full` runs the same capture locally, only when the user asks.
-6. Paste each command you ran and its pass line in the DONE report. That is the evidence. A failure is fixed or raised to the user by name, never described away. Builds, the whole suite, e2e suites and repeat sweeps are CI's, never local.
+6. Paste each command you ran and its pass line in the DONE report. That is the evidence. A failure is fixed or raised to the user by name, never described away. Builds, the whole suite, e2e suites and repeat sweeps belong in CI; the explicit local exceptions above and below must also satisfy the verification disk budget.
 
 ## Full verify: on request or at the parent
 

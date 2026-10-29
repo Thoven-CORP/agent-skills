@@ -4,6 +4,10 @@ pstack skills use Cursor names. In Claude Code, read this file once per session,
 
 This is our copy of upstream `pstack/docs/harness/claude-code.md` (cursor/plugins `1b80080058`, 2026-10-17), changed for how pstack is installed here. Upstream assumes the pstack Claude plugin, with a `<pstack>` folder that holds `skills/` and `docs/`. Here `npx skills` installs each pstack skill on its own into `~/.agents/skills/<name>/`, linked from `~/.claude/skills/<name>`, and `docs/` is not installed. `enforcement/hooks/reapply-skill-patches.py` points poteto-mode, poteto-help and the two formal-verification skills at this file.
 
+## Verification resources
+
+Before generating a verification plan or delegating a check, read `~/.agents/skills/verify/SKILL.md`, section "Verification disk budget", and carry it into the plan and every verifier brief. It applies to all pstack playbooks, including Autopilot-full, and to ad hoc baseline worktrees. A playbook perf step does not itself authorize repeated local production builds. Keep the required proof; move costly checks to CI or an already authorized remote host when they do not fit the local budget.
+
 ## Tools
 
 | Cursor | Claude Code |
