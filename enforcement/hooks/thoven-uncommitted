@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
-# Asks once, at stop, about files this session edited that are still uncommitted.
+# At stop, holds the session on files it edited that are still uncommitted.
 # Shared worktrees make an uncommitted edit look like someone else's work to the next session.
 # Reads the edit log thoven-track-edits writes, which every tool here runs after its edits.
-# Never stages, commits or modifies anything.
+# Never stages, commits or modifies anything in a repository.
+#
+# A tracked file with an uncommitted change blocks every stop until it is committed or kept on
+# purpose with `thoven-uncommitted keep`. After STRICT_MAX blocks on the same set, the stop goes
+# through with a warning, so a session that cannot act does not loop. A new untracked file is
+# asked about once, since probes and scratch stay uncommitted by law.
 #
 # Dialects, per each tool's Stop contract:
 #   claude, codex, devin  {"decision":"block","reason":...} on stdout; stop_hook_active=true
@@ -12,31 +17,61 @@
 #                         (cursor.com/docs/hooks)
 #   warn                  message on stderr, exit 0, for tools whose stop cannot block (OpenCode)
 #   thoven-uncommitted [--dialect claude|codex|cursor|devin|warn]
+#   thoven-uncommitted keep <session id> <absolute path> <reason>
 set -o pipefail
 # Read-only git: status never takes index.lock to refresh, so it cannot block another session's commit.
 export GIT_OPTIONAL_LOCKS=0
+STRICT_MAX=3
+
+valid_session() { [ -n "$1" ] && case "$1" in */*|.*) return 1 ;; *) return 0 ;; esac; }
+
+if [ "${1:-}" = keep ]; then
+  session_id="${2:-}" path="${3:-}" reason="${4:-}"
+  valid_session "$session_id" || { echo "keep: invalid session id" >&2; exit 2; }
+  case "$path" in /*) ;; *) echo "keep: path must be absolute" >&2; exit 2 ;; esac
+  [ -n "${reason// /}" ] || { echo "keep: give a reason" >&2; exit 2; }
+  state="/tmp/claude-thoven/$session_id"
+  mkdir -p "$state"
+  printf '%s\t%s\n' "$path" "${reason//$'\n'/ }" >>"$state/uncommitted-kept"
+  printf 'kept %s uncommitted: %s\n' "$path" "$reason"
+  exit 0
+fi
 
 dialect=claude
 [ "${1:-}" = "--dialect" ] && dialect="${2:-claude}"
 
 payload="$(cat)"
 session_id="$(jq -r '.session_id // .conversation_id // empty' <<<"$payload")"
-[ -n "$session_id" ] || exit 0
-case "$session_id" in */*|.*) exit 0 ;; esac
+valid_session "$session_id" || exit 0
 
 state="/tmp/claude-thoven/$session_id"
 edited_file="$state/edited"
 [ -s "$edited_file" ] || exit 0
 
-[ "$(jq -r '.stop_hook_active // false' <<<"$payload")" = true ] && exit 0
-loop_count="$(jq -r '.loop_count // 0' <<<"$payload")"
-[[ "$loop_count" =~ ^[0-9]+$ ]] && [ "$loop_count" -gt 0 ] && exit 0
 # A user abort or an error is not the agent claiming it finished.
 cursor_status="$(jq -r '.status // "completed"' <<<"$payload")"
 [ "$dialect" = cursor ] && [ "$cursor_status" != completed ] && exit 0
 
-# One "relative<TAB>absolute" line per uncommitted path.
-found=()
+emit() {
+  case "$dialect" in
+    claude|codex|devin) jq -n --arg r "$1" '{decision:"block",reason:$r}' ;;
+    cursor) jq -n --arg r "$1" '{followup_message:$r}' ;;
+    *) printf '%s\n' "$1" >&2 ;;
+  esac
+}
+# list_paths <relative<TAB>absolute lines> <manifest>: a bounded list; the manifest keeps every path.
+list_paths() {
+  local lines="$1" manifest="$2" count paths
+  printf '%s\n' "$lines" | cut -f2 >"$manifest"
+  count="$(printf '%s\n' "$lines" | wc -l | tr -d ' ')"
+  paths="$(printf '%s\n' "$lines" | head -12 | cut -f1 | paste -sd, - | sed 's/,/, /g')"
+  [ "$count" -gt 12 ] && paths="$paths, and $((count - 12)) more (full absolute paths: $manifest)"
+  printf '%s' "$paths"
+}
+
+kept="$state/uncommitted-kept"
+# One "relative<TAB>absolute" line per uncommitted path, split by whether git tracks it.
+tracked=() untracked=()
 while IFS= read -r path; do
   [ -n "$path" ] || continue
   # A deleted file may have taken its directory with it; git runs from the nearest one left.
@@ -47,12 +82,37 @@ while IFS= read -r path; do
   prefix="$(git -C "$dir" rev-parse --show-prefix 2>/dev/null)" || continue
   status="$(git --literal-pathspecs -C "$dir" status --porcelain --untracked-files=all -- "$tail" 2>/dev/null)"
   [ -n "$status" ] || continue
-  found+=("$prefix$tail"$'\t'"$path")
+  if [ "${status:0:2}" = "??" ]; then
+    untracked+=("$prefix$tail"$'\t'"$path")
+  elif ! { [ -f "$kept" ] && cut -f1 "$kept" | grep -qxF -- "$path"; }; then
+    tracked+=("$prefix$tail"$'\t'"$path")
+  fi
 done <"$edited_file"
 
-[ "${#found[@]}" -gt 0 ] || exit 0
+guard="$state/uncommitted-strict"
+if [ "${#tracked[@]}" -gt 0 ]; then
+  sorted="$(printf '%s\n' "${tracked[@]}" | LC_ALL=C sort -u)"
+  key="$(printf '%s\n' "$sorted" | cut -f2 | shasum | cut -c1-16)"
+  count=0
+  [ -f "$guard" ] && [ "$(cut -f1 "$guard")" = "$key" ] && count="$(cut -f2 "$guard")"
+  count=$((count + 1))
+  printf '%s\t%s\n' "$key" "$count" >"$guard"
+  paths="$(list_paths "$sorted" "$state/uncommitted-tracked.paths")"
+  if [ "$count" -gt "$STRICT_MAX" ]; then
+    printf 'Stopping with uncommitted edits to tracked files after %s blocks: %s\n' "$STRICT_MAX" "$paths" >&2
+    exit 0
+  fi
+  emit "Uncommitted edits to tracked files block this stop: $paths. Commit owned work by exact path. To leave one uncommitted on purpose, run \`$0 keep $session_id <absolute path> \"<reason>\"\`, then name the path and the reason in your reply to Andres."
+  exit 0
+fi
+rm -f "$guard"
 
-sorted="$(printf '%s\n' "${found[@]}" | LC_ALL=C sort -u)"
+[ "${#untracked[@]}" -gt 0 ] || exit 0
+[ "$(jq -r '.stop_hook_active // false' <<<"$payload")" = true ] && exit 0
+loop_count="$(jq -r '.loop_count // 0' <<<"$payload")"
+[[ "$loop_count" =~ ^[0-9]+$ ]] && [ "$loop_count" -gt 0 ] && exit 0
+
+sorted="$(printf '%s\n' "${untracked[@]}" | LC_ALL=C sort -u)"
 notified="$state/uncommitted-notified.paths"
 # Upgrade old whole-list notifications without asking again about remaining paths.
 if [ ! -f "$notified" ]; then
@@ -69,19 +129,8 @@ while IFS=$'\t' read -r relative absolute; do
 done <<<"$sorted"
 [ "${#pending[@]}" -gt 0 ] || exit 0
 
-# Bound the UI message; preserve every exact absolute path for review/committing.
 manifest="$state/uncommitted-pending.paths"
-printf '%s\n' "${pending[@]}" | cut -f2 >"$manifest"
-paths="$(printf '%s\n' "${pending[@]:0:12}" | cut -f1 | paste -sd, - | sed 's/,/, /g')"
-if [ "${#pending[@]}" -gt 12 ]; then
-  paths="$paths, and $((${#pending[@]} - 12)) more (full absolute paths: $manifest)"
-fi
+paths="$(list_paths "$(printf '%s\n' "${pending[@]}")" "$manifest")"
 cat "$manifest" >>"$notified"
-msg="Tracked files remain uncommitted: $paths. Commit owned work by exact path, or explain why it stays. Tracking is not proof of ownership."
-
-case "$dialect" in
-  claude|codex|devin) jq -n --arg r "$msg" '{decision:"block",reason:$r}' ;;
-  cursor) jq -n --arg r "$msg" '{followup_message:$r}' ;;
-  *) printf '%s\n' "$msg" >&2 ;;
-esac
+emit "New files remain uncommitted: $paths. Commit owned work by exact path, or explain why it stays. Tracking is not proof of ownership."
 exit 0

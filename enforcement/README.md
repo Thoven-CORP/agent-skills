@@ -272,8 +272,19 @@ before herdr or the Codex app pick their base. `install/gitconfig.py` sets
 main checkouts. `git maintenance` was left out because its prefetch never moves
 `origin/*`.
 
-`thoven-uncommitted` runs at stop. It reads paths recorded by `thoven-track-edits` and asks once per absolute path,
-by blocking, about any still uncommitted. Tracking is not proof of ownership:
+`thoven-uncommitted` runs at stop. It reads paths recorded by `thoven-track-edits` and splits the
+ones still uncommitted by whether git tracks them.
+
+A tracked file with an uncommitted change blocks every stop, `stop_hook_active` and Cursor's
+`loop_count` included, until it is committed or kept on purpose with
+`thoven-uncommitted keep <session> <absolute path> "<reason>"`. The block message carries the exact
+command, and asks the agent to name each kept path and its reason to Andres.
+`/tmp/claude-thoven/<session>/uncommitted-kept` records them. After 3 blocks on the same set it lets
+the stop through and says so on stderr, so a session that cannot act does not loop. A changed set
+starts the count again. The full list lives in `uncommitted-tracked.paths`.
+
+A new untracked file is asked about once per absolute path, since probes and scratch stay
+uncommitted by law. Tracking is not proof of ownership:
 shell scans can include peer edits in shared worktrees. A partial commit does
 not repeat previously raised paths; genuinely new paths still get a warning.
 Warnings show at most 12 paths and retain the full absolute-path manifest under
