@@ -63,6 +63,10 @@ auto_skills=(
   better-interface better-layout better-typography better-ui better-writing
   emil-design-eng interface-craft interface-review transitions-dev no-ai-slop
   writing-plans writing-for-agents
+  build-design state-machine break variant
+
+  # tstack PR skills that orchestrate and dispatch-work route to
+  babysit-pr modernize takeover full-stop leaving-pr-comments
 
   # Matt Pocock and everyday stack skills
   code-review codebase-design diagnosing-bugs domain-modeling research

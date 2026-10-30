@@ -72,6 +72,14 @@ npx skills@latest update -g
 
 It updates only skills you already have and adds none. To add a new third-party package, use
 `npx skills@latest add <owner>/<repo> -g -y -a claude-code -a cursor`, then continue with steps 3 and 4.
+A machine set up before 2026-10-28 lacks the tstack PR skills and four Krehel design skills that
+orchestrate and dispatch-work now route to. `pr-wait` needs `gh` and `python3`.
+
+```bash
+npx skills@latest add t3dotgg/tstack -g -y -a claude-code -a cursor
+npx skills@latest add jakubkrehel/skills -g -y -a claude-code -a cursor \
+  --skill teardown --skill break --skill build-design --skill state-machine
+```
 
 **3. Put the local patches back.** Both commands overwrite the skill folders, which reverts our
 fixes (the `deslop` description, the `verify-this` rewrite, skill names, the model-invocation

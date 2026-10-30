@@ -61,6 +61,12 @@ a rebase ate a day of the onboarding prototype.)
 - An agent-skills PR is not held. It merges in the same pass, then `enforcement/sync.sh
   --apply` runs until `sync.sh` reports every harness copy matches. Commit and merge only on a
   branch in a tree, never in a `main` checkout: `co.thoven.sync` fast-forwards the clean `main` checkouts every 30 minutes.
+- Unattended PR work: `/full-stop` proves, files, babysits and stops at ready-to-merge. It serves
+  the frontend and any PR that changes what a user sees. `/full-send` also merges, on Andres's "full
+  send", only in agent-skills, tooling, and backend PRs that change nothing a user sees. Its merge
+  follows the method table and backend-first order above. Both call `/sol-loop`: with no GPT Sol
+  route, run `dispatch-work/references/review.md` "Every PR put to Andres" in its place and say so.
+  `pr-wait` runs `--until green`, since Thoven has no Greptile or Macroscope.
 - Production moves only through `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh`.
 
 **Where records live.** Linear is the source of truth, and the tldraw board is the source of truth

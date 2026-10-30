@@ -20,6 +20,8 @@ stay there rather than being repeated in ACCESS.
 | Before implementing a CSS transition | `/transitions-dev` |
 | Before implementing keyboard, focus, forms or interactive controls | `/better-accessibility` |
 | Before writing customer-facing copy | `/thoven-branding` |
+| Building a screen from a board frame or Figma frame | `/build-design`; its Design / Built / Status table rides in the REPORT beside the parity grid |
+| A component with four or more reachable states, before the first DONE | `/state-machine`; the switcher URL rides in the REPORT so Andres can flip every state. The route stays uncommitted and is deleted once he has looked |
 | A screen is built, before the parity capture | `/better-ui` |
 | Motion is built, before reporting it complete | `/review-animations`, asked to review the changed motion files |
 | Before changing shared behaviour, an interface or a contract | `/blast-radius` |
@@ -28,7 +30,8 @@ stay there rather than being repeated in ACCESS.
 | Before a requested test-first change, or a bug fix with an obvious cheap test target | `/tdd` |
 | A specific claim is disputed or lacks evidence | `/verify-this`, scoped to that claim |
 | A change affects documented behaviour or setup, before handoff | `/doc-freshness`, scoped to the affected docs |
-| During edits and before sending DONE | `/verify`, targeted checks for this diff; full `bin/verify` only on Andres's request or once at the parent before integration into `main` |
+| Each changed behaviour, at the first DONE and in every fix round | `/verify-this`, one claim per behaviour; a fix round re-verifies only the claims it changed |
+| The first DONE | `/verify`'s check list once, through `/remote-check` on a `laptop` host; full `bin/verify` only on Andres's request or once at the parent before integration into `main` |
 
 Check each selected skill exists in `~/.agents/skills/` and is loadable in the builder's harness.
 Use the loading procedure in brief.md. A missing skill is a named access gap to resolve before
