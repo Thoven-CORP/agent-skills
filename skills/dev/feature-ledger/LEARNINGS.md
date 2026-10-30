@@ -5,6 +5,10 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-10-28 — current project authority moves to Linear
+
+The approved migration ruling makes Linear briefs, documents and accepted decisions primary. The older local-ledger-first and mandatory scaffolding recommendations below are historical, superseded where they conflict. Preserve technical runbooks, evidence and history; do not create duplicate mandatory state files or rebuild a local folder to start work.
+
 ## 2026-08-26 — A doc subagent rewrote a ledger and dropped LOCKED rows
 
 > reflect · 2026-08-26 · memory:feedback_doc_subagents_silently_drop_table_rows · skill-gap · applied · seen 1

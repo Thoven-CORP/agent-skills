@@ -32,7 +32,13 @@ function preflight(issue) {
     failures.push(`lane: ${id} is ${state}. In Progress is the lane.`);
   }
 
-  if (issue.writesToExists === false) {
+  const destination = (issue.writesTo || '').trim().replace(/^`|`$/g, '');
+  const sameIssue = /^this (ticket|issue)$/i.test(destination);
+  const linearRecord = /^https:\/\/linear\.app\/[^/\s]+\/(document|issue)\//i.test(destination);
+  if (linearRecord && issue.writesToAccessible !== true) {
+    failures.push(`unverified-destination: read the Linear record at ${destination} before proceeding.`);
+  }
+  if (!linearRecord && issue.writesToExists === false && !sameIssue) {
     failures.push(`ghost-path: Writes to: ${issue.writesTo} does not resolve.`);
   }
 

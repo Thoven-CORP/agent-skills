@@ -34,7 +34,7 @@ test("missing Linear access never routes to a write intent", () => {
   assert.doesNotMatch(snapshot.next, /Restore Linear access/);
 });
 
-test("no Linear data supplied is ADVISORY, routes to the MCP, and does not degrade the claim", () => {
+test("no Linear data supplied is advisory context but completion remains unknown", () => {
   const { linearNotSupplied } = require("./linear.js");
   const snapshot = deriveSnapshot({
     identity: { name: "Teacher: Business", dir: "/x/projects/business" },
@@ -44,9 +44,8 @@ test("no Linear data supplied is ADVISORY, routes to the MCP, and does not degra
   });
   const finding = snapshot.findings.find((item) => item.code === "linear-input");
   assert.equal(finding.state, "ADVISORY");
-  assert.match(finding.message, /mcp__claude_ai_Linear__list_issues/);
-  assert.match(finding.message, /mcp__plugin_linear_linear__\* — that connector is unauthorized/);
-  assert.equal(snapshot.completionClaim, "VERIFIED");
+  assert.match(finding.message, /authorized Linear MCP connector/);
+  assert.equal(snapshot.completionClaim, "UNKNOWN");
   assert.match(snapshot.next, /--linear-json <file> or --stdin/);
   assert.match(renderSnapshot(snapshot), /no Linear data supplied/);
 });
@@ -66,4 +65,32 @@ test("a Duplicate is closed work and is never the next issue", () => {
   const gate = snapshot.findings.find((f) => f.code === "session-gate");
   assert.equal(gate.state, "VERIFIED");
   assert.match(gate.message, /every issue in this Project is complete/);
+});
+
+const readyLinear = normalizeLinear({ issues: [
+  { identifier: "THV-1", title: "Check", state: "In Progress", stateType: "started",
+    project: "Remote pilot", milestone: "Build", assignee: "A", description: "Writes to: this ticket" },
+] });
+const noLocalState = { source: null, compatibility: false, imbalances: [], coverage: [], commits: [], log: [] };
+
+test("a named Linear project starts without any local project files", () => {
+  const snapshot = deriveSnapshot({ identity: { name: "Remote pilot", dir: null }, linear: readyLinear, git, projectState: noLocalState });
+  assert.equal(snapshot.completionClaim, "VERIFIED");
+  assert.equal(snapshot.next, "THV-1: Check");
+  assert.ok(!snapshot.findings.some(f => f.state === "UNKNOWN" || f.state === "BLOCKED"));
+});
+
+test("historical local imbalances do not override a ready Linear task", () => {
+  const snapshot = deriveSnapshot({ identity: { name: "Remote pilot", dir: "/old" }, linear: readyLinear, git,
+    projectState: { ...noLocalState, source: "/old/STATE.md", imbalances: ["old open item"] } });
+  assert.equal(snapshot.completionClaim, "VERIFIED");
+  assert.equal(snapshot.findings.find(f => f.code === "imbalances").state, "ADVISORY");
+});
+
+test("missing project identity and inaccessible Linear data stay unknown", () => {
+  const snapshot = deriveSnapshot({ identity: { name: null, dir: null },
+    linear: { state: "UNKNOWN", reason: "required Linear source unavailable", issues: [], projects: [] }, git, projectState: noLocalState });
+  assert.equal(snapshot.completionClaim, "UNKNOWN");
+  assert.ok(snapshot.findings.some(f => f.code === "project-identity"));
+  assert.match(snapshot.next, /Linear/);
 });

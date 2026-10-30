@@ -1,99 +1,30 @@
 ---
 name: meta
-description: >-
-  Optional organizer desk for one Linear Project. Use when the user explicitly names a Meta pane
-  or asks it to coordinate a Project. Reads the same Project snapshot as workspace; writes wait for go.
+description: Optional organizer for one Linear Project when the user names a Meta pane or explicitly asks for project coordination. Reads project context and proposes bounded orchestration writes.
 ---
 
 # Meta
 
-This desk is the **organizer** for **one** Linear Project. Andres is the product person.
+Organize one Linear Project; Andres owns product decisions. Use
+[workspace](../workspace/SKILL.md) for orientation and lifecycle. Read its snapshot and the actual
+Project brief, relevant document bodies, issues/milestones and latest Update. Missing local
+project folders or state files do not block orientation.
 
-Meta is optional. You write orchestration surfaces only: Project-local `STATE.md` feature log,
-`CONTINUE_HERE.md`, Linear comments, herdr names, pane prompts after go, and ledger rows for **this**
-Project.
+Resolve the Project from the named issue, session or current workspace. Rex, SSH and local
+sessions are valid; herdr is optional. A conflicting label is a finding to resolve, not permission
+to switch projects. Report the product surface, what changed, current work and the next decision
+that is actually needed. Do not require a question when the next authorized action is clear.
 
-**Source:** `~/thoven/agent-skills/skills/dev/meta/`. Home copies are
-installs. Edit the repo, then copy out.
+When coordinating existing panes, inspect only the requested Project with available native tools.
+Use [dispatch-work](../dispatch-work/SKILL.md) for a deliberate dispatch; ordinary orientation does
+not install fleet hooks or watchers. Pane state describes execution; Linear describes the Project.
 
-**Law:** `~/.agents/skills/workspace/references/WORKFLOW.md` §8. This skill is the desk procedure. The file
-wins on disagreement.
+After go, update the agreed Linear records and read them back. Use the existing decision row,
+issue or Project Update; do not maintain required `STATE.md` or `CONTINUE_HERE.md` copies. Preserve
+local runbooks/history and user-unseen evidence. For continuation use
+[handoff.md](../workspace/references/handoff.md), including actual read content, host, checkout,
+branch/base HEAD and paired repository. Do not claim that a document URL was read.
 
-## Voice
-
-Report like you are talking to the product person.
-
-- Name the **surface** in English, then ledger and ticket in parentheses:
-  "Family controls in Settings are done (D6 · THV-192)."
-- Lead with what changed on the product. Codenames stay in docs.
-
-## On invoke
-
-Do these in order.
-
-1. Name the Project. Match this space's `label` from `herdr workspace list` to its Linear Project.
-   *"I am Meta for Teacher: Settings."*
-2. Read `../workspace/references/PROJECT_SNAPSHOT.md` and run the same `workspace/tools/map.js`
-   command for that Project. Personally read its fingerprint and findings.
-3. Show the **fat card**. Status, milestone, `Writes to:`.
-4. List open checkboxes from that file. These are not panes.
-5. Floor. Pane names = milestone + job. Andres creates tabs and panes.
-6. One next question. **Parallelize** only when items are independent. Cases: [parallelize.md](parallelize.md).
-
-**Done when:** the recap has those six beats, names the snapshot fingerprint and the Project, and the
-recap ends on one question.
-
-## Writes
-
-Orchestration only. `save_issue` after go. A design brainstorm files a ledger
-checkbox, not a new THV-.
-
-## Absorb the floor
-
-```bash
-H="$HOME/.local/bin/herdr"
-$H workspace list
-$H tab list
-$H agent list
-python3 ~/.agents/skills/meta/tools/board-health.py
-```
-
-**Done when:** every working pane in **this** space has one English sentence;
-board-health exit 1 is the first thing in the recap; pane labels carry a
-milestone word. OpenCode `OC | …` titles are leftover. Route from the pane label.
-
-Ghosts and signed-off panes: recap. Recycle after he says so.
-
-## Read the law and the story
-
-- `~/.agents/skills/workspace/references/WORKFLOW.md` §8
-- This Project's fat card and the file it `Writes to:`
-- This Project's `STATE.md` and `CONTINUE_HERE.md`
-
-**Done when:** Linear, the fat card, and this space's panes are in view.
-
-## Refresh this Project's continuation
-
-After go, update only this Project's `CONTINUE_HERE.md` and `STATE.md` feature log. Linear owns
-status. Re-run the Project snapshot after any write.
-
-## Tab digest
-
-When he blesses a Work tab, digest **that tab**.
-
-1. Read the transcripts of the panes in that tab.
-2. After go, a Work pane may output: what shipped, what was ruled, what is leftover.
-3. From **this** desk, run `feature-ledger` `reconcile` on this Project. Then
-   the location stamp and Linear match the floor. Do not run unscoped `workspace`.
-4. The next unit of the **same Project** is a **new pane in a named room**. Propose it. He creates it.
-
-**Done when:** every ruling in those transcripts is in this Project's ledger or
-named as leftover; Linear matches; the next pane is proposed, not begun.
-
-## Walk-away
-
-Skip this on ordinary Meta. Andres can arm a watcher himself.
-
-Only if he says **watch this tab**, **ping me**, or **I'm walking away**, open
-[monitor.md](monitor.md) and arm that tab. Long-running Work panes stay quiet
-until that ask.
+A tab digest reads the requested work, reconciles with the Project's current decisions and shows
+what shipped, changed or remains. It does not automatically start another pane. Only when Andres
+explicitly requests a watch, read [monitor.md](monitor.md); otherwise no watcher is required.

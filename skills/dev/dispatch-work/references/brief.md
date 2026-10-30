@@ -43,6 +43,12 @@ FIRST TURN Load poteto-mode before task work. In Claude Code, invoke the Skill t
            The REPORT's Playbook row records each step's outcome and evidence.
 
 FITS       <<one line: where this ticket sits in its parent issue and what it unblocks>>
+CONTEXT    <<relevant Linear brief/documents: source ids/URLs, read time, governing content and missing sources>>
+           Read the actual supplied content and state its governing decisions before work. A link
+           alone does not establish reading. Re-read live records when accessible; report missing
+           required context rather than substituting old local docs.
+EXECUTION  <<mode and host; source host; browser/automation/app hosts and verified access>>
+PAIRED     <<paired repo absolute worktree, branch and base HEAD, or none with reason>>
 SPEC       {{SNAPSHOT}}. Read it in full first. It holds the ticket, its comments and the parent's
            decisions as main read them. Build it as written. When the snapshot and the code
            disagree, or the snapshot needs a choice it does not make, ASK.

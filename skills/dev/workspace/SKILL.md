@@ -42,9 +42,11 @@ reconciliation ownership.
 1. Read [`references/PROJECT_SNAPSHOT.md`](references/PROJECT_SNAPSHOT.md). Its source order,
    evidence states, and ownership rules are binding.
 2. Resolve the current Linear Project from the named issue, session context, or cwd. If those
-   disagree, report `CONTRADICTED`; do not guess. A snapshot finding `Project folder could not be
-   resolved`, or a missing template, means the Project was never set up: run `$linear-project`
-   before any grill or design work, and never report it as expected.
+   disagree, report `CONTRADICTED`; do not guess. A local folder, `STATE.md`, `PRD.md`, or
+   `CONTINUE_HERE.md` is optional. Resolve the Project and read its governing Linear content even
+   when none of those files exists. Use `$linear-project` for genuinely missing or changed Project
+   setup, not to manufacture local prerequisites. An inaccessible required Linear source is
+   `UNKNOWN`; name that source and continue only work that does not depend on it.
 3. Fetch the Project's issues yourself, through the **Linear MCP connector**, then feed them to
    `map.js`. `map.js` never reaches for a Linear API key on its own.
 
@@ -56,13 +58,13 @@ reconciliation ownership.
    ```bash
    node ~/.agents/skills/workspace/tools/map.js \
      --project '<Linear Project name>' \
-     --project-dir '<projects/<project>>' \
      --linear-json /tmp/linear-<project>.json
    ```
 
-   `--stdin` takes the same JSON on standard input. With neither, the snapshot still renders — git,
-   Project folder, and Project `STATE.md` are all read — and the ticket ledger carries one
-   `ADVISORY linear-input` finding telling you to fetch through the MCP. `--linear-api` is an
+   `--stdin` takes the same JSON on standard input. Add `--project-dir` only for an existing,
+   relevant local archive. With no Linear input, the snapshot renders git and any optional local
+   context with `ADVISORY linear-input`; its completion claim is `UNKNOWN`. The snapshot judges
+   mechanical fields, not whether you read the brief or linked document bodies. `--linear-api` is an
    opt-in path that reads with `LINEAR_API_KEY` or `~/.linear-api-key`. The key works (checked
    2026-10-03), and `tools/set-status.js` uses it. `--feature` and `--family` remain supported
    for the legacy tree views.
@@ -84,7 +86,7 @@ reconciliation ownership.
        {
          "identifier": "THV-318",
          "title": "Bind homework success to requested identity",
-         "description": "Why this exists.\nWrites to: projects/identity-access/decisions/api.md",
+         "description": "Why this exists.\nWrites to: this ticket",
          "updatedAt": "2026-08-30T18:04:11.000Z",
          "state": { "type": "started", "name": "In Progress" },
          "project": { "name": "Shared: Identity & Access" },
@@ -119,6 +121,9 @@ reconciliation ownership.
    - `Writes to: <path>` is parsed out of `description` — first match, own line, verbatim. Linear
      descriptions usually wrap the path in backticks, and the parsed value keeps them; strip before
      using the string as a path.
+   - For `session-preflight.js`, `Writes to: this ticket` resolves to the supplied issue. For a
+     Linear issue/document URL, set `writesToAccessible: true` only after reading that record;
+     `writesToExists` is reserved for required local paths. A URL alone is not confirmed access.
    - Milestone and assignee are both read by the session gate; missing either is `BLOCKED`.
    - Status-only moves go through `node tools/set-status.js "<state name>" THV-1 [THV-2 ...]`,
      which prints one line per issue. The Linear MCP `save_issue` echoes the full issue body.
@@ -160,6 +165,14 @@ read-back line.
 
 ## Compatibility
 
-Audience-level `STATE.md` and `CONTINUE_HERE.md` are read-only compatibility inputs until that
-Linear Project is migrated. Never bulk-split them. Current Project state belongs inside
-`projects/<project>/`.
+Linear holds current briefs, accepted decisions, status and handoffs. Existing local state,
+runbooks, plans and historical documents remain useful linked context; preserve them. Do not
+scaffold, bulk-migrate or delete them to orient a session. tldraw and Paper support design and
+brainstorming; record accepted decisions in Linear. A design file becomes relevant when the
+Linear task names it, not because every machine must have every board.
+
+For a cross-machine handoff, use [handoff.md](references/handoff.md). For a requested check on the
+mini from saved MacBook changes, use [remote-check](../remote-check/SKILL.md).
+
+For a reviewed remote-development release, read [remote-install.md](references/remote-install.md)
+before publishing or installing the selected skills.

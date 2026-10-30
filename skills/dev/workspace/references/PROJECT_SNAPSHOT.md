@@ -5,6 +5,12 @@ value. It is created per invocation; there is no sync command, daemon, cache, or
 
 ## Source tiers and precedence
 
+Project requirements and execution evidence answer different questions. Linear's current brief,
+accepted decisions and relevant documents govern what to build. Code, git and runtime checks prove
+what exists. Implementation that disagrees with the requirement is a gap, not a newer requirement.
+Read governing document bodies; links and issue-only snapshots do not establish their contents.
+Local project files are optional context, never a startup prerequisite.
+
 1. **Executed evidence:** git objects, working-tree state, production imports and mounts, test or QA
    receipts tied to the current fingerprint, and live Linear fields.
 2. **Binding authority:** locked token modules and tests, current components for their own surface,
@@ -14,8 +20,11 @@ value. It is created per invocation; there is no sync command, daemon, cache, or
 4. **Compatibility and advisory context:** audience-level state, old handoffs, prose estimates, and
    historical artifacts.
 
-Higher tiers win. A disagreement is `CONTRADICTED`, not silently reconciled. A newer explicit human
-ruling can supersede older binding authority; record the supersession.
+Within execution claims, prefer direct current evidence over historical descriptions. Within
+requirements, use the current accepted Linear ruling and its named design source. A disagreement
+is `CONTRADICTED`, not silently reconciled. Record supersession in the governing Linear decision.
+A mechanical snapshot's `VERIFIED` is limited to its checked fields; it does not establish that
+documents were read, acceptance criteria passed, or the feature is complete.
 
 ## Stable evidence states
 

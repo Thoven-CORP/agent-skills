@@ -1,0 +1,3602 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-10-28T23:44:35.773119+00:00",
+  "purpose": "Full development-skill and user-plugin parity for the Mac mini, plus explicitly requested additions. Sanitized metadata, not an executable installer.",
+  "evidencePaths": [
+    "~/.agents/.skill-lock.json",
+    "~/.agents/skills",
+    "~/.claude/plugins/installed_plugins.json",
+    "~/.claude/plugins/known_marketplaces.json",
+    "~/.claude/settings.json (enabledPlugins only)",
+    "~/.claude/agents",
+    "~/thoven/skills-lock.json",
+    "~/thoven/frontend/skills-lock.json",
+    "~/thoven/backend/skills-lock.json",
+    "~/.codex/config.toml (plugins.*.enabled only)"
+  ],
+  "limitations": [
+    "Observed installed hashes are not proof of upstream Git revisions.",
+    "The authoring worktree is unpublished; use the approved published SHA, never this metadata snapshot as release approval.",
+    "Native-app skills, MCP authorization, GUI permissions, plugins and referenced agent definitions require separate provisioning.",
+    "Project scopes stay project scopes. Missing/unknown provenance must remain visible in the completion report.",
+    "No credentials, environment values, full settings files or third-party skill bodies are included."
+  ],
+  "counts": {
+    "globalInstalledSkillFolders": 312,
+    "globalLockEntries": 283,
+    "globalLockedSourceGroups": 26,
+    "globalFoldersWithoutLock": 41,
+    "globalMissingLockedFolders": 12,
+    "canonicalDevelopmentSkills": 67,
+    "userPlugins": 29,
+    "enabledUserPlugins": 17,
+    "disabledUserPlugins": 12,
+    "projectSkillFolders": 30,
+    "codexConfiguredPlugins": 26,
+    "codexEnabledConfiguredPlugins": 23
+  },
+  "canonicalDevelopment": {
+    "source": "Thoven-CORP/agent-skills",
+    "revision": "APPROVED_PUBLISHED_SHA_REQUIRED",
+    "skills": [
+      {
+        "name": "andres-dev-evaluation",
+        "skillPath": "skills/andres-dev-evaluation/SKILL.md"
+      },
+      {
+        "name": "andres-mode",
+        "skillPath": "skills/andres-mode/SKILL.md"
+      },
+      {
+        "name": "accessibility-check",
+        "skillPath": "skills/dev/accessibility-check/SKILL.md"
+      },
+      {
+        "name": "api-endpoint",
+        "skillPath": "skills/dev/api-endpoint/SKILL.md"
+      },
+      {
+        "name": "apply-anthropic-skill-best-practices",
+        "skillPath": "skills/dev/apply-anthropic-skill-best-practices/SKILL.md"
+      },
+      {
+        "name": "cco-audit",
+        "skillPath": "skills/dev/cco-audit/SKILL.md"
+      },
+      {
+        "name": "class-activity",
+        "skillPath": "skills/dev/class-activity/SKILL.md"
+      },
+      {
+        "name": "context-engineering",
+        "skillPath": "skills/dev/context-engineering/SKILL.md"
+      },
+      {
+        "name": "create-migration",
+        "skillPath": "skills/dev/create-migration/SKILL.md"
+      },
+      {
+        "name": "delete-user-account",
+        "skillPath": "skills/dev/delete-user-account/SKILL.md"
+      },
+      {
+        "name": "design-research",
+        "skillPath": "skills/dev/design-research/SKILL.md"
+      },
+      {
+        "name": "disk-cleanup",
+        "skillPath": "skills/dev/disk-cleanup/SKILL.md"
+      },
+      {
+        "name": "dispatch-work",
+        "skillPath": "skills/dev/dispatch-work/SKILL.md"
+      },
+      {
+        "name": "doc-freshness",
+        "skillPath": "skills/dev/doc-freshness/SKILL.md"
+      },
+      {
+        "name": "dogfood",
+        "skillPath": "skills/dev/dogfood/SKILL.md"
+      },
+      {
+        "name": "edtech-learning-science",
+        "skillPath": "skills/dev/edtech-learning-science/SKILL.md"
+      },
+      {
+        "name": "esa-receipt",
+        "skillPath": "skills/dev/esa-receipt/SKILL.md"
+      },
+      {
+        "name": "feature-flag-creator",
+        "skillPath": "skills/dev/feature-flag-creator/SKILL.md"
+      },
+      {
+        "name": "feature-ledger",
+        "skillPath": "skills/dev/feature-ledger/SKILL.md"
+      },
+      {
+        "name": "frontend-handover",
+        "skillPath": "skills/dev/frontend-handover/SKILL.md"
+      },
+      {
+        "name": "future-improvements",
+        "skillPath": "skills/dev/future-improvements/SKILL.md"
+      },
+      {
+        "name": "geo-audit",
+        "skillPath": "skills/dev/geo-audit/SKILL.md"
+      },
+      {
+        "name": "grill-with-docs",
+        "skillPath": "skills/dev/grill-with-docs/SKILL.md"
+      },
+      {
+        "name": "humanizer",
+        "skillPath": "skills/dev/humanizer/SKILL.md"
+      },
+      {
+        "name": "interface-craft",
+        "skillPath": "skills/dev/interface-craft/SKILL.md"
+      },
+      {
+        "name": "investigate-thoven",
+        "skillPath": "skills/dev/investigate-thoven/SKILL.md"
+      },
+      {
+        "name": "linear-project",
+        "skillPath": "skills/dev/linear-project/SKILL.md"
+      },
+      {
+        "name": "meta",
+        "skillPath": "skills/dev/meta/SKILL.md"
+      },
+      {
+        "name": "mobile-audit",
+        "skillPath": "skills/dev/mobile-audit/SKILL.md"
+      },
+      {
+        "name": "motion",
+        "skillPath": "skills/dev/motion/SKILL.md"
+      },
+      {
+        "name": "motion-react",
+        "skillPath": "skills/dev/motion-react/SKILL.md"
+      },
+      {
+        "name": "no-ai-slop",
+        "skillPath": "skills/dev/no-ai-slop/SKILL.md"
+      },
+      {
+        "name": "no-mistakes",
+        "skillPath": "skills/dev/no-mistakes/SKILL.md"
+      },
+      {
+        "name": "orchestrate",
+        "skillPath": "skills/dev/orchestrate/SKILL.md"
+      },
+      {
+        "name": "pr-seo-pr-inbox",
+        "skillPath": "skills/dev/pr-seo-pr-inbox/SKILL.md"
+      },
+      {
+        "name": "preflight",
+        "skillPath": "skills/dev/preflight/SKILL.md"
+      },
+      {
+        "name": "product-fundamentals",
+        "skillPath": "skills/dev/product-fundamentals/SKILL.md"
+      },
+      {
+        "name": "product-strategy-brainstorming",
+        "skillPath": "skills/dev/product-strategy-brainstorming/SKILL.md"
+      },
+      {
+        "name": "production-data-audit",
+        "skillPath": "skills/dev/production-data-audit/SKILL.md"
+      },
+      {
+        "name": "prompt-generator",
+        "skillPath": "skills/dev/prompt-generator/SKILL.md"
+      },
+      {
+        "name": "publish",
+        "skillPath": "skills/dev/publish/SKILL.md"
+      },
+      {
+        "name": "qa",
+        "skillPath": "skills/dev/qa/SKILL.md"
+      },
+      {
+        "name": "qa-flow",
+        "skillPath": "skills/dev/qa-flow/SKILL.md"
+      },
+      {
+        "name": "remote-check",
+        "skillPath": "skills/dev/remote-check/SKILL.md"
+      },
+      {
+        "name": "research",
+        "skillPath": "skills/dev/research/SKILL.md"
+      },
+      {
+        "name": "research-orchestration",
+        "skillPath": "skills/dev/research-orchestration/SKILL.md"
+      },
+      {
+        "name": "rspec-map",
+        "skillPath": "skills/dev/rspec-map/SKILL.md"
+      },
+      {
+        "name": "safe-migrate",
+        "skillPath": "skills/dev/safe-migrate/SKILL.md"
+      },
+      {
+        "name": "security-review",
+        "skillPath": "skills/dev/security-review/SKILL.md"
+      },
+      {
+        "name": "session-memory",
+        "skillPath": "skills/dev/session-memory/SKILL.md"
+      },
+      {
+        "name": "subagent-creator",
+        "skillPath": "skills/dev/subagent-creator/SKILL.md"
+      },
+      {
+        "name": "technical-spec-generator",
+        "skillPath": "skills/dev/technical-spec-generator/SKILL.md"
+      },
+      {
+        "name": "test-audit",
+        "skillPath": "skills/dev/test-audit/SKILL.md"
+      },
+      {
+        "name": "testing-runbook-generator",
+        "skillPath": "skills/dev/testing-runbook-generator/SKILL.md"
+      },
+      {
+        "name": "thoven-art",
+        "skillPath": "skills/dev/thoven-art/SKILL.md"
+      },
+      {
+        "name": "thoven-branding",
+        "skillPath": "skills/dev/thoven-branding/SKILL.md"
+      },
+      {
+        "name": "thoven-browser-security",
+        "skillPath": "skills/dev/thoven-browser-security/SKILL.md"
+      },
+      {
+        "name": "thoven-coppa-vpc-contracts",
+        "skillPath": "skills/dev/thoven-coppa-vpc-contracts/SKILL.md"
+      },
+      {
+        "name": "thoven-designer",
+        "skillPath": "skills/dev/thoven-designer/SKILL.md"
+      },
+      {
+        "name": "thoven-email-system",
+        "skillPath": "skills/dev/thoven-email-system/SKILL.md"
+      },
+      {
+        "name": "thoven-reflect",
+        "skillPath": "skills/dev/thoven-reflect/SKILL.md"
+      },
+      {
+        "name": "thoven-security-contracts",
+        "skillPath": "skills/dev/thoven-security-contracts/SKILL.md"
+      },
+      {
+        "name": "trace",
+        "skillPath": "skills/dev/trace/SKILL.md"
+      },
+      {
+        "name": "verify",
+        "skillPath": "skills/dev/verify/SKILL.md"
+      },
+      {
+        "name": "wireframe",
+        "skillPath": "skills/dev/wireframe/SKILL.md"
+      },
+      {
+        "name": "workspace",
+        "skillPath": "skills/dev/workspace/SKILL.md"
+      },
+      {
+        "name": "visual-artifacts",
+        "skillPath": "skills/visual-artifacts/SKILL.md"
+      }
+    ],
+    "basedOnMainSha": "d87d4200306b71d53781dc132e0dfa2ff798f50e"
+  },
+  "globalLockedSkills": [
+    {
+      "source": "Jeffallan/claude-skills",
+      "skills": [
+        {
+          "name": "api-designer",
+          "skillPath": "skills/api-designer/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "a6acfe7813cdbf078353690e6ab488c8433459ee"
+        },
+        {
+          "name": "architecture-designer",
+          "skillPath": "skills/architecture-designer/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "d9baa48932919d8db398cfc0953b3ec07b08356e"
+        },
+        {
+          "name": "database-optimizer",
+          "skillPath": "skills/database-optimizer/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "8532892c1dd93f2b8e0354ed7f34473d4e49153a"
+        },
+        {
+          "name": "debugging-wizard",
+          "skillPath": "skills/debugging-wizard/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "706817ab0da92e9baa8bf9515db40e35f761b92d"
+        },
+        {
+          "name": "fine-tuning-expert",
+          "skillPath": "skills/fine-tuning-expert/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "b67203fbdae118dddb6a1dffc098a0cd79727f64"
+        },
+        {
+          "name": "javascript-pro",
+          "skillPath": "skills/javascript-pro/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "169cd18783b8955aac5f0093047628f25f9a1386"
+        },
+        {
+          "name": "nextjs-developer",
+          "skillPath": "skills/nextjs-developer/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "c92ec0f7f9e29d87be7322134c2c20e5fe9e44f6"
+        },
+        {
+          "name": "playwright-expert",
+          "skillPath": "skills/playwright-expert/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "bb8e2966cf79803f5c4e7011be2cd76c5cb74236"
+        },
+        {
+          "name": "postgres-pro",
+          "skillPath": "skills/postgres-pro/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "cece71e4474f39cb47793c7b84834fdee236a3e6"
+        },
+        {
+          "name": "prompt-engineer",
+          "skillPath": "skills/prompt-engineer/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "faf877cda99a4779b5b93c9de7abeae238130db3"
+        },
+        {
+          "name": "react-expert",
+          "skillPath": "skills/react-expert/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "be511b42f21056772c6437dd6be3c51a54dfd30e"
+        },
+        {
+          "name": "secure-code-guardian",
+          "skillPath": "skills/secure-code-guardian/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "430bda30376f2e0951e37367550423fdcf9d0056"
+        },
+        {
+          "name": "security-reviewer",
+          "skillPath": "skills/security-reviewer/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "617c52edd4ab54c15d388f0960f3f6a76b7c11d6"
+        },
+        {
+          "name": "sql-pro",
+          "skillPath": "skills/sql-pro/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "fed91bc29fb2bc5bb6bf25eb46df26a4700f9c74"
+        },
+        {
+          "name": "test-master",
+          "skillPath": "skills/test-master/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "e03f049226f32b51b1a778a81fe8480f01557ae6"
+        },
+        {
+          "name": "the-fool",
+          "skillPath": "skills/the-fool/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "90a454523144b2be548744dcb477e0b012679978"
+        },
+        {
+          "name": "websocket-engineer",
+          "skillPath": "skills/websocket-engineer/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "cd52967b809c16a9c2f546130464c21693623ddf"
+        }
+      ]
+    },
+    {
+      "source": "NeoLabHQ/context-engineering-kit",
+      "skills": [
+        {
+          "name": "subagent-driven-development",
+          "skillPath": "plugins/sadd/skills/subagent-driven-development/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "0682e04f4eb79a09ed6bb2b5bcc668c1ab733f38"
+        },
+        {
+          "name": "test-prompt",
+          "skillPath": "plugins/customaize-agent/skills/test-prompt/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "33cea5a6f45a86f6c8eeaa42fc8b357e30d497c5"
+        }
+      ]
+    },
+    {
+      "source": "Thoven-CORP/agent-skills",
+      "skills": [
+        {
+          "name": "accessibility-check",
+          "skillPath": "skills/dev/accessibility-check/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "a092f61afa24f2cade4c91b77cae6aa2585a8e8d"
+        },
+        {
+          "name": "andres-dev-evaluation",
+          "skillPath": "skills/andres-dev-evaluation/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "2f2c736160fcdbf029d760780a9eaaaf4be8153d"
+        },
+        {
+          "name": "andres-mode",
+          "skillPath": "skills/andres-mode/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "ffa344f489f6bb2548bb2d4e15c87f0113018ddd"
+        },
+        {
+          "name": "angel-graph-scout",
+          "skillPath": "skills/exec/angel-graph-scout/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "1a84c28bbd5532ac969b8cc00e02f055ded239d2"
+        },
+        {
+          "name": "angel-outreach-loop",
+          "skillPath": "skills/exec/angel-outreach-loop/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "b54e6fc4c23b08c931309e1f3e263cd078136bf7"
+        },
+        {
+          "name": "api-endpoint",
+          "skillPath": "skills/dev/api-endpoint/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "6cff512df91a56cf34175d3d00ab7b4b2256ec0a"
+        },
+        {
+          "name": "apollo-enrich",
+          "skillPath": "skills/exec/apollo-enrich/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "ca7c40fcd60099621d4affe67aaf983f7a523f51"
+        },
+        {
+          "name": "apply-anthropic-skill-best-practices",
+          "skillPath": "skills/dev/apply-anthropic-skill-best-practices/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "63099e48f21aa6ddd7ad0de76606f36a919b1b5f"
+        },
+        {
+          "name": "bro",
+          "skillPath": "skills/exec/bro/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "f5d428f36daae11a4ebef90ac7f608cfe603e585"
+        },
+        {
+          "name": "call-prep",
+          "skillPath": "skills/exec/call-prep/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "a66e1cadbd70dd8fed80a6cb0dcba6ca62bedaa3"
+        },
+        {
+          "name": "cco-audit",
+          "skillPath": "skills/dev/cco-audit/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "70bbcfdbf3e6ebc4598f4e2a704c9ec017f5eb4a"
+        },
+        {
+          "name": "class-activity",
+          "skillPath": "skills/dev/class-activity/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "037b50488c075c9cf18cf8d958a605c3fe05355e"
+        },
+        {
+          "name": "context-engineering",
+          "skillPath": "skills/dev/context-engineering/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "6f9bbc707949c26f5778cd1a6bd7167701438e05"
+        },
+        {
+          "name": "create-migration",
+          "skillPath": "skills/dev/create-migration/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "66c052a3927d4027de71cb55098de941eb762f05"
+        },
+        {
+          "name": "daily-work-log",
+          "skillPath": "skills/exec/daily-work-log/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "4c0fb6d15c20af33b0d56a3efa3e9b08901418b4"
+        },
+        {
+          "name": "delete-user-account",
+          "skillPath": "skills/dev/delete-user-account/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "423612362712649a8cae39aeb57c085fa661aad8"
+        },
+        {
+          "name": "design-research",
+          "skillPath": "skills/dev/design-research/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "9c68da2cfad53eca46287622cb32630961887e89"
+        },
+        {
+          "name": "disk-cleanup",
+          "skillPath": "skills/dev/disk-cleanup/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "65ef87ecf5d812c1cbe4cd2ed051eaa0a2165c40"
+        },
+        {
+          "name": "dispatch-work",
+          "skillPath": "skills/dev/dispatch-work/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "ddb6289acd37efb4f7a0b1249e66677e6ab5fe8d"
+        },
+        {
+          "name": "doc-freshness",
+          "skillPath": "skills/dev/doc-freshness/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "82ae6314d8b298743506b424f0f9541dc571120e"
+        },
+        {
+          "name": "dogfood",
+          "skillPath": "skills/dev/dogfood/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "f30cc80129c43e9a9f6bf51bc87a81c1892d91e2"
+        },
+        {
+          "name": "edtech-learning-science",
+          "skillPath": "skills/dev/edtech-learning-science/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "0a3c0950f206c9c159e7423fde81331ecb487852"
+        },
+        {
+          "name": "email-writing",
+          "skillPath": "skills/exec/email-writing/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "07a86979f7429cf6e8c7a99ca61ad6f4adfc319b"
+        },
+        {
+          "name": "engine",
+          "skillPath": "skills/exec/engine/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "79c1880e25d4325d192523e5a7fb1f7258e62f05"
+        },
+        {
+          "name": "esa-receipt",
+          "skillPath": "skills/dev/esa-receipt/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "c5acdaa830d5c2ffea52208b9b4cdf4d42f30f4e"
+        },
+        {
+          "name": "feature-flag-creator",
+          "skillPath": "skills/dev/feature-flag-creator/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "4d6f6b89d46a8286a6fe83bacdcf29f4e299fb0e"
+        },
+        {
+          "name": "feature-ledger",
+          "skillPath": "skills/dev/feature-ledger/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "0f63801951463a45c5aaf21e4e9317b9f1682073"
+        },
+        {
+          "name": "frontend-handover",
+          "skillPath": "skills/dev/frontend-handover/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "59bea032ee46c5f5773b0b32524bf0e05389ae85"
+        },
+        {
+          "name": "future-improvements",
+          "skillPath": "skills/dev/future-improvements/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "e1156a8c5856ceab5f167a653c8e9dc2373c4163"
+        },
+        {
+          "name": "goal-creator",
+          "skillPath": "skills/exec/goal-creator/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "4827da1b07f7fe60e71ad515d3307d709d8eb1d5"
+        },
+        {
+          "name": "graduate",
+          "skillPath": "skills/exec/graduate/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "e1e7d055c82d1e9c70029f13983b502f3a0e7f88"
+        },
+        {
+          "name": "grill-with-docs",
+          "skillPath": "skills/dev/grill-with-docs/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "cd0fde037e86a7615c1b7cc5dde6ac3b1373b5e4"
+        },
+        {
+          "name": "humanizer",
+          "skillPath": "skills/dev/humanizer/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "d9e9f930131d0e6da68347ec5588a1960aad9639"
+        },
+        {
+          "name": "interface-craft",
+          "skillPath": "skills/dev/interface-craft/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "8c81ea5c5a3ac687368e33d9fcf4bb066f350943"
+        },
+        {
+          "name": "investigate-thoven",
+          "skillPath": "skills/dev/investigate-thoven/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "6251ab0c0e83a0523a63c9d8f15cc4ecb5a34aaf"
+        },
+        {
+          "name": "lab",
+          "skillPath": "skills/exec/lab/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "c325cba58d0e9bc86470fdfa469b80e1ef4269ba"
+        },
+        {
+          "name": "lab-task-writer",
+          "skillPath": "skills/exec/lab-task-writer/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "66de598ae9db7c79af6704861eff46f067fa40a4"
+        },
+        {
+          "name": "legal-risk-assessment",
+          "skillPath": "skills/exec/legal-risk-assessment/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "e028c762f13c481820d076f1e8b8b143e4ab4e0e"
+        },
+        {
+          "name": "linear-project",
+          "skillPath": "skills/dev/linear-project/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "90d3ee73e1336bd2b05b82a9f14bfe7ebbf63d0b"
+        },
+        {
+          "name": "linkedin-assisted-send",
+          "skillPath": "skills/exec/linkedin-assisted-send/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "4112c2884609aa29dee729dab2333b28244275e9"
+        },
+        {
+          "name": "market-research-vc-intelligence",
+          "skillPath": "skills/exec/market-research-vc-intelligence/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "3ea32633400891ee17753ea9b16cf68aa2191d78"
+        },
+        {
+          "name": "meta",
+          "skillPath": "skills/dev/meta/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "aec26dcf2a6094f7c9ccb3557493da375271ee8d"
+        },
+        {
+          "name": "mobile-audit",
+          "skillPath": "skills/dev/mobile-audit/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "c0f7d1ef7666025e96fcf7a48f93b1c114064845"
+        },
+        {
+          "name": "motion",
+          "skillPath": "skills/dev/motion/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "844bcb884ca57e15f71c736639a3626db5b32987"
+        },
+        {
+          "name": "motion-react",
+          "skillPath": "skills/dev/motion-react/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "81ff16d484cbdbae5b9c1f2e855a2688f613a6ef"
+        },
+        {
+          "name": "no-ai-slop",
+          "skillPath": "skills/dev/no-ai-slop/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "01b6b7ff3662d04d861ccb8922c75f5b1e68a125"
+        },
+        {
+          "name": "no-mistakes",
+          "skillPath": "skills/dev/no-mistakes/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "7acfb9e0fa9a6555d5e679a798cfd595dd4f1384"
+        },
+        {
+          "name": "notion-workspace-executor",
+          "skillPath": "skills/exec/notion-workspace-executor/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "58b7e5362d6540cf3bdf610ddef00a7d938f305b"
+        },
+        {
+          "name": "orchestrate",
+          "skillPath": "skills/dev/orchestrate/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "40b8a35d82c5956fbae8e8dfae22e2a41e514b5b"
+        },
+        {
+          "name": "outreach-followup",
+          "skillPath": "skills/exec/outreach-followup/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "b55dd597661c242e775e68388b129ffa658fd687"
+        },
+        {
+          "name": "pr-seo-pr-inbox",
+          "skillPath": "skills/dev/pr-seo-pr-inbox/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "72823a6c30e84ebf8eb88b50299c7502b87217ac"
+        },
+        {
+          "name": "preflight",
+          "skillPath": "skills/dev/preflight/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "5e388f8bf152f7d4da5106c17920c06d26c75eed"
+        },
+        {
+          "name": "product-advisor",
+          "skillPath": "skills/exec/product-advisor/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "d48daf882f45bcaf5e67327dfb4bac3290f63a31"
+        },
+        {
+          "name": "product-fundamentals",
+          "skillPath": "skills/dev/product-fundamentals/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "edebd8e58bf9a34ec9399fd22e81f435913235b8"
+        },
+        {
+          "name": "product-strategy-brainstorming",
+          "skillPath": "skills/dev/product-strategy-brainstorming/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "de7b155e37e48a7bbddf3bd05f9529b14cd0f7b7"
+        },
+        {
+          "name": "production-data-audit",
+          "skillPath": "skills/dev/production-data-audit/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "d7895ac0c41e77d3c453da9e77e9566f1ea4e779"
+        },
+        {
+          "name": "prompt-generator",
+          "skillPath": "skills/dev/prompt-generator/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "bdc5903c043cde5e48bd00ae9b414d0e04e89a30"
+        },
+        {
+          "name": "prospect-finder",
+          "skillPath": "skills/exec/prospect-finder/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "e89b517f487bc0f8a5ba2084c5046cf3e6c24599"
+        },
+        {
+          "name": "prospect-scorer",
+          "skillPath": "skills/exec/prospect-scorer/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "3a2a126310056eca11ff7c64fc7b7a7f571b1980"
+        },
+        {
+          "name": "publish",
+          "skillPath": "skills/dev/publish/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "607fba933c5396797ef12924ad63c0ba66651056"
+        },
+        {
+          "name": "qa",
+          "skillPath": "skills/dev/qa/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "106f30c9baad60f03672d409ba9ad4df7811a482"
+        },
+        {
+          "name": "qa-flow",
+          "skillPath": "skills/dev/qa-flow/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "12d7808f9714c9bfb0f6fd7de1fa3d4dcad01abe"
+        },
+        {
+          "name": "research",
+          "skillPath": "skills/dev/research/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "c2ff5216936aaede0c98227f275523546aee5a1b"
+        },
+        {
+          "name": "research-orchestration",
+          "skillPath": "skills/dev/research-orchestration/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "5427466542d338455c13b8ccdd9abb5b95b905c3"
+        },
+        {
+          "name": "rspec-map",
+          "skillPath": "skills/dev/rspec-map/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "f5341e8800769c16c402634e22fd7e5a91a6bf70"
+        },
+        {
+          "name": "safe-migrate",
+          "skillPath": "skills/dev/safe-migrate/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "2a927afb5bfb81260f0c792cffc5567679ac5d2f"
+        },
+        {
+          "name": "security-review",
+          "skillPath": "skills/dev/security-review/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "668a9966875a6c226810a39e680134e97863098a"
+        },
+        {
+          "name": "session-memory",
+          "skillPath": "skills/dev/session-memory/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "86553d7cb5048f0c09a1b4fd66339f4597c13992"
+        },
+        {
+          "name": "subagent-creator",
+          "skillPath": "skills/dev/subagent-creator/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "7a3ddfdf44465aa19dc0d01e2c4b7317213417c9"
+        },
+        {
+          "name": "technical-spec-generator",
+          "skillPath": "skills/dev/technical-spec-generator/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "240d845b7dd4537a1df53a5f68971ba2736baa67"
+        },
+        {
+          "name": "test-audit",
+          "skillPath": "skills/dev/test-audit/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "70a4d35c84385aeb904547a179453ef6dde432ec"
+        },
+        {
+          "name": "testing-runbook-generator",
+          "skillPath": "skills/dev/testing-runbook-generator/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "eceff5eb89a503aaf922b63e441a6d3d05948102"
+        },
+        {
+          "name": "thoven-art",
+          "skillPath": "skills/dev/thoven-art/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "7a31445197acb7855085097dd8947301286e85df"
+        },
+        {
+          "name": "thoven-boardroom",
+          "skillPath": "skills/exec/thoven-boardroom/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "1795167ee585131fc7b418590e5549442a44408e"
+        },
+        {
+          "name": "thoven-branding",
+          "skillPath": "skills/dev/thoven-branding/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "cd638f27b38ccc15c46c9b9651edabba7c7e4ee2"
+        },
+        {
+          "name": "thoven-browser-security",
+          "skillPath": "skills/dev/thoven-browser-security/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "9480d4e5e68a653302381bfc8a221f1d12e4c6e8"
+        },
+        {
+          "name": "thoven-coppa-vpc-contracts",
+          "skillPath": "skills/dev/thoven-coppa-vpc-contracts/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "d438bca5d2770c1a1fdec61f7cb811772a706b90"
+        },
+        {
+          "name": "thoven-designer",
+          "skillPath": "skills/dev/thoven-designer/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "27e517e624b49d585bb5bb89b6d8c98eb8b05820"
+        },
+        {
+          "name": "thoven-email-system",
+          "skillPath": "skills/dev/thoven-email-system/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "878eb6b66d4caa8d5cf485806542b9ba0a5f77c7"
+        },
+        {
+          "name": "thoven-financials",
+          "skillPath": "skills/exec/thoven-financials/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "faa55f8794573a1cbc09c93f3ef9df8432216744"
+        },
+        {
+          "name": "thoven-reflect",
+          "skillPath": "skills/dev/thoven-reflect/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "7e6f150c1c9df181a6fbd7cc6dda5ca222495903"
+        },
+        {
+          "name": "thoven-security-contracts",
+          "skillPath": "skills/dev/thoven-security-contracts/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "2ff1adbedf4d4bce6ce400e6215716d4e323a89b"
+        },
+        {
+          "name": "todo-manager",
+          "skillPath": "skills/exec/todo-manager/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "069c233060eb671772b91b4839820956f35c749b"
+        },
+        {
+          "name": "trace",
+          "skillPath": "skills/dev/trace/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "4cecdf4969953dc08e423b4f9f6e22438c331c0d"
+        },
+        {
+          "name": "vault-cleanup",
+          "skillPath": "skills/exec/vault-cleanup/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "8d7741e558ede87dbef7e4bcf591b026fde88c48"
+        },
+        {
+          "name": "vault-link",
+          "skillPath": "skills/exec/vault-link/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "7d06452dbfcf5299c8e3aa65eb2ef44cbfe5f866"
+        },
+        {
+          "name": "verify",
+          "skillPath": "skills/dev/verify/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "ef892c56d593435ae2523fa1ab5de7a6787e3e3a"
+        },
+        {
+          "name": "visual-artifacts",
+          "skillPath": "skills/visual-artifacts/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "659dbb50af3ed09a823e05f4eb0fe34801173c36"
+        },
+        {
+          "name": "weekly-cfo-checkin",
+          "skillPath": "skills/exec/weekly-cfo-checkin/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "a5ba0237e913c9dd5ec8c1aa44778ecd8c5652fb"
+        },
+        {
+          "name": "weekly-lab-orchestration",
+          "skillPath": "skills/exec/weekly-lab-orchestration/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "aa968c6b0661af4fa1e713a7abde31b1129df4d7"
+        },
+        {
+          "name": "weekly-ops",
+          "skillPath": "skills/exec/weekly-ops/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "fec9ed8825045435e5dec29684b3bb0c460e7967"
+        },
+        {
+          "name": "wireframe",
+          "skillPath": "skills/dev/wireframe/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "c63bc8c05f4c71f98fd40940bce3beec69ea2a8c"
+        },
+        {
+          "name": "workspace",
+          "skillPath": "skills/dev/workspace/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "2184b48b42bc36467c935f06290cba2ecf3e8ec9"
+        }
+      ]
+    },
+    {
+      "source": "benjitaylor/agentation",
+      "skills": [
+        {
+          "name": "agentation",
+          "skillPath": "skills/agentation/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "1d60385faecc473c3a8b42f17deb23963b3db3a2"
+        },
+        {
+          "name": "agentation-self-driving",
+          "skillPath": "skills/agentation-self-driving/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "76f2d53eae4614e63a2ca8facff9a2df8c87e2f7"
+        }
+      ]
+    },
+    {
+      "source": "cloudflare/security-audit-skill",
+      "skills": [
+        {
+          "name": "security-audit",
+          "skillPath": "skills/security-audit/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "ccbc33ed119b28c3ef7b44a7e2081ab191ad63af"
+        }
+      ]
+    },
+    {
+      "source": "coreyhaines31/marketingskills",
+      "skills": [
+        {
+          "name": "programmatic-seo",
+          "skillPath": "skills/programmatic-seo/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "eb2e157f0899f44c0a8043141157518ec9462c0e"
+        }
+      ]
+    },
+    {
+      "source": "cursor/plugins",
+      "skills": [
+        {
+          "name": "Make Bot UI",
+          "skillPath": "pstack/skills/make-bot-ui/SKILL.md",
+          "installedFolderPresent": false,
+          "installedFolderHash": "4fb9b8cdd991f08b1c3d7516a886af210bd312cd",
+          "ref": "main",
+          "disposition": "stale alias; do not install duplicate alias"
+        },
+        {
+          "name": "Poteto Mode",
+          "skillPath": "pstack/skills/poteto-mode/SKILL.md",
+          "installedFolderPresent": false,
+          "installedFolderHash": "42770bb71c52c756025d7a93f6fb06bac35cf7da",
+          "ref": "main",
+          "disposition": "stale alias; do not install duplicate alias"
+        },
+        {
+          "name": "architect",
+          "skillPath": "pstack/skills/architect/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "29891f4b7ff7e4824d0742b15cf920bd428e12e8",
+          "ref": "main"
+        },
+        {
+          "name": "arena",
+          "skillPath": "pstack/skills/arena/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "849b0b1191f81144ea3a7c7f117011f54d5c872f",
+          "ref": "main"
+        },
+        {
+          "name": "automate-me",
+          "skillPath": "pstack/skills/automate-me/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "7d67c5679fbfc6b18cb582f1915be5a98f8e0d5f",
+          "ref": "main"
+        },
+        {
+          "name": "benchmark-checklist",
+          "skillPath": "pstack/skills/benchmark-checklist/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "7c402481a0934533cb49cdce811b362cf99ef641"
+        },
+        {
+          "name": "blast-radius",
+          "skillPath": "pstack/skills/blast-radius/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "9437b18aef01b61d24b57d0fd3de24386398b643",
+          "ref": "main"
+        },
+        {
+          "name": "check-compiler-errors",
+          "skillPath": "cursor-team-kit/skills/check-compiler-errors/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "4d2f1458358fd0f69a830d0de7bf2111d45879df",
+          "ref": "main"
+        },
+        {
+          "name": "control-cli",
+          "skillPath": "cursor-team-kit/skills/control-cli/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "21f3eee2663ae7c78464bfc2a69f6a8cc6c4f7ed",
+          "ref": "main"
+        },
+        {
+          "name": "control-ui",
+          "skillPath": "cursor-team-kit/skills/control-ui/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "797e6d20a029b2ae757a97951278d308f3b53026",
+          "ref": "main"
+        },
+        {
+          "name": "correct",
+          "skillPath": "harness/pstack/claude-code/skills/correct/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "5ebee6f7fe9cd7f97b1c698dbbf4f19ed8c4c5f4"
+        },
+        {
+          "name": "create-formal-verification-skill",
+          "skillPath": "harness/pstack/claude-code/skills/create-formal-verification-skill/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "64c107c7b574a7fdb45c824e2ad8cd19a596eecf"
+        },
+        {
+          "name": "create-verification-skill",
+          "skillPath": "pstack/skills/create-verification-skill/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "5aa2dae2726d09d219397fbbedc1e9500a239d28",
+          "ref": "main"
+        },
+        {
+          "name": "deslop",
+          "skillPath": "cursor-team-kit/skills/deslop/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "ac9ba043f9dd3b3a8850de6624ec5bc12e375599"
+        },
+        {
+          "name": "figure-it-out",
+          "skillPath": "pstack/skills/figure-it-out/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "7ba3256093e27828e829cf8f0ac63f476b32bf1e",
+          "ref": "main"
+        },
+        {
+          "name": "fix-ci",
+          "skillPath": "cursor-team-kit/skills/fix-ci/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "22d79ed45a382df99b95e1135f13ad0170500511",
+          "ref": "main"
+        },
+        {
+          "name": "fix-merge-conflicts",
+          "skillPath": "cursor-team-kit/skills/fix-merge-conflicts/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "9a539a5c5359e25c9a57df5a741e42524f2fe3c8",
+          "ref": "main"
+        },
+        {
+          "name": "get-pr-comments",
+          "skillPath": "cursor-team-kit/skills/get-pr-comments/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "5664b99671eeabafef1159cdb663cb162ace770d",
+          "ref": "main"
+        },
+        {
+          "name": "how",
+          "skillPath": "pstack/skills/how/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "3fd1c05ec675e7225d51e19e8ec80b92217adfbf",
+          "ref": "main"
+        },
+        {
+          "name": "in-your-own-words",
+          "skillPath": "harness/pstack/claude-code/skills/in-your-own-words/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "e5ff93020dd4ed33b80d9df9a235d1945c676a0d"
+        },
+        {
+          "name": "interrogate",
+          "skillPath": "pstack/skills/interrogate/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "9768af06553215b2381710d5813796c4ddefe91f",
+          "ref": "main"
+        },
+        {
+          "name": "ketchup",
+          "skillPath": "harness/pstack/claude-code/skills/ketchup/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "01c36585506764e9b40b2bfb165a9943b403b158"
+        },
+        {
+          "name": "loop-on-ci",
+          "skillPath": "cursor-team-kit/skills/loop-on-ci/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "2fc5e4bdb8c0924137377af7cf9d6b7585e092ec",
+          "ref": "main"
+        },
+        {
+          "name": "maintain-formal-verification-skill",
+          "skillPath": "harness/pstack/claude-code/skills/maintain-formal-verification-skill/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "8690a0d54b535770e5406d641a222e0ff8b9f07c"
+        },
+        {
+          "name": "maintain-verification-skill",
+          "skillPath": "pstack/skills/maintain-verification-skill/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "b6ce4dcdc378492f9acd55a4e56ae111204b4f11",
+          "ref": "main"
+        },
+        {
+          "name": "make-pr-easy-to-review",
+          "skillPath": "cursor-team-kit/skills/make-pr-easy-to-review/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "30493c1d9b061827149f0caafca027a9016f67c6",
+          "ref": "main"
+        },
+        {
+          "name": "new-branch-and-pr",
+          "skillPath": "cursor-team-kit/skills/new-branch-and-pr/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "509e25255c334b539c466d1fc7d8fd99e15745bf",
+          "ref": "main"
+        },
+        {
+          "name": "no-comments",
+          "skillPath": "pstack/skills/no-comments/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "3a09487f06a3fcf9e313d397a29f5d2efde9283f",
+          "ref": "main"
+        },
+        {
+          "name": "poteto-help",
+          "skillPath": "harness/pstack/claude-code/skills/poteto-help/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "ba19cd6468edf0e7c79f5ff1f0dc4894c86ec94a"
+        },
+        {
+          "name": "poteto-mode",
+          "skillPath": "harness/pstack/claude-code/skills/poteto-mode/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "01d75efb65328e299febc153f056f732014d49d1"
+        },
+        {
+          "name": "pr-review-canvas",
+          "skillPath": "cursor-team-kit/skills/pr-review-canvas/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "44daadad1fe53ccd3a2773e87879965c1640ab71",
+          "ref": "main"
+        },
+        {
+          "name": "principle-attack-the-premise",
+          "skillPath": "pstack/skills/principle-attack-the-premise/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "0b0de55b1f1e7a989a10dd8680f01a67ef378ebc",
+          "ref": "main"
+        },
+        {
+          "name": "principle-boundary-discipline",
+          "skillPath": "pstack/skills/principle-boundary-discipline/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "743b098e6874a93b11e9f4d5843c79a243580ae2",
+          "ref": "main"
+        },
+        {
+          "name": "principle-build-the-lever",
+          "skillPath": "pstack/skills/principle-build-the-lever/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "dd1ee184f4f4d585e42a006f0a1837afdbb3d627",
+          "ref": "main"
+        },
+        {
+          "name": "principle-encode-lessons-in-structure",
+          "skillPath": "pstack/skills/principle-encode-lessons-in-structure/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "1e42cd4db78cc95d0297dc0264c1a74439c90be9",
+          "ref": "main"
+        },
+        {
+          "name": "principle-exhaust-the-design-space",
+          "skillPath": "pstack/skills/principle-exhaust-the-design-space/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "3d93455dc2b3c0d9954e20384ed8569138bd1eb0",
+          "ref": "main"
+        },
+        {
+          "name": "principle-experience-first",
+          "skillPath": "pstack/skills/principle-experience-first/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "2dbcf0d0d4473ca3a93d17e2167b587cfec7f6da",
+          "ref": "main"
+        },
+        {
+          "name": "principle-explain-the-number",
+          "skillPath": "pstack/skills/principle-explain-the-number/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "2f468162c9ce85478f1fb1198149646a2ef0f735"
+        },
+        {
+          "name": "principle-fix-root-causes",
+          "skillPath": "pstack/skills/principle-fix-root-causes/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "f1075eead43f95cd9896381345ff28f0da7e1aea",
+          "ref": "main"
+        },
+        {
+          "name": "principle-foundational-thinking",
+          "skillPath": "pstack/skills/principle-foundational-thinking/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "5880f6577956b14ee4ee89cb72c03fd8bd82a5ac",
+          "ref": "main"
+        },
+        {
+          "name": "principle-guard-the-context-window",
+          "skillPath": "pstack/skills/principle-guard-the-context-window/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "bf09c18e975ded9dc137631c6529db941dda24a2",
+          "ref": "main"
+        },
+        {
+          "name": "principle-laziness-protocol",
+          "skillPath": "pstack/skills/principle-laziness-protocol/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "cb8aa817489838fe615d0dfe321d263e8a3f1faa",
+          "ref": "main"
+        },
+        {
+          "name": "principle-make-operations-idempotent",
+          "skillPath": "pstack/skills/principle-make-operations-idempotent/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "5111ac1acc6584dad178af96174140ee5b29bca4",
+          "ref": "main"
+        },
+        {
+          "name": "principle-migrate-callers-then-delete-legacy-apis",
+          "skillPath": "pstack/skills/principle-migrate-callers-then-delete-legacy-apis/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "cf45195158110569ac6a97d0e8dbed04531373ed",
+          "ref": "main"
+        },
+        {
+          "name": "principle-minimize-reader-load",
+          "skillPath": "pstack/skills/principle-minimize-reader-load/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "f64929f93ffd334f36699b83f53ee7155c4a2063",
+          "ref": "main"
+        },
+        {
+          "name": "principle-model-the-domain",
+          "skillPath": "pstack/skills/principle-model-the-domain/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "6ea2f64ebf635cb2eb8391197e40f32e5f841557",
+          "ref": "main"
+        },
+        {
+          "name": "principle-never-block-on-the-human",
+          "skillPath": "pstack/skills/principle-never-block-on-the-human/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "d2578043c77706411c48c5b7cfe03dc3d45e3b15",
+          "ref": "main"
+        },
+        {
+          "name": "principle-outcome-oriented-execution",
+          "skillPath": "pstack/skills/principle-outcome-oriented-execution/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "8d87411f36c74111e5e54a804dda727e2c034914",
+          "ref": "main"
+        },
+        {
+          "name": "principle-prove-it-works",
+          "skillPath": "pstack/skills/principle-prove-it-works/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "41e2142b6479db1dfdb9c2a3b856a895af61089d",
+          "ref": "main"
+        },
+        {
+          "name": "principle-redesign-from-first-principles",
+          "skillPath": "pstack/skills/principle-redesign-from-first-principles/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "20822072ed14c75eed7f527f734c5d347c43845e",
+          "ref": "main"
+        },
+        {
+          "name": "principle-separate-before-serializing-shared-state",
+          "skillPath": "pstack/skills/principle-separate-before-serializing-shared-state/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "89505c32f2d472da415e7696a6893ad28e108c5f",
+          "ref": "main"
+        },
+        {
+          "name": "principle-sequence-verifiable-units",
+          "skillPath": "pstack/skills/principle-sequence-verifiable-units/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "c1b345dcea21e3d58e7012f8e6547974d295fb3a",
+          "ref": "main"
+        },
+        {
+          "name": "principle-subtract-before-you-add",
+          "skillPath": "pstack/skills/principle-subtract-before-you-add/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "760f5b131e920c0e9914a0ef8cb4b875918af31a",
+          "ref": "main"
+        },
+        {
+          "name": "principle-test-behavior-not-implementation",
+          "skillPath": "pstack/skills/principle-test-behavior-not-implementation/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "7fa3d5dba8496dcd08278a99903a2dfb58a2e179",
+          "ref": "main"
+        },
+        {
+          "name": "principle-type-system-discipline",
+          "skillPath": "pstack/skills/principle-type-system-discipline/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "32850aaddd70478a6dacb153bbcef8532bf7d626",
+          "ref": "main"
+        },
+        {
+          "name": "recall",
+          "skillPath": "pstack/skills/recall/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "4dd0f8b495008fc106b2314401f91bc9cf96ed7f",
+          "ref": "main"
+        },
+        {
+          "name": "reflect",
+          "skillPath": "pstack/skills/reflect/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "e44a51da42eb95e3ab2d13231fe942e218424f66",
+          "ref": "main"
+        },
+        {
+          "name": "review-and-ship",
+          "skillPath": "cursor-team-kit/skills/review-and-ship/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "4c59edfc89811ff444ded5e4a3a07932852769a1",
+          "ref": "main"
+        },
+        {
+          "name": "run-smoke-tests",
+          "skillPath": "cursor-team-kit/skills/run-smoke-tests/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "b02dfd55bc710b80585e1cc0dea76e94923e5dab",
+          "ref": "main"
+        },
+        {
+          "name": "setup-pstack",
+          "skillPath": "pstack/skills/setup-pstack/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "d533da1671e44234a9f72d1d4db8043cedd25eb2",
+          "ref": "main"
+        },
+        {
+          "name": "sharpen",
+          "skillPath": "harness/pstack/claude-code/skills/sharpen/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "726fcb216692c5a2ad78b5c2ae19c2e6ac66cb67"
+        },
+        {
+          "name": "show-me-your-work",
+          "skillPath": "pstack/skills/show-me-your-work/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "118c0642360ab53de52b3f8dd044102567dbcaa9",
+          "ref": "main"
+        },
+        {
+          "name": "statechart",
+          "skillPath": "harness/pstack/claude-code/skills/statechart/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "e0f2895909a11af0b07cfff54af4edb1d14ec4da"
+        },
+        {
+          "name": "swarm",
+          "skillPath": "pstack/skills/swarm/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "227d0b45a15d14d47cdefd096af2a94c12e7d533",
+          "ref": "main"
+        },
+        {
+          "name": "tdd",
+          "skillPath": "pstack/skills/tdd/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "1064da72ceca07bf7f36bddebada585bb59da7bc",
+          "ref": "main"
+        },
+        {
+          "name": "teach",
+          "skillPath": "pstack/skills/teach/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "3ee517292dae0476dc516f9f3805c08fb943c6ff",
+          "ref": "main"
+        },
+        {
+          "name": "technical-writing",
+          "skillPath": "pstack/skills/technical-writing/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "f35560fd015d95ae92eb3c7414d3a48065299dfa",
+          "ref": "main"
+        },
+        {
+          "name": "thermo-nuclear-code-quality-review",
+          "skillPath": "cursor-team-kit/skills/thermo-nuclear-code-quality-review/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "d9c8935dd560b3b6f5941247d04a1843f8c7cc35"
+        },
+        {
+          "name": "thermo-nuclear-review",
+          "skillPath": "thermos/skills/thermo-nuclear-review/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "b222e50771b6bc6f7d2b926b86da2342f160bb79"
+        },
+        {
+          "name": "thermos",
+          "skillPath": "thermos/skills/thermos/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "56e7ab69f83a54852b54512b536c95ea45ecf1e1"
+        },
+        {
+          "name": "typescript-best-practices",
+          "skillPath": "pstack/skills/typescript-best-practices/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "1ccca3c7c0d358c0cd5edd313cd03a31fc75ee5f",
+          "ref": "main"
+        },
+        {
+          "name": "unslop",
+          "skillPath": "pstack/skills/unslop/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "4e572dd70e5557f490e3991c52ea58f0dcee8936",
+          "ref": "main"
+        },
+        {
+          "name": "verify-this",
+          "skillPath": "cursor-team-kit/skills/verify-this/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "11c9aa1407bc647693437c510bcf5a508244c738"
+        },
+        {
+          "name": "weekly-review",
+          "skillPath": "cursor-team-kit/skills/weekly-review/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "41c12c115b622e2a70d726f176766192ccb2d912",
+          "ref": "main"
+        },
+        {
+          "name": "what-did-i-get-done",
+          "skillPath": "cursor-team-kit/skills/what-did-i-get-done/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "953a0fb2b6d763e4149da38a543778aed3091368",
+          "ref": "main"
+        },
+        {
+          "name": "why",
+          "skillPath": "pstack/skills/why/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "ba549f92c3a8dc1506b21674e8794eb980019bf3",
+          "ref": "main"
+        }
+      ]
+    },
+    {
+      "source": "emilkowalski/skills",
+      "skills": [
+        {
+          "name": "animate",
+          "skillPath": "skills/animate/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "a92e36f28d741aee4ff77d1a001300d7e86e07fe"
+        },
+        {
+          "name": "animation-vocabulary",
+          "skillPath": "skills/animation-vocabulary/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "d49565744427887a1f719de1ceee04d941d4e681"
+        },
+        {
+          "name": "break-ui",
+          "skillPath": "skills/break-ui/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "f2a3441d4cf14df060ee363e155502a4818b5f8d"
+        },
+        {
+          "name": "emil-design-eng",
+          "skillPath": "skills/emil-design-eng/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "db7a20dc1d8ad26a0307dcb45ebc79fc372f5c69"
+        },
+        {
+          "name": "find-animation-opportunities",
+          "skillPath": "skills/find-animation-opportunities/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "e6443880f38e33cf78e5d678471eed35e8566763"
+        },
+        {
+          "name": "improve-animations",
+          "skillPath": "skills/improve-animations/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "cf1f7aabac34c08f2cf833f039fa99af2f415183"
+        },
+        {
+          "name": "pick-ui-library",
+          "skillPath": "skills/pick-ui-library/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "370e19776f0aa2403a2edeed78266bd6a5d78036"
+        },
+        {
+          "name": "prototype",
+          "skillPath": "skills/prototype/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "34cd3a303aef0a975fcce3ac906d6b293e600399"
+        },
+        {
+          "name": "review-animations",
+          "skillPath": "skills/review-animations/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "0e0d3cb3e07ca307fe946ccaf57f6c82eb75124a"
+        }
+      ]
+    },
+    {
+      "source": "enesgules/dotfiles",
+      "skills": [
+        {
+          "name": "optimise-github-actions",
+          "skillPath": "skills/optimise-github-actions/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "96508aad8064c4957025630c2fcc9a775ee7bcfa"
+        }
+      ]
+    },
+    {
+      "source": "flornkm/skills",
+      "skills": [
+        {
+          "name": "prefer-container-queries",
+          "skillPath": "skills/prefer-container-queries/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "1d03766a921893d50e31dcae97f164f5b455c296"
+        }
+      ]
+    },
+    {
+      "source": "getsentry/sentry-for-ai",
+      "skills": [
+        {
+          "name": "sentry-create-alert",
+          "skillPath": "src/skills/sentry-create-alert/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "d9c30c266af9072a3856fab4d56ffbc75a04b93f"
+        },
+        {
+          "name": "sentry-debug-issue",
+          "skillPath": "src/skills/sentry-debug-issue/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "44ab12ac6b281e19ac592d96feecf9e848bfb873"
+        },
+        {
+          "name": "sentry-fix-issues",
+          "skillPath": "skills-legacy/sentry-fix-issues/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "c0f5bde3473dd62ce2ed8c3179e8e8ecfed6c0ee"
+        },
+        {
+          "name": "sentry-fix-stack-traces",
+          "skillPath": "src/skills/sentry-fix-stack-traces/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "72414faa9bf1d28f4320b47b4e19e5f6932e97fe"
+        },
+        {
+          "name": "sentry-get-started",
+          "skillPath": "src/skills/sentry-get-started/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "cd140a8af38891a0903f0095b331975dc45633fa"
+        },
+        {
+          "name": "sentry-go-sdk",
+          "skillPath": "skills-legacy/sentry-go-sdk/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "4bea61c530e5f42f54ef52ddcf5b0c87db18c4e6"
+        },
+        {
+          "name": "sentry-instrument",
+          "skillPath": "src/skills/sentry-instrument/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "c4b4f0f940f3ac5b8bcb62114d75a887de40355e"
+        },
+        {
+          "name": "sentry-instrument-logging",
+          "skillPath": "skills-legacy/sentry-instrument-logging/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "d8e2049585b2a47bbb4f1d6ecd8a7d258dfd061a"
+        },
+        {
+          "name": "sentry-instrumentation-guide",
+          "skillPath": "skills-legacy/sentry-instrumentation-guide/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "2d63e2f7130920b0ce67fa7c5ac888bf14daabd8"
+        },
+        {
+          "name": "sentry-nextjs-sdk",
+          "skillPath": "skills-legacy/sentry-nextjs-sdk/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "4dad4906fc793af0f863c65ad9753341aa7c48fb"
+        },
+        {
+          "name": "sentry-node-sdk",
+          "skillPath": "skills-legacy/sentry-node-sdk/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "5177b89378c62564db36b619e26f211e43a08f65"
+        },
+        {
+          "name": "sentry-python-sdk",
+          "skillPath": "skills-legacy/sentry-python-sdk/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "cf3f5d9fa2bcbc67087ce9b0ff0fea0d38163082"
+        },
+        {
+          "name": "sentry-react-sdk",
+          "skillPath": "skills-legacy/sentry-react-sdk/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "b302f9d33c8567c102391fe1098b9d4cd09be7f7"
+        },
+        {
+          "name": "sentry-ruby-sdk",
+          "skillPath": "skills-legacy/sentry-ruby-sdk/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "94cd72519a8b5cacb3b08e0cedc850b28b2a85cc"
+        },
+        {
+          "name": "sentry-sdk-upgrade",
+          "skillPath": "skills-legacy/sentry-sdk-upgrade/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "b0f09524365df3e89a2846990922a25a781ece00"
+        },
+        {
+          "name": "sentry-setup-ai-monitoring",
+          "skillPath": "skills-legacy/sentry-setup-ai-monitoring/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "34d1bb28f0449078423a69d0905cfbbf8a0d6e97"
+        },
+        {
+          "name": "sentry-setup-releases",
+          "skillPath": "src/skills/sentry-setup-releases/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "9d0b3c486918f1129a6c757f8abad54da74fd758"
+        },
+        {
+          "name": "sentry-svelte-sdk",
+          "skillPath": "skills-legacy/sentry-svelte-sdk/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "750256cc3f3427110d219aa920dd82f626f76d91"
+        }
+      ]
+    },
+    {
+      "source": "hamelsmu/evals-skills",
+      "skills": [
+        {
+          "name": "build-review-interface",
+          "skillPath": "skills/build-review-interface/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "f95db8494b976169e592c7f084771b4fa74c8d92"
+        },
+        {
+          "name": "error-analysis",
+          "skillPath": "skills/error-analysis/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "de27480baf6559029362e91e806224f91b472aad"
+        },
+        {
+          "name": "eval-audit",
+          "skillPath": "skills/eval-audit/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "a2b56a671511e107b8c014a594f7d94ea59b7630"
+        },
+        {
+          "name": "generate-synthetic-data",
+          "skillPath": "skills/generate-synthetic-data/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "35543e9cc7b0fe4a16984a3be9a48a4655de851e"
+        },
+        {
+          "name": "validate-evaluator",
+          "skillPath": "skills/validate-evaluator/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "a8da4fddfec1996cebfdfc6e0ca358c9fc4453c2"
+        },
+        {
+          "name": "write-judge-prompt",
+          "skillPath": "skills/write-judge-prompt/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "c51e883af75a6bb736fc4b1d7bba63017640baf2"
+        }
+      ]
+    },
+    {
+      "source": "hex-inc/hex-skills",
+      "skills": [
+        {
+          "name": "context-consultant",
+          "skillPath": "skills/context-consultant/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "3637222f5b7dd16f5fdb5be23ebe9b60f63c6b52"
+        }
+      ]
+    },
+    {
+      "source": "humanlayer/skills",
+      "skills": [
+        {
+          "name": "improve-claude-md",
+          "skillPath": "plugins/improve-claude-md/skills/improve-claude-md/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "742389d936458a62c303c5625232038788a9588f"
+        },
+        {
+          "name": "show-me",
+          "skillPath": "plugins/show-me/skills/show-me/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "362200ac2fb3c17b765049444e88de73767e6d08"
+        }
+      ]
+    },
+    {
+      "source": "jakubantalik/transitions-dev",
+      "skills": [
+        {
+          "name": "transitions-dev",
+          "skillPath": "skills/transitions-dev/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "93dfc32d7bf1512773de123f699e0c07e4167382"
+        }
+      ]
+    },
+    {
+      "source": "jakubkrehel/skills",
+      "skills": [
+        {
+          "name": "better-accessibility",
+          "skillPath": "skills/better-accessibility/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "8fdb2f25f822c2ffaca438e2d325eed9ac6e9b9b"
+        },
+        {
+          "name": "better-colors",
+          "skillPath": "skills/better-colors/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "1f96b150ca7f25fd63ba6079a2ceaf75849186f5"
+        },
+        {
+          "name": "better-interface",
+          "skillPath": "skills/better-interface/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "c2aa3269f78969b8f51e721f5f873401916ace9a"
+        },
+        {
+          "name": "better-layout",
+          "skillPath": "skills/better-layout/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "7ffa8ef65b63bd160eef9d32d1a4493d98260d0f"
+        },
+        {
+          "name": "better-typography",
+          "skillPath": "skills/better-typography/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "25751e782efef061becc8922bb31e378d57fc7b8"
+        },
+        {
+          "name": "better-ui",
+          "skillPath": "skills/better-ui/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "b938dbf6c6a50895f092211012546a31fc5e887e"
+        },
+        {
+          "name": "better-writing",
+          "skillPath": "skills/better-writing/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "4589785678cb20ee3f2dec9cbbb1149bc408fbc1"
+        },
+        {
+          "name": "explain-interface",
+          "skillPath": "skills/explain-interface/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "23885e8a5cf9e1a3b9b4959afaecc88f3e2b385e"
+        },
+        {
+          "name": "interface-review",
+          "skillPath": "skills/interface-review/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "b12ef009667dcb25cc816e0a71e8b5ce5156afa6"
+        },
+        {
+          "name": "variant",
+          "skillPath": "skills/variant/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "9714e4e95df9cd76f6235abbe801a277dcbac16a"
+        }
+      ]
+    },
+    {
+      "source": "mattpocock/skills",
+      "skills": [
+        {
+          "name": "ask-matt",
+          "skillPath": "skills/engineering/ask-matt/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "d6a0d9bf3cdc78cbfcbd6466ac5fd3deffb52877"
+        },
+        {
+          "name": "code-review",
+          "skillPath": "skills/engineering/code-review/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "fee7bb5fdddc069d58cbea09b2c36b5a859eac05"
+        },
+        {
+          "name": "codebase-design",
+          "skillPath": "skills/engineering/codebase-design/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "07ba1cd60efc12d0d3a083005c1d9651cf15e39a"
+        },
+        {
+          "name": "diagnosing-bugs",
+          "skillPath": "skills/engineering/diagnosing-bugs/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "5fdd6cc53385395441910b026c72d71768e993d4"
+        },
+        {
+          "name": "domain-modeling",
+          "skillPath": "skills/engineering/domain-modeling/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "ea30ee454ba264543dbe40737973b1a5afb9f0e6"
+        },
+        {
+          "name": "grill-me",
+          "skillPath": "skills/productivity/grill-me/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "3df14e2d3a89459bf300614be9247e3ce74798f8"
+        },
+        {
+          "name": "grilling",
+          "skillPath": "skills/productivity/grilling/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "28aceb4c9567b985cb47f7db88cf23c9f33af8b8"
+        },
+        {
+          "name": "handoff",
+          "skillPath": "skills/productivity/handoff/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "ce24892bd2d4b9e7fd5ac9b95c03175e18bef388"
+        },
+        {
+          "name": "implement-spec",
+          "skillPath": "skills/engineering/implement-spec/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "0cfefc751d0cb64f0c948ffcb17e13b94e778f08"
+        },
+        {
+          "name": "improve-codebase-architecture",
+          "skillPath": "skills/engineering/improve-codebase-architecture/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "39bd9cc130f7dfcc4e3ea0b3613f6ebed0d0ad2b"
+        },
+        {
+          "name": "resolving-merge-conflicts",
+          "skillPath": "skills/engineering/resolving-merge-conflicts/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "77f0d7de3143abbf03e55a63522d30bff31ae908"
+        },
+        {
+          "name": "retro",
+          "skillPath": "skills/engineering/retro/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "335c1862a43da9d629abafdb79ca0c0de118be08"
+        },
+        {
+          "name": "setup-matt-pocock-skills",
+          "skillPath": "skills/engineering/setup-matt-pocock-skills/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "aafaabf96fa3945d8a4069317a7a6d36b7169670"
+        },
+        {
+          "name": "to-spec",
+          "skillPath": "skills/engineering/to-spec/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "136b9651747cfccbfbb7c50a6b0dfb757e7547d2"
+        },
+        {
+          "name": "to-tickets",
+          "skillPath": "skills/engineering/to-tickets/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "2dee20ad722a31c04ededf9f2d83842473573045"
+        },
+        {
+          "name": "triage",
+          "skillPath": "skills/engineering/triage/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "4cb951d62ecccaed601cdc5f9a1b7b3d8a799635"
+        },
+        {
+          "name": "wait-what",
+          "skillPath": "skills/productivity/wait-what/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "c8b050e6b8c711be1a9008ceacb2126914f0763e"
+        },
+        {
+          "name": "wayfinder",
+          "skillPath": "skills/engineering/wayfinder/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "32b0ce970b1394ede47116e1d3e07f9ccc87591f"
+        },
+        {
+          "name": "writing-for-agents",
+          "skillPath": "skills/productivity/writing-for-agents/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "ad2925850efb8973a72d2e666f7a975f9a2d4a9b"
+        }
+      ]
+    },
+    {
+      "source": "obra/superpowers",
+      "skills": [
+        {
+          "name": "writing-plans",
+          "skillPath": "skills/writing-plans/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "cc97fa00eb2ccd4f283e34eb2ba06a48e1e679f7"
+        }
+      ]
+    },
+    {
+      "source": "vercel-labs/agent-browser",
+      "skills": [
+        {
+          "name": "agent-browser",
+          "skillPath": "skills/agent-browser/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "82def67855a0d2aad7794207951820fa5422fdb0"
+        }
+      ]
+    },
+    {
+      "source": "vercel-labs/agent-skills",
+      "skills": [
+        {
+          "name": "vercel-composition-patterns",
+          "skillPath": "skills/composition-patterns/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "bf90d0a4b83ea054653350f9c67f6de235d3a368"
+        },
+        {
+          "name": "vercel-react-best-practices",
+          "skillPath": "skills/react-best-practices/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "343db72180d05814949fef7d46be96b5c6ee86b3"
+        },
+        {
+          "name": "vercel-react-view-transitions",
+          "skillPath": "skills/react-view-transitions/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "13063dbbfc1b085cbc11b9bd5d4324aa2f41bb3a"
+        }
+      ]
+    },
+    {
+      "source": "vercel-labs/openreview",
+      "skills": [
+        {
+          "name": "next-best-practices",
+          "skillPath": ".agents/skills/next-best-practices/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "ad17eb27952b39a6ab0061bd50e8a2213b63a3ec"
+        },
+        {
+          "name": "next-cache-components",
+          "skillPath": ".agents/skills/next-cache-components/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "a6f29564b9228af553737bd437c7016fc3dc44e0"
+        },
+        {
+          "name": "next-upgrade",
+          "skillPath": ".agents/skills/next-upgrade/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "962598faa417cf3b6c03ec2e5cbe0aa0aeb2c4a9"
+        }
+      ]
+    },
+    {
+      "source": "vercel-labs/skills",
+      "skills": [
+        {
+          "name": "find-skills",
+          "skillPath": "skills/find-skills/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "76a98a285cb0434f3d39e1a873823556330e398b"
+        }
+      ]
+    },
+    {
+      "source": "vercel/components.build",
+      "skills": [
+        {
+          "name": "building-components",
+          "skillPath": "skills/building-components/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "b7f8c5d9010b2f8cd1b4c9f250886264d5ce6d15"
+        }
+      ]
+    },
+    {
+      "source": "vercel/vercel",
+      "skills": [
+        {
+          "name": "vercel-cli",
+          "skillPath": "skills/vercel-cli/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "99e54d3ab28a4db88b5adf9b3742ac50676318de"
+        }
+      ]
+    },
+    {
+      "source": "wheresryan22/anatomy",
+      "skills": [
+        {
+          "name": "anatomy",
+          "skillPath": "SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "1482e8469b0a9e0d8cc18ea2740a01423d29ae80"
+        }
+      ]
+    },
+    {
+      "source": "zubair-trabzada/geo-seo-claude",
+      "skills": [
+        {
+          "name": "geo-audit",
+          "skillPath": "skills/geo-audit/SKILL.md",
+          "installedFolderPresent": true,
+          "installedFolderHash": "25d18267d7624e83c8ca18cd11f47715454d998e"
+        },
+        {
+          "name": "geo-brand-mentions",
+          "skillPath": "skills/geo-brand-mentions/SKILL.md",
+          "installedFolderPresent": false,
+          "installedFolderHash": "1b2f91e105529f369ae59de034191ebaca5b0663",
+          "disposition": "missing from source catalog; reconcile rather than claim installed"
+        },
+        {
+          "name": "geo-citability",
+          "skillPath": "skills/geo-citability/SKILL.md",
+          "installedFolderPresent": false,
+          "installedFolderHash": "87eee109477df3cbc361fed066ae4330219436ec",
+          "disposition": "missing from source catalog; reconcile rather than claim installed"
+        },
+        {
+          "name": "geo-compare",
+          "skillPath": "skills/geo-compare/SKILL.md",
+          "installedFolderPresent": false,
+          "installedFolderHash": "0ba4f8c862bcf6d49cfccbee3d30eeb879289cfd",
+          "disposition": "missing from source catalog; reconcile rather than claim installed"
+        },
+        {
+          "name": "geo-content",
+          "skillPath": "skills/geo-content/SKILL.md",
+          "installedFolderPresent": false,
+          "installedFolderHash": "9982390429ca287ba13763789d7d0252b35d59ee",
+          "disposition": "missing from source catalog; reconcile rather than claim installed"
+        },
+        {
+          "name": "geo-crawlers",
+          "skillPath": "skills/geo-crawlers/SKILL.md",
+          "installedFolderPresent": false,
+          "installedFolderHash": "5111689e97fe14e99fc0adb88a03abf344639341",
+          "disposition": "missing from source catalog; reconcile rather than claim installed"
+        },
+        {
+          "name": "geo-llmstxt",
+          "skillPath": "skills/geo-llmstxt/SKILL.md",
+          "installedFolderPresent": false,
+          "installedFolderHash": "af532b8cb085c000d129887bcf6cb33b60945055",
+          "disposition": "missing from source catalog; reconcile rather than claim installed"
+        },
+        {
+          "name": "geo-platform-optimizer",
+          "skillPath": "skills/geo-platform-optimizer/SKILL.md",
+          "installedFolderPresent": false,
+          "installedFolderHash": "c583662347a4503628228ceb3f78633660d64f90",
+          "disposition": "missing from source catalog; reconcile rather than claim installed"
+        },
+        {
+          "name": "geo-report",
+          "skillPath": "skills/geo-report/SKILL.md",
+          "installedFolderPresent": false,
+          "installedFolderHash": "739cbd64c1de4a788dd3f41a8518412e60a6fa6d",
+          "disposition": "missing from source catalog; reconcile rather than claim installed"
+        },
+        {
+          "name": "geo-schema",
+          "skillPath": "skills/geo-schema/SKILL.md",
+          "installedFolderPresent": false,
+          "installedFolderHash": "8326f064a98de374d964766936de91a88f1b3116",
+          "disposition": "missing from source catalog; reconcile rather than claim installed"
+        },
+        {
+          "name": "geo-technical",
+          "skillPath": "skills/geo-technical/SKILL.md",
+          "installedFolderPresent": false,
+          "installedFolderHash": "e3a506805215553b8c1bc80f1caae1184b37ed9d",
+          "disposition": "missing from source catalog; reconcile rather than claim installed"
+        }
+      ]
+    }
+  ],
+  "globalSkillsWithoutLock": [
+    {
+      "name": "autopilot",
+      "sourcePath": "~/.agents/skills/autopilot",
+      "skillFileSha256": "2f0fd7aebbcacfa81afb8ead8107b44e4202e45e23ad20e3778c9123cadb9589",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "canvas",
+      "sourcePath": "~/.agents/skills/canvas",
+      "skillFileSha256": "80e7adf9f761d854c39eb056eb6af2280b6f18720beedb48e596e0eed723e13e",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "create-hook",
+      "sourcePath": "~/.agents/skills/create-hook",
+      "skillFileSha256": "3c96a121123c06ec801c7354eee5b5b5247c6521d7bd7dd1b9018cccc74a1e9c",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "create-rule",
+      "sourcePath": "~/.agents/skills/create-rule",
+      "skillFileSha256": "ff1de16edfb55f7190101ac2a8206a8bff1fef803c28a0b8a1943e9ffa175e4b",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "create-skill",
+      "sourcePath": "~/.agents/skills/create-skill",
+      "skillFileSha256": "a49ef6dced91a1f929c54bc23a50d14134feaf8361bbc540047486f0879bfa2f",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "create-subagent",
+      "sourcePath": "~/.agents/skills/create-subagent",
+      "skillFileSha256": "8874e78acaa6ae74e4252ba63cb6374eb6bfa47a324ff0542d0e28f9c01fb56a",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "design-to-production",
+      "sourcePath": "~/.agents/skills/design-to-production",
+      "skillFileSha256": "d53c0f33c7ec0ae8219b0e0fda81515513cb4764f87ce66ff016ff2700d6bb26",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "find-docs",
+      "sourcePath": "~/.agents/skills/find-docs",
+      "skillFileSha256": "cbaa2e13076d21b54e30401b27971b3610a1d51473612edb3fe6b229d2e5e543",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "goal",
+      "sourcePath": "~/.agents/skills/goal",
+      "skillFileSha256": "9e4b10497711d9491a4424670560972e8ab095c25633145b1473478ac0333576",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "herdr",
+      "sourcePath": "~/.agents/skills/herdr",
+      "skillFileSha256": "b16ba0d9a22adbaf259d2022cd323801f8e51d530c94cb0cd23a69069292506b",
+      "status": "outside destination setup per user instruction; do not provision its service"
+    },
+    {
+      "name": "loop",
+      "sourcePath": "~/.agents/skills/loop",
+      "skillFileSha256": "fa195d01ca95def6f8e6ca1902d35470d153b49472ba4e60ea5224485f192a05",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "meta-monitor",
+      "sourcePath": "~/.agents/skills/meta-monitor",
+      "skillFileSha256": "1d9b13c7d7ff277d935d9a7e7b4320173d1f9f1284c5e3a2bdc885518af6e126",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "migrate-to-skills",
+      "sourcePath": "~/.agents/skills/migrate-to-skills",
+      "skillFileSha256": "ba4e939aa72a2e955e1b481743ff1db171fa0db13f43385f1ea90a9e7117a283",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "neon",
+      "sourcePath": "~/.agents/skills/neon",
+      "skillFileSha256": "a6c2f2ca27a3bf6059ef852427dbd89d37080cc4a7424b464041f30ed9e3155d",
+      "status": "matches project lock source by name; compare content before replacing",
+      "candidateSource": "neondatabase/agent-skills",
+      "candidateSkillPath": "skills/neon/SKILL.md"
+    },
+    {
+      "name": "neon-postgres",
+      "sourcePath": "~/.agents/skills/neon-postgres",
+      "skillFileSha256": "374335ecc861a272e2d8d6b671bc47ae81f71f49ad50b2c2d1587a36d1cdc132",
+      "status": "matches project lock source by name; compare content before replacing",
+      "candidateSource": "neondatabase/agent-skills",
+      "candidateSkillPath": "skills/neon-postgres/SKILL.md"
+    },
+    {
+      "name": "new-repo",
+      "sourcePath": "~/.agents/skills/new-repo",
+      "skillFileSha256": "f00ae3d0e231c35bb70ced3ae5dae7378aa5b43e6c8b5f2637a037638e67efde",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "origin",
+      "sourcePath": "~/.agents/skills/origin",
+      "skillFileSha256": "cd515fe0d7037fb2907bff05f3c010f5643baf43b250592b882df84f8937fdcf",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "rename-chat",
+      "sourcePath": "~/.agents/skills/rename-chat",
+      "skillFileSha256": "618b6d42cacec9b77ebadc5ca0f564f42e1e592499b01cfc22595a608f3ceb31",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "render-background-workers",
+      "sourcePath": "~/.agents/skills/render-background-workers",
+      "skillFileSha256": "972988c645171fd42aed4863e81f25f74622776026a944be31fcf809ac7702c9",
+      "status": "upstream candidate verified to exist; installed revision not recorded",
+      "candidateSource": "render-oss/skills",
+      "candidateSkillPath": "skills/render-background-workers/SKILL.md"
+    },
+    {
+      "name": "render-blueprints",
+      "sourcePath": "~/.agents/skills/render-blueprints",
+      "skillFileSha256": "cd87392ee01e8b3506c80f12c5d18783ed9fabfc4bbada6e8f221819a0a804f3",
+      "status": "upstream candidate verified to exist; installed revision not recorded",
+      "candidateSource": "render-oss/skills",
+      "candidateSkillPath": "skills/render-blueprints/SKILL.md"
+    },
+    {
+      "name": "render-cli",
+      "sourcePath": "~/.agents/skills/render-cli",
+      "skillFileSha256": "92a67216566df7f243b718aa88b6790d5b6205b33c66788bccfb2b697a29f418",
+      "status": "upstream candidate verified to exist; installed revision not recorded",
+      "candidateSource": "render-oss/skills",
+      "candidateSkillPath": "skills/render-cli/SKILL.md"
+    },
+    {
+      "name": "render-debug",
+      "sourcePath": "~/.agents/skills/render-debug",
+      "skillFileSha256": "412c2cff904fbdff6bb561ed18583e64ae6ab172d2979f1cc34464374cf04d91",
+      "status": "upstream candidate verified to exist; installed revision not recorded",
+      "candidateSource": "render-oss/skills",
+      "candidateSkillPath": "skills/render-debug/SKILL.md"
+    },
+    {
+      "name": "render-deploy",
+      "sourcePath": "~/.agents/skills/render-deploy",
+      "skillFileSha256": "5be1a2f89193aff72fe7d7bdc7c498d0b5a444546590140222637064925a9f40",
+      "status": "upstream candidate verified to exist; installed revision not recorded",
+      "candidateSource": "render-oss/skills",
+      "candidateSkillPath": "skills/render-deploy/SKILL.md"
+    },
+    {
+      "name": "render-domains",
+      "sourcePath": "~/.agents/skills/render-domains",
+      "skillFileSha256": "f1e306a2be77583ff55b140545543aa4e01fb875dec6e728e52361282da0bd55",
+      "status": "upstream candidate verified to exist; installed revision not recorded",
+      "candidateSource": "render-oss/skills",
+      "candidateSkillPath": "skills/render-domains/SKILL.md"
+    },
+    {
+      "name": "render-env-vars",
+      "sourcePath": "~/.agents/skills/render-env-vars",
+      "skillFileSha256": "ed9182eb9983aa07d3b19aca9c85da7b1d743280077b7363aec576e8c9c3a249",
+      "status": "upstream candidate verified to exist; installed revision not recorded",
+      "candidateSource": "render-oss/skills",
+      "candidateSkillPath": "skills/render-env-vars/SKILL.md"
+    },
+    {
+      "name": "render-monitor",
+      "sourcePath": "~/.agents/skills/render-monitor",
+      "skillFileSha256": "17f1b66a73bab95209182828f4442fc11b6bcf1ef0cc4714e473b6c307ce0e8b",
+      "status": "upstream candidate verified to exist; installed revision not recorded",
+      "candidateSource": "render-oss/skills",
+      "candidateSkillPath": "skills/render-monitor/SKILL.md"
+    },
+    {
+      "name": "render-web-services",
+      "sourcePath": "~/.agents/skills/render-web-services",
+      "skillFileSha256": "8fb30db4fdc82a949cc4ced2d85e6a4a85fe3e42a8f1752e0ed2677d7e479643",
+      "status": "upstream candidate verified to exist; installed revision not recorded",
+      "candidateSource": "render-oss/skills",
+      "candidateSkillPath": "skills/render-web-services/SKILL.md"
+    },
+    {
+      "name": "review",
+      "sourcePath": "~/.agents/skills/review",
+      "skillFileSha256": "bd00601823f73cce6a20acc3996e7d2ea3c2a366143da12eafd0d94b98d88ece",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "review-bugbot",
+      "sourcePath": "~/.agents/skills/review-bugbot",
+      "skillFileSha256": "96db32c50a3c486dbe5076824d4480828c810826f3e0a639f3a965aef9451221",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "review-security",
+      "sourcePath": "~/.agents/skills/review-security",
+      "skillFileSha256": "d007ec5a617e9caeef03055cd9c5dad762d80acb4ae1b20377bde4b3b41c46fd",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "rex",
+      "sourcePath": "~/.agents/skills/rex",
+      "skillFileSha256": "8ceee7ec6e022deec6080f1dc03729e320eba969db28476c5922b2fbfae5cde4",
+      "status": "vendor installed stub; provision from destination Rex CLI",
+      "installation": "rex skill setup; confirm current Rex help first"
+    },
+    {
+      "name": "sdk",
+      "sourcePath": "~/.agents/skills/sdk",
+      "skillFileSha256": "baf963c116d4b0a4231748563ef0fc6ecc2589f9b36759d806c385004be854a4",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "search",
+      "sourcePath": "~/.agents/skills/search",
+      "skillFileSha256": "597a9174f2d4098427b8d52a89f366fbe311c807b4a5c41646f0c137ad82cf0f",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "share",
+      "sourcePath": "~/.agents/skills/share",
+      "skillFileSha256": "7deb4c207da4fd8b32dd3f41c7a6a66c961f6e56ae0db85921ed77919e8bf1ba",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "shell",
+      "sourcePath": "~/.agents/skills/shell",
+      "skillFileSha256": "b354ce28c70af1d5c05bb6bf070a1823fadd470530993ab271a1cfcbe57ad4fe",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "split-to-prs",
+      "sourcePath": "~/.agents/skills/split-to-prs",
+      "skillFileSha256": "796eb4bf3fd9a3cdde51a39979d14aed86f81aa3fd2c77bfeb33c0cc4456dd2f",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "statusline",
+      "sourcePath": "~/.agents/skills/statusline",
+      "skillFileSha256": "9ce07cefc16faf737ad58fb8f09ac6d34ff457382daf90ff6a06d402f4688d73",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "thoven-monthly-kpis",
+      "sourcePath": "~/.agents/skills/thoven-monthly-kpis",
+      "skillFileSha256": "010fed45a8373f02773ed92cd18882d4a7f8dfcf2c6a24890da80b267caf21da",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "tldraw-offline",
+      "sourcePath": "~/.agents/skills/tldraw-offline",
+      "skillFileSha256": "ab3092a12494fce273ba9522a0b6e67ad9dd4a80a7c38a21b01b6e80cd99f471",
+      "status": "installed by tldraw Desktop; desktop app and local server required"
+    },
+    {
+      "name": "update-cli-config",
+      "sourcePath": "~/.agents/skills/update-cli-config",
+      "skillFileSha256": "7ab23cb1feadd3d0aedf5bf06d479f17606a7610de558d89a2de1ece75123874",
+      "status": "provenance unresolved; inspect package before migration"
+    },
+    {
+      "name": "update-cursor-settings",
+      "sourcePath": "~/.agents/skills/update-cursor-settings",
+      "skillFileSha256": "cda7180339d1f03f9331915b20d835a5d414eac7f97f30faa530d3e485c9fbe5",
+      "status": "provenance unresolved; inspect package before migration"
+    }
+  ],
+  "projectSkills": [
+    {
+      "scopePath": "~/thoven",
+      "lockPath": "~/thoven/skills-lock.json",
+      "skills": [
+        {
+          "name": "hyperframes",
+          "source": "heygen-com/hyperframes",
+          "skillPath": "skills/hyperframes/SKILL.md",
+          "folderHash": "ff3823b79cd3fdac5bc9e24c7c015edfcc2aaccc9712e1f6f47a55e6f6175b73",
+          "status": "locked"
+        },
+        {
+          "name": "hyperframes-cli",
+          "source": "heygen-com/hyperframes",
+          "skillPath": "skills/hyperframes-cli/SKILL.md",
+          "folderHash": "98e89e8789a8996fbd2b0e438f6f620be0dda9d6f2f62fc74eb805b75e094a34",
+          "status": "locked"
+        },
+        {
+          "name": "hyperframes-registry",
+          "source": "heygen-com/hyperframes",
+          "skillPath": "skills/hyperframes-registry/SKILL.md",
+          "folderHash": "0642a19a182bc8834fc699030440ba8586584b7b1864006097511cf704dd4c90",
+          "status": "locked"
+        },
+        {
+          "name": "remotion-to-hyperframes",
+          "source": "heygen-com/hyperframes",
+          "skillPath": "skills/remotion-to-hyperframes/SKILL.md",
+          "folderHash": "904264930f8ca93c2e3a8d819e6c1a49af60ce6197e68fda8fa947fe0231d66c",
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "scopePath": "~/thoven/frontend",
+      "lockPath": "~/thoven/frontend/skills-lock.json",
+      "skills": [
+        {
+          "name": "agent-evaluation",
+          "source": null,
+          "skillPath": null,
+          "folderHash": null,
+          "status": "unlocked; preserve and resolve provenance"
+        },
+        {
+          "name": "create-command",
+          "source": null,
+          "skillPath": null,
+          "folderHash": null,
+          "status": "unlocked; preserve and resolve provenance"
+        },
+        {
+          "name": "create-hook",
+          "source": null,
+          "skillPath": null,
+          "folderHash": null,
+          "status": "unlocked; preserve and resolve provenance"
+        },
+        {
+          "name": "create-workflow-command",
+          "source": null,
+          "skillPath": null,
+          "folderHash": null,
+          "status": "unlocked; preserve and resolve provenance"
+        },
+        {
+          "name": "founder-first-principles-framework",
+          "source": null,
+          "skillPath": null,
+          "folderHash": null,
+          "status": "unlocked; preserve and resolve provenance"
+        },
+        {
+          "name": "gsap-core",
+          "source": "greensock/gsap-skills",
+          "skillPath": "skills/gsap-core/SKILL.md",
+          "folderHash": "c4a01101d9e1aafbf4b49f75d74f9349790d8741981ba0237c990093863035a6",
+          "status": "locked"
+        },
+        {
+          "name": "gsap-frameworks",
+          "source": "greensock/gsap-skills",
+          "skillPath": "skills/gsap-frameworks/SKILL.md",
+          "folderHash": "4852e85a48088d9044b08ebd1db607915b628c0c3ec7e04300713f546728fbdf",
+          "status": "locked"
+        },
+        {
+          "name": "gsap-performance",
+          "source": "greensock/gsap-skills",
+          "skillPath": "skills/gsap-performance/SKILL.md",
+          "folderHash": "863842ac2d7aee53fd4f0025c960173d7ad3e658a5715b89b2211fa280213c1f",
+          "status": "locked"
+        },
+        {
+          "name": "gsap-plugins",
+          "source": "greensock/gsap-skills",
+          "skillPath": "skills/gsap-plugins/SKILL.md",
+          "folderHash": "791bda0e6e460511fe82a78e745db519b88ffaeeab4d04a74879a03ca4f41740",
+          "status": "locked"
+        },
+        {
+          "name": "gsap-react",
+          "source": "greensock/gsap-skills",
+          "skillPath": "skills/gsap-react/SKILL.md",
+          "folderHash": "7d3b52822681a4158e371f895c58fb7030ecaf33f585a534b7162f9e92c5d893",
+          "status": "locked"
+        },
+        {
+          "name": "gsap-scrolltrigger",
+          "source": "greensock/gsap-skills",
+          "skillPath": "skills/gsap-scrolltrigger/SKILL.md",
+          "folderHash": "1cdc5647693783cb7a662d84a5de434c88a051ed56b4d33597c9b5782b5973e6",
+          "status": "locked"
+        },
+        {
+          "name": "gsap-timeline",
+          "source": "greensock/gsap-skills",
+          "skillPath": "skills/gsap-timeline/SKILL.md",
+          "folderHash": "54981c2feec5a9c0d57988aeb32315af32bdeadd261550d5e9db7a7b1f08b487",
+          "status": "locked"
+        },
+        {
+          "name": "gsap-utils",
+          "source": "greensock/gsap-skills",
+          "skillPath": "skills/gsap-utils/SKILL.md",
+          "folderHash": "1ab2387f6e694718a4f1b5acf2a4ab16e1b884c3428adf5f6b26d830f00826cf",
+          "status": "locked"
+        },
+        {
+          "name": "prefer-container-queries",
+          "source": "flornkm/skills",
+          "skillPath": "skills/prefer-container-queries/SKILL.md",
+          "folderHash": "3fa6dd9ef0abaa079079b2784ae02a355d595cf5e3936bbbf1fd7cd34119e34f",
+          "status": "locked"
+        },
+        {
+          "name": "prompt-engineering",
+          "source": null,
+          "skillPath": null,
+          "folderHash": null,
+          "status": "unlocked; preserve and resolve provenance"
+        },
+        {
+          "name": "prototype",
+          "source": "emilkowalski/skills",
+          "skillPath": "skills/prototype/SKILL.md",
+          "folderHash": "f246d1f47566481d9207e1aa574bdee5454257d862919a6591283e9af2f57eab",
+          "status": "locked"
+        },
+        {
+          "name": "remotion",
+          "source": null,
+          "skillPath": null,
+          "folderHash": null,
+          "status": "unlocked; preserve and resolve provenance"
+        },
+        {
+          "name": "seo-resource-page",
+          "source": null,
+          "skillPath": null,
+          "folderHash": null,
+          "status": "unlocked; preserve and resolve provenance"
+        },
+        {
+          "name": "test-prompt",
+          "source": null,
+          "skillPath": null,
+          "folderHash": null,
+          "status": "unlocked; preserve and resolve provenance"
+        },
+        {
+          "name": "test-skill",
+          "source": null,
+          "skillPath": null,
+          "folderHash": null,
+          "status": "unlocked; preserve and resolve provenance"
+        },
+        {
+          "name": "thought-based-reasoning",
+          "source": null,
+          "skillPath": null,
+          "folderHash": null,
+          "status": "unlocked; preserve and resolve provenance"
+        },
+        {
+          "name": "youtube-transcript",
+          "source": null,
+          "skillPath": null,
+          "folderHash": null,
+          "status": "unlocked; preserve and resolve provenance"
+        }
+      ]
+    },
+    {
+      "scopePath": "~/thoven/backend",
+      "lockPath": "~/thoven/backend/skills-lock.json",
+      "skills": [
+        {
+          "name": "agent-tools",
+          "source": "inf-sh/skills",
+          "skillPath": null,
+          "folderHash": "4531a7acb44796d0c191affa79eee5bd71bb99eb0d76f9b8c2e966d1354020dc",
+          "status": "locked"
+        },
+        {
+          "name": "neon",
+          "source": "neondatabase/agent-skills",
+          "skillPath": "skills/neon/SKILL.md",
+          "folderHash": "4a11ddb79d07e83a542af0f8dbae232824a3c5260e226580fea9807a02b5ebee",
+          "status": "locked"
+        },
+        {
+          "name": "neon-postgres",
+          "source": "neondatabase/agent-skills",
+          "skillPath": "skills/neon-postgres/SKILL.md",
+          "folderHash": "9386efb7f97bd96f01d0c84f467e8e6e41be54f73cc1ece9c92f4f1dbd76f10f",
+          "status": "locked"
+        },
+        {
+          "name": "seo-audit",
+          "source": "coreyhaines31/marketingskills",
+          "skillPath": null,
+          "folderHash": "ec3109d213dde1747614ad1112ef0e498e04b24e464538968e156dfbfadb2121",
+          "status": "locked"
+        }
+      ]
+    }
+  ],
+  "requestedAdditions": [
+    {
+      "source": "t3dotgg/tstack",
+      "observedUpstreamSha": "1085050f3baed1ac724caa4a8166145fb2ac88af",
+      "status": "not installed locally; requested for destination installation",
+      "skills": [
+        "full-send",
+        "full-stop",
+        "council",
+        "sol-loop",
+        "file-pr",
+        "takeover",
+        "babysit-pr",
+        "modernize",
+        "leaving-pr-comments"
+      ],
+      "requirements": [
+        "authenticated gh",
+        "python3 for babysit-pr",
+        "cross-provider model delegation for council and sol-loop"
+      ],
+      "policy": "Installation does not authorize merge, publish, deployment or posting comments. Preserve explicit main approval; prefer full-stop when merge is not authorized."
+    },
+    {
+      "source": "jakubkrehel/skills",
+      "status": "expand existing design set to full reviewed bundle",
+      "additionalSkills": [
+        "break",
+        "build-design",
+        "teardown",
+        "state-machine"
+      ],
+      "retainedSkills": [
+        "better-accessibility",
+        "better-colors",
+        "better-interface",
+        "better-layout",
+        "better-typography",
+        "better-ui",
+        "better-writing",
+        "explain-interface",
+        "interface-review",
+        "variant"
+      ]
+    }
+  ],
+  "claudeUserPlugins": [
+    {
+      "id": "Notion@claude-plugins-official",
+      "scope": "user",
+      "observedVersion": "0.1.0",
+      "gitCommitSha": "a7d0b05ca3f910c71dba56d4062ba781ae092e78",
+      "enabled": false,
+      "cachedHooksJsonPresent": false,
+      "cachedMcpJsonPresent": false,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    {
+      "id": "canva@anthropic-plugin-directory",
+      "scope": "user",
+      "observedVersion": "1.0.0-906e8e0b0808",
+      "gitCommitSha": "906e8e0b0808e7146b998a48179abef281be57ca",
+      "enabled": true,
+      "cachedHooksJsonPresent": false,
+      "cachedMcpJsonPresent": true,
+      "marketplaceSource": {
+        "status": "not in local marketplace registry; resolve via supported official directory; do not guess repository"
+      }
+    },
+    {
+      "id": "chrome-devtools-mcp@claude-plugins-official",
+      "scope": "user",
+      "observedVersion": "1.11.0",
+      "gitCommitSha": "a878bcad39584337e055778353246820deafa7c0",
+      "enabled": true,
+      "cachedHooksJsonPresent": false,
+      "cachedMcpJsonPresent": false,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    {
+      "id": "cloudflare@cloudflare",
+      "scope": "user",
+      "observedVersion": "1.0.0",
+      "gitCommitSha": "6dc7604903127485e7e4cb26314651ebd4a4df19",
+      "enabled": true,
+      "cachedHooksJsonPresent": false,
+      "cachedMcpJsonPresent": true,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "cloudflare/skills"
+      }
+    },
+    {
+      "id": "code-review@claude-plugins-official",
+      "scope": "user",
+      "observedVersion": "1.0.1",
+      "gitCommitSha": "f8c5e7a1dcb71b10cb74586224b5401f3de5db28",
+      "enabled": false,
+      "cachedHooksJsonPresent": false,
+      "cachedMcpJsonPresent": false,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    {
+      "id": "code-simplifier@claude-plugins-official",
+      "scope": "user",
+      "observedVersion": "1.0.0",
+      "gitCommitSha": "b36fd4b753018b0b340803579399992a32e43502",
+      "enabled": false,
+      "cachedHooksJsonPresent": false,
+      "cachedMcpJsonPresent": false,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    {
+      "id": "context7@claude-plugins-official",
+      "scope": "user",
+      "observedVersion": "f8c5e7a1dcb7",
+      "gitCommitSha": "f8c5e7a1dcb71b10cb74586224b5401f3de5db28",
+      "enabled": true,
+      "cachedHooksJsonPresent": false,
+      "cachedMcpJsonPresent": true,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    {
+      "id": "explanatory-output-style@claude-plugins-official",
+      "scope": "user",
+      "observedVersion": "1.0.1",
+      "gitCommitSha": "f8c5e7a1dcb71b10cb74586224b5401f3de5db28",
+      "enabled": false,
+      "cachedHooksJsonPresent": true,
+      "cachedMcpJsonPresent": false,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    {
+      "id": "feature-dev@claude-plugins-official",
+      "scope": "user",
+      "observedVersion": "1.0.1",
+      "gitCommitSha": "f8c5e7a1dcb71b10cb74586224b5401f3de5db28",
+      "enabled": true,
+      "cachedHooksJsonPresent": false,
+      "cachedMcpJsonPresent": false,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    {
+      "id": "frontend-design@claude-plugins-official",
+      "scope": "user",
+      "observedVersion": "1.1.1",
+      "gitCommitSha": "f8c5e7a1dcb71b10cb74586224b5401f3de5db28",
+      "enabled": false,
+      "cachedHooksJsonPresent": false,
+      "cachedMcpJsonPresent": false,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    {
+      "id": "github@claude-plugins-official",
+      "scope": "user",
+      "observedVersion": "f8c5e7a1dcb7",
+      "gitCommitSha": "f8c5e7a1dcb71b10cb74586224b5401f3de5db28",
+      "enabled": true,
+      "cachedHooksJsonPresent": false,
+      "cachedMcpJsonPresent": true,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    {
+      "id": "i-have-adhd@i-have-adhd",
+      "scope": "user",
+      "observedVersion": "0.1.0",
+      "gitCommitSha": "d05af1e4ac2259846e81686d14180d46d84acc2d",
+      "enabled": true,
+      "cachedHooksJsonPresent": true,
+      "cachedMcpJsonPresent": false,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "ayghri/i-have-adhd"
+      }
+    },
+    {
+      "id": "impeccable@impeccable",
+      "scope": "user",
+      "observedVersion": "4.8.0",
+      "gitCommitSha": "414603bf14c7a344edb466bb1f85690c77ce8b7d",
+      "enabled": false,
+      "cachedHooksJsonPresent": true,
+      "cachedMcpJsonPresent": false,
+      "marketplaceSource": {
+        "type": "git",
+        "url": "https://github.com/pbakaus/impeccable.git"
+      }
+    },
+    {
+      "id": "linear@claude-plugins-official",
+      "scope": "user",
+      "observedVersion": "f8c5e7a1dcb7",
+      "gitCommitSha": "f8c5e7a1dcb71b10cb74586224b5401f3de5db28",
+      "enabled": true,
+      "cachedHooksJsonPresent": false,
+      "cachedMcpJsonPresent": true,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    {
+      "id": "mattpocock-skills@mattpocock",
+      "scope": "user",
+      "observedVersion": "1.3.1",
+      "gitCommitSha": "24fe0ef7737efae15c87225755e9f6f5965e4888",
+      "enabled": true,
+      "cachedHooksJsonPresent": false,
+      "cachedMcpJsonPresent": false,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "mattpocock/skills"
+      }
+    },
+    {
+      "id": "mem0@mem0-plugins",
+      "scope": "user",
+      "observedVersion": "0.3.3",
+      "gitCommitSha": "0cddc36d524ac6f54228e6355048adb936b436c3",
+      "enabled": true,
+      "cachedHooksJsonPresent": true,
+      "cachedMcpJsonPresent": true,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "mem0ai/mem0"
+      }
+    },
+    {
+      "id": "next-steps@claude-community",
+      "scope": "user",
+      "observedVersion": "1.0.0",
+      "gitCommitSha": "f60f0454df3045f724c43c6346ec80bdcc3472b2",
+      "enabled": true,
+      "cachedHooksJsonPresent": true,
+      "cachedMcpJsonPresent": false,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "anthropics/claude-plugins-community"
+      }
+    },
+    {
+      "id": "paper-desktop@paper",
+      "scope": "user",
+      "observedVersion": "0.2.1",
+      "gitCommitSha": "a8ba8b21be02f68c83470213bc72ea43cf3b6d1f",
+      "enabled": true,
+      "cachedHooksJsonPresent": false,
+      "cachedMcpJsonPresent": false,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "paper-design/agent-plugins"
+      }
+    },
+    {
+      "id": "playwright@claude-plugins-official",
+      "scope": "user",
+      "observedVersion": "f8c5e7a1dcb7",
+      "gitCommitSha": "f8c5e7a1dcb71b10cb74586224b5401f3de5db28",
+      "enabled": false,
+      "cachedHooksJsonPresent": false,
+      "cachedMcpJsonPresent": true,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    {
+      "id": "ralph-loop@claude-plugins-official",
+      "scope": "user",
+      "observedVersion": "1.0.1",
+      "gitCommitSha": "f8c5e7a1dcb71b10cb74586224b5401f3de5db28",
+      "enabled": false,
+      "cachedHooksJsonPresent": true,
+      "cachedMcpJsonPresent": false,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    {
+      "id": "ruby-lsp@claude-plugins-official",
+      "scope": "user",
+      "observedVersion": "1.0.0",
+      "gitCommitSha": null,
+      "enabled": false,
+      "cachedHooksJsonPresent": false,
+      "cachedMcpJsonPresent": false,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    {
+      "id": "security-guidance@claude-plugins-official",
+      "scope": "user",
+      "observedVersion": "2.0.17",
+      "gitCommitSha": "41f619d61b999adec1a1c8deb97d1a5b6ac35bb6",
+      "enabled": false,
+      "cachedHooksJsonPresent": true,
+      "cachedMcpJsonPresent": false,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    {
+      "id": "sentry@claude-plugins-official",
+      "scope": "user",
+      "observedVersion": "1.4.0",
+      "gitCommitSha": "8ed4f25563d90806e8a50c7fb78170ede9ca2f5e",
+      "enabled": true,
+      "cachedHooksJsonPresent": false,
+      "cachedMcpJsonPresent": false,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    {
+      "id": "skill-creator@claude-plugins-official",
+      "scope": "user",
+      "observedVersion": "f8c5e7a1dcb7",
+      "gitCommitSha": "f8c5e7a1dcb71b10cb74586224b5401f3de5db28",
+      "enabled": false,
+      "cachedHooksJsonPresent": false,
+      "cachedMcpJsonPresent": false,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    {
+      "id": "stripe@claude-plugins-official",
+      "scope": "user",
+      "observedVersion": "0.11.17",
+      "gitCommitSha": "deae744bc0cbf6034b4b6f22f51c690b71a4e779",
+      "enabled": true,
+      "cachedHooksJsonPresent": true,
+      "cachedMcpJsonPresent": true,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    {
+      "id": "superpowers@claude-plugins-official",
+      "scope": "user",
+      "observedVersion": "7.0.0",
+      "gitCommitSha": "bb92a77741419a4ab5f06e711a283343f1ada0c3",
+      "enabled": true,
+      "cachedHooksJsonPresent": true,
+      "cachedMcpJsonPresent": false,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    {
+      "id": "typesafe@typesafe-ai",
+      "scope": "user",
+      "observedVersion": "0.5.7",
+      "gitCommitSha": "65a39f393687675ce170e6094757de20370365b9",
+      "enabled": true,
+      "cachedHooksJsonPresent": false,
+      "cachedMcpJsonPresent": false,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "typesafe-ai/skills"
+      }
+    },
+    {
+      "id": "upstash@upstash",
+      "scope": "user",
+      "observedVersion": "1.2.5",
+      "gitCommitSha": "aa4191dd5042892e9a872595d719482e0da96dec",
+      "enabled": true,
+      "cachedHooksJsonPresent": false,
+      "cachedMcpJsonPresent": false,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "upstash/skills"
+      }
+    },
+    {
+      "id": "warp@claude-code-warp",
+      "scope": "user",
+      "observedVersion": "2.4.0",
+      "gitCommitSha": "53ab8d63ef74d7653002444762812d2fb5639eee",
+      "enabled": false,
+      "cachedHooksJsonPresent": true,
+      "cachedMcpJsonPresent": false,
+      "marketplaceSource": {
+        "type": "github",
+        "repo": "warpdotdev/claude-code-warp"
+      }
+    }
+  ],
+  "otherScopeOnlyPlugins": [
+    {
+      "id": "commit-commands@claude-plugins-official",
+      "observedScopes": [
+        "local",
+        "project"
+      ],
+      "disposition": "reconcile with selected project; do not promote to user scope"
+    },
+    {
+      "id": "greptile@claude-plugins-official",
+      "observedScopes": [
+        "local"
+      ],
+      "disposition": "reconcile with selected project; do not promote to user scope"
+    },
+    {
+      "id": "notion@anthropic-plugin-directory",
+      "observedScopes": [
+        "project"
+      ],
+      "disposition": "reconcile with selected project; do not promote to user scope"
+    },
+    {
+      "id": "sdd@context-engineering-kit",
+      "observedScopes": [
+        "local"
+      ],
+      "disposition": "reconcile with selected project; do not promote to user scope"
+    },
+    {
+      "id": "serena@claude-plugins-official",
+      "observedScopes": [
+        "project"
+      ],
+      "disposition": "reconcile with selected project; do not promote to user scope"
+    },
+    {
+      "id": "superpowers@superpowers-marketplace",
+      "observedScopes": [
+        "project"
+      ],
+      "disposition": "reconcile with selected project; do not promote to user scope"
+    },
+    {
+      "id": "vercel@claude-plugins-official",
+      "observedScopes": [
+        "local"
+      ],
+      "disposition": "reconcile with selected project; do not promote to user scope"
+    }
+  ],
+  "knownMarketplaceSources": {
+    "claude-plugins-official": {
+      "type": "github",
+      "repo": "anthropics/claude-plugins-official"
+    },
+    "n8n-mcp-skills": {
+      "type": "github",
+      "repo": "czlonkowski/n8n-skills"
+    },
+    "superpowers-marketplace": {
+      "type": "github",
+      "repo": "obra/superpowers-marketplace"
+    },
+    "anthropic-agent-skills": {
+      "type": "github",
+      "repo": "anthropics/skills"
+    },
+    "context-engineering-kit": {
+      "type": "github",
+      "repo": "NeoLabHQ/context-engineering-kit"
+    },
+    "hamelsmu-evals-skills": {
+      "type": "github",
+      "repo": "hamelsmu/evals-skills"
+    },
+    "impeccable": {
+      "type": "git",
+      "url": "https://github.com/pbakaus/impeccable.git"
+    },
+    "claude-code-warp": {
+      "type": "github",
+      "repo": "warpdotdev/claude-code-warp"
+    },
+    "mem0-plugins": {
+      "type": "github",
+      "repo": "mem0ai/mem0"
+    },
+    "mattpocock": {
+      "type": "github",
+      "repo": "mattpocock/skills"
+    },
+    "i-have-adhd": {
+      "type": "github",
+      "repo": "ayghri/i-have-adhd"
+    },
+    "upstash": {
+      "type": "github",
+      "repo": "upstash/skills"
+    },
+    "typesafe-ai": {
+      "type": "github",
+      "repo": "typesafe-ai/skills"
+    },
+    "thoven-dev": {
+      "type": "github",
+      "repo": "Andresem611/dev-workflow"
+    },
+    "cloudflare": {
+      "type": "github",
+      "repo": "cloudflare/skills"
+    },
+    "paper": {
+      "type": "github",
+      "repo": "paper-design/agent-plugins"
+    },
+    "claude-community": {
+      "type": "github",
+      "repo": "anthropics/claude-plugins-community"
+    }
+  },
+  "claudeAgentDefinitions": [
+    {
+      "name": "cfo-weekly-analyst",
+      "sourcePath": "~/.claude/agents/cfo-weekly-analyst.md",
+      "canonicalSourcePath": null,
+      "installedSha256": "dfaa1c640bef1bcf8b0d996fbf3c263715a4b698c56ede008ad5877b602c20e8",
+      "status": "resolve provenance; native harness or custom definition, not covered by skills installer"
+    },
+    {
+      "name": "compliance-auditor",
+      "sourcePath": "~/.claude/agents/compliance-auditor.md",
+      "canonicalSourcePath": null,
+      "installedSha256": "27f2f9f9f2aa08fdf09bd9fb41873e3b8e18e1cfd5012987151ab07a738fae63",
+      "status": "resolve provenance; native harness or custom definition, not covered by skills installer"
+    },
+    {
+      "name": "explorer",
+      "sourcePath": "~/.claude/agents/explorer.md",
+      "canonicalSourcePath": "enforcement/agents/explorer.md",
+      "installedSha256": "417f85b1b149cd780924b705916c907e489a75b06d424b1a77e8f51aa5c5bfc1",
+      "status": "compare released definition and adapt host paths"
+    },
+    {
+      "name": "geo-ai-visibility",
+      "sourcePath": "~/.claude/agents/geo-ai-visibility.md",
+      "canonicalSourcePath": null,
+      "installedSha256": "54bf83fb83a634149d657884dd7576aff6d47b0d5399ace0e36f4e454bd529af",
+      "status": "resolve provenance; native harness or custom definition, not covered by skills installer"
+    },
+    {
+      "name": "geo-content",
+      "sourcePath": "~/.claude/agents/geo-content.md",
+      "canonicalSourcePath": null,
+      "installedSha256": "9cf4cd006ff6c0dc47c798c326104f9a2b9018e36784cbdb666da07809bd844b",
+      "status": "resolve provenance; native harness or custom definition, not covered by skills installer"
+    },
+    {
+      "name": "geo-platform-analysis",
+      "sourcePath": "~/.claude/agents/geo-platform-analysis.md",
+      "canonicalSourcePath": null,
+      "installedSha256": "07b5633be6bcc61b316e30590a061c1bc05d1e8f37ff549e09be0377a8011923",
+      "status": "resolve provenance; native harness or custom definition, not covered by skills installer"
+    },
+    {
+      "name": "geo-schema",
+      "sourcePath": "~/.claude/agents/geo-schema.md",
+      "canonicalSourcePath": null,
+      "installedSha256": "a30090dcca6d5ebcb7529d83fccb821bc5f34aa84258c8ad59c4feecc79852e2",
+      "status": "resolve provenance; native harness or custom definition, not covered by skills installer"
+    },
+    {
+      "name": "geo-technical",
+      "sourcePath": "~/.claude/agents/geo-technical.md",
+      "canonicalSourcePath": null,
+      "installedSha256": "f80ea4765ca3038255c891abd1bb1371c885d2511e112e4de2346c19b66dc59b",
+      "status": "resolve provenance; native harness or custom definition, not covered by skills installer"
+    },
+    {
+      "name": "legal-advisor",
+      "sourcePath": "~/.claude/agents/legal-advisor.md",
+      "canonicalSourcePath": null,
+      "installedSha256": "d7e34fabac4c24ae22948de53e01b3a7e53067bfb41dec8c6bd844e6b2722bcf",
+      "status": "resolve provenance; native harness or custom definition, not covered by skills installer"
+    },
+    {
+      "name": "poteto-agent",
+      "sourcePath": "~/.claude/agents/poteto-agent.md",
+      "canonicalSourcePath": "enforcement/agents/poteto-agent.md",
+      "installedSha256": "f9cc4544f5721b9b7d5d515ee51461b01e5105dfc466243abdfb9db0eab84770",
+      "status": "compare released definition and adapt host paths"
+    },
+    {
+      "name": "thermo-nuclear-code-quality-review-subagent",
+      "sourcePath": "~/.claude/agents/thermo-nuclear-code-quality-review-subagent.md",
+      "canonicalSourcePath": "enforcement/agents/thermo-nuclear-code-quality-review-subagent.md",
+      "installedSha256": "d2b075c5d285e6e7982e28984dd6fe830b124317f0f01396bbf0f388d17e3bc5",
+      "status": "compare released definition and adapt host paths"
+    },
+    {
+      "name": "thermo-nuclear-review-subagent",
+      "sourcePath": "~/.claude/agents/thermo-nuclear-review-subagent.md",
+      "canonicalSourcePath": "enforcement/agents/thermo-nuclear-review-subagent.md",
+      "installedSha256": "63437dfccb8857002cb4a240a2a82eb03aaab801a158b7b68075f91e1ed74039",
+      "status": "compare released definition and adapt host paths"
+    },
+    {
+      "name": "tldraw-offline",
+      "sourcePath": "~/.claude/agents/tldraw-offline.md",
+      "canonicalSourcePath": null,
+      "installedSha256": "19dd6949d6649f885968ae914d77c6f63b0cd27c34ac24342ac97f735860c439",
+      "status": "resolve provenance; native harness or custom definition, not covered by skills installer"
+    },
+    {
+      "name": "ui-builder",
+      "sourcePath": "~/.claude/agents/ui-builder.md",
+      "canonicalSourcePath": "enforcement/agents/ui-builder.md",
+      "installedSha256": "876b127437a660457ebf38c2922ea1f3ffd79666aeb7c25121492edaa2330aac",
+      "status": "compare released definition and adapt host paths"
+    },
+    {
+      "name": "verifier",
+      "sourcePath": "~/.claude/agents/verifier.md",
+      "canonicalSourcePath": "enforcement/agents/verifier.md",
+      "installedSha256": "85dbe872755a08a1d9f96370f9c98eaf6c6f37cc4a44098ca13441dc2f966a0e",
+      "status": "compare released definition and adapt host paths"
+    }
+  ],
+  "channelReconciliation": [
+    "Matt Pocock, Sentry and Superpowers have overlapping loose-skill/plugin installations. Compare content and preserve customizations; document intentional namespaced copies and avoid accidental same-name shadows.",
+    "Do not install the same source twice through identical loose-skill adapters. The shared ~/.agents catalog serves Codex; no second global Codex link catalog.",
+    "Do not activate previously disabled plugins or promote project/local entries without an explicit reason and approval when behavior changes.",
+    "Do not copy global legacy hooks or entire settings/auth files. Review plugin-provided hooks/MCP before enabling plugin parity."
+  ],
+  "codexConfiguredPlugins": [
+    {
+      "id": "browser@openai-bundled",
+      "enabled": true,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "chrome@openai-bundled",
+      "enabled": true,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "code-review@claude-plugins-official",
+      "enabled": true,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "code-review@openai-bundled",
+      "enabled": true,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "codex-app-tools@openai-bundled",
+      "enabled": true,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "commit-commands@claude-plugins-official",
+      "enabled": true,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "computer-use@openai-bundled",
+      "enabled": true,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "context7@claude-plugins-official",
+      "enabled": true,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "documents@openai-primary-runtime",
+      "enabled": true,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "feature-dev@claude-plugins-official",
+      "enabled": true,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "github@claude-plugins-official",
+      "enabled": true,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "greptile@claude-plugins-official",
+      "enabled": false,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "mattpocock-skills@mattpocock",
+      "enabled": true,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "mem0@mem0-plugins",
+      "enabled": true,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "pdf@openai-primary-runtime",
+      "enabled": true,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "playwright@claude-plugins-official",
+      "enabled": true,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "presentations@openai-primary-runtime",
+      "enabled": true,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "sdd@context-engineering-kit",
+      "enabled": false,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "sentry@claude-plugins-official",
+      "enabled": true,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "serena@claude-plugins-official",
+      "enabled": false,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "spreadsheets@openai-primary-runtime",
+      "enabled": true,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "stripe@claude-plugins-official",
+      "enabled": true,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "superpowers@claude-plugins-official",
+      "enabled": true,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "template-creator@openai-primary-runtime",
+      "enabled": true,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "unified-computer-use@openai-bundled",
+      "enabled": true,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    },
+    {
+      "id": "visualize@openai-bundled",
+      "enabled": true,
+      "scopeEvidence": "user config.toml",
+      "status": "configured on MacBook; destination availability and execution unverified; sign-in deferred"
+    }
+  ],
+  "destinationOptions": {
+    "claudeSessionStartPatchHook": {
+      "install": false,
+      "status": "deferred",
+      "reason": "Not required for initial Claude skill/plugin setup. Review necessary patches manually before any optional hook registration."
+    },
+    "codexSkillVisibilityConfiguration": {
+      "apply": false,
+      "status": "deferred",
+      "reason": "Codex sign-in and execution are deferred. Do not edit config.toml during initial Claude setup."
+    }
+  },
+  "projectHandoff": {
+    "selectedPair": null,
+    "status": "awaiting user choice; do not infer source pair from the current shell directory",
+    "verifiedCandidates": [
+      {
+        "project": "private-lessons-rework",
+        "frontend": {
+          "sourcePath": "~/thoven/frontend-private-lessons-rework",
+          "branch": "feature/private-lessons-rework",
+          "head": "43a37820b81fc40d1f1db5e28e5ff5901f519cc1",
+          "trackedDirtyCount": 0,
+          "untrackedCount": 0
+        },
+        "backend": {
+          "sourcePath": "~/thoven/backend-private-lessons-rework",
+          "branch": "feature/private-lessons-rework",
+          "head": "d6ae815b23824ea7f67cf0fc4daaa6627e8e0ed5",
+          "trackedDirtyCount": 0,
+          "untrackedCount": 0
+        }
+      },
+      {
+        "project": "student-dashboard-and-independent-learning",
+        "frontend": {
+          "sourcePath": "~/thoven/frontend-student-dashboard-and-independent-learning",
+          "branch": "student-dashboard-and-independent-learning/integration",
+          "head": "ade8ad7fa4900da1794bec30f75445cb20f2a285",
+          "trackedDirtyCount": 0,
+          "untrackedCount": 0
+        },
+        "backend": {
+          "sourcePath": "~/thoven/backend-student-dashboard-and-independent-learning",
+          "branch": "student-dashboard-and-independent-learning/integration",
+          "head": "1d790d851063a573c376d163720771c5b0fcaf43",
+          "trackedDirtyCount": 0,
+          "untrackedCount": 0
+        }
+      },
+      {
+        "project": "intro-call-learner-packet",
+        "frontend": {
+          "sourcePath": "~/thoven/frontend-intro-call-learner-packet",
+          "branch": "intro-call-learner-packet/integration",
+          "head": "397b91647fec11ca1f5204e96a9c5605bdf3730c",
+          "trackedDirtyCount": 7,
+          "untrackedCount": 14
+        },
+        "backend": {
+          "sourcePath": "~/thoven/backend-intro-call-learner-packet",
+          "branch": "intro-call-learner-packet/integration",
+          "head": "88fdff42adb748ae4f4010f3cc86fe9d99ca9faa",
+          "trackedDirtyCount": 0,
+          "untrackedCount": 0
+        }
+      }
+    ]
+  }
+}

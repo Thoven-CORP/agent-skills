@@ -1,6 +1,6 @@
 # Workspace
 
-`workspace` derives a deterministic Project snapshot from Linear, Project-local state, git, and
+`workspace` derives a deterministic Project snapshot from Linear, optional local context, git, and
 workflow law. Its zero-dependency Node modules live in `tools/` and are shared by
 `feature-ledger`; neither skill invokes the other or stores hidden state.
 
@@ -13,7 +13,10 @@ node tools/map.js --feature dashboard
 node tools/map.js --family teacher
 ```
 
-Without Linear credentials, the snapshot still renders and marks Linear `UNKNOWN`.
+`--project-dir` is optional. Missing local project files never block a Linear-only start.
+Without supplied Linear input the snapshot renders an advisory and an `UNKNOWN` completion claim.
+An attempted failed fetch is `UNKNOWN`. The caller separately reads the relevant Linear document
+bodies; the mechanical snapshot does not establish document access or semantic completion.
 
 ## Modules
 
