@@ -86,6 +86,9 @@ same-shape tickets go the same way.
 Before dispatching onto an integration branch, compare its `lefthook.yml` and `bin/verify` with
 `origin/main`. When they differ, offer Andres a catch-up merge of `main` (merge commit) as a go first:
 an old branch's pre-push hook runs checks `main` dropped, and panes end up pushing with `--no-verify`.
+Before that go, run `/modernize` on the branch for its verdict only and put the verdict in the go
+line. MODERNIZE is the catch-up merge. REWORK or CLOSE is a finding for Andres. The catch-up itself
+stays a merge commit: a shared integration branch is never rebased.
 
 **Done when:** the blockers are merged and no pane holds the ticket, and you can state the CLI, the
 model, the tier, and one line on why this tier.
@@ -169,7 +172,7 @@ A peer message from a pane carries a status line and its entry path:
 | `DONE_WITH_CONCERNS THV-x` | Read the concerns. Correctness or scope concerns get a fix round first. Observations go to step 5. |
 | `NEEDS_CONTEXT THV-x` | Answer from Linear and this conversation, by peer message plus an ANSWER entry. A product call goes to Andres word for word; relay his answer and add it to the Linear parent. |
 | `BLOCKED THV-x` | Context gap: answer it. Too hard: fresh pane one tier up. Too big: split the ticket. Product call: ask Andres. |
-| `HANDOFF THV-x` | The pane hit its budget. Spawn a fresh pane on the same brief plus the HANDOFF entry. |
+| `HANDOFF THV-x` | The pane hit its budget. Spawn a fresh pane on the same brief plus the HANDOFF entry and the takeover line below. |
 
 An alert line names the pane and the cause:
 
@@ -178,7 +181,7 @@ An alert line names the pane and the cause:
 | `STARTUP` | No status 90s after launch. Read `dispatch read <pane>` and answer the trust, update or login dialog with `dispatch key <pane> <key>` (`enter`, `down`, `1`, ...). The opening prompt rides in the launch line and starts once the dialog closes. |
 | `BLOCKED` (2 min or more) | Read `dispatch read <pane>`. Answer a dialog inside the brief's scope with `dispatch key <pane> <key>`; otherwise ask Andres. |
 | `FROZEN` | Read further back. A long test run or `waiting for verification lock` is fine. A hung tool: `dispatch interrupt <pane>`, then ask for status. |
-| `GONE` | The agent exited. Spawn a fresh pane on the same brief plus `Resume from <last commit>.` |
+| `GONE` | The agent exited. Spawn a fresh pane on the same brief plus the takeover line below. |
 | `LIMIT` | Tell Andres the reset time in one line. After it, check `git -C <tree> status` for a half-done merge or rebase, then message the pane `continue`. |
 | `SETTLED_NO_REPORT` | The pane ended a turn with no REPORT, QUESTION or HANDOFF entry of its own. Message it: `Post your REPORT entry and message me your status line.` The uncommitted files it lists may be other sessions' edits in a shared tree. `still running: …` means a background job kept it from reporting for 10 minutes: ask the pane whether it still needs that job, and to stop a server it forgot. |
 | `TICK_ERROR` | The watcher failed to read this pane for 4 ticks in a row (about 2 minutes) and names the last error. Run `dispatch status <pane>`. Several panes timing out together (`rex call timed out`) means the machine is overloaded: check load and memory, then prune or hold panes before anything else. A single pane's Rex or herdr error is the backend's to fix; tell Andres in one line. While the status read itself fails, no other alert fires for that pane. |
@@ -190,9 +193,19 @@ turn to end. Use `dispatch interrupt` only to stop work going the wrong way. A C
 fix round with `dispatch send <pane> <file>` once it is idle. Hold the verifier until the pane has
 answered the last correction. The entries are the record Andres reads.
 
+**Takeover line** for a replacement pane: `Run /takeover in place on <branch>, from <last commit>.
+The earlier pane's commits and report are claims: re-prove them before you build on them. Finish
+is this brief's DONE, commits only.`
+
 **Done when:** every pane has reported and main has handled it, or its alert is reported to Andres.
 
 ### 5. Verify
+
+After main pushes and opens the ticket PR, arm one watcher for it with the Monitor tool
+(`timeout_ms: 3600000`): `~/.agents/skills/babysit-pr/scripts/pr-wait <n> --until green`. Run
+nothing else that polls the PR. Exit 1 on a red check is a fix round to the pane, or a gate-repair
+line to Andres (review.md, "Handling findings"). BEHIND, or a base commit touching the PR's files,
+means main brings the branch up to date before the merge go. Re-arm after every push.
 
 Follow [references/review.md](references/review.md): main's pass, then a verifier pane for a
 feature slice or a review subagent for cleanup and hardening.

@@ -27,8 +27,17 @@ When two rows match equally, ask one question.
 | This repo has no control skill or Feature Map | `/create-verification-skill` |
 | An existing verify-app map is stale | `/maintain-verification-skill` |
 | Commit, deploy, release | `/publish` |
+| Watch a PR through CI and comments without me | `/babysit-pr` |
+| Watch a PR until its checks pass, in the terminal | `/loop-on-ci` |
 | CI is red on a PR | `/fix-ci` |
-| Watch a PR until its checks pass | `/loop-on-ci` |
+| An old PR or branch is behind `main`, "rebase this" | `/modernize` |
+| Pick up another person's or agent's PR, branch or dead pane | `/takeover` |
+| Take a ticket to ready-to-merge unattended | `/full-stop` |
+| Take a PR that changes nothing a user sees to merged, on "full send" | `/full-send` |
+| Run a heavy check on the mini against MacBook changes | `/remote-check` |
+| Set up or reshape a Linear Project | `/linear-project` |
+| What families are texting about, a feedback sweep | `/text-product-analysis` |
+| Brainstorm or grill a feature, journey or flow; what matters most | `/product-fundamentals` |
 | Where does this stand, log work, move a ticket | `/workspace` |
 
 ### Rails and data
@@ -78,7 +87,7 @@ When two rows match equally, ask one question.
 | Bug report | `/investigate-thoven` → `/verify` |
 | Schema change | `/safe-migrate` → `/verify` |
 | Pre-commit | `/deslop` → `/no-comments` → `/mattpocock-skills:code-review` → `/verify` |
-| Ship | `/verify` → `/publish` → `/loop-on-ci` |
+| Ship | `/verify` → `/publish` → `/babysit-pr` |
 
 ## Rules
 

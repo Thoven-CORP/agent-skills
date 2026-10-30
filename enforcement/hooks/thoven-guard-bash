@@ -55,6 +55,27 @@ deny() {
   exit 0
 }
 
+# The host rule: heavy work runs on the host whose profile says mini. Read once per call. A missing
+# profile, or a role other than laptop, changes nothing; one that does not parse warns once and
+# changes nothing, so a broken profile never blocks work.
+host_role=""
+host_file="$HOME/.config/thoven/host.json"
+if [ -f "$host_file" ] && ! host_role="$(jq -r '.role? // "" | strings' "$host_file" 2>/dev/null)"; then
+  printf 'thoven-guard-bash: %s does not parse; the host rule is off\n' "$host_file" >&2
+  host_role=""
+fi
+# What a laptop sends to the mini: a command's start, then the remote that runs it there. Runner
+# words (pnpm, npx, npm run, yarn exec) fold to pnpm. "whole suite" is any run the suite check below
+# refuses. THOVEN_LOCAL_HEAVY=1 in front of one command runs it here.
+heavy_table=(
+  "bin/verify|remote-verify"
+  "pnpm build|remote-check"
+  "next build|remote-check"
+  "playwright test|remote-check"
+  "pnpm test:e2e|remote-check"
+  "whole suite|remote-check"
+)
+
 # Split a command into its subcommands, one line each: S, the VAR=val words in front of the command,
 # \037, then the command from its head word on, past VAR=val, wrappers (env, timeout, sudo, nice,
 # nohup, time, command, xargs) and do/then/else/elif. Only an unquoted ; & | or newline separates,
@@ -452,11 +473,44 @@ for entry in "${subcommands[@]}"; do
       ;;
     rspec|bin/rspec|*/bin/rspec) suite="rspec"; rest=("${fwords[@]:1}") ;;
   esac
-  if [ -n "$suite" ] && [ "$full_ok" != 1 ]; then
-    has_path=""
-    for fw in "${rest[@]}"; do
-      case "$fw" in run|watch|--|-*) ;; *) has_path=1; break ;; esac
+  has_path=""
+  for fw in "${rest[@]}"; do
+    case "$fw" in run|watch|--|-*) ;; *) has_path=1; break ;; esac
+  done
+
+  if [ "$host_role" = laptop ] && [[ " $assigns " != *" THOVEN_LOCAL_HEAVY=1 "* ]]; then
+    hw=("${fwords[@]}")
+    runner=""
+    case "${hw[0]:-}" in
+      npx|pnpm|yarn|bun|npm)
+        runner=pnpm
+        i=1
+        while [ "$i" -lt "${#hw[@]}" ]; do
+          case "${hw[$i]}" in run|exec|dlx|-*) i=$((i + 1)) ;; *) break ;; esac
+        done
+        hw=("${hw[@]:$i}")
+        ;;
+    esac
+    case "${hw[0]:-}" in
+      */bin/verify|./bin/verify) hw[0]=bin/verify ;;
+      */playwright) hw[0]=playwright ;;
+      */next) hw[0]=next ;;
+    esac
+    bare=" ${hw[*]} "
+    with_runner=" ${runner:+$runner }${hw[*]} "
+    [ -n "$suite" ] && [ -z "$has_path" ] && bare=" whole suite "
+    for entry_h in "${heavy_table[@]}"; do
+      pat="${entry_h%%|*}"
+      [[ "$bare" == " $pat "* || "$with_runner" == " $pat "* ]] || continue
+      if [ "${entry_h#*|}" = remote-verify ]; then
+        vargs="${hw[*]:1}"
+        deny "heavy work runs on the mini: remote-verify${vargs:+ $vargs}"
+      fi
+      deny "heavy work runs on the mini: remote-check \`${fwords[*]}\` (the remote-check skill runs it there on your saved changes)"
     done
+  fi
+
+  if [ -n "$suite" ] && [ "$full_ok" != 1 ]; then
     if [ -z "$has_path" ]; then
       deny "That runs the whole $suite suite, which pins the machine every pane shares. Run the spec or test files you changed by path. Main or the integration session can run the full suite with THOVEN_FULL_SUITE=1 in front of the command."
     fi

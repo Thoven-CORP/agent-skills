@@ -7,6 +7,8 @@ description: Run a requested check on the Mac mini using saved MacBook changes, 
 
 Use this for a test, build or browser check of saved local changes. For coding on the mini, use a
 separate Git worktree and the normal branch/PR process. Never edit product code in the sync mirror.
+When the check is `bin/verify`, run `remote-verify` from the MacBook checkout instead: it ships HEAD
+plus the dirty and untracked files to a throwaway worktree on the mini and never touches a mirror.
 
 ## Select the input
 

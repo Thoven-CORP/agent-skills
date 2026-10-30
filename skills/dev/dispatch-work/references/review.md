@@ -26,7 +26,7 @@ Check these against the builder's REPORT entry (`dispatch board <project> --tick
 branch before starting the verifier. Each one that fails is a finding.
 
 - A red run exists before the green one, for the proof the ticket names.
-- Type-check, the touched test files (one file per run) and lint on those files ran during the build.
+- Each changed behaviour has a `/verify-this` verdict. Type-check, the touched test files (one file per run) and lint on those files ran once, at the first DONE. A fix round ran only the test files it touched.
 - Commits land on the named branch, by exact path, each ending in the ticket id.
 - `git diff --stat <base>..HEAD` touches the ticket's Paths, and every other file has a stated reason.
 - The report labels each claim measured, inferred or guess.
@@ -94,7 +94,8 @@ edge cases, test nits, style).
 
 A PR main asks Andres to merge has had, on its final diff, /mattpocock-skills:code-review, thermo
 sized as in verifier step 5, and /deslop. That includes hotfix, follow-up and CI-fix PRs that never
-had a verifier pane. The go line reports the result in one line. After a wave of ticket merges
+had a verifier pane. Its `pr-wait --until green` (SKILL.md step 5) exited 0 on that final head, and
+the branch is not BEHIND. The go line reports the result in one line. After a wave of ticket merges
 into an integration branch, run one /deslop and thermo pass over the merged range.
 
 ## Handling findings

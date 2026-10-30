@@ -61,6 +61,14 @@ try:
     run("--apply")
     assert "env" not in data(), data()
     assert "--rollback" not in run("--help")
+
+    # The session-procs hooks land on their three events with their modes.
+    write({})
+    run("--apply")
+    for event, suffix in (("PostToolUse", "thoven-session-procs record"), ("SessionEnd", "thoven-session-procs end"),
+                          ("SubagentStop", "thoven-session-procs end --agent")):
+        found = [h["command"] for e in data()["hooks"][event] for h in e["hooks"] if "thoven-session-procs" in h["command"]]
+        assert len(found) == 1 and found[0].endswith(suffix), (event, found)
 finally:
     assert tmp.name.startswith("thv1063.") and str(tmp.parent) == "/tmp", tmp
     shutil.rmtree(tmp)

@@ -16,12 +16,16 @@ together.
   correction overrides the brief from that point.
 - Machine: run the touched test files, one file per run, one process at a time, no watch mode.
   Run e2e, build, stack and perf work through
-  `/Users/andresmartinez/thoven/agent-skills/enforcement/bin/thoven-load-gate -- <cmd>`, which waits
+  `~/thoven/agent-skills/enforcement/bin/thoven-load-gate -- <cmd>`, which waits
   for free memory and a free slot. Exit 75 means the wait ran out: rerun once, then ask main.
-  Run no full `bin/verify` unless the brief asks for it; when it does, run it plain, outside the
-  gate: it holds its own machine lock. CI runs the full suite
+  Run no full `bin/verify` unless the brief asks for it. Heavy work runs on the host whose
+  `~/.config/thoven/host.json` says `mini`, where `bin/verify` takes a gate slot itself; on a
+  `laptop` host run `remote-verify` instead, and the `remote-check` skill for builds and e2e. CI runs the full suite
   on the integration PR. Stop the servers you started after each step. Delete scratch you can regenerate. Route big logs and
   wide reads through a subagent and keep its summary.
+- Verification disk use: read [Verify: Verification disk budget](../../verify/SKILL.md#verification-disk-budget)
+  before any capture, temporary checkout, install or build, even when the brief selects
+  `verify-this` instead of the full check list. Carry this rule into verifier briefs too.
 - When `bin/verify` comes back BLOCKED only because `origin/main` moved, merge main once and rerun
   once. If main moves again, do not merge again: report the block as it came back, with every row
   and the base SHA you merged. Further catch-up is main's call.

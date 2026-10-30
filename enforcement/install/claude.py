@@ -18,6 +18,9 @@ from common import ENFORCEMENT_DIR, add_missing, copy_file, load_denies, needs_c
 
 CLAUDE_DIR = Path.home() / ".claude"
 HOOKS_DIR = CLAUDE_DIR / "hooks"
+# thoven-sweep imports ../hooks/thoven-session-procs, so it sits in ~/.claude/bin beside the hooks dir.
+SWEEP = CLAUDE_DIR / "bin" / "thoven-sweep"
+SWEEP_LINK = Path.home() / ".local" / "bin" / "thoven-sweep"
 SETTINGS = CLAUDE_DIR / "settings.json"
 
 PLUGIN_DIRS_ENV = "CLAUDE_CODE_PLUGIN_DIRS"
@@ -27,6 +30,9 @@ HOOK_SPECS = [
     ("thoven-guard-bash", "PreToolUse", "Bash", 10, ""),
     ("thoven-track-edits", "PreToolUse", "Bash", 10, " --pre"),
     ("thoven-track-edits", "PostToolUse", "Edit|Write|Bash", 10, ""),
+    ("thoven-session-procs", "PostToolUse", "Bash", 10, " record"),
+    ("thoven-session-procs", "SessionEnd", None, 30, " end"),
+    ("thoven-session-procs", "SubagentStop", None, 30, " end --agent"),
     ("thoven-uncommitted", "Stop", None, 10, ""),
     ("thoven-andres-mode", "SessionStart", "startup|clear|compact", 10, ""),
     ("thoven-ticket-recall", "UserPromptSubmit", None, 6, " --harness claude"),
@@ -111,6 +117,8 @@ def main():
     wanted_dirs = [d for d in dirs if not is_stale(d)]
     gone = [d for d in dirs if is_stale(d)]
     print(f"- env {PLUGIN_DIRS_ENV}: {'remove ' + ', '.join(gone) if gone else 'no stale entry'}")
+    sweep_needed = needs_copy(ENFORCEMENT_DIR / "bin" / "thoven-sweep", SWEEP)
+    print(f"- thoven-sweep: copy to {SWEEP}={'yes' if sweep_needed else 'no (already matches)'}, link {SWEEP_LINK}")
 
     if not args.apply:
         print("\nDry run only. Re-run with --apply to write.")
@@ -129,6 +137,17 @@ def main():
     if gone:
         set_plugin_dirs(settings, wanted_dirs)
         print(f"Removed {', '.join(gone)} from env {PLUGIN_DIRS_ENV}")
+
+    if sweep_needed:
+        copy_file(ENFORCEMENT_DIR / "bin" / "thoven-sweep", SWEEP, executable=True)
+        changed = True
+    if not SWEEP_LINK.is_symlink():
+        SWEEP_LINK.parent.mkdir(parents=True, exist_ok=True)
+        if SWEEP_LINK.exists():
+            SWEEP_LINK.unlink()
+        SWEEP_LINK.symlink_to(SWEEP)
+        print(f"Linked {SWEEP_LINK} -> {SWEEP}")
+        changed = True
 
     if settings != original:
         write_json(SETTINGS, settings)

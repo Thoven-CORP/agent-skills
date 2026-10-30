@@ -257,5 +257,67 @@ as_session "git branch scratch/n ahead" "" >/dev/null
 g -C "$REPO" branch scratch/n ahead
 expect "a call with no session id records no branch" "$(as_session "git branch -D scratch/n" "")" "deny"
 
+# The host rule (MV-7): a laptop profile sends heavy work to the mini. Each table entry, then the
+# commands that stay allowed, under laptop, mini, missing and unparseable profiles.
+PROFILE="$HOME/.config/thoven/host.json"
+mkdir -p "$(dirname "$PROFILE")"
+hreason() { run claude "$(claude_payload "$1" "$WT")" | sed 's/^rc=0 //' | jq -r '.hookSpecificOutput.permissionDecisionReason // "allow"'; }
+heavy=(
+  "bin/verify --base main"
+  "./bin/verify"
+  "pnpm build"
+  "npm run build"
+  "npx next build"
+  "pnpm exec playwright test"
+  "npx playwright test e2e/login.spec.ts"
+  "pnpm test:e2e"
+  "pnpm vitest run"
+  "bundle exec rspec"
+  "THOVEN_FULL_SUITE=1 bundle exec rspec"
+)
+light=(
+  "pnpm exec vitest run components/ui/thoven-button.test.tsx"
+  "pnpm exec oxlint components/ui/thoven-button.tsx"
+  "remote-verify --base main"
+  "ssh thoven-mini-ssh 'cd ~/thoven && bin/verify'"
+  "git status"
+)
+printf '{ "role": "laptop", "heavyHost": "thoven-mini-ssh" }\n' >"$PROFILE"
+expect "laptop: bin/verify --base main names remote-verify" "$(hreason "bin/verify --base main")" "heavy work runs on the mini: remote-verify --base main"
+expect "laptop: cd frontend && bin/verify names remote-verify" "$(hreason "cd frontend && bin/verify")" "heavy work runs on the mini: remote-verify"
+for c in "${heavy[@]}"; do
+  case "$c" in *bin/verify*) want="remote-verify" ;; *) want="remote-check" ;; esac
+  case "$(hreason "$c")" in "heavy work runs on the mini: $want"*) ok "laptop denies $c with $want" ;; *) fail "laptop denies $c with $want" "$(hreason "$c")" ;; esac
+done
+for c in "${light[@]}"; do expect "laptop allows $c" "$(decision claude "$c" "$WT")" "allow"; done
+expect "laptop: THOVEN_LOCAL_HEAVY=1 bin/verify is allowed" "$(decision claude "THOVEN_LOCAL_HEAVY=1 bin/verify --base main" "$WT")" "allow"
+expect "laptop: THOVEN_LOCAL_HEAVY=1 pnpm build is allowed" "$(decision claude "THOVEN_LOCAL_HEAVY=1 pnpm build" "$WT")" "allow"
+expect "laptop: THOVEN_LOCAL_HEAVY=1 allows one command, not the next" "$(decision claude "THOVEN_LOCAL_HEAVY=1 pnpm build; bin/verify" "$WT")" "deny"
+expect "laptop: THOVEN_LOCAL_HEAVY=1 leaves the whole-suite rule" "$(decision claude "THOVEN_LOCAL_HEAVY=1 bundle exec rspec" "$WT")" "deny"
+expect "laptop: bash -c does not hide bin/verify" "$(decision claude "bash -c 'bin/verify'" "$WT")" "deny"
+expect "laptop: prose naming bin/verify stays allowed" "$(decision claude "echo bin/verify --base main" "$WT")" "allow"
+printf '{ "role": "laptop" }\n' >"$PROFILE"
+expect "laptop: cursor denies bin/verify" "$(run cursor "$(cursor_payload "bin/verify" "$WT")" | sed 's/^rc=0 //' | jq -r .permission)" "deny"
+expect "laptop: devin blocks bin/verify" "$(run devin "$(devin_payload "bin/verify")" "$WT")" "rc=2 "
+
+for profile in mini missing unparseable; do
+  case "$profile" in
+    mini) printf '{ "role": "mini", "slots": 3, "minFreePct": 25, "minDiskFreeGiB": 15 }\n' >"$PROFILE" ;;
+    missing) rm -f "$PROFILE" ;;
+    unparseable) printf '{ "role": "laptop", \n' >"$PROFILE" ;;
+  esac
+  for c in "${heavy[@]}" "${light[@]}"; do
+    case "$c" in "pnpm vitest run"|"bundle exec rspec") want=deny ;; *) want=allow ;; esac
+    expect "$profile profile: $c is ${want}ed as before" "$(decision claude "$c" "$WT")" "$want"
+  done
+  stderr="$(claude_payload "bin/verify --base main" "$WT" | "$GUARD" --dialect claude 2>&1 >/dev/null)"
+  case "$profile" in
+    unparseable) want=1 ;;
+    *) want=0 ;;
+  esac
+  expect "$profile profile: warning lines on stderr" "$(printf '%s' "$stderr" | grep -c .)" "$want"
+done
+rm -f "$PROFILE"
+
 [ "$failed" -eq 0 ] || exit 1
 echo "all passed"

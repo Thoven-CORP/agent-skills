@@ -61,6 +61,12 @@ a rebase ate a day of the onboarding prototype.)
 - An agent-skills PR is not held. It merges in the same pass, then `enforcement/sync.sh
   --apply` runs until `sync.sh` reports every harness copy matches. Commit and merge only on a
   branch in a tree, never in a `main` checkout: `co.thoven.sync` fast-forwards the clean `main` checkouts every 30 minutes.
+- Unattended PR work: `/full-stop` proves, files, babysits and stops at ready-to-merge. It serves
+  the frontend and any PR that changes what a user sees. `/full-send` also merges, on Andres's "full
+  send", only in agent-skills, tooling, and backend PRs that change nothing a user sees. Its merge
+  follows the method table and backend-first order above. Both call `/sol-loop`: with no GPT Sol
+  route, run `dispatch-work/references/review.md` "Every PR put to Andres" in its place and say so.
+  `pr-wait` runs `--until green`, since Thoven has no Greptile or Macroscope.
 - Production moves only through `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh`.
 
 **Where records live.** Linear holds current Project briefs, accepted decisions, status, evidence
@@ -93,8 +99,10 @@ names that issue beside the change.
 targeted checks while editing and at DONE, CI on every PR, the full `bin/verify --base <integration
 branch>` only when Andres asks or once at the parent before the integration PR into `main`, nothing
 reruns on push. Heavy work (e2e, builds, stacks, perf) runs through
-`~/thoven/agent-skills/enforcement/bin/thoven-load-gate -- <cmd>`. `bin/verify` runs plain, never
-through the gate: it holds its own machine lock. Stop the servers you started after each step, and
+`~/thoven/agent-skills/enforcement/bin/thoven-load-gate -- <cmd>`. Heavy work runs on the host
+whose `~/.config/thoven/host.json` says `mini`. There, `bin/verify` takes a gate slot itself, so run
+it as is. On a `laptop` host the Bash guard denies verify, builds, e2e and whole suites: run
+`remote-verify` for verify and the `remote-check` skill for the rest. Stop the servers you started after each step, and
 delete scratch you can regenerate.
 
 **Local database.** `thoven-worktree create` sets `TEST_DATABASE_URL` to `neondb_test_<slug>`, drops

@@ -57,6 +57,20 @@ path.
 Every pattern it matches is anchored at command position. A substring match
 denied this repo's own README, and then denied the edit that fixed it.
 
+It also holds the host rule. Each call reads `~/.config/thoven/host.json` once. With
+`role: laptop`, it denies the heavy commands in its `heavy_table` array: `bin/verify`,
+`pnpm build`, `next build`, `playwright test`, `pnpm test:e2e` and any run it treats as
+a whole suite. The denial for `bin/verify` names `remote-verify` with the same arguments,
+`heavy work runs on the mini: remote-verify --base main`, and the rest name the
+`remote-check` skill. `THOVEN_LOCAL_HEAVY=1` in front of one command runs it here. A
+missing profile, or any other role, changes nothing. A profile that does not parse
+prints one warning line and changes nothing, so a broken profile never blocks work.
+`remote-verify` and `ssh thoven-mini-ssh ...` stay allowed.
+
+`config/host-profile.example.json` holds both machines' profiles. Each machine keeps
+only its own object, unwrapped, at `~/.config/thoven/host.json`: the mini's under
+`mini`, the MacBook's under `laptop`. Neither is installed by this repo.
+
 `thoven-ticket-recall` runs on `UserPromptSubmit` in Claude and Codex. When a prompt names a
 THV ticket, it runs the mem0 plugin's own search for that ticket and injects what comes back. The
 plugin searches only on a session's first prompt, and a ticket named mid-session is where earlier
@@ -182,12 +196,44 @@ fires after `git worktree add` from any tool, including a herdr create that did 
 go through `thoven-worktree`, and warns when the new HEAD is behind `origin/main`
 with no commits of its own. A hook at that point cannot block.
 
-`bin/thoven-load-gate [--slots N] [--min-free PCT] [--max-load N] [--wait SECS] -- <cmd>`
-runs a heavy job once a slot is free, system memory free is at least 20% and the
-1-minute load is at most 12. Defaults are 2 slots and a 1500 s wait, each overridable
-by a `THOVEN_GATE_*` variable. It exits 75 when the wait runs out. `--check-only` waits
-on memory and load without taking a slot, and `THOVEN_GATE_DISABLE=1` skips the checks.
-`bin/thoven-load-gate-test` proves it with a temp slot directory, no git and no database.
+`bin/thoven-load-gate [--profile FILE] [--slots N] [--weight N] [--min-free PCT] [--max-load N] [--wait SECS] -- <cmd>`
+runs a heavy job once a slot is free, system memory free is at least 20%, the
+1-minute load is at most 12 and memory pressure is below level 4. Defaults are 2 slots
+and a 1500 s wait. The command sees `THOVEN_GATE_SLOT=<i>`, the slot it holds, so a
+caller can give each slot its own resources. `--weight N` takes N slots at once or
+none, and `THOVEN_GATE_SLOT` is then the lowest of them. A long-lived process holds
+its slot for as long as it runs, so `thoven-load-gate --name dev-server -- pnpm run dev`
+counts a dev server against the pool.
+
+`--profile FILE` reads a JSON host profile such as `~/.config/thoven/host.json`. Its
+`slots`, `minFreePct`, `maxLoad`, `waitSeconds`, `blockAtPressure` (0 turns the pressure
+check off) and `minDiskFreeGiB` replace the defaults, and other fields are ignored. With
+`minDiskFreeGiB` set, the gate refuses while the volume holding `$HOME` has less free.
+A `THOVEN_GATE_*` variable wins over the profile and a flag wins over both, wherever
+`--profile` sits on the command line. A profile that is not a JSON object of
+non-negative numbers exits 2 and runs nothing.
+
+It exits 75 when the wait runs out and names the last reason it refused. `--check-only`
+waits on memory, load, pressure and disk without taking a slot, and
+`THOVEN_GATE_DISABLE=1` skips the checks. `bin/thoven-load-gate-test` proves it with a
+temp slot directory and stubbed `sysctl` and `df`, no git and no database.
+
+`bin/remote-verify [--host HOST] [--repo frontend|backend] [--profile PATH] [--base REF] [verify args]`
+runs `bin/verify` for the current checkout on the Mac mini (`thoven-mini-ssh` by
+default). HEAD must be on an origin branch, or it refuses with exit 3 and names the
+branch. It sends HEAD's SHA, `git diff --binary HEAD` and a tar of the untracked files
+in one `ssh -o BatchMode=yes` call, together with its own copy, so the mini needs no
+install of it. Secret and generated paths (`.env*`, keys, `master.key`, credentials,
+`.git`, `node_modules`, build output, the remote-check skill's Mutagen exclusions) are
+dropped on the MacBook and each one is named on stderr. On the mini it fetches the SHA
+into `~/thoven/<repo>`, adds a detached worktree under `~/thoven/runs/remote-verify-<id>/`,
+applies the patch, installs from the lockfile and runs `bin/verify` with
+`THOVEN_VERIFY_HOST_PROFILE` set. A verify that does not read the profile yet is wrapped
+in `thoven-load-gate --profile`. The worktree is removed on success, failure and signal,
+and `verify.log` stays beside it. The `THOVEN_VERIFY` block is printed to stdout and
+everything else to stderr. `--base` is resolved to a SHA on the MacBook. `--host local`
+runs the mini half on this machine. `bin/remote-verify-test` proves it with a stubbed
+`ssh`, a bare origin and a stub `bin/verify`, all under one temp directory.
 
 Exit codes:
 
@@ -197,6 +243,7 @@ Exit codes:
 | `thoven-worktree` | 0 created or already exists, 1 failure, 2 usage, 3 refused (read-only or docs-only kind), 4 reuse an existing tree (its path is the last stdout line) |
 | `thoven-evidence-dedupe` | 0 success, 1 an apply failure, 2 refused input |
 | `bin/verify` (both repos) | the gated command's code, 75 when the gate's wait ran out |
+| `remote-verify` | `bin/verify`'s own code, 2 usage, 3 HEAD not pushed, 4 setup failed on the mini |
 
 `bin/thoven-exit-codes-test` pins these codes, except 4, with throwaway directories.
 
@@ -269,3 +316,15 @@ The two unconditional denies, `git clean` and `git reset --hard`, are also
 written into each harness's own permission file, so they hold even where a
 hook is skipped. The path-conditional ones need the session's edit record and
 stay hook-only.
+
+## Session-owned process cleanup
+
+`hooks/thoven-session-procs` records the dev servers a Claude Code session starts
+(PostToolUse on Bash, found by walking from the session's `claude` process) in
+`~/.thoven/session-procs/<session_id>`. SessionEnd stops everything recorded for the
+session: TERM, 10 seconds, KILL, and the start time must still match. SubagentStop stops nothing,
+because subagents share one `claude` process and a server cannot be tied to the agent that
+started it (one agent's stop killed another's servers). It logs to `~/.thoven/session-procs.log`.
+`bin/thoven-sweep` is the manual wider sweep: it lists every dev server and dev tool with its
+owner and stops nothing unless given `--stop <pid...>` or `--stop-unowned`. Nothing runs it on a
+schedule. Tests: `bin/thoven-session-procs-test`.

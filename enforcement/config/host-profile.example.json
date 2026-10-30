@@ -1,0 +1,8 @@
+{
+  "mini": {
+    "role": "mini", "slots": 3, "workersPerSlot": 2, "coldWeight": 2, "minFreePct": 25,
+    "maxLoad": 24, "blockAtPressure": 4, "waitSeconds": 900, "deepRows": true,
+    "devServerWeight": 1, "browserQaWeight": 1, "minDiskFreeGiB": 15
+  },
+  "laptop": { "role": "laptop", "heavyHost": "thoven-mini-ssh" }
+}
