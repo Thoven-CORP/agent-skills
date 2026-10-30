@@ -1,4 +1,5 @@
 import contextlib
+import importlib.util
 import io
 import json
 import os
@@ -17,7 +18,8 @@ class CodexNotificationInstallTest(unittest.TestCase):
         with patch.multiple(installer, CODEX_DIR=codex_dir,
                             HOOKS_DIR=codex_dir / "hooks",
                             HOOKS_JSON=codex_dir / "hooks.json",
-                            RULES=codex_dir / "rules" / "thoven.rules"), \
+                            RULES=codex_dir / "rules" / "thoven.rules",
+                            CONFIG=codex_dir / "config.toml"), \
                 patch.object(installer.sys, "argv", ["codex.py"] + (["--apply"] if apply else [])), \
                 contextlib.redirect_stdout(io.StringIO()):
             installer.main()
@@ -71,6 +73,68 @@ class CodexNotificationInstallTest(unittest.TestCase):
             self.assertFalse(any("osascript" in h["command"]
                                  for entries in hooks["hooks"].values()
                                  for entry in entries for h in entry["hooks"]))
+
+
+class CodexHooksFeatureTest(unittest.TestCase):
+    def test_no_config_gets_the_table(self):
+        text, change = installer.enable_hooks_feature("")
+        self.assertEqual("[features]\nhooks = true\n", text)
+        self.assertEqual("add [features] hooks = true", change)
+
+    def test_table_is_appended_after_existing_settings(self):
+        text, _ = installer.enable_hooks_feature('model = "gpt"\n\n[hooks.state]\n')
+        self.assertEqual('model = "gpt"\n\n[hooks.state]\n\n[features]\nhooks = true\n', text)
+        self.assertTrue(installer.parses_as_toml(text))
+
+    def test_key_is_added_inside_an_existing_table_only(self):
+        src = "[features]\nweb_search = true\n\n[other]\nhooks = false\n"
+        text, change = installer.enable_hooks_feature(src)
+        self.assertEqual("[features]\nhooks = true\nweb_search = true\n\n[other]\nhooks = false\n", text)
+        self.assertEqual("add hooks = true to [features]", change)
+
+    def test_false_is_turned_on(self):
+        text, change = installer.enable_hooks_feature("[features]\nhooks = false # off\n")
+        self.assertEqual("[features]\nhooks = true\n", text)
+        self.assertEqual("turn [features] hooks from false to true", change)
+
+    def test_already_on_is_untouched(self):
+        src = "[features]\nhooks = true\n"
+        self.assertEqual((src, None), installer.enable_hooks_feature(src))
+
+    def test_dotted_features_key_is_left_for_a_person(self):
+        text, change = installer.enable_hooks_feature("features.web_search = true\n")
+        self.assertIsNone(text)
+        self.assertIn("by hand", change)
+
+    @unittest.skipUnless(importlib.util.find_spec("tomllib"), "tomllib needs Python 3.11")
+    def test_unparseable_result_is_refused(self):
+        self.assertFalse(installer.parses_as_toml("[features]\nhooks = true\n[features]\n"))
+
+    def test_install_sets_the_feature_once_and_keeps_other_settings(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = root / ".codex" / "config.toml"
+            config.parent.mkdir()
+            config.write_text('model = "gpt"\n')
+            before = config.read_bytes()
+            CodexNotificationInstallTest.run_installer(self, root)
+            self.assertEqual(before, config.read_bytes(), "dry run changed config.toml")
+            CodexNotificationInstallTest.run_installer(self, root, apply=True)
+            self.assertEqual('model = "gpt"\n\n[features]\nhooks = true\n', config.read_text())
+            self.assertEqual(before, config.with_name("config.toml.bak-thv969").read_bytes())
+            applied = config.read_bytes()
+            CodexNotificationInstallTest.run_installer(self, root, apply=True)
+            self.assertEqual(applied, config.read_bytes(), "second install changed config.toml")
+
+    def test_install_leaves_a_dotted_config_alone(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = root / ".codex" / "config.toml"
+            config.parent.mkdir()
+            config.write_text("features.web_search = true\n")
+            before = config.read_bytes()
+            CodexNotificationInstallTest.run_installer(self, root, apply=True)
+            self.assertEqual(before, config.read_bytes())
 
 
 if __name__ == "__main__":
