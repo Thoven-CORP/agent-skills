@@ -1,0 +1,254 @@
+#!/usr/bin/env bash
+# Runs bin/verify for the current tree on the Mac mini: sends HEAD, the uncommitted patch and the
+# untracked files over one ssh call, verifies them in a throwaway worktree there and prints the
+# THOVEN_VERIFY block. The same file is the mini-side half (--serve), shipped inside the bundle so
+# the mini needs no install of it.
+set -uo pipefail
+
+usage() {
+  cat <<'USAGE'
+usage: remote-verify [--host HOST] [--repo frontend|backend] [--profile PATH] [--base REF]
+                     [verify args...]
+
+  Run from inside a frontend or backend checkout. HEAD must be on an origin branch.
+  --host HOST      ssh destination (default thoven-mini-ssh, env REMOTE_VERIFY_HOST);
+                   "local" runs the mini half on this machine without ssh
+  --repo NAME      clone under ~/thoven on the mini (default: backend when the tree has a
+                   Gemfile, else frontend)
+  --profile PATH   host profile on the mini (default ~/.config/thoven/host.json there)
+  --base REF       resolved to a SHA here and passed to bin/verify as --base <sha>
+  Any other argument goes to bin/verify unchanged.
+
+  Uncommitted tracked changes travel as `git diff --binary HEAD`, untracked files as a tar of
+  `git ls-files --others --exclude-standard`. Secret and generated paths (.env*, keys,
+  credentials, .git, node_modules, build output) never leave this machine; each one skipped is
+  named on stderr. The THOVEN_VERIFY block goes to stdout, verify's progress to stderr.
+  Exit codes: bin/verify's own, 2 usage, 3 HEAD not pushed, 4 setup failed on the mini.
+USAGE
+}
+
+say() { printf 'remote-verify: %s\n' "$*" >&2; }
+
+# The ignore list from the remote-check skill's Mutagen exclusions. Prints nothing for a path that
+# may travel, else the reason.
+blocked_path() {
+  local p="$1" base="${1##*/}" part
+  local IFS=/
+  for part in $p; do
+    case "$part" in
+      .git | .ssh | .aws | .gnupg | .docker | node_modules | .next | .turbo | .cache | coverage | \
+        playwright-report | test-results | .bundle | .playwright | .vercel)
+        printf 'excluded directory %s' "$part"; return ;;
+    esac
+  done
+  case "$p" in
+    tmp/* | log/* | storage/* | vendor/bundle/*) printf 'generated output'; return ;;
+  esac
+  case "$base" in
+    .env | .env.* | *.env | .envrc | .netrc | .npmrc | .pypirc | .pgpass | master.key | \
+      credentials | credentials.* | *credentials*.json | secrets.* | *.secret | *.secrets | \
+      *.pem | *.key | *.p12 | *.pfx | *.keystore | *.jks | *.gpg | *.asc | \
+      id_rsa* | id_dsa* | id_ecdsa* | id_ed25519* | *.sqlite | *.sqlite3 | *.log | .DS_Store)
+      printf 'secret or local-only file'; return ;;
+  esac
+}
+
+# ---------------------------------------------------------------- mini half
+clone="" wt="" bundle_dir=""
+# The worktree and the received bundle are removed on success, failure and signal alike. The log
+# stays for reading.
+cleanup() {
+  if [ -n "$wt" ] && [ -d "$wt" ]; then rm -rf "$wt"; fi
+  if [ -n "$bundle_dir" ]; then rm -rf "$bundle_dir"; fi
+  if [ -n "$clone" ]; then git -C "$clone" worktree prune 2>/dev/null; fi
+  wt=""
+}
+kill_tree() {
+  local kid
+  for kid in $(pgrep -P "$1" 2>/dev/null); do kill_tree "$kid"; done
+  kill -TERM "$1" 2>/dev/null
+}
+
+serve() {
+  local bundle="$1" root="${REMOTE_VERIFY_ROOT:-$HOME/thoven}"
+  bundle_dir="$bundle"
+  local repo sha branch profile id status=0
+  repo=$(sed -n 's/^repo=//p' "$bundle/meta")
+  sha=$(sed -n 's/^sha=//p' "$bundle/meta")
+  branch=$(sed -n 's/^branch=//p' "$bundle/meta")
+  profile=$(sed -n 's/^profile=//p' "$bundle/meta")
+  [ -n "$profile" ] || profile="$HOME/.config/thoven/host.json"
+  case "$repo" in frontend | backend) ;; *) say "unknown repo '$repo'"; return 4 ;; esac
+  case "$sha" in *[!0-9a-f]* | '') say "bad sha '$sha'"; return 4 ;; esac
+  clone="$root/$repo"
+  [ -d "$clone/.git" ] || [ -f "$clone/.git" ] || { say "no clone at $clone on $(hostname -s)"; return 4; }
+
+  local -a args=()
+  while IFS= read -r -d '' a; do args+=("$a"); done < "$bundle/args"
+  local base_sha
+  base_sha=$(sed -n 's/^base=//p' "$bundle/meta")
+
+  local need
+  for need in "$sha" ${base_sha:+"$base_sha"}; do
+    if ! git -C "$clone" cat-file -e "$need^{commit}" 2>/dev/null; then
+      git -C "$clone" fetch -q origin 2>&1 | sed 's/^/remote-verify: fetch: /' >&2
+      git -C "$clone" cat-file -e "$need^{commit}" 2>/dev/null ||
+        git -C "$clone" fetch -q origin "$need" 2>/dev/null
+      git -C "$clone" cat-file -e "$need^{commit}" 2>/dev/null ||
+        { say "commit $need (branch ${branch:-detached}) is not on origin as seen from $clone"; return 4; }
+    fi
+  done
+
+  id="remote-verify-$(date +%Y%m%d-%H%M%S)-$$"
+  run="${REMOTE_VERIFY_RUNS:-$root/runs}/$id"
+  wt="$run/tree"
+  mkdir -p "$run" || return 4
+  trap 'cleanup' EXIT
+  trap 'cleanup; exit 130' INT TERM HUP
+
+  git -C "$clone" worktree add -q --detach "$wt" "$sha" >&2 || { say "worktree add failed"; return 4; }
+  if [ -s "$bundle/patch" ]; then
+    git -C "$wt" apply --binary --whitespace=nowarn "$bundle/patch" >&2 ||
+      { say "patch did not apply at $sha"; return 4; }
+  fi
+  if [ -s "$bundle/untracked.tar" ]; then
+    tar -xf "$bundle/untracked.tar" -C "$wt" || { say "untracked files did not unpack"; return 4; }
+  fi
+
+  # ssh runs a non-interactive shell, which has no mise shims; load the tree's tool pins.
+  local mise
+  mise=$(command -v mise || ls "$HOME/.local/bin/mise" 2>/dev/null)
+  if [ -n "$mise" ]; then eval "$(cd "$wt" && "$mise" env -s bash 2>/dev/null)"; fi
+
+  local install="${REMOTE_VERIFY_INSTALL-}"
+  if [ -z "$install" ]; then
+    if [ -f "$wt/pnpm-lock.yaml" ]; then install="pnpm install --frozen-lockfile --prefer-offline --silent"
+    elif [ -f "$wt/Gemfile.lock" ]; then install="bundle check >/dev/null || BUNDLE_FROZEN=true bundle install --quiet"
+    else install=none
+    fi
+  fi
+  if [ "$install" != none ]; then
+    say "installing: $install"
+    (cd "$wt" && eval "$install") >&2 || { say "install failed in $wt"; return 4; }
+  fi
+
+  local -a cmd=(bin/verify "${args[@]+"${args[@]}"}")
+  # A verify that knows THOVEN_VERIFY_HOST_PROFILE takes its own gate slot; an older one is
+  # wrapped in the gate so it still queues behind the mini's other heavy jobs.
+  if [ -f "$profile" ]; then
+    export THOVEN_VERIFY_HOST_PROFILE="$profile"
+    if ! grep -qs THOVEN_VERIFY_HOST_PROFILE "$wt/scripts/verify/diff-lock.py" "$wt/lib/thoven/verify.rb"; then
+      local gate="${THOVEN_LOAD_GATE:-$HOME/thoven/agent-skills/enforcement/bin/thoven-load-gate}"
+      if [ -x "$gate" ]; then cmd=("$gate" --profile "$profile" --name remote-verify -- "${cmd[@]}")
+      else say "no thoven-load-gate at $gate; running bin/verify on its own lock"
+      fi
+    fi
+  else
+    say "no host profile at $profile; bin/verify runs on its own lock"
+  fi
+
+  say "verifying $repo $sha${branch:+ ($branch)} in $wt"
+  { (cd "$wt" && exec "${cmd[@]}") < /dev/null 2>&1 | tee "$run/verify.log" >&2; } &
+  local child=$!
+  trap 'kill_tree "$child"; wait "$child" 2>/dev/null; cleanup; exit 130' INT TERM HUP
+  wait "$child"; status=$?
+  trap - INT TERM HUP
+  cleanup
+  printf '\n' >&2
+  sed -n '/^THOVEN_VERIFY_BEGIN$/,/^THOVEN_VERIFY_END$/p' "$run/verify.log"
+  grep -qx THOVEN_VERIFY_BEGIN "$run/verify.log" || say "bin/verify printed no THOVEN_VERIFY block"
+  say "exit $status; log $run/verify.log on $(hostname -s)"
+  return "$status"
+}
+
+if [ "${1-}" = "--serve" ]; then
+  [ $# -eq 2 ] || exit 2
+  serve "$2"; rc=$?
+  rm -rf "$2"
+  exit "$rc"
+fi
+
+# ---------------------------------------------------------------- MacBook half
+host="${REMOTE_VERIFY_HOST:-thoven-mini-ssh}"
+repo=""
+profile=""
+base=""
+verify_args=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h | --help) usage; exit 0 ;;
+    --host) [ $# -ge 2 ] || { usage >&2; exit 2; }; host="$2"; shift 2 ;;
+    --repo) [ $# -ge 2 ] || { usage >&2; exit 2; }; repo="$2"; shift 2 ;;
+    --profile) [ $# -ge 2 ] || { usage >&2; exit 2; }; profile="$2"; shift 2 ;;
+    --base) [ $# -ge 2 ] || { usage >&2; exit 2; }; base="$2"; shift 2 ;;
+    *) verify_args+=("$1"); shift ;;
+  esac
+done
+
+top=$(git rev-parse --show-toplevel 2>/dev/null) || { say "not inside a git checkout"; exit 2; }
+cd "$top" || exit 2
+if [ -z "$repo" ]; then
+  if [ -f Gemfile ]; then repo=backend; else repo=frontend; fi
+fi
+case "$repo" in frontend | backend) ;; *) say "--repo must be frontend or backend"; exit 2 ;; esac
+
+sha=$(git rev-parse --verify HEAD) || { say "no HEAD commit"; exit 2; }
+branch=$(git symbolic-ref --short -q HEAD || true)
+if [ -z "$(git for-each-ref --contains "$sha" --format='%(refname)' refs/remotes/origin)" ]; then
+  if [ -n "$branch" ]; then
+    say "HEAD ${sha:0:12} on branch '$branch' is not pushed to origin; the mini can only fetch pushed commits. Run: git push -u origin $branch"
+  else
+    say "detached HEAD ${sha:0:12} is not on any origin branch; push it to a branch first"
+  fi
+  exit 3
+fi
+
+base_sha=""
+if [ -n "$base" ]; then
+  base_sha=$(git rev-parse --verify -q "$base^{commit}") || { say "cannot resolve --base $base"; exit 2; }
+  verify_args=(--base "$base_sha" "${verify_args[@]+"${verify_args[@]}"}")
+fi
+
+stage=$(mktemp -d "${TMPDIR:-/tmp}/remote-verify-out.XXXXXX") || exit 4
+trap 'rm -rf "$stage"' EXIT
+cp "$0" "$stage/remote-verify" || exit 4
+{
+  printf 'repo=%s\nsha=%s\nbranch=%s\nbase=%s\nprofile=%s\n' "$repo" "$sha" "$branch" "$base_sha" "$profile"
+} > "$stage/meta"
+: > "$stage/args"
+for a in "${verify_args[@]+"${verify_args[@]}"}"; do printf '%s\0' "$a" >> "$stage/args"; done
+
+# Tracked changes: only the paths the ignore list lets through go into the patch.
+tracked=()
+while IFS= read -r -d '' p; do
+  why=$(blocked_path "$p")
+  if [ -n "$why" ]; then say "skipped $p ($why)"; else tracked+=(":(literal)$p"); fi
+done < <(git diff --no-renames --name-only -z HEAD)
+if [ ${#tracked[@]} -gt 0 ]; then
+  git diff --binary --no-renames HEAD -- "${tracked[@]}" > "$stage/patch" || exit 4
+else
+  : > "$stage/patch"
+fi
+
+: > "$stage/untracked.list"
+while IFS= read -r -d '' p; do
+  why=$(blocked_path "$p")
+  if [ -n "$why" ]; then say "skipped $p ($why)"; else printf '%s\0' "$p" >> "$stage/untracked.list"; fi
+done < <(git ls-files --others --exclude-standard -z)
+if [ -s "$stage/untracked.list" ]; then
+  COPYFILE_DISABLE=1 tar -cf "$stage/untracked.tar" --null -T "$stage/untracked.list" || exit 4
+fi
+rm -f "$stage/untracked.list"
+
+n_tracked=${#tracked[@]}
+n_untracked=0
+[ -s "$stage/untracked.tar" ] && n_untracked=$(tar -tf "$stage/untracked.tar" | grep -cv '/$')
+say "sending $repo ${sha:0:12}${branch:+ ($branch)}, $n_tracked changed and $n_untracked untracked files, to $host"
+
+remote_cmd='d=$(mktemp -d "${TMPDIR:-/tmp}/remote-verify.XXXXXX") && tar -xf - -C "$d" && exec bash "$d/remote-verify" --serve "$d"'
+bundle() { COPYFILE_DISABLE=1 tar -cf - -C "$stage" remote-verify meta args patch $( [ -f "$stage/untracked.tar" ] && echo untracked.tar ); }
+if [ "$host" = local ]; then
+  bundle | bash -c "$remote_cmd"
+else
+  bundle | ssh -o BatchMode=yes "$host" "$remote_cmd"
+fi
