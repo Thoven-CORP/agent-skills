@@ -20,6 +20,8 @@ stay there rather than being repeated in ACCESS.
 | Before implementing a CSS transition | `/transitions-dev` |
 | Before implementing keyboard, focus, forms or interactive controls | `/better-accessibility` |
 | Before writing customer-facing copy | `/thoven-branding` |
+| Building a screen from a board frame or Figma frame | `/build-design`; its Design / Built / Status table rides in the REPORT beside the parity grid |
+| A component with four or more reachable states, before the first DONE | `/state-machine`; the switcher URL rides in the REPORT so Andres can flip every state. The route stays uncommitted and is deleted once he has looked |
 | A screen is built, before the parity capture | `/better-ui` |
 | Motion is built, before reporting it complete | `/review-animations`, asked to review the changed motion files |
 | Before changing shared behaviour, an interface or a contract | `/blast-radius` |

@@ -40,6 +40,15 @@ domain row over a universal one. When two rows match equally, ask one question.
 | This repo has no control skill or Feature Map | `/create-verification-skill` |
 | An existing verify-app map is stale | `/maintain-verification-skill` |
 | Commit, deploy, release | `/publish` |
+| Watch a PR through CI and comments without me | `/babysit-pr` |
+| Watch CI in the terminal until it passes | `/loop-on-ci` |
+| CI is red on a PR | `/fix-ci` |
+| An old PR or branch is behind `main`, "rebase this" | `/modernize` |
+| Pick up another person's or agent's PR, branch or dead pane | `/takeover` |
+| Take a ticket to ready-to-merge unattended | `/full-stop` |
+| Run a heavy check on the mini against MacBook changes | `/remote-check` |
+| Set up or reshape a Linear Project | `/linear-project` |
+| What families are texting about, a feedback sweep | `/text-product-analysis` |
 | Where does this stand, log work, move a ticket | `/workspace` |
 
 ### Design and UI
@@ -65,6 +74,15 @@ domain row over a universal one. When two rows match equally, ask one question.
 | Explore a UX pattern before designing | `/design-research` |
 | Set up or extract a design system, run live browser iteration | `/impeccable <verb>` |
 | Sketch a layout before committing | `/wireframe` |
+| Build a Figma or board frame | `/build-design` |
+| Work on every state of one component | `/state-machine` |
+| Stress test a component under every scenario | `/break` |
+| Feed a screen worst-case data | `/break-ui` |
+| Iterate on variants of the component being built | `/variant` |
+| Review the UI changes in a branch or PR | `/interface-review` |
+| Art, stickers, icons or Thovie for a page | `/thoven-art` |
+| How was this site or effect built | `/explain-interface` |
+| An exploded technical illustration | `/teardown` |
 
 ### Motion
 
@@ -79,6 +97,7 @@ domain row over a universal one. When two rows match equally, ask one question.
 | Name a feel precisely | `/animation-vocabulary` |
 | Storyboard, timeline, live tuning panels | `/interface-craft` |
 | Should this animate at all | `/emil-design-eng` |
+| Build one new animation from scratch | `/animate` |
 
 ### React, Next and types
 
@@ -127,6 +146,8 @@ A chain is worth naming when the order matters and the wrong order wastes work.
 | New component with motion | `/thoven-designer` → `/motion` → `/motion-react` → `/verify` |
 | Pre-ship quality pass | `/impeccable polish` → `/accessibility-check` → `/qa-flow` → `/publish` |
 | Pre-commit | `/deslop` → `/no-comments` → `/mattpocock-skills:code-review` → `/verify` |
+| Screen from a frame | `/thoven-designer` → `/build-design` → `/state-machine` → `/verify` |
+| Ship | `/verify` → `/publish` → `/babysit-pr` |
 
 ## Quality work, `/impeccable` or a `better-*` skill
 

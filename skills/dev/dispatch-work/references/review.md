@@ -94,7 +94,8 @@ edge cases, test nits, style).
 
 A PR main asks Andres to merge has had, on its final diff, /mattpocock-skills:code-review, thermo
 sized as in verifier step 5, and /deslop. That includes hotfix, follow-up and CI-fix PRs that never
-had a verifier pane. The go line reports the result in one line. After a wave of ticket merges
+had a verifier pane. Its `pr-wait --until green` (SKILL.md step 5) exited 0 on that final head, and
+the branch is not BEHIND. The go line reports the result in one line. After a wave of ticket merges
 into an integration branch, run one /deslop and thermo pass over the merged range.
 
 ## Handling findings

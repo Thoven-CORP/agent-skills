@@ -18,7 +18,7 @@
         "maintain-verification-skill": "An existing verify-app map is stale",
         "publish": "Commit, deploy, release",
         "fix-ci": "CI is red on a PR",
-        "loop-on-ci": "Watch a PR until its checks pass",
+        "loop-on-ci": "Watch a PR until its checks pass, in the terminal",
         "workspace": "Where does this stand, log work, move a ticket",
         "postgres-pro": "Query plans, indexes, Postgres behaviour",
         "safe-migrate": "A schema change or migration; Schema change",
@@ -38,7 +38,16 @@
         "deslop": "Strip AI slop from a diff; Pre-commit",
         "no-comments": "Remove comments that restate the code",
         "code-review": "Review a branch against standards and spec",
-        "tdd": "Write the test first"
+        "tdd": "Write the test first",
+        "babysit-pr": "Watch a PR through CI and comments without me",
+        "modernize": "An old PR or branch is behind main, \"rebase this\"",
+        "takeover": "Pick up another person's or agent's PR, branch or dead pane",
+        "full-stop": "Take a ticket to ready-to-merge unattended",
+        "full-send": "Take a PR that changes nothing a user sees to merged, on \"full send\"",
+        "remote-check": "Run a heavy check on the mini against MacBook changes",
+        "linear-project": "Set up or reshape a Linear Project",
+        "text-product-analysis": "What families are texting about, a feedback sweep",
+        "product-fundamentals": "Brainstorm or grill a feature, journey or flow; what matters most"
       }
     }
   }
