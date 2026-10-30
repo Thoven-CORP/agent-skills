@@ -26,7 +26,7 @@ Check these against the builder's REPORT entry (`dispatch board <project> --tick
 branch before starting the verifier. Each one that fails is a finding.
 
 - A red run exists before the green one, for the proof the ticket names.
-- Type-check, the touched test files (one file per run) and lint on those files ran during the build.
+- Each changed behaviour has a `/verify-this` verdict. Type-check, the touched test files (one file per run) and lint on those files ran once, at the first DONE. A fix round ran only the test files it touched.
 - Commits land on the named branch, by exact path, each ending in the ticket id.
 - `git diff --stat <base>..HEAD` touches the ticket's Paths, and every other file has a stated reason.
 - The report labels each claim measured, inferred or guess.

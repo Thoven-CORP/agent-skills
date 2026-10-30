@@ -30,7 +30,8 @@ stay there rather than being repeated in ACCESS.
 | Before a requested test-first change, or a bug fix with an obvious cheap test target | `/tdd` |
 | A specific claim is disputed or lacks evidence | `/verify-this`, scoped to that claim |
 | A change affects documented behaviour or setup, before handoff | `/doc-freshness`, scoped to the affected docs |
-| During edits and before sending DONE | `/verify`, targeted checks for this diff; full `bin/verify` only on Andres's request or once at the parent before integration into `main` |
+| Each changed behaviour, at the first DONE and in every fix round | `/verify-this`, one claim per behaviour; a fix round re-verifies only the claims it changed |
+| The first DONE | `/verify`'s check list once, through `/remote-check` on a `laptop` host; full `bin/verify` only on Andres's request or once at the parent before integration into `main` |
 
 Check each selected skill exists in `~/.agents/skills/` and is loadable in the builder's harness.
 Use the loading procedure in brief.md. A missing skill is a named access gap to resolve before
