@@ -322,8 +322,9 @@ stay hook-only.
 `hooks/thoven-session-procs` records the dev servers a Claude Code session starts
 (PostToolUse on Bash, found by walking from the session's `claude` process) in
 `~/.thoven/session-procs/<session_id>`. SessionEnd stops everything recorded for the
-session, and SubagentStop stops what that `agent_id` recorded: TERM, 10 seconds, KILL, and the
-start time must still match. It logs to `~/.thoven/session-procs.log`.
+session: TERM, 10 seconds, KILL, and the start time must still match. SubagentStop stops nothing,
+because subagents share one `claude` process and a server cannot be tied to the agent that
+started it (one agent's stop killed another's servers). It logs to `~/.thoven/session-procs.log`.
 `bin/thoven-sweep` is the manual wider sweep: it lists every dev server and dev tool with its
 owner and stops nothing unless given `--stop <pid...>` or `--stop-unowned`. Nothing runs it on a
 schedule. Tests: `bin/thoven-session-procs-test`.
