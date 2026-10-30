@@ -204,6 +204,23 @@ waits on memory, load, pressure and disk without taking a slot, and
 `THOVEN_GATE_DISABLE=1` skips the checks. `bin/thoven-load-gate-test` proves it with a
 temp slot directory and stubbed `sysctl` and `df`, no git and no database.
 
+`bin/remote-verify [--host HOST] [--repo frontend|backend] [--profile PATH] [--base REF] [verify args]`
+runs `bin/verify` for the current checkout on the Mac mini (`thoven-mini-ssh` by
+default). HEAD must be on an origin branch, or it refuses with exit 3 and names the
+branch. It sends HEAD's SHA, `git diff --binary HEAD` and a tar of the untracked files
+in one `ssh -o BatchMode=yes` call, together with its own copy, so the mini needs no
+install of it. Secret and generated paths (`.env*`, keys, `master.key`, credentials,
+`.git`, `node_modules`, build output, the remote-check skill's Mutagen exclusions) are
+dropped on the MacBook and each one is named on stderr. On the mini it fetches the SHA
+into `~/thoven/<repo>`, adds a detached worktree under `~/thoven/runs/remote-verify-<id>/`,
+applies the patch, installs from the lockfile and runs `bin/verify` with
+`THOVEN_VERIFY_HOST_PROFILE` set. A verify that does not read the profile yet is wrapped
+in `thoven-load-gate --profile`. The worktree is removed on success, failure and signal,
+and `verify.log` stays beside it. The `THOVEN_VERIFY` block is printed to stdout and
+everything else to stderr. `--base` is resolved to a SHA on the MacBook. `--host local`
+runs the mini half on this machine. `bin/remote-verify-test` proves it with a stubbed
+`ssh`, a bare origin and a stub `bin/verify`, all under one temp directory.
+
 Exit codes:
 
 | Command | Codes |
@@ -212,6 +229,7 @@ Exit codes:
 | `thoven-worktree` | 0 created or already exists, 1 failure, 2 usage, 3 refused (read-only or docs-only kind), 4 reuse an existing tree (its path is the last stdout line) |
 | `thoven-evidence-dedupe` | 0 success, 1 an apply failure, 2 refused input |
 | `bin/verify` (both repos) | the gated command's code, 75 when the gate's wait ran out |
+| `remote-verify` | `bin/verify`'s own code, 2 usage, 3 HEAD not pushed, 4 setup failed on the mini |
 
 `bin/thoven-exit-codes-test` pins these codes, except 4, with throwaway directories.
 

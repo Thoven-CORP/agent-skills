@@ -33,6 +33,13 @@ row "thoven-load-gate, wait ran out" 75 "$BIN/thoven-load-gate" --min-free 101 -
 row "thoven-worktree, no args" 2 "$BIN/thoven-worktree"
 row "thoven-worktree create --kind review" 3 "$BIN/thoven-worktree" create fe x 1 --kind review --dry-run
 row "thoven-evidence-dedupe, no args" 2 "$BIN/thoven-evidence-dedupe"
+row "remote-verify --help" 0 "$BIN/remote-verify" --help
+row "remote-verify, flag with no value" 2 "$BIN/remote-verify" --host
+(cd "$T" && "$BIN/remote-verify" --host local) >/dev/null 2>&1
+got=$?
+if [ "$got" = 2 ]; then printf 'PASS remote-verify, outside a checkout: exit 2\n'
+else printf 'FAIL remote-verify, outside a checkout: exit %s, want 2\n' "$got"; failures=$((failures + 1)); fi
+printf 'SKIP remote-verify exits 3 and 4: need a git origin, covered by remote-verify-test\n'
 printf 'SKIP thoven-worktree exit 4 (reuse): needs a real git repo with a Project tree, covered by thoven-worktree-reuse-test\n'
 
 if [ "$failures" -gt 0 ]; then printf '%s row(s) failed\n' "$failures"; exit 1; fi
