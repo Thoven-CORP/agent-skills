@@ -71,5 +71,90 @@ shim slgarbage 'echo "garbage in the load average"' sysctl
 PATH="$T/shim.slgarbage:$PATH" "$TOOL" --min-free 0 --max-load 0 --wait 2 -- true >/dev/null 2>&1
 expect_rc "i) sysctl vm.loadavg garbage admits (fail-open)" $? 0
 
+out="$("$TOOL" "${OPEN[@]}" --slots 3 -- env 2>/dev/null | grep '^THOVEN_GATE_SLOT=')"
+if [ "$out" = THOVEN_GATE_SLOT=1 ]; then pass "j) first job sees THOVEN_GATE_SLOT=1"; else fail "j) first job sees THOVEN_GATE_SLOT=1" "got '$out'"; fi
+"$TOOL" "${OPEN[@]}" --slots 3 -- sleep 4 &
+holder=$!
+sleep 1
+out="$("$TOOL" "${OPEN[@]}" --slots 3 -- env 2>/dev/null | grep '^THOVEN_GATE_SLOT=')"
+if [ "$out" = THOVEN_GATE_SLOT=2 ]; then pass "j) second job sees THOVEN_GATE_SLOT=2"; else fail "j) second job sees THOVEN_GATE_SLOT=2" "got '$out'"; fi
+wait "$holder"
+out="$("$TOOL" "${OPEN[@]}" --check-only -- env 2>/dev/null | grep -c '^THOVEN_GATE_SLOT=')"
+if [ "$out" = 0 ]; then pass "j) --check-only exports no slot"; else fail "j) --check-only exports no slot" "THOVEN_GATE_SLOT set"; fi
+
+out="$("$TOOL" "${OPEN[@]}" --slots 3 --weight 2 -- sh -c 'ls "$THOVEN_GATE_DIR"; echo "slot=$THOVEN_GATE_SLOT"' 2>/dev/null | tr '\n' ' ')"
+if [ "$out" = "slot.1 slot.2 slot=1 " ]; then pass "k) weight 2 holds two slots"; else fail "k) weight 2 holds two slots" "got '$out'"; fi
+if [ -z "$(ls "$THOVEN_GATE_DIR")" ]; then pass "k) weight 2 releases both slots"; else fail "k) weight 2 releases both slots" "left $(ls "$THOVEN_GATE_DIR")"; fi
+
+"$TOOL" "${OPEN[@]}" --slots 2 -- sleep 5 &
+holder=$!
+sleep 1
+rm -f "$T/ran"
+"$TOOL" "${OPEN[@]}" --slots 2 --weight 2 --wait 2 -- touch "$T/ran" >/dev/null 2>&1
+expect_rc "l) weight 2 with one free slot exits 75 after --wait" $? 75
+if [ -e "$T/ran" ]; then fail "l) weight 2 did not run" "marker file exists"; else pass "l) weight 2 did not run"; fi
+"$TOOL" "${OPEN[@]}" --slots 2 --weight 2 --wait 10 -- touch "$T/ran" >/dev/null 2>&1 &
+waiter=$!
+sleep 1
+if [ -d "$THOVEN_GATE_DIR/slot.2" ]; then fail "l) waiting weight 2 holds no partial slot" "slot.2 taken"; else pass "l) waiting weight 2 holds no partial slot"; fi
+wait "$holder"
+wait "$waiter"
+expect_rc "l) weight 2 runs once both slots are free" $? 0
+"$TOOL" "${OPEN[@]}" --slots 2 --weight 3 -- true >/dev/null 2>&1; expect_rc "l) weight above slots refuses" $? 2
+"$TOOL" "${OPEN[@]}" --weight 0 -- true >/dev/null 2>&1; expect_rc "l) weight 0 refuses" $? 2
+
+P="$T/host.json"
+printf '{ "role": "mini", "slots": 1, "workersPerSlot": 2, "coldWeight": 2, "minFreePct": 0,\n  "maxLoad": 100000, "blockAtPressure": 4, "waitSeconds": 2, "deepRows": true,\n  "devServerWeight": 1, "browserQaWeight": 1, "minDiskFreeGiB": 0 }\n' > "$P"
+"$TOOL" --profile "$P" --name dev-server -- sleep 5 &
+holder=$!
+sleep 1
+err="$("$TOOL" --profile "$P" -- true 2>&1 >/dev/null)"
+expect_rc "m) profile slots and waitSeconds apply" $? 75
+case "$err" in *'slots 1/1 busy'*dev-server*) pass "m) give-up names the long-lived holder" ;; *) fail "m) give-up names the long-lived holder" "stderr '$err'" ;; esac
+"$TOOL" --slots 2 --profile "$P" -- true >/dev/null 2>&1
+expect_rc "n) --slots before --profile still wins" $? 0
+wait "$holder"
+printf '{ "minFreePct": 101, "waitSeconds": 2 }\n' > "$P"
+err="$("$TOOL" --profile "$P" --max-load 100000 -- true 2>&1 >/dev/null)"
+expect_rc "m) profile minFreePct applies" $? 75
+case "$err" in *'memory free '*'% < 101%'*) pass "m) give-up names the memory reason" ;; *) fail "m) give-up names the memory reason" "stderr '$err'" ;; esac
+"$TOOL" --profile "$P" --min-free 0 --max-load 100000 -- true >/dev/null 2>&1
+expect_rc "n) --min-free overrides the profile" $? 0
+
+for bad in '{ "slots": 3' '[1, 2]' '{ "slots": "three" }' '{ "slots": 2.5 }' '{ "maxLoad": true }'; do
+  printf '%s\n' "$bad" > "$P"
+  rm -f "$T/ran"
+  "$TOOL" --profile "$P" "${OPEN[@]}" -- touch "$T/ran" >/dev/null 2>&1
+  rc=$?
+  if [ "$rc" = 2 ] && [ ! -e "$T/ran" ]; then pass "o) profile '$bad' refuses and runs nothing"; else fail "o) profile '$bad' refuses and runs nothing" "exit $rc"; fi
+done
+"$TOOL" --profile "$T/missing.json" "${OPEN[@]}" -- true >/dev/null 2>&1; expect_rc "o) missing profile refuses" $? 2
+"$TOOL" --profile >/dev/null 2>&1; expect_rc "o) --profile without a file refuses" $? 2
+
+shim pressure4 'case "$*" in *pressure_level*) echo 4 ;; *loadavg*) echo "{ 0.10 0.10 0.10 }" ;; esac' sysctl
+rm -f "$T/ran"
+err="$(PATH="$T/shim.pressure4:$PATH" "$TOOL" "${OPEN[@]}" --wait 2 -- touch "$T/ran" 2>&1 >/dev/null)"
+expect_rc "p) pressure level 4 exits 75" $? 75
+if [ -e "$T/ran" ]; then fail "p) pressure 4 did not run" "marker file exists"; else pass "p) pressure 4 did not run"; fi
+case "$err" in *'pressure level 4'*) pass "p) give-up names the pressure reason" ;; *) fail "p) give-up names the pressure reason" "stderr '$err'" ;; esac
+shim pressure2 'case "$*" in *pressure_level*) echo 2 ;; *loadavg*) echo "{ 0.10 0.10 0.10 }" ;; esac' sysctl
+PATH="$T/shim.pressure2:$PATH" "$TOOL" "${OPEN[@]}" --wait 2 -- true >/dev/null 2>&1
+expect_rc "p) pressure level 2 admits" $? 0
+printf '{ "blockAtPressure": 0 }\n' > "$P"
+PATH="$T/shim.pressure4:$PATH" "$TOOL" --profile "$P" "${OPEN[@]}" --wait 2 -- true >/dev/null 2>&1
+expect_rc "p) profile blockAtPressure 0 turns the check off" $? 0
+
+shim disklow 'printf "Filesystem 1024-blocks Used Available Capacity Mounted\n/dev/x 100000000 99000000 1048576 99%% /\n"' df
+shim diskok 'printf "Filesystem 1024-blocks Used Available Capacity Mounted\n/dev/x 100000000 10000000 20971520 10%% /\n"' df
+printf '{ "minDiskFreeGiB": 15, "waitSeconds": 2 }\n' > "$P"
+err="$(PATH="$T/shim.disklow:$PATH" "$TOOL" --profile "$P" "${OPEN[@]}" -- true 2>&1 >/dev/null)"
+expect_rc "q) disk below minDiskFreeGiB exits 75" $? 75
+case "$err" in *'disk free 1GiB < 15GiB'*) pass "q) give-up names the disk reason" ;; *) fail "q) give-up names the disk reason" "stderr '$err'" ;; esac
+PATH="$T/shim.diskok:$PATH" "$TOOL" --profile "$P" "${OPEN[@]}" -- true >/dev/null 2>&1
+expect_rc "q) disk above minDiskFreeGiB admits" $? 0
+shim diskgarbage 'echo "no table here"' df
+PATH="$T/shim.diskgarbage:$PATH" "$TOOL" --profile "$P" "${OPEN[@]}" -- true >/dev/null 2>&1
+expect_rc "q) unreadable df admits (fail-open)" $? 0
+
 if [ "$failures" -gt 0 ]; then printf '%s case(s) failed\n' "$failures"; exit 1; fi
 printf 'all cases passed\n'

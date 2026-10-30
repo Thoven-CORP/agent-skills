@@ -182,12 +182,27 @@ fires after `git worktree add` from any tool, including a herdr create that did 
 go through `thoven-worktree`, and warns when the new HEAD is behind `origin/main`
 with no commits of its own. A hook at that point cannot block.
 
-`bin/thoven-load-gate [--slots N] [--min-free PCT] [--max-load N] [--wait SECS] -- <cmd>`
-runs a heavy job once a slot is free, system memory free is at least 20% and the
-1-minute load is at most 12. Defaults are 2 slots and a 1500 s wait, each overridable
-by a `THOVEN_GATE_*` variable. It exits 75 when the wait runs out. `--check-only` waits
-on memory and load without taking a slot, and `THOVEN_GATE_DISABLE=1` skips the checks.
-`bin/thoven-load-gate-test` proves it with a temp slot directory, no git and no database.
+`bin/thoven-load-gate [--profile FILE] [--slots N] [--weight N] [--min-free PCT] [--max-load N] [--wait SECS] -- <cmd>`
+runs a heavy job once a slot is free, system memory free is at least 20%, the
+1-minute load is at most 12 and memory pressure is below level 4. Defaults are 2 slots
+and a 1500 s wait. The command sees `THOVEN_GATE_SLOT=<i>`, the slot it holds, so a
+caller can give each slot its own resources. `--weight N` takes N slots at once or
+none, and `THOVEN_GATE_SLOT` is then the lowest of them. A long-lived process holds
+its slot for as long as it runs, so `thoven-load-gate --name dev-server -- pnpm run dev`
+counts a dev server against the pool.
+
+`--profile FILE` reads a JSON host profile such as `~/.config/thoven/host.json`. Its
+`slots`, `minFreePct`, `maxLoad`, `waitSeconds`, `blockAtPressure` (0 turns the pressure
+check off) and `minDiskFreeGiB` replace the defaults, and other fields are ignored. With
+`minDiskFreeGiB` set, the gate refuses while the volume holding `$HOME` has less free.
+A `THOVEN_GATE_*` variable wins over the profile and a flag wins over both, wherever
+`--profile` sits on the command line. A profile that is not a JSON object of
+non-negative numbers exits 2 and runs nothing.
+
+It exits 75 when the wait runs out and names the last reason it refused. `--check-only`
+waits on memory, load, pressure and disk without taking a slot, and
+`THOVEN_GATE_DISABLE=1` skips the checks. `bin/thoven-load-gate-test` proves it with a
+temp slot directory and stubbed `sysctl` and `df`, no git and no database.
 
 Exit codes:
 
