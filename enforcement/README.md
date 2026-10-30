@@ -57,6 +57,20 @@ path.
 Every pattern it matches is anchored at command position. A substring match
 denied this repo's own README, and then denied the edit that fixed it.
 
+It also holds the host rule. Each call reads `~/.config/thoven/host.json` once. With
+`role: laptop`, it denies the heavy commands in its `heavy_table` array: `bin/verify`,
+`pnpm build`, `next build`, `playwright test`, `pnpm test:e2e` and any run it treats as
+a whole suite. The denial for `bin/verify` names `remote-verify` with the same arguments,
+`heavy work runs on the mini: remote-verify --base main`, and the rest name the
+`remote-check` skill. `THOVEN_LOCAL_HEAVY=1` in front of one command runs it here. A
+missing profile, or any other role, changes nothing. A profile that does not parse
+prints one warning line and changes nothing, so a broken profile never blocks work.
+`remote-verify` and `ssh thoven-mini-ssh ...` stay allowed.
+
+`config/host-profile.example.json` holds both machines' profiles. Each machine keeps
+only its own object, unwrapped, at `~/.config/thoven/host.json`: the mini's under
+`mini`, the MacBook's under `laptop`. Neither is installed by this repo.
+
 `thoven-ticket-recall` runs on `UserPromptSubmit` in Claude and Codex. When a prompt names a
 THV ticket, it runs the mem0 plugin's own search for that ticket and injects what comes back. The
 plugin searches only on a session's first prompt, and a ticket named mid-session is where earlier

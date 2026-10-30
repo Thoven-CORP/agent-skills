@@ -16,18 +16,20 @@ Thoven work spans a frontend and a backend repo, run by a main session that disp
 - In an audit or scoping phase, a "do X now" adds X to the plan with scope and evidence; write production code once the build phase starts. (LEARNINGS 2026-08-03)
 - Map callers (exact import grep, graphify, route to handler) before ruling anything dead or deletable, and label each ruling verified or audit claim. (LEARNINGS 2026-09-03)
 - Resolve each merge conflict by product intent with its source, check blast radius past the conflicted lines, and state the oracle before the smallest test; a walkthrough is not proof. (LEARNINGS 2026-10-20)
-- Improve verification through skill text and check selection; hooks, receipt plumbing and watcher scripts are not the deliverable. (LEARNINGS 2026-10-19)
+- Improve verification through skill text and check selection; hooks, receipt plumbing and watcher scripts are not the deliverable, except the Bash guard that routes heavy work by host. (LEARNINGS 2026-10-19)
 - Ship internal tooling and any low-severity, well-understood fix light: one builder or one small PR, targeted tests, no fix loop, merge on green CI (a merge into `main` is still asked in one line); verifier panes, thermo rounds and live waves wait until the user asks. (LEARNINGS 2026-10-25)
 - Name each item in a status or remaining-work list by its feature in plain words, with what happened to it, its PR and its worktree; ticket ids go beside only when the user asks. (LEARNINGS 2026-10-25)
 
 ## Records
 
-- **Linear and the tldraw board are the only records.** Specs, decisions, rulings, evidence and status live in Linear. Designs live on the Project's `.tldraw` board.
+- Keep existing branches and PRs when changing execution host. A remote check of saved changes does not require an extra PR or a document-sync migration. Separate the disposable test mirror from writable coding worktrees. (LEARNINGS 2026-10-28)
+
+- **Linear is the project record.** Briefs, accepted decisions, rulings, evidence pointers, status and handoffs live in Linear. tldraw and Paper support design and brainstorming. Read the design source a Linear task names; record accepted choices in Linear. Local technical runbooks and history remain useful context, without becoming required setup.
 - **Local evidence stays until the user has seen it.** Upload to Linear, show it in chat, and delete the local copy only after the user says they have looked. (E1: seven "show me" asks in one slice after a close step deleted the folder.)
-- **The Linear parent holds the canonical decisions**, each with an id, a date and its board frame. Slice tickets cite ids and never restate them.
+- **The Linear parent holds the canonical decisions**, each with an id, a date and any named design source. Slice tickets cite ids and never restate them. A board is not required when the task has no design source.
 - **A ruling amends the decision row it changes**, in the same turn and without asking, and removes every stale copy: explainer, board frame, proto, sibling slice rows. Add a row only when no row covers it; never a dated row beside the one it replaces. A ruling about where a kind of item goes is standing. A ruling that lives only in chat is not yet a ruling. (H6: panes re-asked rulings that were in chat and not in the parent.)
 - **After a Linear write, read it back** and report it in one line. Write no local receipt.
-- **The board is one living spec.** Edit it in place and change only the layer or frame the user named. Keep it on one page with nothing overlapping; an ADR, PRD or motion card holds 3-6 requirement lines. Each design-variant refinement goes in a new row beside the last, and superseded iterations go once an option is picked.
+- **When using a board, edit it in place** and change only the layer or frame the user named. Keep it on one page with nothing overlapping; an ADR, PRD or motion card holds 3-6 requirement lines. Each design-variant refinement goes in a new row beside the last, and superseded iterations go once an option is picked. Record accepted choices in Linear.
 - A dropped skill or tool loses every mention. No Retired list names it.
 
 ## Spec writing
@@ -35,7 +37,7 @@ Thoven work spans a frontend and a backend repo, run by a main session that disp
 - Before asking, search the Linear parents, the Project description and Mem0. A settled ruling gets applied, not re-asked. (F5: eight re-asks.)
 - A product grill stays at product and flow level. Park design details as "Open for design".
 - A decision row records what looking at the board cannot tell you. Layout, colour, copy and motion point at the frame.
-- Every Private Lessons ticket opens with `Writes to:` the board path.
+- Every Private Lessons ticket opens with `Writes to:` its actual destination: the Linear record, this ticket, or the named design artifact when that is the task.
 - Lexicon: a "Session" is the unit, "Lessons" is the arrangement. Audiences are the student dashboard, the parent side, the adult student. Demo data uses Andres Martinez or real fixtures, never an invented name.
 - Group findings into the existing unit-of-work tickets. Keep the ticket count low. Debt, bugs and smells in code the ticket or feature owns are fixed on its branch in the same round. A problem outside it gets one line in an existing grouped Linear issue, or a new issue only when none fits. A product call goes to the user as a question.
 
@@ -51,6 +53,9 @@ In a product brainstorm or grill:
 The full method is `product-fundamentals`.
 
 ## Parity
+
+Apply visual parity when the task intentionally uses a named design source. Do not invent a board
+or a design gate for work without one. Accepted Linear decisions govern which design applies.
 
 Both checks run twice: in the brief before dispatch and as the reviewer's first two sections. `~/.agents/skills/dispatch-work/references/brief.md` and `~/.agents/skills/dispatch-work/references/review.md` carry the procedure.
 
@@ -76,8 +81,9 @@ The builder checks its own homework before DONE; the reviewer runs the same list
 - **Red then green on the behaviour the ticket names**, in the file's own test. A test that passes with the change reverted is not a test.
 - **Check a claim before saying it.** Before calling something missing, search `~/thoven/frontend` and every sibling worktree, and name which you covered. Open a cited doc line's heading before calling it a lock. A fact not checked this session is called unverified in the same sentence.
 - **Other people's tests run once.** Lint on changed files, cached typecheck, direct importers once. Mutation runs on GitHub on PRs into `main`, and locally only when the user asks. Never per hunk over the suite.
-- **One cadence.** Targeted checks while editing and at DONE; CI on every PR, the affected tests into an integration branch and the full suite into `main`; the full `bin/verify` only when the user asks or once at the parent, before the integration PR into `main`; nothing on push. A FAIL row is fixed or raised by name, never described away.
+- **One cadence.** Targeted checks while editing; `remote-verify` with the deep rows at DONE; CI on every PR, the affected tests into an integration branch and the full suite into `main`; the full suite once at the parent, on the mini, before the integration PR into `main`; nothing on push. A FAIL row is fixed or raised by name, never described away.
 - **A CI failure is real until proven a flake**: the same SHA passes on rerun and the test passes on `main`'s latest run. Red CI on `main` gets a named owner the day it appears.
+- A test that fails only under load is rerun alone on the mini once; a pass alone makes it a timing bug with one Linear line.
 - **Show, then claim.** The receipt block, the grid, the red and green lines, in chat. Done means merged and a user can reach it.
 - Fix rounds carry only bugs a user hits in the normal flow. Rare edge cases, test nits and CI red on files the slice did not touch are one line in the report. Gate repair, other CI fixes and redesigns are a line to the user with a choice.
 
@@ -90,7 +96,7 @@ The builder checks its own homework before DONE; the reviewer runs the same list
 - A brief quotes the user's words and states no preference the user did not say.
 - Name source, target and method in every merge line ("THV-1234 into scheduling/improvements, squash"; "scheduling/improvements → main, merge commit") and ask before any merge that touches `main`. The method by PR role is in thoven-law.md "Branches and PRs". A stale branch "predates" work on main; "deleted" is for a commit that removed something.
 - Leave `disable-model-invocation` off a skill unless the user says that skill must never self-trigger, and search installed skills under `~/.agents/skills`, since `grep -r` skips the `~/.claude/skills` symlinks.
-- Check disk and memory before any dispatch. Below 5 GB free or above load 16, prune first (Andres, 2026-10-27: the limit of 10 "needs to be bumped up to like 15-18"); never a worktree for a minor fix. At most two build panes with browsers open at once; verify reads load and free memory itself and drops to one row when the box is busy.
+- Before any dispatch, ask the mini's load gate for free slots (`thoven-load-gate --check-only --profile ~/.config/thoven/host.json`); with none free, prune first, and never a worktree for a minor fix. A dev server and a browser QA loop each hold a slot, and verify takes its own.
 - When work lands and the user has seen the evidence, close its pane, stop its dev servers, remove its worktrees, protos and scratch, and report it in one line; never offer. Never remove unpushed work. Delete your own one-off probes and scratch scripts once you have checked them, and say so.
 
 ## Replies
