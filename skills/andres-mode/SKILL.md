@@ -16,7 +16,7 @@ Thoven work spans a frontend and a backend repo, run by a main session that disp
 - In an audit or scoping phase, a "do X now" adds X to the plan with scope and evidence; write production code once the build phase starts. (LEARNINGS 2026-08-03)
 - Map callers (exact import grep, graphify, route to handler) before ruling anything dead or deletable, and label each ruling verified or audit claim. (LEARNINGS 2026-09-03)
 - Resolve each merge conflict by product intent with its source, check blast radius past the conflicted lines, and state the oracle before the smallest test; a walkthrough is not proof. (LEARNINGS 2026-10-20)
-- Improve verification through skill text and check selection; hooks, receipt plumbing and watcher scripts are not the deliverable. (LEARNINGS 2026-10-19)
+- Improve verification through skill text and check selection; hooks, receipt plumbing and watcher scripts are not the deliverable, except the Bash guard that routes heavy work by host. (LEARNINGS 2026-10-19)
 - Ship internal tooling and any low-severity, well-understood fix light: one builder or one small PR, targeted tests, no fix loop, merge on green CI (a merge into `main` is still asked in one line); verifier panes, thermo rounds and live waves wait until the user asks. (LEARNINGS 2026-10-25)
 - Name each item in a status or remaining-work list by its feature in plain words, with what happened to it, its PR and its worktree; ticket ids go beside only when the user asks. (LEARNINGS 2026-10-25)
 
@@ -81,8 +81,9 @@ The builder checks its own homework before DONE; the reviewer runs the same list
 - **Red then green on the behaviour the ticket names**, in the file's own test. A test that passes with the change reverted is not a test.
 - **Check a claim before saying it.** Before calling something missing, search `~/thoven/frontend` and every sibling worktree, and name which you covered. Open a cited doc line's heading before calling it a lock. A fact not checked this session is called unverified in the same sentence.
 - **Other people's tests run once.** Lint on changed files, cached typecheck, direct importers once. Mutation runs on GitHub on PRs into `main`, and locally only when the user asks. Never per hunk over the suite.
-- **One cadence.** Targeted checks while editing and at DONE; CI on every PR, the affected tests into an integration branch and the full suite into `main`; the full `bin/verify` only when the user asks or once at the parent, before the integration PR into `main`; nothing on push. A FAIL row is fixed or raised by name, never described away.
+- **One cadence.** Targeted checks while editing; `remote-verify` with the deep rows at DONE; CI on every PR, the affected tests into an integration branch and the full suite into `main`; the full suite once at the parent, on the mini, before the integration PR into `main`; nothing on push. A FAIL row is fixed or raised by name, never described away.
 - **A CI failure is real until proven a flake**: the same SHA passes on rerun and the test passes on `main`'s latest run. Red CI on `main` gets a named owner the day it appears.
+- A test that fails only under load is rerun alone on the mini once; a pass alone makes it a timing bug with one Linear line.
 - **Show, then claim.** The receipt block, the grid, the red and green lines, in chat. Done means merged and a user can reach it.
 - Fix rounds carry only bugs a user hits in the normal flow. Rare edge cases, test nits and CI red on files the slice did not touch are one line in the report. Gate repair, other CI fixes and redesigns are a line to the user with a choice.
 
@@ -95,7 +96,7 @@ The builder checks its own homework before DONE; the reviewer runs the same list
 - A brief quotes the user's words and states no preference the user did not say.
 - Name source, target and method in every merge line ("THV-1234 into scheduling/improvements, squash"; "scheduling/improvements → main, merge commit") and ask before any merge that touches `main`. The method by PR role is in thoven-law.md "Branches and PRs". A stale branch "predates" work on main; "deleted" is for a commit that removed something.
 - Leave `disable-model-invocation` off a skill unless the user says that skill must never self-trigger, and search installed skills under `~/.agents/skills`, since `grep -r` skips the `~/.claude/skills` symlinks.
-- Check disk and memory on the execution host before any dispatch. Below 5 GB free or above load 16, prune first (Andres, 2026-10-27: the limit of 10 "needs to be bumped up to like 15-18"); never a worktree for a minor fix. At most two build panes with browsers open at once; verify reads that host's load and free memory itself and drops to one row when the box is busy.
+- Before any dispatch, ask the mini's load gate for free slots (`thoven-load-gate --check-only --profile ~/.config/thoven/host.json`); with none free, prune first, and never a worktree for a minor fix. A dev server and a browser QA loop each hold a slot, and verify takes its own.
 - When work lands and the user has seen the evidence, close its pane, stop its dev servers, remove its worktrees, protos and scratch, and report it in one line; never offer. Never remove unpushed work. Delete your own one-off probes and scratch scripts once you have checked them, and say so.
 
 ## Replies
