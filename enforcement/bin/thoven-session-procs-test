@@ -99,13 +99,13 @@ class Record(Base):
         self.assertEqual(len(again), 1, "a second call must not duplicate or reassign")
         subprocess.run(["pkill", "-P", str(parent.pid)])
 
-    def test_agent_id_is_recorded(self):
+    def test_agent_id_is_not_recorded(self):
         parent = subprocess.Popen(["bash", "-c", 'bash -c \'exec -a "next-server (v1)" sleep 300\' & wait'])
         self.procs.append(parent)
         time.sleep(0.8)
         self.hook(["record"], json.dumps({"session_id": "s2", "agent_id": "agentA"}), THOVEN_PROCS_ROOT_PID=str(parent.pid))
         row = json.loads((Path(self.home) / "session-procs" / "s2").read_text().splitlines()[0])
-        self.assertEqual(row["agent_id"], "agentA")
+        self.assertEqual(row["agent_id"], "", "attribution is ambiguous in a shared claude process, so none is recorded")
         subprocess.run(["pkill", "-P", str(parent.pid)])
 
     def test_server_outside_the_session_tree_records_nothing(self):
@@ -165,17 +165,31 @@ class End(Base):
         self.assertTrue(reaped(p), "KILL should follow the TERM grace")
         self.assertIn(f"KILL pid={p.pid}", (Path(self.home) / "session-procs.log").read_text())
 
-    def test_subagent_stop_stops_only_that_agent(self):
-        a, b, main = self.sleeper(), self.sleeper(), self.sleeper()
-        row = lambda p, agent: {"pid": p.pid, "start": start_of(p.pid), "agent_id": agent, "command": "sleep"}
-        self.write_record("s1", [row(a, "A"), row(b, "B"), row(main, "")])
+    def test_subagent_stop_never_kills_another_agents_server(self):
+        # Two agents share one claude process. A's server is fired for by B's Bash hook, so record
+        # used to tag it agent B; B's SubagentStop (a pause, not a finish) then killed it.
+        parent = subprocess.Popen(["bash", "-c", 'bash -c \'exec -a "next-server (v1)" sleep 300\' & wait'])
+        self.procs.append(parent)
+        time.sleep(0.8)
+        server = subprocess.run(["pgrep", "-P", str(parent.pid)], capture_output=True, text=True).stdout.split()[0]
+        self.hook(["record"], json.dumps({"session_id": "s1", "agent_id": "B"}), THOVEN_PROCS_ROOT_PID=str(parent.pid))
+        self.hook(["end", "--agent"], json.dumps({"session_id": "s1", "agent_id": "B"}))
         self.hook(["end", "--agent"], json.dumps({"session_id": "s1", "agent_id": "A"}))
-        self.assertTrue(reaped(a))
-        self.assertTrue(alive(b.pid) and alive(main.pid))
-        left = (Path(self.home) / "session-procs" / "s1").read_text().splitlines()
-        self.assertEqual(len(left), 2)
         self.hook(["end", "--agent"], json.dumps({"session_id": "s1"}))
-        self.assertTrue(alive(b.pid) and alive(main.pid), "SubagentStop without an agent_id stops nothing")
+        self.assertTrue(alive(int(server)), "SubagentStop must never signal a recorded server")
+        self.assertEqual(len((Path(self.home) / "session-procs" / "s1").read_text().splitlines()), 1)
+        self.hook(["end"], json.dumps({"session_id": "s1"}))
+        deadline = time.time() + 5
+        while alive(int(server)) and time.time() < deadline:
+            time.sleep(0.2)
+        self.assertFalse(alive(int(server)), "SessionEnd still cleans up")
+
+    def test_subagent_stop_ignores_rows_an_older_hook_tagged(self):
+        a, main = self.sleeper(), self.sleeper()
+        row = lambda p, agent: {"pid": p.pid, "start": start_of(p.pid), "agent_id": agent, "command": "sleep"}
+        self.write_record("s1", [row(a, "A"), row(main, "")])
+        self.hook(["end", "--agent"], json.dumps({"session_id": "s1", "agent_id": "A"}))
+        self.assertTrue(alive(a.pid) and alive(main.pid))
 
 
 class Sweep(Base):

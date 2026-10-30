@@ -3,12 +3,18 @@
 
   thoven-session-procs record        PostToolUse, matcher Bash
   thoven-session-procs end           SessionEnd
-  thoven-session-procs end --agent   SubagentStop
+  thoven-session-procs end --agent   SubagentStop (does nothing, see below)
 
 record walks the process table from this session's claude process and writes the server-like
 descendants still alive to ~/.thoven/session-procs/<session_id> as pid, start time, agent_id
-and command. end sends TERM to the recorded processes, waits, then KILL, and checks the start
-time before each signal so a reused pid is never hit. A process the session did not start is
+(always empty) and command. end sends TERM to the recorded processes, waits, then KILL, and checks the start
+time before each signal so a reused pid is never hit.
+
+Why no agent attribution: subagents share one claude process, the hook runs under claude rather
+than under the Bash tool's shell, and the payload names no pid or shell. A new server cannot be
+tied to the agent whose call started it, so tagging it with the firing agent_id made one agent's
+SubagentStop kill another's servers. SubagentStop also fires when an agent only pauses on
+background work. So records carry no agent and end --agent stops nothing; SessionEnd cleans up. A process the session did not start is
 never listed, so it is never touched. thoven-sweep imports this file for the matcher and stop().
 
 Test seams: THOVEN_PROCS_HOME moves ~/.thoven; THOVEN_PROCS_ROOT_PID names the session process
@@ -145,8 +151,8 @@ def record(session_id: str, agent_id: str) -> None:
     mine = set(descendants(table, root))
     added = [pid for pid in watched(table) if pid in mine and (pid, table[pid][1]) not in known]
     for pid in added:
-        rows.append({"pid": pid, "start": table[pid][1], "agent_id": agent_id, "command": table[pid][2][:200]})
-        log(f"record session={session_id} agent={agent_id or '-'} pid={pid} {table[pid][2][:100]}")
+        rows.append({"pid": pid, "start": table[pid][1], "agent_id": "", "command": table[pid][2][:200]})
+        log(f"record session={session_id} pid={pid} {table[pid][2][:100]}")
     if added:
         RECORDS.mkdir(parents=True, exist_ok=True)
         write_records(path, rows)
@@ -184,12 +190,11 @@ def stop(targets: list, why: str, grace: float = None) -> list:
 
 def end(session_id: str, agent_id: str, agent_only: bool) -> None:
     path = record_path(session_id)
-    if path is None or (agent_only and not agent_id):
+    if path is None or agent_only:
         return
     rows = read_records(path)
-    mine = [r for r in rows if not agent_only or r["agent_id"] == agent_id]
-    stop([(r["pid"], r["start"]) for r in mine], f"session={session_id} agent={agent_id or '-'}")
-    write_records(path, [r for r in rows if r not in mine])
+    stop([(r["pid"], r["start"]) for r in rows], f"session={session_id}")
+    write_records(path, [])
 
 
 def main(argv: list) -> int:
