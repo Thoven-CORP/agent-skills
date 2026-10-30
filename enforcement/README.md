@@ -301,7 +301,10 @@ here runs it from its own copy, kept in step by `sync.sh`.
 
 Claude Code and Codex run it on `PreToolUse` for `Bash` in the default dialect,
 installed by `install/claude.py` and `install/codex.py`, and they run the other
-hooks too. Codex's hook schema is identical to Claude Code's.
+hooks too. Codex's hook schema is identical to Claude Code's. Codex runs `hooks.json` only with
+`[features] hooks = true` in `~/.codex/config.toml`, so `install/codex.py` sets it. It leaves the
+file alone, and says so, when `features` is written as a dotted key or the edit would not parse.
+Codex still asks the user to trust each hook once; the installer never writes that trust state.
 
 Cursor runs it on `beforeShellExecution` with `--dialect cursor`, which reads the
 top-level `command` and answers `{"permission":"deny"}`. Cursor staff say the

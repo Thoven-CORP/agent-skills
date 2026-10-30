@@ -2,6 +2,8 @@
 """Installs the enforcement hooks into Codex's hooks.json, and the deny list as Codex rules.
 
 Codex uses the identical hooks.json shape as Claude Code, in its own file.
+Codex runs hooks.json only with `[features] hooks = true` in config.toml, which this sets.
+Each hook still needs the user's trust in Codex once; this never writes that trust state.
 The deny list becomes forbidden prefix_rule entries in ~/.codex/rules/thoven.rules,
 which Codex loads with every other file in that folder at startup
 (developers.openai.com/codex/rules).
@@ -10,6 +12,7 @@ Dry run by default. Pass --apply to write.
 import argparse
 import copy
 import json
+import re
 import shlex
 import sys
 from pathlib import Path
@@ -20,6 +23,44 @@ CODEX_DIR = Path.home() / ".codex"
 HOOKS_DIR = CODEX_DIR / "hooks"
 HOOKS_JSON = CODEX_DIR / "hooks.json"
 RULES = CODEX_DIR / "rules" / "thoven.rules"
+CONFIG = CODEX_DIR / "config.toml"
+
+FEATURES_HEADER = re.compile(r"^\[features\][ \t]*(#.*)?$", re.M)
+TABLE_HEADER = re.compile(r"^\[", re.M)
+HOOKS_KEY = re.compile(r"^hooks[ \t]*=[ \t]*(true|false)\b.*$", re.M)
+
+
+def enable_hooks_feature(text: str):
+    """Returns (new text, what changed), or (None, reason) when the edit is unsafe.
+
+    A text edit, because the standard library reads TOML but cannot write it.
+    """
+    header = FEATURES_HEADER.search(text)
+    if header is None:
+        if re.search(r"^features[ \t]*[.=]", text, re.M):
+            return None, "features is set outside a [features] table; set hooks = true by hand"
+        sep = "" if not text or text.endswith("\n\n") else ("\n" if text.endswith("\n") else "\n\n")
+        return text + sep + "[features]\nhooks = true\n", "add [features] hooks = true"
+    start = header.end()
+    nxt = TABLE_HEADER.search(text, start + 1)
+    end = nxt.start() if nxt else len(text)
+    key = HOOKS_KEY.search(text, start, end)
+    if key is None:
+        return text[:start] + "\nhooks = true" + text[start:], "add hooks = true to [features]"
+    if key.group(1) == "true":
+        return text, None
+    return text[:key.start()] + "hooks = true" + text[key.end():], "turn [features] hooks from false to true"
+
+
+def parses_as_toml(text: str) -> bool:
+    try:
+        import tomllib
+    except ImportError:
+        return True
+    try:
+        return tomllib.loads(text).get("features", {}).get("hooks") is True
+    except tomllib.TOMLDecodeError:
+        return False
 
 # (script name, event, matcher, timeout, args); --pre stamps the start of each shell call
 HOOK_SPECS = [
@@ -100,6 +141,11 @@ def main():
     rules_text = render_rules(load_denies())
     rules_needed = not RULES.exists() or RULES.read_text() != rules_text
 
+    config_text = CONFIG.read_text() if CONFIG.exists() else ""
+    new_config, config_change = enable_hooks_feature(config_text)
+    if new_config is not None and config_change and not parses_as_toml(new_config):
+        new_config, config_change = None, "the edited config.toml would not parse; set hooks = true by hand"
+
     print(f"Target hooks.json: {HOOKS_JSON}")
     print(f"Target hooks dir: {HOOKS_DIR}")
     if notifications_changed:
@@ -108,6 +154,10 @@ def main():
         print(f"- {script_name}: copy={'yes' if copy_needed else 'no (already matches)'} "
               f"hooks_entry[{event}/{matcher or '-'}]={'add' if settings_needed else 'already present'}")
     print(f"- {RULES}: {'write' if rules_needed else 'already matches'}")
+    if new_config is None:
+        print(f"- {CONFIG}: left alone, {config_change}")
+    else:
+        print(f"- {CONFIG}: {config_change or 'hooks feature already on'}")
 
     if not args.apply:
         print("\nDry run only. Re-run with --apply to write.")
@@ -130,6 +180,12 @@ def main():
         backup_once(RULES)
         RULES.write_text(rules_text)
         print(f"Wrote {RULES}")
+        changed = True
+    if new_config is not None and config_change:
+        CONFIG.parent.mkdir(parents=True, exist_ok=True)
+        backup_once(CONFIG)
+        CONFIG.write_text(new_config)
+        print(f"Wrote {CONFIG}: {config_change}")
         changed = True
     if not changed:
         print("No changes.")
