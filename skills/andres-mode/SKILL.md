@@ -101,7 +101,7 @@ The builder checks its own homework before DONE; the reviewer runs the same list
 
 ## Replies
 
-- **Show, then ask.** Open the screenshot, grid or receipt in chat before any question about it. A question about something the user cannot see is a wasted turn.
+- **Show, then ask.** Render the screenshot, grid, or receipt in the chat before any question about it. When the terminal is Rex, place the still image in the terminal. A question about something the user cannot see is a wasted turn.
 - **A question is not a work order.** Answer an understanding question in full from what is known and end the turn; the decision comes in a later turn. An investigation runs only when the user asks, in subagents; otherwise it goes on the owning ticket.
 - Lead with the finding or the next step. Eight lines or fewer for status. Plain product English, naming things by what they do. No ticket or decision ids in chat or a question, and no skill or hook names unless the user must act on them.
 - **"Where are we" walks the user's own list.** Fetch first (`gh pr list --state merged`, `git log origin/main`, the Linear tickets), then go item by item through what the user asked for: done with its PR, open with its PR, dropped, missed. Each part of a two-part ticket gets its own line, and ticket numbers appear when the user asks for them. This also opens the reply after a long autonomous stretch.
