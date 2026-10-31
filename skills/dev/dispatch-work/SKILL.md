@@ -198,9 +198,11 @@ turn to end. Use `dispatch interrupt` only to stop work going the wrong way. A C
 fix round with `dispatch send <pane> <file>` once it is idle. Hold the verifier until the pane has
 answered the last correction. The entries are the record Andres reads.
 
-**Takeover line** for a replacement pane: `Run /takeover in place on <branch>, from <last commit>.
-The earlier pane's commits and report are claims: re-prove them before you build on them. Finish
-is this brief's DONE, commits only.`
+**Takeover.** A replacement pane gets the same brief with its opening line changed to
+`/poteto-mode session-pickup THV-x "<title>"`, plus this line: `Pick up on <branch> from <last
+commit>. The earlier pane's handoff is <entry path>. Its commits and report are claims: re-prove them
+before you build on them. Finish is this brief's DONE, commits only.` Never name another skill such
+as `/takeover` in a brief: the pane loads it instead of poteto-mode.
 
 **Done when:** every pane has reported and main has handled it, or its alert is reported to Andres.
 

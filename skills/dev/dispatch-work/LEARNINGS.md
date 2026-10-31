@@ -37,6 +37,25 @@ New entries on top. Each one: what happened, why, what changed.
 **Why.** review.md runs both, and the synthesis did not say which had run.
 **What changed.** Logged. At seen 2 the verifier report carries one row per review skill, with its finding count.
 
+## 2026-10-31 — the pane gets "Invoke <skill> to start" and the brief inline
+
+> session · 2026-10-31 · 01a169a1 · correction · applied · seen 1
+
+**What happened.** A replacement builder for THV-1506 got a brief whose takeover line said "Run
+/takeover in place". The pane loaded `/takeover` instead of poteto-mode and ended its turn without
+building. Andres: start the pane with "Invoke poteto-mode to start" and paste the brief as text
+instead of pointing at a file.
+
+**Why.** A skill named anywhere in the brief competes with the opening skill, and a path the pane
+has to open is one more step that can go wrong.
+
+**How to apply.** `dispatch spawn` sends `Invoke <first line> to start.` and the rest of the brief
+inline. A takeover changes the opening line to `/poteto-mode session-pickup` and never names
+`/takeover`. Smoke-tested 2026-10-31: a Sonnet pane invoked poteto-mode with the Skill tool first and
+read its task from the prompt.
+
+---
+
 ## 2026-10-31 — a dispatched pane opens beside main, not in a new window
 
 > session · 2026-10-31 · 01a169a1 · correction · applied · seen 1
