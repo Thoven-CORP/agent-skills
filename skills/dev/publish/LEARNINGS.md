@@ -5,6 +5,17 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-31: a straight-through path for hotfixes, and the changelog moves to the start
+
+> session · 2026-10-31 · 16b02206 · request · applied · seen 2
+
+**What happened.** On two 2026-10-30 promotes (`prod/2026-10-30-1` and `-2`), Andres said "skip my skill ceremony" and "same as last time, skip the ceremony". The skill's rule that a go given before a command covers nothing meant every Stop had to be talked past. Neither release ran the changelog check, which still sat in a Pitfalls line about checking "before promote".
+**Why.** The skill had one production path, with a go at every Stop. A small hotfix has nothing for a human to decide between `plan` and `tag` unless something refuses or fails. The changelog check was a Pitfalls line, not a step, so it got skipped.
+**What changed.**
+- A "Straight through" section in `production-2.0.md`, routed from "hotfix", "skip the ceremony" and "straight through". It reads the release against the last tag, names the steps it needs, runs them without stopping, and stops only on a refusal, a failure that repeats on one rerun, an unexpected skip, or a Stop the read did not foresee.
+- Step 1 now starts with the changelog check.
+- The "go before the command covers nothing" rule names the straight-through path as its one exception.
+
 ## 2026-10-22 — hotfix PR first; owed backfills and changelog entries are release-plan steps
 
 > reflect · 2026-10-22 · 01a151d4 · skill-gap · applied · seen 1

@@ -8,7 +8,7 @@ Its progress and done lines start with `== ` and show SHAs as their first 9 char
 
 ## Steps
 
-1. **Pick the SHAs.** A normal promote takes what staging runs now: `plan` with no `--be` or `--fe` reads it. A hotfix merges its PR into `main` first (`references/staging-2.0.md` step 0, "Stop: merge the PR"), then pins only the half that changed: `--be <sha> --fe keep`, or `--fe <sha> --be keep`, where `<sha>` is the merge commit (`gh pr view <number> --json mergeCommit -q .mergeCommit.oid`). Pinning it also ships every unpromoted commit before it on `main`: list them in the plan with `git -C <repo> log --oneline <from>..<sha>`. Done when you hold the exact `plan` command.
+1. **Pick the SHAs.** Start with the changelog. List the range's PRs per repo with `git -C <repo> log --oneline --first-parent <last prod tag>..origin/main`, and check that each one wrote its `[Unreleased]` entry in `CHANGELOG.md`. A PR labelled `skip-changelog` needs none. Add the missing entries in one PR into `main` and pin that merge, so the release ships its own notes. Then pick the SHAs. A normal promote takes what staging runs now: `plan` with no `--be` or `--fe` reads it. A hotfix merges its PR into `main` first (`references/staging-2.0.md` step 0, "Stop: merge the PR"), then pins only the half that changed: `--be <sha> --fe keep`, or `--fe <sha> --be keep`, where `<sha>` is the merge commit (`gh pr view <number> --json mergeCommit -q .mergeCommit.oid`). Pinning it also ships every unpromoted commit before it on `main`: list them in the plan with `git -C <repo> log --oneline <from>..<sha>`. Done when every PR in the range has its changelog entry and you hold the exact `plan` command.
 
 2. **Plan the release.** Run step 7's accounts check first (`accounts-loaded`), so a missing-accounts gap is in the plan. Then:
 
@@ -118,3 +118,20 @@ The fix goes into `main` as a PR and reaches production through a normal promote
 ## Changelog
 
 2.0 production stamps no version. Each PR carries its own `[Unreleased]` entry.
+
+## Straight through
+
+A hotfix, or any release Andres asks for with "skip the ceremony", "straight through" or "no go's", runs Steps 1 to 11 with no stop between them. Andres's request is the go for each Stop of this one release. It does not carry to the next release.
+
+1. **Read the release against the last one.** Do step 1, changelog first. Run `plan` (step 2) and read its output against the last `prod/*` tag. Note which halves move, whether migrations are listed, and what the commits are (`git -C <repo> log --oneline --first-parent <last prod tag>..<sha>`). From that, name the steps this release needs:
+   - Migrations listed: take the snapshot (step 5) right before the backend.
+   - Backend unchanged: `backend` still runs, because it is the API health gate and the Daily webhook check.
+   - The range's tickets owe a backfill or rake task (from the Pitfalls line on owed steps): run it as a numbered step before the harness.
+2. **Staging-green, the short form.** Confirm staging serves each SHA that changes. Use the latest `thoven-staging` deployment's commit (`/vercel-cli`) and the staging Render deploy (`/render-monitor`), plus green required CI on the merge commit. A run of `staging-2.0.md` already done in this session for the same SHA also counts.
+3. **Promote.** Run steps 5 to 10 in order, without waiting between them. Run the backend smoke (step 7) and the production harness (step 9) on this machine.
+4. **Stop only for these.** Show Andres the output and wait:
+   - a `REFUSED:` or `FAILED at line` line, including a refusal whose named fix writes outside this release (a Neon branch, a webhook, an env var);
+   - a smoke or harness failure that repeats on one rerun (a single network timeout gets that one rerun);
+   - an unexpected skip in the harness diff;
+   - a Stop the release reached that the read in step 1 did not foresee.
+5. **Report.** Do step 11 once, at the end.
