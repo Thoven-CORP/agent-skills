@@ -55,6 +55,12 @@ class PostBoardClean(Harness):
                 self.assertIn(f"no project 'projj' under {self.home}", self.err.getvalue())
         self.assertFalse(os.path.exists(store.project_dir("projj")))
 
+    def test_a_ticket_takes_any_linear_team_key_and_refuses_the_rest(self):
+        self.assertEqual(self.cmd("post", "proj", "--ticket", "DEP-24", "--kind", "answer", stdin="x"), 0)
+        for bad in ("", "dep-24", "DEP", "24", "DEP-24x"):
+            with self.subTest(bad):
+                self.assertEqual(self.cmd("post", "proj", "--ticket", bad, "--kind", "answer", stdin="x"), 2)
+
     def test_round_trip(self):
         self.assertEqual(self.cmd("post", "proj", "--ticket", "THV-7", "--kind", "report", "--status", "done",
                                   "--from", "build-thv-7", stdin="Acceptance ok\nProof ok\n"), 0)

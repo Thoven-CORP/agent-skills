@@ -12,7 +12,7 @@ Backend = Literal["rex", "herdr"]
 KINDS = ("Meta", "Plan", "Design", "Build", "Review", "Research", "Audit", "Fix", "Verify")
 REPORT_WORDS = ("DONE", "DONE_WITH_CONCERNS", "NEEDS_CONTEXT", "BLOCKED", "VERIFIED", "FINDINGS")
 PROJECT_RE = re.compile(r"^[a-z0-9-]+$")
-TICKET_RE = re.compile(r"^THV-[0-9]+$")
+TICKET_RE = re.compile(r"^[A-Z][A-Z0-9]*-[0-9]+$")  # any Linear team key: THV-123, DEP-24
 # Folders under the dispatch home that are not Projects.
 RESERVED_DIRS = ("events",)
 
@@ -180,5 +180,5 @@ def check_project(project: str) -> str:
 
 def check_ticket(ticket: str) -> str:
     if not TICKET_RE.match(ticket or ""):
-        raise UsageError(f"ticket must look like THV-123, got {ticket!r}")
+        raise UsageError(f"ticket must look like THV-123 or DEP-24, got {ticket!r}")
     return ticket
