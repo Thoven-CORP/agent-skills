@@ -120,7 +120,8 @@ def declared_in_target(files, old_path: str, name: str, language: str) -> bool:
     patterns = {
         "javascript": [
             re.compile(r"\bexport\s+(?:(?:declare|default|async)\s+)*(?:function|class|const|let|var|interface|type|enum)\s+" + re.escape(name) + r"\b"),
-            re.compile(r"\bexport\s*\{[^}]*\b" + re.escape(name) + r"\b[^}]*\}"),
+            # Covers `export { X }`, `export type { X }`, and the `... from '...'` re-export forms.
+            re.compile(r"\bexport\s*(?:type\s*)?\{[^}]*\b" + re.escape(name) + r"\b[^}]*\}"),
         ],
         "python": [re.compile(r"(?m)^\s*(?:async\s+)?(?:def|class)\s+" + re.escape(name) + r"\b")],
         "ruby": [re.compile(r"(?m)^\s*(?:def(?:\s+self\.)?|class\s+|module\s+)" + re.escape(name) + r"\b")],
