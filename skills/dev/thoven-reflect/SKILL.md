@@ -39,6 +39,8 @@ One message, three `Agent` calls, `subagent_type: general-purpose`. Each prompt 
 | Tooling | `sonnet` | `references/tooling-reviewer.md` |
 | Divergent | inherit | `references/divergent-reviewer.md` |
 
+Reviewers read `corrections.md` and `dispatch.md`. A transcript open is the lines around one correction, not the file.
+
 Done when all three have returned a numbered list. A reviewer that returns nothing is re-sent once.
 
 ## 3. Synthesize

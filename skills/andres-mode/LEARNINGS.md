@@ -67,7 +67,7 @@ New entries on top. Each one: what happened, why, what changed.
 
 **What happened.** Andres: "not the work related to the other sessions… your work where we left off."
 **Why.** Resume read Linear and other sessions before this session's transcript.
-**What changed.** Replies: "where we left off" is this session's own transcript. Other sessions are context.
+**What changed.** Replies: "where we left off" is his last turn and the reply before it in this session. Other sessions stay context.
 
 ## 2026-10-31 — a main-session fix proves each behaviour with verify-this
 
