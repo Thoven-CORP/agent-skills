@@ -5,6 +5,94 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-31 — confusion gets one sentence, then a picture
+
+> reflect · 2026-10-31 · 14531ef9 · 39a12a43 · 7c3d7896 · 16b02206 · broken-rule · applied · seen 4
+
+**What happened.** Andres said he was confused and asked for an ASCII picture. The reply stayed in mechanism prose.
+**Why.** Replies said plain product English and had no trigger for "confused".
+**What changed.** Replies: one plain sentence, then an ASCII sketch or visual of what exists and what changed, opened that turn.
+
+## 2026-10-31 — a turn ends on the work
+
+> reflect · 2026-10-31 · 7c3d7896 · 14531ef9 · 39a12a43 · broken-rule · applied · seen 3
+
+**What happened.** Andres: "stop asking me so many minor steps if it needs to be done just do it."
+**Why.** The reversible-work line still left room to end on "say go" for a step the agent had already recommended.
+**What changed.** Replies: a turn ends on the work, and small reversible follow-ups run in that same turn.
+
+## 2026-10-31 — the named target wins
+
+> reflect · 2026-10-31 · 0f23577b · f4c25100 · correction · applied · seen 4
+
+**What happened.** Andres: "Stop running the PR, I said directly on the integration branch." He also said a piece of work was not part of that project.
+**Why.** Merge lines named source and method, and still defaulted to a pull request.
+**What changed.** Delegation: "directly on <branch>" commits and pushes there. "Not part of that project" is a tree cut from main.
+
+## 2026-10-31 — a flag on a settled ruling cites the id and drops
+
+> reflect · 2026-10-31 · 39a12a43 · 0f23577b · 14531ef9 · broken-rule · applied · seen 4
+
+**What happened.** Andres: "Admin wallet load should count as consent. I don't know why you keep saying that."
+**Why.** Spec writing said apply a settled ruling, and a reviewer's "worth confirming" still reached him.
+**What changed.** Spec writing: a flag against a settled ruling cites its decision id and stays off his list.
+
+## 2026-10-31 — a done report accounts for every decided item
+
+> reflect · 2026-10-31 · 7c3d7896 · broken-rule · applied · seen 2
+
+**What happened.** Andres: "what did you leave out" and "I literally dont see any of the changes on the artifact."
+**Why.** "Where are we" walked tickets, not the brainstorm's decided items, and the reply defended the design.
+**What changed.** A done report lists every decided in-scope item as built, with where it renders, or left out with the reason. "I don't see it" opens the artifact he is looking at first.
+
+## 2026-10-31 — prove a credential before calling it wrong
+
+> reflect · 2026-10-31 · 7c3d7896 · broken-rule · applied · seen 2
+
+**What happened.** Andres: "You literally have the stripe plugins… why you are not checking docs."
+**Why.** Check-your-work searched the repo and did not call the vendor.
+**What changed.** A credential or vendor choice is proved with the plugin or the docs. Keys are fetched through the plugin. Evidence he pasted stays.
+
+## 2026-10-31 — close-out is done, and a long job has a cap
+
+> reflect · 2026-10-31 · 14531ef9 · 7c3d7896 · f4c25100 · broken-rule · applied · seen 4
+
+**What happened.** Servers and worktrees were left up, cleanup was offered, and a process ran for hours before a force-kill.
+**Why.** Delegation said report cleanup in one line, and the offer still happened.
+**What changed.** Cleanup runs when the work lands. Demo servers and heavy jobs start under a time cap and stop that turn. Force-killing a process you did not start needs a yes that names its pid and owner.
+
+## 2026-10-31 — where we left off is this session
+
+> reflect · 2026-10-31 · 39a12a43 · 0f23577b · skill-gap · applied · seen 3
+
+**What happened.** Andres: "not the work related to the other sessions… your work where we left off."
+**Why.** Resume read Linear and other sessions before this session's transcript.
+**What changed.** Replies: "where we left off" is this session's own transcript. Other sessions are context.
+
+## 2026-10-31 — a main-session fix proves each behaviour with verify-this
+
+> reflect · 2026-10-31 · 7c3d7896 · 14531ef9 · skill-gap · applied · seen 2
+
+**What happened.** Andres: "dont use verify, use /verify-this."
+**Why.** The cadence named remote-verify and bin/verify. Only the pane standing rules named verify-this.
+**What changed.** One cadence: a main-session test-and-fix run proves each behaviour with /verify-this.
+
+## 2026-10-31 — design boards follow the journey
+
+> reflect · 2026-10-31 · 389b9590 · skill-gap · applied · seen 1
+
+**What happened.** Andres: "When I mean by journey I mean the actual product flow" and asked for columns as sections and rows as states.
+**Why.** No board layout was written down.
+**What changed.** Logged. Promote to the Records board line at seen 2: columns are the journey's steps, rows are the states, and every frame name says the screen and the state.
+
+## 2026-10-31 — push a work-holding branch the same turn
+
+> reflect · 2026-10-31 · 39a12a43 · broken-rule · applied · seen 1
+
+**What happened.** Andres asked to commit and push a branch so the work would not get lost.
+**Why.** Records writes a ruling the same turn and says nothing about an unpushed branch.
+**What changed.** Logged. Promote to Records at seen 2.
+
 ## 2026-10-28 — remote execution keeps the existing Git workflow
 
 In migration session 01a17981, Andres corrected the proposed transfer ceremony: "we already do PRs and branching." Changing execution host must preserve that workflow. Remote checks use saved changes and dedicated mirrors; coding continues in separate worktrees. A new PR or wholesale document sync is not a prerequisite. One unique session supports this correction.
@@ -47,11 +135,11 @@ In migration session 01a17981, Andres corrected the proposed transfer ceremony: 
 
 ## 2026-10-25 — restate multi-point design feedback before redrawing
 
-> reflect · 2026-10-25 · 0f23577b · 389b9590 · 01a16fa4 · skill-gap · applied · seen 3
+> reflect · 2026-10-25 · 0f23577b · 389b9590 · 01a16fa4 · 95c4b104 · skill-gap · applied · seen 7
 
 **What happened.** Andres asked four times in three sessions for his feedback to be played back before anything was drawn: "Restate your understanding of my feedback. before drawing and tweaking I want you to mockup with ascii in chat" (0f23577b), "Restate my decisions so you can align" (389b9590). When the restate was skipped, the lightbox came back full-screen: "it should be small popup not the full screen".
 **Why.** No rule asked for a restate before a redraw, so each round went straight to drawing.
-**What changed.** Replies: "Restate before redrawing", a numbered list plus an ASCII sketch for layout, and nothing drawn until he says yes.
+**What changed.** Replies: "Restate before redrawing" now covers two or more points on art, copy, or layout. 2026-10-31: still missed with andres-mode loaded (95c4b104). Seen 7.
 
 ## 2026-10-25 — a ruling amends its row and every stale copy
 

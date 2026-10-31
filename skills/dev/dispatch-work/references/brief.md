@@ -58,7 +58,7 @@ DECIDED IN CHAT
            Build to "Andres ruled" lines. Treat the others as defaults you may overturn with a
            reason in your report.
 RULES      <<binding rules for the files this pane writes, with exemptions>>
-DESIGN     <<no UI, or the board path, the frames above, and every screen and state they show, async included>>
+DESIGN     <<no UI; "UI, no design source: before/after line only"; or the board path, the frames above, and every screen and state they show, async included>>
            Bring each frame to life as the decisions describe it, at visual parity and full
            fidelity: layout, spacing, type, every state, and motion where the frame shows it. Values come from design-system tokens; use the shared component
            where one exists, and build a missing one with /building-components. Loading, empty,
@@ -147,6 +147,6 @@ Fix these only. Re-run the tests that cover each fix and name them: those files 
 plus typecheck and lint on the touched files. A UI fix runs only the browser test or parity state
 it touches. No bin/verify, no mutation sweep, no full e2e or browser suite this round. Copy follows
 design/lexicon/LEXICON.md, and focus and accessibility fixes use the existing Thoven components.
-On a UI fix, push: the Parity check re-shoots each touched state at its frame's width and 390.
-Compare it with the previous grid; a change beyond the fixed element is a defect. Report as before.
+On a UI fix, commit only. Main pushes this round so the Parity check re-shoots each touched state at its frame's width and 390.
+Main reads that grid. A change beyond the fixed element is a defect. Report as before.
 ```

@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-31 — a variant of a shipped surface starts from the real route
+
+> reflect · 2026-10-31 · 0f23577b · 389b9590 · broken-rule · applied · seen 2
+
+**What happened.** Andres: "when you're doing these prototypes on already real things, you actually look at the code." A later pass was told to change only the middle section.
+**Why.** Rule 16 said the slot is locked, and the skill never said to open the shipped page first.
+**What changed.** Before drawing a variant of a shipped surface or an attached mockup, open the real route, start from its shipped code, and state in two lines what stays and what changes.
+
 ## 2026-10-25 — the skill never fired on drawings and protos
 
 > reflect · 2026-10-25 · 7c3d7896 · 389b9590 · 39a12a43 · broken-rule · applied · seen 3

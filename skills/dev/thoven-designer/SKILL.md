@@ -18,6 +18,8 @@ The surface you were named is the only one in scope. Fitting a component into it
 Resizing the shell, the grid, or the neighbouring cards is a new decision that needs Andres.
 `feature-ledger` **rule 16**.
 
+Before drawing a variant of a shipped surface or an attached mockup, open the real route, start from its shipped code, and state in two lines what stays and what changes.
+
 ## Pitfalls
 
 - Use the assigned colour step as is, without converting, re-measuring or comparing it to stock Tailwind; a suspected palette inconsistency goes to its own ticket. (LEARNINGS 2026-08-17)

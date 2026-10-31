@@ -101,6 +101,7 @@ into an integration branch, run one /deslop and thermo pass over the merged rang
 ## Handling findings
 
 - **Gate repair, CI fixes and redesigns** go to Andres as one line with a choice.
+- **A round carries about five user-facing findings.** A larger set splits by concern into panes whose files do not overlap.
 - **Critical or important:** a fix round (`brief.md`, fix-round brief) to the builder by peer message plus a CORRECTION entry,
   then a verifier re-run scoped to the fix diff. There are 3 fix rounds. Rounds 1 and 2 go to the
   builder's pane. Round 3 goes to a fresh pane one tier up. The ticket stays **Ready** throughout.
