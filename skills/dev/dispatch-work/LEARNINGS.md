@@ -11,7 +11,56 @@ New entries on top. Each one: what happened, why, what changed.
 
 **What happened.** Andres asked dispatch to update Linear natively, including when the session had just run grill-with-docs or product-fundamentals.
 **Why.** The brief could cite a chat ruling that Linear did not have yet, so the pane built from the conversation.
-**What changed.** The workspace update table runs in the same turn as the event. DECIDED IN CHAT cites the decision id. A ruling with no id is not ready.
+**What changed.** The workspace fixed-writes table runs in the same turn as the event. DECIDED IN CHAT cites the decision id.
+
+## 2026-10-31 — cheap contract lanes run before DONE
+
+> reflect · 2026-10-31 · 7c3d7896 · skill-gap · applied · seen 5
+
+**What happened.** Panes reported DONE, then hosted CI failed on the contract manifest, OpenAPI types, the raw-id guard, and knip. One rubocop run passed `--except Thoven/NoRawIdFind`.
+**Why.** DONE WHEN listed rubocop, specs, and type-check. `TESTING.md` already named the cheap lanes.
+**What changed.** standing.md: before DONE, regenerate the contract manifest and frontend OpenAPI types, run `bin/ci fast` guards, contract, and schema, plus the OpenAPI-breaking check on a schema change. Frontend runs `api-types:check`, `contract-check`, and `knip` when exports change. The authorization cop runs with the other guards.
+
+## 2026-10-31 — a brief names the shared primitive before it names a control
+
+> reflect · 2026-10-31 · thv-918 · broken-rule · applied · seen 1
+
+**What happened.** Main told a pane to use a pill for Refunded. The shipped control was a RadioGroupItem. The pane then hand-rolled controls the design system already had.
+**Why.** DESIGN said "use the shared component where one exists" and the brief still named the wrong one.
+**What changed.** The pitfall list is already past ten lines, so this is a step in snapshot-and-brief: before DESIGN names a control or a design value, run thoven-designer and name the shared primitive with one live call site.
+
+## 2026-10-31 — main pushes a UI fix round and reads the parity grid
+
+> reflect · 2026-10-31 · thv-918 · tooling · applied · seen 1
+
+**What happened.** The fix-round brief told the pane to push, standing.md says panes only commit, and main reshot parity by hand for several rounds.
+**Why.** The template contradicted the standing rule.
+**What changed.** The fix-round brief says commit only. When a UI fix round reports, main pushes and reads the Parity grid.
+
+## 2026-10-31 — a review names which of thermos and deslop ran
+
+> reflect · 2026-10-31 · 14531ef9 · broken-rule · applied · seen 1
+
+**What happened.** Andres: "it seems like we did not find any reviews from /thermos or /deslop. if you did not invoke those invoke those next."
+**Why.** review.md runs both, and the synthesis did not say which had run.
+**What changed.** Logged. At seen 2 the verifier report carries one row per review skill, with its finding count.
+
+## 2026-10-31 — the pane gets "Invoke <skill> to start" and the brief inline
+
+> session · 2026-10-31 · 01a169a1 · correction · applied · seen 1
+
+**What happened.** A replacement builder for THV-1506 got a brief whose takeover line said "Run
+/takeover in place". The pane loaded `/takeover` instead of poteto-mode and ended its turn without
+building. Andres: start the pane with "Invoke poteto-mode to start" and paste the brief as text
+instead of pointing at a file.
+
+**Why.** A skill named anywhere in the brief competes with the opening skill, and a path the pane
+has to open is one more step that can go wrong.
+
+**How to apply.** `dispatch spawn` sends `Invoke <first line> to start.` and the rest of the brief
+inline. A takeover changes the opening line to `/poteto-mode session-pickup` and never names
+`/takeover`. Smoke-tested 2026-10-31: a Sonnet pane invoked poteto-mode with the Skill tool first and
+read its task from the prompt.
 
 ## 2026-10-31 — a dispatched pane opens beside main, not in a new window
 
@@ -161,11 +210,11 @@ The brief research (about 30 incidents) found builders already asked, about 11 t
 
 ## 2026-10-22 — the delivery loop: quiet heartbeats, limits, inbox, close-out, review sizing
 
-> reflect · 2026-10-22 · 39a12a43 · 889d1f76 · d9f3ef92 · a010cb0c · 19da0b54 · ec30f47b · c132eb65 · 79269fdf · 02cf7024 · d0d40add · 636cedec · f60a27f9 · 93f7415c · broken-rule · applied · seen 7
+> reflect · 2026-10-22 · 39a12a43 · 889d1f76 · d9f3ef92 · a010cb0c · 19da0b54 · ec30f47b · c132eb65 · 79269fdf · 02cf7024 · d0d40add · 636cedec · f60a27f9 · 93f7415c · 7c3d7896 · 14531ef9 · 2222bb7a · 389b9590 · broken-rule · applied · seen 11
 
 **What happened.** A 14-day deep pass over main sessions found the loop leaking at every handoff. Heartbeat exits outnumbered real events about 4.5 to 1, and each forced a line to Andres ("Is this even that important?"). A watcher killed for memory stayed dead ("rearm and check if the pane froze"). Panes stopped at usage limits until Andres said "limits should be back" (5 sessions). Builder reports failed with `agent_blocked` while main sat at a dialog, and builders looped 30-60 retries; nothing read the out/ inbox. Linear looked stale ("Why is linear not updated I am so confused"). Close-out left trees, databases and branches for Andres to ask about in 7 sessions. He asked about 20 times for /thermos and /deslop on PRs with no verifier pane. Tickets ran 8-14 fix rounds on an undefined severity scale. On THV-1355 he saw the page only after two verifier passes, and his notes reopened it. Old integration branches' pre-push hooks pushed panes to `--no-verify`. `gh pr merge` exited nonzero after good merges.
 **Why.** Step 4 told main to report every wake and never said how to recover a killed watcher, a usage limit or a failed report. Step 6 said "Done means merged and a user can reach it", which clashed with Done on an integration branch. review.md named no severity scale and ran code-quality thermo only on big diffs.
-**What changed.** Step 4: heartbeats re-arm silently; a killed watcher is replaced by `herdr agent wait` (Andres: herdr's own wait is lighter); a usage-limit row; the out/ inbox read on every wake; brief.md REPORT says stop, never loop. Linear section: every merge or Done report ends with the pending Linear writes as a go. Step 1: offer a catch-up merge when the branch's hooks differ from main. Step 6: Done means merged into its target, integration branch or main (Andres: "Done on an integration branch should also mean done"), and the report says where it lives; close-out removes the ticket's own tree and merged branches. review.md: severity defined; thermo sized to the diff (code-quality under ~300 lines in one module, /thermos above, sharded past ~1k), Matt Pocock's /code-review, and every PR put to Andres gets the trio. Pitfalls: show UI at first DONE; read back the PR after every merge.
+**What changed.** Step 4: heartbeats re-arm silently; a killed watcher is replaced by `herdr agent wait` (Andres: herdr's own wait is lighter); a usage-limit row; the out/ inbox read on every wake; brief.md REPORT says stop, never loop. Linear section: every merge or Done report ends with the pending Linear writes as a go. Step 1: offer a catch-up merge when the branch's hooks differ from main. Step 6: Done means merged into its target, integration branch or main (Andres: "Done on an integration branch should also mean done"), and the report says where it lives; close-out removes the ticket's own tree and merged branches. review.md: severity defined; thermo sized to the diff (code-quality under ~300 lines in one module, /thermos above, sharded past ~1k), Matt Pocock's /code-review, and every PR put to Andres gets the trio. Pitfalls: show UI at first DONE; read back the PR after every merge. 2026-10-31: when main's own limit resets, step 4 runs status on every pane and `git status --short` in each tree. A file is re-applied only when that status names it. Seen 11.
 
 ## 2026-10-22 — corrections to a busy pane go as a brief file, never a typed follow-up
 
@@ -356,7 +405,7 @@ RULINGS, tells him in one line, and asks only a product call no rule covers.
 
 ## 2026-09-16 — a fix round carries about five findings
 
-> reflect · 2026-09-16 · memory:feedback_subagent_token_budget · correction · applied · seen 2
+> reflect · 2026-09-16 · memory:feedback_subagent_token_budget · 2026-10-27 · broken-rule · applied · seen 3
 
 **What happened.** The THV-538 build agent reached 347k tokens. Andres: "that feels excessive for
 one subagent ... make sure agents have tight [budgets]". A THV-578 fix-forward brief with 11 items
@@ -365,7 +414,7 @@ plus e2e ran to about 265k.
 judgment degraded as the window filled.
 **What changed.** The 250k budget was already in `references/brief.md` STANDING. Step edit in the
 fix-round brief: carry about five findings per round and split a larger set by concern into panes
-whose files do not overlap.
+whose files do not overlap. 2026-10-31: THV-918 still sent rounds of 10 and 11, so Handling findings now states the cap where main decides the round. Seen 3.
 
 ---
 

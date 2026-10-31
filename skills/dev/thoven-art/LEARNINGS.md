@@ -7,6 +7,9 @@ New entries on top. Each one: what happened, why, what changed.
 
 ## 2026-10-26 · Homepage sections asset kit (THV-1455, THV-1468)
 
+> reflect · 2026-10-26 · 95c4b104 · broken-rule · applied · seen 2
+
+- **The description now fires when art is planned.** 2026-10-31, 95c4b104: the kit was scheduled before the skill loaded. Planning, listing, or scheduling art loads it, and `design/art/INDEX.md` is read first.
 - **Generated before reusing.** The first kit planned twelve new icons while the passport marks
   already covered three (metronome, headphones, bolt). Andres: "Why did you create the assets when we
   had some from the original stickers and stuff." Step 2 now maps every need to a library row first.

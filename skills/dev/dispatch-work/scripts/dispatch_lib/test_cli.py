@@ -272,7 +272,7 @@ class Spawn(Harness):
                 self.brief(f"\n{line}\nYou are {{{{AGENT_NAME}}}}.\n")
                 self.assertEqual(self.spawn(), 0)
                 launch = self.mux.spawned[-1][2]
-                self.assertEqual(launch.prompt, f"{line} Read and follow your brief: {store.registrations()[-1].brief}")
+                self.assertEqual(launch.prompt, f"Invoke {line} to start.\n\nYou are build-thv-5-{len(store.registrations()) + 1}.\n")
 
     def test_missing_brief_is_refused(self):
         self.assertEqual(self.spawn(), 3)
@@ -319,7 +319,12 @@ class Spawn(Harness):
                                        "post --ticket THV-5\n")
         cwd, label, launch, split = self.mux.spawned[0]
         self.assertEqual((cwd, label, split), (self.tree, "Build · Cart (THV-5)", "block:main"))
-        self.assertEqual(launch.prompt, f'/poteto-mode feature THV-5 "Cart" Read and follow your brief: {reg.brief}')
+        self.assertEqual(launch.prompt, 'Invoke /poteto-mode feature THV-5 "Cart" to start.\n\n'
+                                        f"You are build-thv-5-2; main andres-main; board {self.home}/proj/board.md; "
+                                        f"spec {self.home}/proj/snapshots/THV-5.md; project proj.\n"
+                                        "Array<string> and <Parallel panes> and a -> b.\n"
+                                        "<div> <https://linear.app/x> <a@b.co> <Path> a << b\n"
+                                        "post --ticket THV-5\n")
         self.assertEqual(self.spawn(), 0)
         self.assertEqual(store.registrations()[1].agent_name, "build-thv-5-3")
 

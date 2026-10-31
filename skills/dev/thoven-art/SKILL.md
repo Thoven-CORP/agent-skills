@@ -1,6 +1,6 @@
 ---
 name: thoven-art
-description: Pictures in Thoven's art family, from the art library in design/art. Use when a design, page or feature needs art (stickers, stamps, instruments, icons, marks, hand-drawn outlines and boxes, frames, photos, Thovie), before generating any image or icon (QuiverAI, Paper image generation), and when adding or reviewing assets.
+description: Pictures in Thoven's art family, from the art library in design/art. Use when planning, listing, or scheduling art for a design, page, or feature (stickers, stamps, instruments, icons, marks, hand-drawn outlines and boxes, frames, photos, Thovie), before the plan names a new asset, and before generating any image or icon (QuiverAI, Paper). Read design/art/INDEX.md first. Also use when adding or reviewing assets.
 ---
 
 # Thoven art

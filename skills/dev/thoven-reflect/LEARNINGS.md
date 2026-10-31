@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-31 — reviewers read the digest, not the chats
+
+> reflect · 2026-10-31 · d041edf0 · correction · applied · seen 1
+
+**What happened.** Andres asked how the weekly check works and said he was worried it would turn into a token hog.
+**Why.** The mine file is small. The three reviewers then opened the raw chats.
+**What changed.** Reviewers read `corrections.md` and `dispatch.md`. A transcript open is the lines around one correction, not the file.
+
 ## 2026-10-21 — one rung ladder for every kind of lesson
 
 > reflect · 2026-10-21 · 997fee44 · skill-gap · applied · seen 1

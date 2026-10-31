@@ -103,6 +103,7 @@ model, the tier, and one line on why this tier.
    is insufficient. When the receiver has Linear access, re-read there; otherwise carry the actual
    relevant content and disclose missing or stale context.
 2. Copy [references/brief.md](references/brief.md) to the board's `briefs/THV-x.md` and fill it.
+   Before DESIGN names a control or a design value, run thoven-designer and name the shared primitive with one live call site.
    Carry what the ticket cannot know. Find earlier rulings with one mem0 search (`search_memories`,
    query: the ticket id, its title and the Project). Write a ruling the ticket lacks with
    `update THV-n grill`, then re-run the snapshot. A confirmed product brief uses `update THV-n brief`.
@@ -184,10 +185,12 @@ An alert line names the pane and the cause:
 | `BLOCKED` (2 min or more) | Read `dispatch read <pane>`. Answer a dialog inside the brief's scope with `dispatch key <pane> <key>`; otherwise ask Andres. |
 | `FROZEN` | Read further back. A long test run or `waiting for verification lock` is fine. A hung tool: `dispatch interrupt <pane>`, then ask for status. |
 | `GONE` | The agent exited. Spawn a fresh pane on the same brief plus the takeover line below. |
-| `LIMIT` | Tell Andres the reset time in one line. After it, check `git -C <tree> status` for a half-done merge or rebase, then message the pane `continue`. |
+| `LIMIT` | Tell Andres the reset time in one line. After it, check `git -C <tree> status` for a half-done merge or rebase, then message the pane `continue`. When main's own limit resets, run `dispatch status` on every pane, re-arm `dispatch watch`, and `git status --short` in each tree. Re-apply only a path that status shows this pane changed. Re-dispatch a frozen pane. |
 | `SETTLED_NO_REPORT` | The pane ended a turn with no REPORT, QUESTION or HANDOFF entry of its own. Message it: `Post your REPORT entry and message me your status line.` The uncommitted files it lists may be other sessions' edits in a shared tree. `still running: …` means a background job kept it from reporting for 10 minutes: ask the pane whether it still needs that job, and to stop a server it forgot. |
 | `TICK_ERROR` | The watcher failed to read this pane for 4 ticks in a row (about 2 minutes) and names the last error. Run `dispatch status <pane>`. Several panes timing out together (`rex call timed out`) means the machine is overloaded: check load and memory, then prune or hold panes before anything else. A single pane's Rex or herdr error is the backend's to fix; tell Andres in one line. While the status read itself fails, no other alert fires for that pane. |
 | `SETTLED` (Codex) | Read the pane's REPORT entry with `dispatch board <project> --ticket THV-x`, then handle it as the status table says. |
+
+When a UI fix round reports, push the pane's commits. The Parity check re-shoots. Read that grid.
 
 **Corrections and fix rounds go as a peer message plus a CORRECTION entry** (`dispatch post ...
 --kind correction`). A message reaches a busy pane between its tool calls, so it never waits for the
@@ -195,9 +198,11 @@ turn to end. Use `dispatch interrupt` only to stop work going the wrong way. A C
 fix round with `dispatch send <pane> <file>` once it is idle. Hold the verifier until the pane has
 answered the last correction. The entries are the record Andres reads.
 
-**Takeover line** for a replacement pane: `Run /takeover in place on <branch>, from <last commit>.
-The earlier pane's commits and report are claims: re-prove them before you build on them. Finish
-is this brief's DONE, commits only.`
+**Takeover.** A replacement pane gets the same brief with its opening line changed to
+`/poteto-mode session-pickup THV-x "<title>"`, plus this line: `Pick up on <branch> from <last
+commit>. The earlier pane's handoff is <entry path>. Its commits and report are claims: re-prove them
+before you build on them. Finish is this brief's DONE, commits only.` Never name another skill such
+as `/takeover` in a brief: the pane loads it instead of poteto-mode.
 
 **Done when:** every pane has reported and main has handled it, or its alert is reported to Andres.
 

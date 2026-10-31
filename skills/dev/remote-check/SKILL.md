@@ -10,6 +10,10 @@ separate Git worktree and the normal branch/PR process. Never edit product code 
 When the check is `bin/verify`, run `remote-verify` from the MacBook checkout instead: it ships HEAD
 plus the dirty and untracked files to a throwaway worktree on the mini and never touches a mirror.
 
+## Pitfalls
+
+- Read mini-side logs and screenshots yourself over the ssh host in `~/.config/thoven/host.json`. (LEARNINGS 2026-10-31)
+
 ## Select the input
 
 Read the relevant Linear task and governing document bodies. Follow

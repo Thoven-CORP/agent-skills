@@ -207,8 +207,9 @@ class App:
         stem = os.path.splitext(os.path.basename(source))[0]
         brief = os.path.join(store.sub(project, "briefs"), f"{stem}.{name}.md")
         store.write_atomic(brief, text)
-        # The pane's first prompt carries the skill line: inside the brief file it is only text and never fires.
-        prompt = f"{skill} Read and follow your brief: {brief}"
+        # The pane's first prompt names the skill to invoke and carries the brief's text, so the pane never has to
+        # open a file to learn its task. The file stays as the record.
+        prompt = f"Invoke {skill} to start.\n\n" + text.split(skill, 1)[1].lstrip("\n")
         # The brief, snapshot and board sit outside the tree; without this a Claude pane asks to read its own brief.
         add_dirs = [d for d in (a.add_dir, store.project_dir(project)) if d]
         cli, launch = build_launch(a.tier, a.cli, a.model, name, prompt, add_dirs)
