@@ -5,6 +5,21 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-31 — a dispatched pane opens beside main, not in a new window
+
+> session · 2026-10-31 · 01a169a1 · correction · applied · seen 1
+
+**What happened.** Andres asked for THV-1436 to open "in a new pane in rex instead of a whole new
+tab" and said dispatch should do that by default. `dispatch spawn` opened a Rex window or herdr tab
+per ticket unless `--split-of` was given.
+
+**Why.** Andres watches the builder from main's window. A separate window hides it.
+
+**How to apply.** `dispatch spawn` now splits the pane it runs in by default. `--split-of <pane>`
+splits another pane, and `--tab` brings back the separate window. Layout and step 3 say so.
+
+---
+
 ## 2026-10-26 — load the skill explicitly in each harness, then prove execution
 
 > session · 2026-10-26 · 01a1797d · correction · applied · seen 1
