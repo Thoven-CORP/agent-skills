@@ -11,8 +11,8 @@ description: >-
 
 # Workspace
 
-`$workspace` is a pure reader until the user approves a disclosed write set. Andres's go in chat on a
-dispatch update is that approval for its fixed writes (see Update after a dispatch). It owns Project
+`$workspace` is a pure reader until the user approves a disclosed write set. A dispatch event, a
+confirmed grill ruling, or a confirmed product brief approves its row under Fixed writes. It owns Project
 orientation, Linear lifecycle, capture, close, and the derived Map. A log entry is a Project Update
 or an issue comment. It does not perform semantic feature reconciliation.
 
@@ -156,12 +156,9 @@ This pass does not wait for capture, close, or log.
    only after approval, serially. Re-run the snapshot and report its new fingerprint and the
    before/after open-issue count per Project.
 
-## Update after a dispatch
+## Fixed writes
 
-`update THV-n <event> [THV-m <event> ...]` names the Linear writes a dispatch event needs. Main ends a
-merge or Done report with them as a one-line go (dispatch-work, Roles). Andres's go in chat approves
-exactly the writes in this table, so skip the snapshot and the approval step. Anything the table
-does not name goes through the Recipe.
+`update THV-n <event> [THV-m <event> ...]` is the write. The event approves its row. Apply it in the same turn. The reply is the read-back. A write outside this table goes through the Recipe.
 
 | Event | Write |
 |---|---|
@@ -169,11 +166,12 @@ does not name goes through the Recipe.
 | `pr <number>` | `set-status.js "Ready" THV-n`, then one comment: `PR #<number> opened` |
 | `report <STATUS>` | One comment: the report's status line and its Acceptance rows, nothing else. Take them from the newest REPORT entry that `~/.agents/skills/dispatch-work/scripts/dispatch board <project> --ticket THV-n` prints |
 | `merged <number>` | `set-status.js "Done" THV-n`, then one comment: `Merged #<number>`. List the open tickets the merge may close; moving them needs the Recipe |
+| `grill` | Amend the governing decision document (Ruling, steps 1–3). Comment on THV-n with the decision ids. |
+| `brief` | One decision entry per settled choice. A Project Update links those ids. The slot map stays on the design board the entry points at. |
 
-When any event in the table carries a ruling, or a change in scope or status, the same go names the decision-entry amend and a Project Update in the shape WORKFLOW.md §5 gives. Each surface links the decision id.
+A `started`, `pr`, `report`, or `merged` row that also changes a ruling amends the decision entry and posts a Project Update in the WORKFLOW.md §5 shape. Each surface links the decision id.
 
-Each write is idempotent: when the issue already sits at or past the target state, skip the move and
-say so. Reply with one line per issue, the state `set-status.js` read back, and stop.
+When the issue is already at or past the target state, report that state and leave it. Reply with one line per issue, the state `set-status.js` read back, and stop.
 
 ## Completion
 

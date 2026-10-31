@@ -31,7 +31,7 @@ The moves that generate each level's questions live in `references/sources/chesk
    - In a brand or generative exercise, collect Andres's answer before showing yours.
 4. **Close a level.** The next round opens with "Level N settled: …". Answering the round accepts it, and a no reopens that level.
 5. **Direction check, every round.** Flag in one line when a question polishes something that doesn't move toward what matters, when the work drifts from level 1, or when it leans on an unchecked assumption. Name the cheapest check. The call is Andres's.
-6. **Brief.** When the frontier is empty, or Andres stops, write the brief in chat. Copy it to the board frame on his go.
+6. **Brief.** When the frontier is empty, or Andres stops, write the brief in chat. On his go, copy the slot map to the board frame and run workspace `update THV-n brief`. Done when the reply quotes each decision id from that read-back.
 
 ## What each level checks
 
@@ -72,8 +72,8 @@ KEEP / CUT / DEFER   one line each, with the reason
 LATER          questions parked below the level we reached
 ```
 
-Mermaid does not render in this terminal, so draw in ASCII. Rulings reach Linear only through the usual ruling flow, after Andres confirms.
+Mermaid does not render in this terminal, so draw in ASCII.
 
 ## Neighbours
 
-`product-advisor` owns scope modes and engineering edge cases. `wireframe` and `prototype` own screens and variants. `feature-ledger` owns decision rows. `qa-flow` proves the built path.
+`product-advisor` owns scope modes and engineering edge cases. `wireframe` and `prototype` own screens and variants. `feature-ledger` reconciles the decision entries against the spec and the code. `qa-flow` proves the built path.

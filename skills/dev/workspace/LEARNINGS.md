@@ -5,6 +5,14 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-10-31 — a grill or product brief writes in the same turn as the confirmation
+
+> reflect · 2026-10-31 · d041edf0 · correction · applied · seen 1
+
+**What happened.** Andres asked for the Linear update to be native on dispatch, and the same when he invokes grill-with-docs or product-fundamentals.
+**Why.** Those sessions ended in chat and on the design board. Dispatch then copied the ruling into the brief, and Linear stayed behind the conversation.
+**What changed.** `update THV-n grill` and `update THV-n brief` are rows in the fixed write table. The confirmation is the go. The reply is the read-back.
+
 ## 2026-10-30 — the fast lane was deleted while the learning still said applied
 
 **What happened.** Andres, reflecting on this skill, said rulings from grills and docs were not written down, writes stayed shallow, and native Linear documents were not used. He kept asking for another mine and a real doc update.

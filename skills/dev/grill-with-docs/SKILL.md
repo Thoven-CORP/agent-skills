@@ -27,3 +27,7 @@ When the gate is green, invoke the `grilling` skill.
 
 Shipped product code is out of scope. Protos and `app/dev/` routes are in. The issue's
 `Writes to:` path is the only document this session must finish.
+
+## Close
+
+When Andres confirms a ruling, run workspace `update THV-n grill` in that turn. Done when the reply quotes the decision id from that read-back and `Writes to:` is finished.

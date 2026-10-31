@@ -21,6 +21,12 @@ test("a ruling is written when it is said, and close only mines what that pass m
   assert.match(skill, /A new snapshot fingerprint does not prove the text/);
 });
 
+test("a confirmed grill or product brief is a fixed write in the same turn", () => {
+  assert.match(skill, /\| `grill` \|/);
+  assert.match(skill, /\| `brief` \|/);
+  assert.match(skill, /Apply it in the same turn/);
+});
+
 test("one owner per fact, and the write tools include documents and Project Updates", () => {
   assert.match(workflow, /\| Decision \| The Project's governing decision document/);
   assert.match(workflow, /\| Handoff, progress, and risk \| The latest Project Update/);
