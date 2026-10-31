@@ -318,10 +318,17 @@ class Spawn(Harness):
                                        "<div> <https://linear.app/x> <a@b.co> <Path> a << b\n"
                                        "post --ticket THV-5\n")
         cwd, label, launch, split = self.mux.spawned[0]
-        self.assertEqual((cwd, label, split), (self.tree, "Build · Cart (THV-5)", None))
+        self.assertEqual((cwd, label, split), (self.tree, "Build · Cart (THV-5)", "block:main"))
         self.assertEqual(launch.prompt, f'/poteto-mode feature THV-5 "Cart" Read and follow your brief: {reg.brief}')
         self.assertEqual(self.spawn(), 0)
         self.assertEqual(store.registrations()[1].agent_name, "build-thv-5-3")
+
+    def test_tab_opens_a_window_and_split_of_names_the_pane(self):
+        self.brief("/poteto-mode feature THV-5 \"Cart\"\nGo\n")
+        self.snapshot()
+        self.assertEqual(self.spawn("--tab"), 0)
+        self.assertEqual(self.spawn("--split-of", "block:builder"), 0)
+        self.assertEqual([s[3] for s in self.mux.spawned], [None, "block:builder"])
 
     def test_brief_flag_uses_another_file(self):
         self.brief("/poteto-mode Verify THV-5 \"Cart\"\nverify {{AGENT_NAME}}\n", name="THV-5-verify.md")

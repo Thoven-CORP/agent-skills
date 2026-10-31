@@ -54,10 +54,11 @@ moves, the Project Update) as a one-line go, so Linear never goes stale without 
 
 ## Layout
 
-- **Rex:** one session per Linear Project. Main lives in window 1, `Meta · <Project>`. Each issue
-  gets its own window, `<Kind> · <issue title> (THV-x)`. Sub-issues are splits in that window.
-- **herdr:** one space per Project. Main's tab is `Meta · <Project>`, each issue is a tab with the
-  same label, and sub-issues are panes in that tab.
+- **Rex:** one session per Linear Project. Main lives in window 1, `Meta · <Project>`. Each
+  dispatched pane is a split beside main in that window, labelled `<Kind> · <issue title> (THV-x)`.
+  `dispatch spawn` splits the pane it runs in. `--tab` opens its own window instead.
+- **herdr:** one space per Project. Main's tab is `Meta · <Project>`, and each dispatched pane is a
+  split beside main with the same label. `--tab` opens its own tab instead.
 - Kind names the ticket's work. Pick it by the rule in
   [WORKFLOW.md §8](../workspace/references/WORKFLOW.md). `dispatch label --kinds` prints the
   accepted words.
@@ -134,8 +135,9 @@ in Linear, then come back.
 2. `scripts/dispatch spawn <project> THV-x --kind <K> --title "<title>" --cwd <path> --tier <n> --base <sha>`.
    It fills the `{{…}}` fields and `THV-<id>`, and refuses a brief with a `{{…}}` or `<<…>>` slot
    left, or one that reads `{{SNAPSHOT}}` before the snapshot exists. When the agent fails to start,
-   the pane stays registered, so STARTUP or GONE reports it. A ticket that spans both repos gets one pane: spawn in the frontend tree and add `--add-dir <backend tree>`. A sub-issue
-   adds `--split-of <pane>`. Add `--cli codex` only when Andres named Codex.
+   the pane stays registered, so STARTUP or GONE reports it. A ticket that spans both repos gets one pane: spawn in the frontend tree and add `--add-dir <backend tree>`. The pane opens
+   as a split beside main. A sub-issue adds `--split-of <pane>` to split beside its parent's pane.
+   Add `--tab` only when Andres asks for a separate window. Add `--cli codex` only when Andres named Codex.
 3. On the first dispatch in this Project, label main's own pane (`$REX_BLOCK` in Rex, `$HERDR_PANE_ID` in herdr): `scripts/dispatch label <pane> Meta "<Project>" --tab`.
 4. Move the ticket to **In Progress** with `set-status.js`.
 
