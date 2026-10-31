@@ -1,17 +1,20 @@
 ---
 name: workspace
 description: >-
-  Project orientation and Linear lifecycle for Thoven. Use when the user asks where work stands,
-  what is next, to capture or close work, to log a session, or to reconcile the current Project's
-  board state. Produces one deterministic Project snapshot before proposing lifecycle writes.
+  Linear lifecycle for a Thoven Project. Use when Andres rules mid-session
+  ("make it the accordion", "library indigo", "max 5"), when a grill or spec
+  session ends, when he asks to update the docs, the Project description, the
+  Project status, or a Project Update, or when he asks where work stands, what
+  is next, to capture or close work, to log a session, or to reconcile the
+  board. Read the Project snapshot before proposing a lifecycle write.
 ---
 
 # Workspace
 
 `$workspace` is a pure reader until the user approves a disclosed write set. Andres's go in chat on a
 dispatch update is that approval for its fixed writes (see Update after a dispatch). It owns Project
-orientation, Linear lifecycle, capture, close, the derived Map, and the Project log. It does not
-perform semantic feature reconciliation.
+orientation, Linear lifecycle, capture, close, and the derived Map. A log entry is a Project Update
+or an issue comment. It does not perform semantic feature reconciliation.
 
 ## Pitfalls
 
@@ -36,6 +39,16 @@ When posting an Update, supply its health indicator. If the connected tool requi
 to post the first Update, use a known resolved lead or report the gap; do not invent an owner.
 Local receipts retain their distinct evidence role; `$feature-ledger` keeps artifact and semantic
 reconciliation ownership.
+
+## Ruling
+
+When Andres rules in the session, or a grill or spec session ends, write that ruling before the next task. The home and the entry shape are [WORKFLOW.md](references/WORKFLOW.md) §5.
+
+1. Amend the governing decision document. One entry per choice. A ruling that supersedes an earlier entry amends that entry.
+2. Say the id back in one line.
+3. Read the entry back. The id in the reply is the id in the document.
+
+This pass does not wait for capture, close, or log.
 
 ## Recipe
 
@@ -134,10 +147,14 @@ reconciliation ownership.
    ledger including Done and Canceled history, mechanical findings, completion claim, and next
    issue or skill invocation. Then run one mem0 search (`search_memories`, query: the Project name
    and the next issue id). Print what comes back under **Recalled**, after the snapshot. It is
-   recall, not record: it never changes the fingerprint or a finding.
-6. For capture, close, or log, show one exact Project-scoped write set. Apply only after approval,
-   serially. Re-run the snapshot and report its new fingerprint and the before/after open-issue
-   count per Project.
+   recall, not record: it never changes the fingerprint or a finding. A recalled ruling with no
+   matching decision entry is missing. Step 6 puts it in the write set.
+6. For capture, close, or log, mine first, then show one exact Project-scoped write set. List every
+   ruling and status change in this session, including a recalled ruling from step 5. Mark each one
+   written, amended, missing, or contradicted against the home in WORKFLOW.md §5. Each missing one
+   is a write-set entry. A ruling already written by the Ruling section stays marked written. Apply
+   only after approval, serially. Re-run the snapshot and report its new fingerprint and the
+   before/after open-issue count per Project.
 
 ## Update after a dispatch
 
@@ -153,6 +170,8 @@ does not name goes through the Recipe.
 | `report <STATUS>` | One comment: the report's status line and its Acceptance rows, nothing else. Take them from the newest REPORT entry that `~/.agents/skills/dispatch-work/scripts/dispatch board <project> --ticket THV-n` prints |
 | `merged <number>` | `set-status.js "Done" THV-n`, then one comment: `Merged #<number>`. List the open tickets the merge may close; moving them needs the Recipe |
 
+When any event in the table carries a ruling, or a change in scope or status, the same go names the decision-entry amend and a Project Update in the shape WORKFLOW.md §5 gives. Each surface links the decision id.
+
 Each write is idempotent: when the issue already sits at or past the target state, skip the move and
 say so. Reply with one line per issue, the state `set-status.js` read back, and stop.
 
@@ -161,7 +180,10 @@ say so. Reply with one line per issue, the state `set-status.js` read back, and 
 The main session has read the snapshot fingerprint and can account for every mechanical blocker
 and unknown. A write operation is complete only when the approved writes are applied and the
 post-write snapshot has been read. A dispatch update is complete when every issue in it has its
-read-back line.
+read-back line. A content write is complete when a read-back of each written surface shows each
+mined ruling in place. End the reply with one line naming the surfaces touched and the surfaces
+checked and left unchanged. A new snapshot fingerprint does not prove the text of a document, a
+description, a comment, or a Project Update.
 
 ## Compatibility
 
