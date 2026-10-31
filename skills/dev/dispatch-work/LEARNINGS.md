@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-31 — a grill or product brief is in Linear before the pane brief
+
+> reflect · 2026-10-31 · d041edf0 · correction · applied · seen 1
+
+**What happened.** Andres asked dispatch to update Linear natively, including when the session had just run grill-with-docs or product-fundamentals.
+**Why.** The brief could cite a chat ruling that Linear did not have yet, so the pane built from the conversation.
+**What changed.** The workspace fixed-writes table runs in the same turn as the event. DECIDED IN CHAT cites the decision id.
+
 ## 2026-10-31 — cheap contract lanes run before DONE
 
 > reflect · 2026-10-31 · 7c3d7896 · skill-gap · applied · seen 5
@@ -53,8 +61,6 @@ has to open is one more step that can go wrong.
 inline. A takeover changes the opening line to `/poteto-mode session-pickup` and never names
 `/takeover`. Smoke-tested 2026-10-31: a Sonnet pane invoked poteto-mode with the Skill tool first and
 read its task from the prompt.
-
----
 
 ## 2026-10-31 — a dispatched pane opens beside main, not in a new window
 

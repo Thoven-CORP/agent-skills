@@ -5,6 +5,22 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-10-31 — a grill or product brief writes in the same turn as the confirmation
+
+> reflect · 2026-10-31 · d041edf0 · correction · applied · seen 1
+
+**What happened.** Andres asked for the Linear update to be native on dispatch, and the same when he invokes grill-with-docs or product-fundamentals.
+**Why.** Those sessions ended in chat and on the design board. Dispatch then copied the ruling into the brief, and Linear stayed behind the conversation.
+**What changed.** `update THV-n grill` and `update THV-n brief` are rows in the fixed write table. The confirmation is the go. The reply is the read-back.
+
+## 2026-10-30 — the fast lane was deleted while the learning still said applied
+
+**What happened.** Andres, reflecting on this skill, said rulings from grills and docs were not written down, writes stayed shallow, and native Linear documents were not used. He kept asking for another mine and a real doc update.
+
+**Why.** The 2026-08-22 fast lane and the 2026-08-23 grill triggers were removed when the snapshot was unified. Both entries below still read as applied. WORKFLOW named several homes for a decision, and the concrete examples were repo paths.
+
+**What changed.** The description triggers on a mid-session ruling, the end of a grill or spec, and an ask to update docs or a Project Update. The Ruling section writes the decision when it is said, into the governing document in WORKFLOW §5. Recipe step 6 mines a ruling that pass missed. Completion requires a read-back of the written text.
+
 ## 2026-10-28 — Linear-only startup supersedes the local-folder prerequisite
 
 The current migration ruling makes Linear the project record. Missing local project folders or templates no longer establish missing setup. Recipe step 2 and the shared snapshot now accept a named Linear Project without local state. Inaccessible required Linear content still needs an explicit gap. This supersedes the recommendation in the 2026-10-25 entry below; its historical evidence remains intact.

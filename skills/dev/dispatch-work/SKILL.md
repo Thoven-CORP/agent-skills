@@ -49,8 +49,8 @@ Linear writes, pushes and product calls stay with main. Code stays with the pane
 back to a pane.
 
 Main moves status with `node ~/.agents/skills/workspace/tools/set-status.js "<State>" THV-x`, which
-prints the state it read back. Every merge or Done report ends with the pending Linear writes (status
-moves, the Project Update) as a one-line go, so Linear never goes stale without Andres knowing.
+prints the state it read back. Each dispatch event applies its row in the workspace fixed-writes
+table in that turn. The reply is the read-back line.
 
 ## Layout
 
@@ -105,9 +105,9 @@ model, the tier, and one line on why this tier.
 2. Copy [references/brief.md](references/brief.md) to the board's `briefs/THV-x.md` and fill it.
    Before DESIGN names a control or a design value, run thoven-designer and name the shared primitive with one live call site.
    Carry what the ticket cannot know. Find earlier rulings with one mem0 search (`search_memories`,
-   query: the ticket id, its title and the Project). A ruling the ticket lacks goes onto the Linear
-   parent first, then re-run the snapshot. A ruling that lives only in this conversation goes in
-   DECIDED IN CHAT with its label.
+   query: the ticket id, its title and the Project). Write a ruling the ticket lacks with
+   `update THV-n grill`, then re-run the snapshot. A confirmed product brief uses `update THV-n brief`.
+   DECIDED IN CHAT cites the decision id.
 3. Record execution mode and host, absolute worktree, branch/base HEAD and paired repository.
    A remote coding tree must be outside every Mutagen test mirror. Preserve existing PR routing.
 4. Put every binding rule you hold into RULES now. A rule sent after dispatch arrives as an addendum
@@ -116,7 +116,7 @@ model, the tier, and one line on why this tier.
 Pick the ACCESS lines for this ticket from [references/skills.md](references/skills.md). When the
 ticket's own process hands the slice Linear moves, write in RULES that main makes them.
 
-**Done when:** every field is filled, every chat ruling carries its label, and DONE WHEN names the
+**Done when:** every field is filled, every chat ruling cites a decision id read back from Linear, and DONE WHEN names the
 seams and the red-first proof. A field you cannot fill means the ticket is not ready. Fix the ticket
 in Linear, then come back.
 

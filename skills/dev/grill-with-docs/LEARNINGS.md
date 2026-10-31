@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-10-31 — a confirmed ruling is written before the next task
+
+> reflect · 2026-10-31 · d041edf0 · correction · applied · seen 1
+
+**What happened.** Andres asked for a grill to update Linear natively, the same way a dispatch event does.
+**Why.** The skill finished `Writes to:` and left the ruling in the conversation.
+**What changed.** Close runs workspace `update THV-n grill` in the turn he confirms. The decision id is read back.
+
 ## 2026-10-08 — Grill scope is the Project plus his paste
 
 > reflect · 2026-10-08 · memory:feedback_brainstorm_scope_is_project_plus_paste · 39a12a43 · correction · applied · seen 2

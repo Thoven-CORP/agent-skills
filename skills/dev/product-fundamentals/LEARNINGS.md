@@ -5,6 +5,14 @@ New entries go on top. Each entry covers what happened, why, and what changed.
 
 ---
 
+## 2026-10-31 — a confirmed brief is a Linear write, not only a chat recap
+
+> reflect · 2026-10-31 · d041edf0 · correction · applied · seen 1
+
+**What happened.** Andres asked for product-fundamentals to update Linear natively when he confirms the brief.
+**Why.** The brief was copied to the design board on his go, and the ruling waited for a later log.
+**What changed.** Step 6 runs workspace `update THV-n brief` in that same turn. The slot map stays on the board. The decision entry points at it.
+
 ## 2026-10-23 — Replaces customer-obsession-design-thinking
 
 > reflect + grill · 2026-10-23 · ~60 product sessions · 0f23577b · origin

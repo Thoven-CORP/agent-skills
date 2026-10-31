@@ -13,9 +13,9 @@ and Project Updates; feature-ledger retains its artifact and reconciliation resp
 
 **A Linear issue links to its governing decision. Do not create a second current decision copy.**
 
-**Current records policy (2026-10-28).** Linear-first startup and §5 supersede the older local-folder
-examples below. No project file is a universal prerequisite. Retain existing technical/history
-material; do not scaffold it to satisfy an example or require bulk document sync.
+**Current records policy (2026-10-28, homes revised 2026-10-30).** §5 names one owner per fact.
+No project file is a universal prerequisite. Retain existing technical and history material.
+Do not scaffold it to satisfy an example or require a bulk document sync.
 
 The numbered ledger rules that skills cite (rule 2 points at its source, rule 4 owners must exist,
 rule 9 prefer a script, rule 12 do not restate the prototype, rule 13 every surface has an authority)
@@ -142,15 +142,15 @@ it closes.
 ```
 ┌─ 1 · PRD + ARCHITECTURE ──────────────────────── lane: In Progress ───┐
 │   Every issue carries "Writes to:". Both repos' requirements land here.│
-│     problem, who has it, stories → Linear brief                              │
-│     ADRs, FE and BE              → decisions/architecture.md           │
-│     payload contract             → decisions/api.md                    │
-│     schema                       → decisions/database.md               │
+│     problem, who has it, stories → Project brief (§5)                  │
+│     a decision                   → governing document (§5)             │
+│     a technical artifact         → a repo path only when §5 selects it │
 │   GATE  accepted outputs meet their criteria                        │
 └────────────────────────────────────────────────────────────────────────┘
                                   ▼
 ┌─ 2 · DESIGN ──────────────────────────────────── lane: In Progress ───┐
-│     proto                        → DESIGN_<PROJECT>.md row + the route │
+│     proto                        → the design source the issue names   │
+│     accepted choice              → governing document (§5)             │
 │     component                    → the component + its token test      │
 │   GATE  every DESIGN_<PROJECT>.md surface row resolves                 │
 └────────────────────────────────────────────────────────────────────────┘
@@ -288,8 +288,8 @@ components app --include=*.tsx` returns a call site outside app/dev/.
 A spec issue's is shorter, because `Writes to:` already names the artifact:
 
 ```
-Writes to: backend/docs/api/teacher-settings-decisions.md
-Done when: that file names every field this Feature reads, and each row says
+Writes to: https://linear.app/thoven/document/<document-id>
+Done when: that document names every field this Feature reads, and each row says
 whether the backend emits it today.
 ```
 
@@ -308,19 +308,33 @@ relevant linked document bodies, native issues/milestones and latest Project Upd
 are not read evidence. Use the live Project setup standard through `linear-project` when changing
 setup. Missing local files do not imply that setup is missing.
 
-| Artifact | Home |
-|---|---|
-| Brief, requirements, accepted decisions, planning and handoffs | Linear Project documents, parent/issue records and Updates |
-| Status, assignee, ordering, milestones and dependencies | Native Linear fields |
-| Design and brainstorming | tldraw or Paper, referenced by Linear; accepted choices recorded in Linear |
-| Technical runbooks, API/schema details, executable plans and code | Owning repository when useful and explicitly selected |
-| Existing PRDs, `STATE.md`, `CONTINUE_HERE.md`, archives and evidence | Preserve as optional technical/history context; no mandatory copies |
+| Fact | Owner | Other records |
+|---|---|---|
+| Decision | The Project's governing decision document. One entry per choice. | The parent and the issue link the id. |
+| Status | The issue state and the Project status field. | A Project Update names the state. |
+| Brief and scope | The Project description. | |
+| Handoff, progress, and risk | The latest Project Update, with a health value. | An issue comment links that Update. |
+| Design and brainstorming | tldraw or Paper. | The accepted choice is a decision entry. |
+| Technical detail, plans, and code | The owning repository, when a decision entry selects that path. | |
+| Existing PRDs, `STATE.md`, `CONTINUE_HERE.md`, archives | Optional history. | No required copy. |
 
-Maintain one governing decision per choice, with stable ids and pointers to its sources. Amend
-that decision when the user rules; do not append a competing current decision. Preserve historical
-records and rejected alternatives. An accepted design source binds the surface it shows. A code
-component establishes current implementation, not a superseding product requirement. A missing
-required design or document is a named context gap, not permission to invent it.
+### Decision entry
+
+One entry per choice, in the governing document.
+
+- id
+- ruling, one sentence
+- reason
+- rejected alternatives
+- the source it points at
+- what it supersedes
+- status, from the vocabulary in `~/thoven/CLAUDE.md`
+
+Amend that entry when the user rules. Preserve historical records and rejected alternatives. An accepted design source binds the surface it shows. A code component establishes current implementation, not a superseding product requirement. A missing required design or document is a named context gap, not permission to invent it.
+
+### Project Update
+
+One Update carries health (`onTrack`, `atRisk`, or `offTrack`), what changed, the decision ids, the risks, and what is next. It links each decision id. It does not restate the ruling.
 
 Keep the existing Git branches and PR route across hosts. Use a dedicated disposable test mirror
 for remote checks and separate worktrees for remote coding. See
@@ -431,7 +445,7 @@ DOCUMENTS
 - Write to the record or technical path "Writes to:" names. Done when its acceptance criteria pass, not merely when it exists. Then set Ready.
 - If the grill produces build work, run /to-tickets after Andres asks. /writing-plans still exists for a session plan.
 - New top-level docs/ folders are Andres's call. Ask in a comment.
-- Decisions live in the Linear parent issue. Link to one by id and board frame. Never restate one.
+- Decisions live in the governing document named in §5. The parent issue links that document by id.
 
 BUILDING
 - Every issue is vertical through both repos, and demoable alone.
@@ -508,9 +522,9 @@ The issue **points**. It does not retell the spec. One block at the top of the b
 
 ```
 Sits in: <Initiative> · <Audience>: <Feature> · <Milestone>
-Ledger: <D# or ADR# · one-line surface name>
+Ledger: <decision id in the §5 document>
 Room: ~<Project session or space> / <tab>
-Writes to: <path>          ← documents only; omit on Build/Review
+Writes to: this ticket, or a Linear document URL. Omit on Build/Review.
 Done when: <checkable outcome>
 ```
 
@@ -570,9 +584,7 @@ skill from spawn to close.
   `stateHistory` to find its state before the move, and restore both state and cycle (a Backlog
   child normally has cycle null). Adding a Backlog issue to the active cycle also moves it to Todo
   silently, so the same check applies there.
-- **Linear's write tools are `save_issue` and `save_comment`,** not `create_*`. An unknown tool name
-  reports as "failed to connect," not "unknown tool" — if reads work and a write "can't connect,"
-  check the tool name before retrying.
+- **Confirm the live write tool with a read, then use it.** Issue text is `save_issue`. A comment is `save_comment`. A native document is `save_document`. The Project description is `save_project`. A Project Update is `save_status_update`, and it includes a health value (`onTrack`, `atRisk`, or `offTrack`). These names were read from the Linear connector on 2026-10-30. A client whose tool list differs uses the name that read returns. An unknown tool name reports as "failed to connect," not "unknown tool." If reads work and a write cannot connect, check the tool name before retrying.
 - **Cancel an issue to close it,** so the id keeps resolving. Delete a *decision* row once it is
   superseded; keep a *rejected alternative* inside the drawing.
 - **Read a merge before trusting it.** `.claude/launch.json` merges cleanly and wrong across
