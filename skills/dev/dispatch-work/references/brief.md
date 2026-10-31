@@ -16,9 +16,10 @@ ONE LINE) are the pane's to fill: leave them.
   `Andres ruled <date>: …`, `main recommends: …` or `guess: …`.
 - RULES: every binding rule you hold, scoped to the files this pane writes, with its exemptions
   (generated files, manifests, routes.rb, files already over a limit).
-- For a Codex pane write `$poteto-mode`. `dispatch spawn` sends the brief's first line as the
-  pane's opening prompt, because inside the file it is only text, and refuses a brief that opens
-  with anything but a skill line.
+- For a Codex pane write `$poteto-mode`. `dispatch spawn` opens the pane with `Invoke <first line>
+  to start.` followed by the rest of the brief as text, so the pane never opens a file to learn its
+  task. It refuses a brief that opens with anything but a skill line. The filled brief is still saved
+  under `briefs/` as the record.
 - In a subagent prompt the opening skill line is text. Keep FIRST TURN intact so the builder
   explicitly loads the skill in its own harness.
 
