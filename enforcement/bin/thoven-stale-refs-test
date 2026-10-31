@@ -99,6 +99,31 @@ printf 'from lib.python_module import new_name\nnew_name()\n' > "$language_repo/
 printf "require_relative '../lib/ruby_module'\nnew_name\n" > "$language_repo/src/ruby_caller.rb"
 expect_status 0 "$scanner" --count --base origin/main -- "$language_repo"
 
+# Every re-export form still exports the name, so importers of the old module are live. A truly
+# removed export is still red.
+reexport_repo="$workspace/reexport-fixture"
+git -C "$workspace" init -b main reexport-fixture >/dev/null
+git -C "$reexport_repo" config user.email verify@example.test
+git -C "$reexport_repo" config user.name 'Verify Test'
+mkdir -p "$reexport_repo/lib"
+printf 'export type Kind = 1\nexport const Val = 1\n' > "$reexport_repo/lib/view.ts"
+printf 'export type Kind = 1\nexport const Val = 1\n' > "$reexport_repo/lib/source.ts"
+printf "import { Kind, Val } from './view'\nvoid Val\n" > "$reexport_repo/lib/caller.ts"
+git -C "$reexport_repo" add .
+git -C "$reexport_repo" commit -m base >/dev/null
+git -C "$reexport_repo" update-ref refs/remotes/origin/main HEAD
+for form in \
+  "export type { Kind } from './source'\nexport { Val } from './source'" \
+  "import type { Kind } from './source'\nimport { Val } from './source'\nexport type { Kind }\nexport { Val }" \
+  "export {\n  Val,\n} from './source'\nexport type {\n  Kind,\n} from './source'"; do
+  printf "$form\n" > "$reexport_repo/lib/view.ts"
+  expect_status 0 "$scanner" --count --base origin/main -- "$reexport_repo"
+done
+printf "export type { Kind } from './source'\n" > "$reexport_repo/lib/view.ts"
+expect_status 1 "$scanner" --count --base origin/main -- "$reexport_repo"
+printf "export const Other = 1\n" > "$reexport_repo/lib/view.ts"
+expect_status 1 "$scanner" --count --base origin/main -- "$reexport_repo"
+
 # A default export reshaped inside its module (a Suspense wrapper re-adds it lower down) is
 # still exported at HEAD, so its importers are live. Removing it for real is still red.
 default_repo="$workspace/default-fixture"
