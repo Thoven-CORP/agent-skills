@@ -15,6 +15,10 @@ PY_FROM = re.compile(r"(?m)^\s*from\s+([.\w]+)\s+import\s+(.+)$")
 PY_DECL = re.compile(r"^\s*-\s*(?:async\s+)?(?:def|class)\s+([A-Za-z_]\w*)\b")
 RB_DECL = re.compile(r"^\s*-\s*(?:def(?:\s+self\.)?|class\s+|module\s+)([A-Za-z_]\w*)\b")
 RB_REQUIRE = re.compile(r"\brequire_relative\s*\(?\s*['\"]([^'\"]+)['\"]\s*\)?")
+JS_EXTS = (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs")
+IMPORT_KEYWORD = re.compile(r"\b(?:from|import|require)\b")
+# TypeScript resolves `./x.js` to x.ts, so an explicit JS-family extension also tries these.
+JS_TO_TS = {".js": (".ts", ".tsx"), ".jsx": (".tsx",), ".mjs": (".mts",), ".cjs": (".cts",)}
 
 
 def git(root: Path, *args: str) -> str:
@@ -22,6 +26,48 @@ def git(root: Path, *args: str) -> str:
     if result.returncode:
         raise RuntimeError(result.stderr.strip() or f"git {' '.join(args)} failed")
     return result.stdout
+
+
+def in_string_literal(text: str, pos: int) -> bool:
+    """True when `pos` sits inside a '...', "..." or `...` literal opened earlier on its line.
+
+    Used for JS-family sources only: `plant: "import x from './gone'"` is a fixture that names a
+    module, not an import. A literal spanning lines is not tracked."""
+    quote = ""
+    escaped = False
+    for char in text[text.rfind("\n", 0, pos) + 1:pos]:
+        if escaped:
+            escaped = False
+        elif char == "\\" and quote:
+            escaped = True
+        elif quote:
+            if char == quote:
+                quote = ""
+        elif char in "'\"`":
+            quote = char
+    return bool(quote)
+
+
+def module_key(path: str) -> str:
+    """The module a path names: no extension, and `x/index` is `x`, as TypeScript resolves it."""
+    stem = target_path(path)
+    return stem[:-len("/index")] if stem.endswith("/index") else stem
+
+
+def resolves(specifier: str, importer: str, paths) -> bool:
+    """True when the specifier still names an existing file or directory index at HEAD."""
+    spec = specifier.replace("\\", "/")
+    if spec.startswith(("./", "../")):
+        base = posixpath.normpath(posixpath.join(posixpath.dirname(importer), spec))
+    else:
+        base = spec.removeprefix("@/")
+    candidates = [base]
+    for ext, replacements in JS_TO_TS.items():
+        if base.endswith(ext):
+            candidates += [base[:-len(ext)] + new for new in replacements]
+    candidates += [base + ext for ext in SOURCE_EXTS]
+    candidates += [f"{base}/index{ext}" for ext in SOURCE_EXTS]
+    return any(candidate in paths for candidate in candidates)
 
 
 def merge_base(root: Path, base: str) -> str:
@@ -112,10 +158,10 @@ def declared_in_target(files, old_path: str, name: str, language: str) -> bool:
 
     A removed `export default` line counts as removed only if the module has no default export at
     HEAD: wrapping a page in Suspense deletes the line and re-adds it lower in the same file."""
-    target = target_path(old_path)
+    target = module_key(old_path)
     if not name:
         return language == "javascript" and any(
-            target_path(rel) == target and any(pattern.search(text) for pattern in DEFAULT_EXPORT)
+            module_key(rel) == target and any(pattern.search(text) for pattern in DEFAULT_EXPORT)
             for rel, text in files)
     patterns = {
         "javascript": [
@@ -126,7 +172,7 @@ def declared_in_target(files, old_path: str, name: str, language: str) -> bool:
         "python": [re.compile(r"(?m)^\s*(?:async\s+)?(?:def|class)\s+" + re.escape(name) + r"\b")],
         "ruby": [re.compile(r"(?m)^\s*(?:def(?:\s+self\.)?|class\s+|module\s+)" + re.escape(name) + r"\b")],
     }[language]
-    return any(target_path(rel) == target and any(pattern.search(text) for pattern in patterns)
+    return any(module_key(rel) == target and any(pattern.search(text) for pattern in patterns)
                for rel, text in files)
 
 
@@ -156,6 +202,8 @@ def callers(files, old_path: str, name: str, is_default: bool, language: str):
     if language == "javascript":
         for rel, text in files:
             for match in IMPORT.finditer(text):
+                if rel.endswith(JS_EXTS) and in_string_literal(text, match.start()):
+                    continue
                 bindings = match.group(1) or ""
                 spec = match.group(2) or match.group(3) or ""
                 if target_matches(spec, old_path, rel) and (is_default or re.search(r"\b" + re.escape(name) + r"\b", bindings)):
@@ -191,6 +239,8 @@ def main() -> int:
     try:
         merge, records = changes(root, base)
         files = list(current_files(root))
+        paths = {rel for rel in git(root, "ls-files", "-co", "--exclude-standard", "-z").split("\0")
+                 if rel and (root / rel).is_file()}
     except RuntimeError as error:
         print(f"thoven-stale-ref-calls: {error}", file=sys.stderr)
         return 2
@@ -199,12 +249,18 @@ def main() -> int:
         if not old_path:
             continue
         if kind in ("D", "R"):
+            stale = re.compile(r"['\"]((?:\.{1,2}/|@/)?[^'\"]*" + re.escape(old_path.rsplit(".", 1)[0]) + r"(?:\.[A-Za-z0-9]+)?)['\"]")
             for rel, _text in files:
                 if rel == old_path:
                     continue
                 for line_no, line in enumerate(_text.splitlines(), 1):
-                    if re.search(r"\b(?:from|import|require)\b[^\n]*['\"](?:\.{1,2}/|@/)?[^'\"]*" + re.escape(old_path.rsplit(".", 1)[0]) + r"(?:\.[A-Za-z0-9]+)?['\"]", line):
-                        found.add(f"{rel}:{line_no}: references removed path {old_path}")
+                    for keyword in IMPORT_KEYWORD.finditer(line):
+                        if rel.endswith(JS_EXTS) and in_string_literal(line, keyword.start()):
+                            continue
+                        match = stale.search(line, keyword.end())
+                        if match and not resolves(match.group(1), rel, paths):
+                            found.add(f"{rel}:{line_no}: references removed path {old_path}")
+                            break
         for name, is_default, language in removed_exports(root, merge, old_path):
             if declared_in_target(files, old_path, name, language):
                 continue

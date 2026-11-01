@@ -163,6 +163,75 @@ rm "$snapshot/docs/live.md"
 printf "import { Gone } from '@/lib/gone'\n" > "$snapshot/docs/live.md"
 expect_status 1 "$scanner" --count --base origin/main -- "$snapshot"
 
+# A file renamed x.ts -> x/index.ts still resolves for `./x`, `./x.js` and `@/lib/x`: no stale
+# import, for the named-export and the removed-path checks alike. Re-pointing the rename at a
+# different directory leaves the importer unresolved and red; so does a plain deletion.
+index_repo="$workspace/dir-index-fixture"
+git -C "$workspace" init -b main dir-index-fixture >/dev/null
+git -C "$index_repo" config user.email verify@example.test
+git -C "$index_repo" config user.name 'Verify Test'
+mkdir -p "$index_repo/lib/obs" "$index_repo/lib/sub"
+touch "$index_repo/next.config.mjs"
+printf 'export function sendLog() {}\nexport type Emission = 1\n' > "$index_repo/lib/obs/adapter.ts"
+printf "import { sendLog } from './adapter'\nvoid sendLog\n" > "$index_repo/lib/obs/report.ts"
+printf "import type { Emission } from './adapter.js'\nexport type E = Emission\n" > "$index_repo/lib/obs/seat.ts"
+printf "import { sendLog } from '@/lib/obs/adapter'\nvoid sendLog\n" > "$index_repo/lib/sub/alias.ts"
+git -C "$index_repo" add .
+git -C "$index_repo" commit -m base >/dev/null
+git -C "$index_repo" update-ref refs/remotes/origin/main HEAD
+mkdir -p "$index_repo/lib/obs/adapter"
+git -C "$index_repo" mv lib/obs/adapter.ts lib/obs/adapter/index.ts
+expect_status 0 "$scanner" --count --base origin/main -- "$index_repo"
+# The same rename into a sibling directory leaves every importer pointing at nothing.
+git -C "$index_repo" mv lib/obs/adapter/index.ts lib/sub/adapter.ts
+expect_status 1 "$scanner" --count --base origin/main -- "$index_repo"
+# A plain deletion with no file and no directory index at the old path stays red.
+git -C "$index_repo" rm -q -f lib/sub/adapter.ts
+expect_status 1 "$scanner" --count --base origin/main -- "$index_repo"
+
+# A string literal that names a removed module is a fixture, not an import. The same text as real
+# code is still red, and so is the same text in a markdown file.
+literal_repo="$workspace/literal-fixture"
+git -C "$workspace" init -b main literal-fixture >/dev/null
+git -C "$literal_repo" config user.email verify@example.test
+git -C "$literal_repo" config user.name 'Verify Test'
+mkdir -p "$literal_repo/lib" "$literal_repo/docs"
+printf 'export const gone = 1\n' > "$literal_repo/lib/gone.ts"
+git -C "$literal_repo" add .
+git -C "$literal_repo" commit -m base >/dev/null
+git -C "$literal_repo" update-ref refs/remotes/origin/main HEAD
+git -C "$literal_repo" rm -q lib/gone.ts
+printf "const rules = [{ plant: \"import { gone } from '@/lib/gone'\" }, { plant: 'const m = require(\"@/lib/gone\")' }]\nvoid rules\n" > "$literal_repo/scan.test.ts"
+expect_status 0 "$scanner" --count --base origin/main -- "$literal_repo"
+printf "import { gone } from '@/lib/gone'\nvoid gone\n" > "$literal_repo/real.ts"
+expect_status 1 "$scanner" --count --base origin/main -- "$literal_repo"
+rm "$literal_repo/real.ts"
+printf "const m = await import('@/lib/gone')\nvoid m\n" > "$literal_repo/dynamic.ts"
+expect_status 1 "$scanner" --count --base origin/main -- "$literal_repo"
+rm "$literal_repo/dynamic.ts"
+printf "const m = require('@/lib/gone')\nvoid m\n" > "$literal_repo/required.ts"
+expect_status 1 "$scanner" --count --base origin/main -- "$literal_repo"
+rm "$literal_repo/required.ts"
+printf "export { gone } from '@/lib/gone'\n" > "$literal_repo/reexport.ts"
+expect_status 1 "$scanner" --count --base origin/main -- "$literal_repo"
+rm "$literal_repo/reexport.ts"
+printf "import {\n  gone,\n} from '@/lib/gone'\nvoid gone\n" > "$literal_repo/multiline.ts"
+expect_status 1 "$scanner" --count --base origin/main -- "$literal_repo"
+rm "$literal_repo/multiline.ts"
+printf "See \"import { gone } from '@/lib/gone'\" in the old docs.\n" > "$literal_repo/docs/guide.md"
+expect_status 1 "$scanner" --count --base origin/main -- "$literal_repo"
+rm "$literal_repo/docs/guide.md"
+expect_status 0 "$scanner" --count --base origin/main -- "$literal_repo"
+
+# A clean repo with no changes and an empty one are green, not skipped into a false red or crash.
+empty_repo="$workspace/empty-fixture"
+git -C "$workspace" init -b main empty-fixture >/dev/null
+git -C "$empty_repo" config user.email verify@example.test
+git -C "$empty_repo" config user.name 'Verify Test'
+git -C "$empty_repo" commit --allow-empty -m base >/dev/null
+git -C "$empty_repo" update-ref refs/remotes/origin/main HEAD
+expect_status 0 "$scanner" --count --base origin/main -- "$empty_repo"
+
 # An empty base is refused, never read as "no base" and a skipped caller check.
 expect_status 2 "$scanner" --count --base '' -- "$default_repo"
 expect_status 2 "$source_helper" '' "$default_repo"
