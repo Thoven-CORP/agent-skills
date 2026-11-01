@@ -24,8 +24,8 @@ Run it whenever the user says the problem keeps coming back.
 It is idempotent, skips any `.next/cache` whose dev server is live, and skips `~/.cache/uv`
 when a uv process is running. Prefer it over hand-rolled `rm` for everything it already covers;
 extend the script rather than running one-off deletions, so the next session inherits the fix.
-`TRANSCRIPT_DAYS` (default 14, set 2026-10-27) bounds AI session-history retention; `TRANSCRIPT_DAYS=0` disables it. The Monday launchd job sets the same value in `~/Library/LaunchAgents/co.thoven.disk-prune.plist`.
-A weekly launchd job at `~/Library/LaunchAgents/co.thoven.disk-prune.plist` runs it Mondays 9am.
+`TRANSCRIPT_DAYS` (default 14, set 2026-10-27) bounds AI session-history retention; `TRANSCRIPT_DAYS=0` disables it. The Monday launchd job sets its own value, 7 since 2026-10-29, in `~/Library/LaunchAgents/co.thoven.disk-prune.plist`.
+A weekly launchd job at `~/Library/LaunchAgents/co.thoven.disk-prune.plist` runs it Mondays 9am and logs to `~/Library/Logs/co.thoven.disk-prune.log`. The log lives outside this skill folder because a reinstall wipes the folder: on 2026-10-30 it took the job's run history with it. `launchctl print gui/$(id -u)/co.thoven.disk-prune` shows runs since the last load.
 
 ### The safety contract (do not weaken this)
 
@@ -38,7 +38,7 @@ additionally need an extension on `ALLOWED_FILE_EXT`; clearing a declared cache 
 skips that check, since the root itself is the proof of disposability.
 
 A guard failure aborts the run with exit 3 rather than skipping the one path, because a violation
-means the caller's assumptions are wrong. If a weekly run exits 3, read `prune.log` and fix the
+means the caller's assumptions are wrong. If a weekly run exits 3, read `~/Library/Logs/co.thoven.disk-prune.log` and fix the
 caller. **Do not relax the guard to make a run succeed.**
 
 Verify with `bash scripts/prune-test.sh`. It builds a throwaway `$HOME`, plants real source files,
