@@ -68,7 +68,7 @@ Its progress and done lines start with `== ` and show SHAs as their first 9 char
    GHOST_TARGET=production pnpm run test:ghost
    ```
 
-   Done when `.stats.unexpected` is `0` and the skip diff below prints nothing. The expected skips are the staging browser path's two tests, the two retired record-write tests and the admin job probe (`production is read-only`):
+   Done when `.stats.unexpected` is `0`, the skip diff below prints nothing, and the database check after it exits 0. The expected skips are the staging browser path's two tests, the two retired record-write tests and the admin job probe (`production is read-only`):
 
    ```bash
    jq -r '.stats.unexpected' test-results/ghost.json
@@ -81,7 +81,15 @@ the frontend serves without a Vercel login wall
 SKIPS
    ```
 
-   **Stop: harness failed or skipped.** Only when a test failed, or the skip diff printed a line. Tell Andres, with each failure and each unexpected skip's reason. Production already runs the SHA, so this is a rollback decision for Andres (section "Roll back").
+   Then check the production database, read-only, with `<deploy-utc>` the UTC time step 6 printed its done line:
+
+   ```bash
+   ~/thoven/agent-skills/skills/dev/publish/scripts/prod-db-check.sh <deploy-utc>
+   ```
+
+   It confirms every migration at the live backend SHA is applied, the email ledger has a row for each mail sent since the deploy, no job failed since the deploy, and the 15-minute `LessonReminderJob` ran. Exit 3 means the deploy is under 16 minutes old: rerun it after the time its `WAIT` line names.
+
+   **Stop: harness failed or skipped.** Only when a test failed, the skip diff printed a line, or the database check exited 1. Tell Andres, with each failure and each unexpected skip's reason. Production already runs the SHA, so this is a rollback decision for Andres (section "Roll back").
 
 10. **Stop: tag the release.** After Andres's go:
 
@@ -109,7 +117,7 @@ Andres declares a rollback. An agent proposes one when production went live on a
 
 3. **Stop: roll back the backend.** After Andres's go: `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh backend <id>`. Done when it prints `backend on <sha9> (api healthy, worker live)`.
 
-4. **Checks after the rollback.** Run the backend smoke of step 7 and the harness of step 9 again, each on a checkout of the SHA it now serves. Done when both pass.
+4. **Checks after the rollback.** Run the backend smoke of step 7 and the harness and database check of step 9 again, each on a checkout of the SHA it now serves. Done when all three pass.
 
 5. **Stop: tag the rollback.** After Andres's go: `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh tag <id>`. Done when it prints `tagged prod/<date>-<n>; release <id> closed`.
 
