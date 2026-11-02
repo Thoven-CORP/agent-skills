@@ -58,6 +58,9 @@ iso_utc() {
   [ -n "$out" ] || die "cannot format $1 as RFC 3339 UTC"
   printf '%s' "$out"
 }
+# shellcheck source=staging-hold.sh
+. "$(dirname "${BASH_SOURCE[0]}")/staging-hold.sh"
+
 is_sha() { [[ $1 =~ ^[0-9a-f]{40}$ ]]; }
 
 RENDER_KEY=$(awk '$1=="key:"{print $2; exit}' ~/.render/cli.yaml 2>/dev/null || true)
@@ -171,10 +174,11 @@ open_release() {
   jq -e '.id and .be.to and .fe.to' "$REL" >/dev/null 2>&1 || die "release file $REL is unreadable"
   [ -n "$ID" ] || die "name the release: $cmd $(jq -r .id "$REL")"
   [ "$(jq -r .id "$REL")" = "$ID" ] || die "open release is $(jq -r .id "$REL"), not $ID"
+  staging_hold_refresh
 }
 rel() { jq -r "$1" "$REL"; }
 rel_set() { local tmp; tmp=$(mktemp); jq "$@" "$REL" >"$tmp" && mv "$tmp" "$REL"; }
-close_release() { mkdir -p "$RELEASES/$1"; mv "$REL" "$RELEASES/$1/"; rm -f "$REL_PTR"; rmdir "$LOCK"; }
+close_release() { staging_hold_release "$(rel '.staging_hold // empty')" || die "cannot release staging hold; release remains open"; mkdir -p "$RELEASES/$1"; mv "$REL" "$RELEASES/$1/"; rm -f "$REL_PTR"; rmdir "$LOCK"; }
 
 # Refuses when a half moved since plan: prod must be at .from or already at .to.
 still_planned() {
@@ -238,8 +242,9 @@ deploy() {
 case "$cmd" in
   plan)
     mkdir "$LOCK" 2>/dev/null || die "a release is open ($(jq -r .id "$(cat "$REL_PTR" 2>/dev/null)" 2>/dev/null || echo unknown)); finish it or run abort"
-    planned=0
-    trap '[ "$planned" = 1 ] || { rm -f "$REL_PTR"; rmdir "$LOCK" 2>/dev/null || true; }' EXIT
+    planned=0; plan_hold=""
+    trap '[ "$planned" = 1 ] || { staging_hold_release "$plan_hold" || true; rm -f "$REL_PTR"; rmdir "$LOCK" 2>/dev/null || true; }' EXIT
+    plan_hold=$(staging_hold_acquire "release planning") || die "cannot acquire shared staging hold; plan stopped"
     [ "$ROLLBACK" = 1 ] || guard_snapshot_ttl "$NEON_PROJECT"
     auto_assign_off || die "Vercel autoAssignCustomDomains is on, so merges go live by themselves. Switch it off first"
     for r in "$BE_REPO" "$FE_REPO"; do git -C "$r" fetch -q origin main; done
@@ -255,6 +260,10 @@ case "$cmd" in
     fi
     PROD_FE=$(prod_fe) || die "cannot tell what thoven.co serves (site and Vercel both failed)"
 
+    if [ -z "$BE_ARG" ]; then
+      retry curl -sS --fail --max-time 20 https://thoven-api-staging.onrender.com/up >/dev/null \
+        || die "staging API is asleep or unhealthy; resume it before planning from staging"
+    fi
     STAGE_BE=""; STAGE_FE=""
     if [ -z "$BE_ARG" ]; then STAGE_BE=$(live_commit "$STAGING_API_ID") || die "cannot read staging deploys"; fi
     if [ -z "$FE_ARG" ]; then
@@ -312,8 +321,8 @@ Pass --schema-stays only if the older code runs on the newer schema."
     id="$(TZ=America/New_York date +%Y%m%d-%H%M%S)-${BE:0:7}-${FE:0:7}"
     REL="$RELEASES/$id.json"
     jq -n --arg id "$id" --arg be "$BE" --arg pbe "$PROD_BE" --arg fe "$FE" --arg pfe "$PROD_FE" \
-      --arg migs "$MIGS" --arg build "$BUILD" --argjson rb "$ROLLBACK" --argjson order "$ORDER" \
-      '{id:$id, rollback:($rb==1), order:$order, be:{from:$pbe,to:$be}, fe:{from:$pfe,to:$fe},
+      --arg migs "$MIGS" --arg build "$BUILD" --arg staging_hold "$plan_hold" --argjson rb "$ROLLBACK" --argjson order "$ORDER" \
+      '{id:$id, staging_hold:$staging_hold, rollback:($rb==1), order:$order, be:{from:$pbe,to:$be}, fe:{from:$pfe,to:$fe},
         migrations:($migs|split("\n")|map(select(.!=""))), build_at_plan:$build,
         snapshot:null, snapshot_at:null, tag:null,
         done:{snapshot:false, backend:false, api_healthy:false, frontend:false}}' >"$REL"

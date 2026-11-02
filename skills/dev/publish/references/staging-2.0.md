@@ -7,6 +7,12 @@ Staging deploys itself. Merging a PR into `main` rebuilds staging in both repos:
 
 On this path `/publish` pushes nothing and deploys nothing. It proves staging runs the SHA and runs the staging gates on it. A SHA that passes every step here is **staging-green**, the only kind `references/production-2.0.md` promotes.
 
+## Availability hold
+
+Before QA, use the backend's `docs/deployment/staging-lifecycle.md` to acquire a hold on `thoven-mini-ssh`, resume staging, and verify its web and worker. Release the hold when the checks finish. QA holds and release holds are separate.
+
+`promote.sh plan` acquires a shared staging hold before provider requests. Each subsequent release command renews it for 24 hours. The mini must have the matching backend lifecycle command at `~/thoven/backend/bin/staging-lifecycle`. Install that backend change before adopting this promotion change. An unreachable mini or a missing lifecycle command blocks release work. A release idle for more than 24 hours needs a new hold before further QA. Only enable staging shutdown after the companion integration and hold round trip have been verified as described in the backend runbook.
+
 ## Steps
 
 0. **Stop: merge the PR.** Only when the PR is not merged yet. Merging needs Andres's "merge it" for that PR (see "Who does what" in the Render runbook). Done when `gh pr view <number> --json state -q .state` prints `MERGED`.
