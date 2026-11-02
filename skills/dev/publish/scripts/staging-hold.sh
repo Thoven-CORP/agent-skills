@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
 staging_control() {
-  local command='if [ -f "$HOME/.config/thoven/staging-lifecycle.env" ]; then set -a; . "$HOME/.config/thoven/staging-lifecycle.env" || exit; set +a; fi; exec "$HOME/thoven/backend/bin/staging-lifecycle"' argument
+  local command='if [ -f "$HOME/.config/thoven/staging-lifecycle.env" ]; then set -a; . "$HOME/.config/thoven/staging-lifecycle.env" || exit; set +a; fi; exec "$HOME/thoven/backend/bin/staging-lifecycle"' argument control_hostname
   for argument in "$@"; do printf -v command '%s %q' "$command" "$argument"; done
-  if [ "$(hostname)" = Mac.attlocal.net ]; then
+  control_hostname=$(hostname)
+  if [ "${control_hostname%%.*}" = Mac ] && [ "$(jq -r '.role // empty' "$HOME/.config/thoven/host.json" 2>/dev/null)" = mini ]; then
     bash -c "$command"
   else
     ssh -o BatchMode=yes -o ConnectTimeout=10 thoven-mini-ssh "$command"
