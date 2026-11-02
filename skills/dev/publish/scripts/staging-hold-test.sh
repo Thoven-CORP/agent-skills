@@ -76,4 +76,23 @@ SCRIPT
 HOME="$scratch/home" PATH="$scratch/bin:$PATH" bash -c 'source "$1"; staging_require_ready' _ "$(dirname "${BASH_SOURCE[0]}")/staging-hold.sh" > "$scratch/remote-probe"
 [ "$(cat "$scratch/remote-probe")" = ready ]
 echo 'PASS: remote probe loads private mini credentials without logging them'
+cat > "$scratch/bin/hostname" <<'SCRIPT'
+#!/usr/bin/env bash
+echo Mac.attlocal.net
+SCRIPT
+printf '{"role":"laptop"}\n' > "$scratch/home/.config/thoven/host.json"
+cat > "$scratch/bin/ssh" <<'SCRIPT'
+#!/usr/bin/env bash
+echo remote-selected
+SCRIPT
+HOME="$scratch/home" PATH="$scratch/bin:$PATH" bash -c 'source "$1"; staging_control probe --apply' _ "$(dirname "${BASH_SOURCE[0]}")/staging-hold.sh" > "$scratch/route"
+[ "$(cat "$scratch/route")" = remote-selected ]
+echo 'PASS: a laptop named Mac.attlocal.net still routes through the mini'
+printf '{"role":"mini"}\n' > "$scratch/home/.config/thoven/host.json"
+for control_hostname in Mac Mac.local; do
+  printf '#!/usr/bin/env bash\necho %s\n' "$control_hostname" > "$scratch/bin/hostname"
+  HOME="$scratch/home" PATH="$scratch/bin:$PATH" bash -c 'source "$1"; staging_control probe --apply' _ "$(dirname "${BASH_SOURCE[0]}")/staging-hold.sh" > "$scratch/route"
+  [ "$(cat "$scratch/route")" = ready ]
+done
+echo 'PASS: the canonical mini executes locally with or without a DHCP suffix'
 echo 'all passed'
