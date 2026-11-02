@@ -1,11 +1,16 @@
 # Publish: 2.0 staging
 
-Staging deploys itself. Merging a PR into `main` rebuilds staging in both repos:
+Frontend merges still deploy to the Vercel `thoven-staging` project. Backend staging is one combined Render service, `thoven-api-staging`, with commit auto-deploy off. Blueprint Auto Sync must separately be set to No and verified before the combined-staging PR merges; otherwise a Blueprint change can still redeploy the service. Keep Auto Sync off and sync reviewed configuration explicitly under a deployment hold. Service auto-deploy off alone is not a no-deploy guarantee. See [Render Blueprint sync](https://render.com/docs/infrastructure-as-code#disabling-automatic-sync). The old `thoven-worker-staging` stays suspended and is never resumed by the lifecycle command; removing its Blueprint declaration does not suspend it.
 
-- frontend: Vercel project `thoven-staging` builds the new commit and serves staging.thoven.co,
-- backend: Render `thoven-api-staging` and `thoven-worker-staging` deploy the new commit. The web service runs `bin/controlled-migrate` before it goes live.
+Before these gates, explicitly deploy the reviewed backend `main` SHA using backend `docs/deployment/staging-lifecycle.md`: acquire a hold, resume/probe the currently deployed revision, deploy the pinned SHA to the running web service, then verify actual revision and a fresh execution probe. The legacy worker must stop before the first combined cutover. Render can overlap old/new combined instances temporarily during deploys and maintenance; Solid Queue database coordination supports that handoff. This is one async runner per instance, not a global singleton or an exactly-once side-effect guarantee. Controlled migrations remain web preDeploy only.
 
-On this path `/publish` pushes nothing and deploys nothing. It proves staging runs the SHA and runs the staging gates on it. A SHA that passes every step here is **staging-green**, the only kind `references/production-2.0.md` promotes.
+On this path `/publish` does not deploy staging. It proves the explicitly selected staging revision and gates. A SHA that passes every step here is **staging-green**, the only kind `references/production-2.0.md` promotes.
+
+## Availability hold
+
+Before QA, use the backend's `docs/deployment/staging-lifecycle.md` to acquire a hold on `thoven-mini-ssh`, run `up --apply`, and verify its combined web and async runner. Wake requires a private `STAGING_ADMIN_TOKEN` and a real job probe before it reports ready. A four-hour session expires automatically unless renewed; QA must maintain its own bounded hold throughout active work. Release the hold when the checks finish. QA holds and release holds are separate.
+
+`promote.sh plan` acquires a shared staging hold before provider requests. Each subsequent release command renews it for 24 hours. Selecting staging during planning also requires the combined-service execution probe; an absent token, sleeping service, live legacy worker or failed probe blocks the plan and gives explicit deploy/wake/probe instructions. Production planning never silently deploys or wakes staging. The mini must have the matching backend lifecycle command at `~/thoven/backend/bin/staging-lifecycle`. Install that backend change before adopting this promotion change. An unreachable mini or a missing lifecycle command blocks release work. A release idle for more than 24 hours needs a new hold before further QA. Only enable staging shutdown after the companion integration and hold round trip have been verified as described in the backend runbook.
 
 ## Steps
 
@@ -36,11 +41,12 @@ Run each step in the repo it names. Steps 1 to 4 check each repo that changed. S
 
    ```bash
    render deploys list srv-dao470bm8hqs73d71sh0 -o json --confirm | jq '.[0] | {status, commit: .commit.id}'
-   render deploys list srv-dao470bm8hqs73d71shg -o json --confirm | jq '.[0] | {status, commit: .commit.id}'
+   # On the mini, with its private staging admin token:
+   ~/thoven/backend/bin/staging-lifecycle probe --apply
    curl -s https://thoven-api-staging.onrender.com/health | jq '.revision'
    ```
 
-   Done when both services show `status` `live` with `commit` equal to the SHA, and `revision.sha` is a prefix of it. A deploy still `build_in_progress`, `pre_deploy_in_progress`, or `update_in_progress` means wait and re-run; after 20 minutes, report it as stuck. A `pre_deploy_failed` status means `bin/controlled-migrate` refused: read the refusal section of the Render runbook (below).
+   Done when the combined web service shows `status` `live` with `commit` equal to the SHA, `revision.sha` is a prefix of it, the legacy worker is suspended, and the actual probe succeeds on `thoven-api-staging` with process kind `Worker`. A merge alone is not deployment evidence. A deploy still `build_in_progress`, `pre_deploy_in_progress`, or `update_in_progress` means wait and re-run; after 20 minutes, report it as stuck. A `pre_deploy_failed` status means `bin/controlled-migrate` refused: read the refusal section of the Render runbook (below).
 
 4. **Frontend: Vercel runs the SHA.**
 
