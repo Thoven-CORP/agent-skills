@@ -260,9 +260,8 @@ case "$cmd" in
     fi
     PROD_FE=$(prod_fe) || die "cannot tell what thoven.co serves (site and Vercel both failed)"
 
-    if [ -z "$BE_ARG" ]; then
-      retry curl -sS --fail --max-time 20 https://thoven-api-staging.onrender.com/up >/dev/null \
-        || die "staging API is asleep or unhealthy; resume it before planning from staging"
+    if [ -z "$BE_ARG" ] || [ -z "$FE_ARG" ]; then
+      staging_require_ready || die "staging execution probe failed; plan stopped"
     fi
     STAGE_BE=""; STAGE_FE=""
     if [ -z "$BE_ARG" ]; then STAGE_BE=$(live_commit "$STAGING_API_ID") || die "cannot read staging deploys"; fi

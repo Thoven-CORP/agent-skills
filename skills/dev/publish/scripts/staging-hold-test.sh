@@ -12,6 +12,7 @@ staging_control() {
   case "$1" in
     hold) printf 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' ;;
     release-hold) echo released ;;
+    probe) echo 'worker execution readiness: verified on thoven-api-staging' ;;
     *) return 1 ;;
   esac
 }
@@ -24,7 +25,13 @@ staging_hold_refresh > /dev/null
 [ "$(sed -n '1p' "$scratch/calls" | cut -d' ' -f1)" = hold ]
 [ "$(sed -n '2p' "$scratch/calls")" = 'release-hold --token bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb --apply' ]
 echo 'PASS: refresh acquires and persists replacement before releasing the old hold'
+staging_require_ready > /dev/null
+[ "$(tail -1 "$scratch/calls")" = 'probe --apply' ]
+echo 'PASS: staging selection requires a combined-service execution probe'
 staging_control() { return 1; }
+if staging_require_ready > "$scratch/probe-failure" 2>&1; then exit 1; fi
+grep -q 'explicitly deploy the reviewed main SHA' "$scratch/probe-failure"
+echo 'PASS: unavailable probe refuses staging readiness with explicit recovery steps'
 if (staging_hold_refresh) > "$scratch/failure" 2>&1; then exit 1; fi
 [ "$(rel .staging_hold)" = "$token" ]
 echo 'PASS: unavailable control host blocks release without discarding the saved hold'
@@ -53,4 +60,20 @@ grep -q 'cannot acquire shared staging hold; plan stopped' "$scratch/plan-output
 if grep -q UNEXPECTED_PROVIDER_REQUEST "$scratch/plan-output"; then exit 1; fi
 [ ! -d "$scratch/home/.thoven/releases/lock" ]
 echo 'PASS: actual promote plan refuses unavailable staging control before provider requests and cleans its lock'
+mkdir -p "$scratch/home/.config/thoven" "$scratch/home/thoven/backend/bin"
+printf 'RENDER_API_KEY=fixture\nSTAGING_ADMIN_TOKEN=fixture-secret\n' > "$scratch/home/.config/thoven/staging-lifecycle.env"
+chmod 600 "$scratch/home/.config/thoven/staging-lifecycle.env"
+cat > "$scratch/home/thoven/backend/bin/staging-lifecycle" <<'SCRIPT'
+#!/usr/bin/env bash
+[ "$RENDER_API_KEY" = fixture ] && [ "$STAGING_ADMIN_TOKEN" = fixture-secret ] && [ "$*" = 'probe --apply' ] || exit 1
+echo ready
+SCRIPT
+chmod +x "$scratch/home/thoven/backend/bin/staging-lifecycle"
+cat > "$scratch/bin/ssh" <<'SCRIPT'
+#!/usr/bin/env bash
+bash -c "${@: -1}"
+SCRIPT
+HOME="$scratch/home" PATH="$scratch/bin:$PATH" bash -c 'source "$1"; staging_require_ready' _ "$(dirname "${BASH_SOURCE[0]}")/staging-hold.sh" > "$scratch/remote-probe"
+[ "$(cat "$scratch/remote-probe")" = ready ]
+echo 'PASS: remote probe loads private mini credentials without logging them'
 echo 'all passed'
