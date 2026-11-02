@@ -1,7 +1,6 @@
 ---
 name: bro
 description: Restate the last message in plain human language, with no jargon, restructured for legibility.
-disable-model-invocation: true
 ---
 
 Rewrite your last message so it's actually legible:
