@@ -3,7 +3,7 @@
 #
 #   plan [--be SHA|keep] [--fe SHA|keep] [--rollback] [--schema-stays]
 #   snapshot ID    Neon branch of prod; required before backend when migrations are added
-#   backend  ID    thoven-api (health-gated), then thoven-worker, then Daily's webhook must be ACTIVE
+#   backend  ID [--redeploy]  thoven-api (health-gated), then thoven-worker; --redeploy applies config at the pinned SHA
 #   frontend ID    points thoven.co at the build of the pinned frontend SHA
 #   tag      ID    Daily's webhook must be ACTIVE; prod/<date>-<n> in both repos, then closes the release
 #   status         prints the open release
@@ -150,7 +150,7 @@ find_build() {
 }
 
 cmd=${1:-help}; shift || true
-ID=""; BE_ARG=""; FE_ARG=""; ROLLBACK=0; SCHEMA_STAYS=0
+ID=""; BE_ARG=""; FE_ARG=""; ROLLBACK=0; SCHEMA_STAYS=0; REDEPLOY=0
 if [ "$cmd" = plan ]; then
   while [ $# -gt 0 ]; do
     case "$1" in
@@ -162,8 +162,11 @@ if [ "$cmd" = plan ]; then
     esac
   done
 else
-  [ $# -le 1 ] || die "$cmd takes only the release ID"
-  ID=${1:-}
+  ID=${1:-}; [ $# -eq 0 ] || shift
+  if [ "$cmd" = backend ] && [ "${1:-}" = --redeploy ]; then
+    REDEPLOY=1; shift
+  fi
+  [ $# -eq 0 ] || die "unexpected arguments for $cmd"
 fi
 mkdir -p "$RELEASES"
 
@@ -380,10 +383,10 @@ Pass --schema-stays only if the older code runs on the newer schema."
       [ -z "$busy" ] || die "$svc already has deploy $busy running; wait for it, then rerun"
     done
 
-    [ "$api" = "$BE" ] || deploy "$API_ID" "$BE"
+    [ "$REDEPLOY" = 0 ] && [ "$api" = "$BE" ] || deploy "$API_ID" "$BE"
     health_gate "$BE"
     rel_set '.done.api_healthy=true'
-    [ "$worker" = "$BE" ] || deploy "$WORKER_ID" "$BE"
+    [ "$REDEPLOY" = 0 ] && [ "$worker" = "$BE" ] || deploy "$WORKER_ID" "$BE"
     [ "$(live_commit "$WORKER_ID")" = "$BE" ] || die "thoven-worker is not live on ${BE:0:9}"
     rel_set '.done.backend=true'
     daily_webhook_gate
