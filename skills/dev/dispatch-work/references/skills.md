@@ -22,6 +22,8 @@ stay there rather than being repeated in ACCESS.
 | Before writing customer-facing copy | `/thoven-branding` |
 | Building a screen from a board frame or Figma frame | `/build-design`; its Design / Built / Status table rides in the REPORT beside the parity grid |
 | A component with four or more reachable states, before the first DONE | `/state-machine`; the switcher URL rides in the REPORT so Andres can flip every state. The route stays uncommitted and is deleted once he has looked |
+| Before the first edit on a multi-step flow, a request that can fail or retry, a status column, or a job or webhook workflow | `/state-brief`, unless the Linear parent already holds its machine; the transition table and invariants ride in the first REPORT |
+| The same ticket, before the first DONE | `/state-audit` over the diff; its rating and every Low finding ride in the REPORT |
 | A screen is built, before the parity capture | `/better-ui` |
 | Motion is built, before reporting it complete | `/review-animations`, asked to review the changed motion files |
 | Before changing shared behaviour, an interface or a contract | `/blast-radius` |
