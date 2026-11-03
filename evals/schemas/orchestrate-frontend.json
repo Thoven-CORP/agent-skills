@@ -8,6 +8,8 @@
       "criteria": {
         "grill-with-docs": "Build or change a feature, 3+ concerns, multi-file; Idea to shipped feature",
         "architect": "Shape types and module boundaries before code",
+        "state-brief": "Design a flow with three or more states, or one a job, webhook, timer or another person can move",
+        "state-audit": "Audit a built flow for flag soup, hidden transitions or missing recovery",
         "to-spec": "Turn a settled design into a written spec",
         "feature-ledger": "Reconcile a large feature's PRD, design, contract and code",
         "superpowers:writing-plans": "Write an implementation plan from requirements",
