@@ -24,8 +24,9 @@ reference only for intent and rationale.
 
 | Question | Binding source (Tier 0) | Deep reference |
 |---|---|---|
-| Colour, palette, status hues | `tools/build-palette.mjs` (`PALETTE`) generates the `GENERATED:palette` region of `app/globals.css`; `__tests__/palette.test.ts` | `docs/design/color.md` |
-| Type ramp, fonts, weights | `app/globals.css` `@theme` `--text-*`; `__tests__/theme-tokens.test.ts` | `docs/design/typography.md` |
+| Colour, palette, status hues | `tools/build-palette.mjs` (`PALETTE`) generates the `GENERATED:palette` region of `app/globals.css`; `__tests__/palette.test.ts` | `design/color.md` |
+| Type ramp, fonts, weights | `app/globals.css` type roles; `__tests__/type-roles.test.ts`; `lib/cn-type-roles.test.ts` | `design/typography.md` |
+| Supporting text colour and content-title adoption | `app/globals.css` semantic colour aliases and existing type roles; `components/teacher/private-lessons/LessonsOverview.test.tsx` compiled paint | `design/typography.md` and `design/color.md` |
 | Buttons, ledges, variants | `thovenButtonTokens` in `lib/live-lesson-tokens.ts:53`; `components/ui/thoven-button.tsx`; `__tests__/design-system-doc.test.ts` | `design/buttons.md` |
 | Icons, the two tiers, K2 | `lib/icon-tokens.ts`; `__tests__/icon-tier-scan.test.ts`, `__tests__/icon-tokens.test.ts`, `__tests__/openmoji-icon-map.test.ts` | `docs/design/icons.md` |
 | Motion, springs, reduced motion | `lib/motion-config.ts` | `docs/design/motion.md` |
