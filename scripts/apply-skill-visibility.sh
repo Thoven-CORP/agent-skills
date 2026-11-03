@@ -49,6 +49,7 @@ auto_skills=(
   # Product verification and daily Thoven work
   qa-flow control-cli control-ui find-skills preflight publish verify workspace
   feature-ledger investigate-thoven doc-freshness dispatch-work andres-mode
+  state-brief state-audit
 
   # Official Cursor Team Kit (Cursor plugins, main)
   check-compiler-errors deslop fix-ci fix-merge-conflicts get-pr-comments

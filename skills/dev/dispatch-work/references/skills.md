@@ -14,7 +14,6 @@ stay there rather than being repeated in ACCESS.
 | -- | -- |
 | The first edit to a component or a design value | `/thoven-designer` |
 | Building a component the system does not have, or changing one | `/building-components` |
-| Before the first `.ts` or `.tsx` edit | `/typescript-best-practices` |
 | Before the first React or Next.js implementation edit | `/vercel-react-best-practices` |
 | Before implementing a React interaction or animated interface | `/interface-craft` |
 | Before implementing a CSS transition | `/transitions-dev` |
@@ -22,6 +21,8 @@ stay there rather than being repeated in ACCESS.
 | Before writing customer-facing copy | `/thoven-branding` |
 | Building a screen from a board frame or Figma frame | `/build-design`; its Design / Built / Status table rides in the REPORT beside the parity grid |
 | A component with four or more reachable states, before the first DONE | `/state-machine`; the switcher URL rides in the REPORT so Andres can flip every state. The route stays uncommitted and is deleted once he has looked |
+| Before the first edit, when the ticket adds or changes a flow that passes the gate in state-brief's When to run and the Linear parent holds no machine for it | `/state-brief`; the transition table and invariants ride in the first REPORT |
+| Before the first DONE, when the ticket ran `/state-brief` or its diff adds or changes a status write, a reducer, or two or more flags for one flow | `/state-audit` over the diff; its rating and every Low finding ride in the REPORT |
 | A screen is built, before the parity capture | `/better-ui` |
 | Motion is built, before reporting it complete | `/review-animations`, asked to review the changed motion files |
 | Before changing shared behaviour, an interface or a contract | `/blast-radius` |
@@ -33,6 +34,6 @@ stay there rather than being repeated in ACCESS.
 | Each changed behaviour, at the first DONE and in every fix round | `/verify-this`, one claim per behaviour; a fix round re-verifies only the claims it changed |
 | The first DONE | `/verify`'s check list once, through `/remote-check` on a `laptop` host; full `bin/verify` only on Andres's request or once at the parent before integration into `main` |
 
-Check each selected skill exists in `~/.agents/skills/` and is loadable in the builder's harness.
-Use the loading procedure in brief.md. A missing skill is a named access gap to resolve before
+Before dispatch, run `~/thoven/agent-skills/scripts/check-skill-routes.sh` on the filled brief; every
+ACCESS skill prints `ok`. Use the loading procedure in brief.md. A missing skill is a named access gap to resolve before
 dispatch. Invocation counts show execution gaps; they do not decide which skills belong here.
