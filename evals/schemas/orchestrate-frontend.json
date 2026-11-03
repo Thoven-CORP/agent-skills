@@ -52,7 +52,6 @@
         "next-cache-components": "Caching, `use cache`, revalidation",
         "next-upgrade": "Upgrade Next across a major",
         "vercel-react-best-practices": "Render cost, bundle size, re-renders",
-        "typescript-best-practices": "Types, generics, inference",
         "javascript-pro": "Plain JS, Node, tooling",
         "playwright-expert": "Drive or inspect a real browser",
         "deslop": "Strip AI slop from a diff; Pre-commit",

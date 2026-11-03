@@ -110,7 +110,6 @@ domain row over a universal one. When two rows match equally, ask one question.
 | Caching, `use cache`, revalidation | `/next-cache-components` |
 | Upgrade Next across a major | `/next-upgrade` |
 | Render cost, bundle size, re-renders | `/vercel-react-best-practices` |
-| Types, generics, inference | `/typescript-best-practices` |
 | Plain JS, Node, tooling | `/javascript-pro` |
 | Drive or inspect a real browser | `/playwright-expert` |
 
