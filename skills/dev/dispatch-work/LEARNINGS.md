@@ -5,6 +5,16 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-03 — the TypeScript row named a skill a fresh builder could not load
+
+> session · 2026-11-03 · state-brief-audit · correction · applied · seen 1
+
+**What happened.** Andres saw briefs still sending `/typescript-best-practices` and read it as a skill that does not exist. Every recent brief's ACCESS line carried it.
+**Why.** Its frontmatter sets `paths: ["**/*.ts", "**/*.tsx"]`, so Claude Code answers `Unknown skill` until the session reads a matching file in its project. A headless check printed `BEFORE: Unknown skill` and `AFTER: LOADED` around one `.ts` read. A builder loading ACCESS skills at its first turn, or main checking them from agent-skills, hit the error. It is the only installed skill with `paths`.
+**What changed.** skills.md drops the row; the skill surfaces itself on the first `.ts` read. Two gated rows add `/state-brief` before the first edit and `/state-audit` before the first DONE, for stateful flows only.
+
+---
+
 ## 2026-10-31 — a grill or product brief is in Linear before the pane brief
 
 > reflect · 2026-10-31 · d041edf0 · correction · applied · seen 1

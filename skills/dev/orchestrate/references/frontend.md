@@ -29,6 +29,8 @@ domain row over a universal one. When two rows match equally, ask one question.
 |---|---|
 | Build or change a feature, 3+ concerns, multi-file | `/grill-with-docs` |
 | Shape types and module boundaries before code | `/architect` |
+| Design a flow with three or more states, or one a job, webhook, timer or another person can move | `/state-brief` |
+| Audit a built flow for flag soup, hidden transitions or missing recovery | `/state-audit` |
 | Turn a settled design into a written spec | `/to-spec` |
 | Reconcile a large feature's PRD, design, contract and code | `/feature-ledger` |
 | Write an implementation plan from requirements | `/superpowers:writing-plans` |

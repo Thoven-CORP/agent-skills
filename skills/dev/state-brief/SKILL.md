@@ -1,13 +1,23 @@
 ---
 name: state-brief
-description: Design a stateful feature as an explicit state machine before code. Use before building a multi-step flow, a request that can fail or retry, a record with a status column, or a job or webhook workflow; when a plan holds two or more flags for one process; or for /state-brief.
+description: Design a stateful flow as an explicit state machine before code. Use once per flow at design time, when the flow has three or more states a person can tell apart, or something other than the person on screen can move it (a job, webhook, timer, or another person or tab), or a status column changes; or for /state-brief.
 ---
 
 # State brief
 
 The brief names the machine before the code: its states, events, transition table, owner and invariants, with a diagram drawn from the table. The code implements the table and adds no transition the table lacks.
 
-It covers a flow with three or more states, anything that waits on a request, and anything a job, webhook, timer, second tab or second person can move. A local toggle such as open and closed gets no brief. Server data stays in React Query, whose status is already a machine; the brief covers what the user or the system does with that data.
+## When to run
+
+Run it once per flow, at design time. On a Project that is the spec stage, after `/architect`, and the result goes in the Linear parent so every slice cites it. A builder runs it only when its ticket adds a flow the parent has no machine for.
+
+A flow passes the gate when any one of these holds:
+
+- It has three or more states a person can tell apart.
+- Something other than the person on screen can move it: a job, a webhook, a timer, or another person or tab.
+- It adds a status column, or adds, renames or removes a status value.
+
+Everything else gets no brief. That includes a single read shown through React Query, a form whose fields are only values, an open or closed toggle, a bug fix that adds no state, and copy or styling. Server data stays in React Query, whose status is already a machine; the brief covers what the user or the system does with that data.
 
 `/state-audit` is the check after the build. The `statechart` skill is the model checker this brief feeds. When `~/.agents/skills/statechart/SKILL.md` exists, step 5 hands the brief to it.
 

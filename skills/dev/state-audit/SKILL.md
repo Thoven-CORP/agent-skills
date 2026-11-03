@@ -1,11 +1,13 @@
 ---
 name: state-audit
-description: Audit built code for state robustness, including flag soup, transitions hidden in effects or conditionals, effects detached from transitions, and missing recovery, timeouts or back-pressure. Use before the first DONE on a stateful feature, when a flow keeps breaking in new ways, or for /state-audit.
+description: Audit built code for state robustness, including flag soup, transitions hidden in effects or conditionals, effects detached from transitions, and missing recovery, timeouts or back-pressure. Use once before the first DONE on a ticket that ran /state-brief or whose diff changes a status write, a reducer, or two or more flags for one flow; when a flow keeps breaking in new ways; or for /state-audit.
 ---
 
 # State audit
 
 The audit recovers the machine the code actually implements, compares it with the one it should implement, and reports where they differ. The audit edits nothing. A finding in code the ticket owns is fixed on its branch in the same round. A finding outside it gets one line in an existing grouped Linear issue.
+
+It runs once, before the first DONE, and again only when a fix round changes the state logic. A diff that touches no status write, reducer or flow flag gets no audit.
 
 The intended machine is the `/state-brief` output in the Linear parent when one exists. Otherwise it is the design source and the issue. The `statechart` skill turns a suspected race into a shortest bug path when it is installed (`~/.agents/skills/statechart/SKILL.md`).
 
