@@ -75,7 +75,8 @@ before answering from files, then hand it to `workspace` `capture`.
 
 For a content title or supporting text, read `design/typography.md` and its named CSS/test owners.
 A title's semantic heading level does not choose its display face. Use the existing content-title
-role and its family. Select supporting colour separately from size, and check the compiled result
+role and its family; do not introduce a new type framework or a one-off size. Pair supporting
+labels and values with `text-supporting` and an existing size role. Check the compiled result
 through `cn()` before changing a shared role. Essential names, dates, and instructions use readable
 supporting text; muted and disabled treatments require a state-specific reason.
 
