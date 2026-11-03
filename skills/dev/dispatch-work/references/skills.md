@@ -34,6 +34,6 @@ stay there rather than being repeated in ACCESS.
 | Each changed behaviour, at the first DONE and in every fix round | `/verify-this`, one claim per behaviour; a fix round re-verifies only the claims it changed |
 | The first DONE | `/verify`'s check list once, through `/remote-check` on a `laptop` host; full `bin/verify` only on Andres's request or once at the parent before integration into `main` |
 
-Check each selected skill exists in `~/.agents/skills/` and is loadable in the builder's harness.
-Use the loading procedure in brief.md. A missing skill is a named access gap to resolve before
+Before dispatch, run `~/thoven/agent-skills/scripts/check-skill-routes.sh` on the filled brief; every
+ACCESS skill prints `ok`. Use the loading procedure in brief.md. A missing skill is a named access gap to resolve before
 dispatch. Invocation counts show execution gaps; they do not decide which skills belong here.

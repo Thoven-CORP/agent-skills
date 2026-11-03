@@ -5,7 +5,7 @@ description: Audit built code for state robustness, including flag soup, transit
 
 # State audit
 
-The audit recovers the machine the code actually implements, compares it with the one it should implement, and reports where they differ. The audit edits nothing. A finding in code the ticket owns is fixed on its branch in the same round. A finding outside it gets one line in an existing grouped Linear issue.
+The audit recovers the machine the code actually implements, compares it with the one it should implement, and reports where they differ. The audit reports and edits nothing. The builder then fixes each finding in code the ticket owns, on its branch, in the same round. A finding outside the ticket gets one line in an existing grouped Linear issue.
 
 It runs once, before the first DONE, and again only when a fix round changes the state logic. A diff that touches no status write, reducer or flow flag gets no audit.
 
@@ -36,7 +36,7 @@ Done when: the as-built states and transitions are written down, and every probe
 
 ## 3. Prove the reachable bad states
 
-A claim that the code can reach an impossible or inconsistent state carries the event sequence that reaches it, and one of these:
+A claim that the code can reach an impossible state carries the event sequence that reaches it, and one of these:
 
 - A failing test that drives that sequence.
 - A live repro on the real surface.
@@ -67,5 +67,5 @@ Rate it:
 - **Rating.** One per machine, with a one-line reason.
 - **Highest-risk spots.** Each with `file:line`, a short snippet, the event sequence, and its evidence or the label inferred.
 - **Improvements.** Concrete moves, such as "extract to a reducer with these states and events", "make these three states children of `paying`", "move this effect onto the `CONFIRMED` transition", "make this job retry to the same end state", or "give this migration a `down`". For an extraction, write the target machine with `/state-brief` steps 2 to 6.
-- **Diagram.** The as-built machine beside the intended one, with every difference marked. When statechart ran, its chart is the as-built diagram. Put both on one page made with the `visual-artifacts` skill, because this terminal does not render Mermaid.
+- **Diagram.** The as-built machine beside the intended one, with every difference marked. When statechart ran, its chart is the as-built diagram. Draw and show them as `/state-brief` step 6 says.
 - **Lint candidates.** For each repeated pattern, the search that finds it, its count of real hits after reading them, and the false positives seen. A pattern with three or more real hits becomes one Linear line proposing an oxlint rule in the frontend's `.oxlintrc.json`, or a RuboCop cop in the backend. Fewer hits stay in this report.

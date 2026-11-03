@@ -19,7 +19,7 @@ A flow passes the gate when any one of these holds:
 
 Everything else gets no brief. That includes a single read shown through React Query, a form whose fields are only values, an open or closed toggle, a bug fix that adds no state, and copy or styling. Server data stays in React Query, whose status is already a machine; the brief covers what the user or the system does with that data.
 
-`/state-audit` is the check after the build. The `statechart` skill is the model checker this brief feeds. When `~/.agents/skills/statechart/SKILL.md` exists, step 5 hands the brief to it.
+`/state-audit` is the check after the build. The `statechart` skill is the model checker this brief feeds. When `~/.agents/skills/statechart/SKILL.md` exists, step 5 hands the brief to it through [references/statechart.md](references/statechart.md).
 
 ## 1. Find what exists
 
@@ -30,7 +30,7 @@ Done when: each existing status value and each place that writes it is listed wi
 
 ## 2. List the states and events
 
-- **States** are named in product words, such as `choosing`, `approving`, `approved` and `failed`. Data that exists in one state lives on that state, as a member of a discriminated union like `{ kind: 'failed'; code }`. It is never a sibling field that is null in every other state.
+- **States** are named in product words, such as `choosing`, `approving`, `approved` and `failed`. Data that exists in one state lives on that state, as a member of a discriminated union like `{ kind: 'failed'; code }`. It is never a sibling field that is null in every other state. Check the shape against each impossible state, such as loading with an error, and make the type unable to hold it.
 - **Compound states.** When several states share an exit, such as cancel or an expired session, make them children of one parent and put the exit on the parent once.
 - **Parallel regions.** When two things vary independently, such as an upload's progress and a form's validity, give each its own region. Never list their cross product.
 - **Events** are user intents or facts that happened, each with its payload: `APPROVE_PRESSED`, `PAYMENT_CONFIRMED { paymentId }`, `TIMED_OUT`. List the events the system sends too: a webhook arrives, a job retries, a timer fires, another tab or person changes the record, the session expires.
@@ -58,7 +58,7 @@ Each machine has one owner, and every write goes through it.
 | A backend record's lifecycle | A module under `app/domain/` that owns every write to the status column. Each transition is one compare-and-set or runs under `with_lock`, and only the caller whose update moved the row runs the effects | `app/domain/consent/attempts.rb` |
 | Background work | A solid_queue job that reads the row again and calls the domain transition. A retry reaches the same end state | `app/jobs/consent/reconcile_job.rb` calls `Consent::Attempts.reconcile!` |
 
-XState is not installed in the frontend. Adding it is a dependency decision for Andres. Propose it only when the machine needs spawned actors or timers across parallel regions that a reducer would have to build by hand.
+Adding a state library is a dependency decision for Andres. Propose one only when the machine needs spawned actors or timers across parallel regions that a reducer would have to build by hand.
 
 A status value the frontend shows is a payload field. It belongs in the parent's API decision rows, because both repos' suites stay green when it drifts.
 
@@ -70,6 +70,8 @@ When the machine spans a request and a job or webhook, also write down:
 - **Isolation.** Heavy work such as a backfill or a fan-out runs in a batched job, never in the request.
 - **Reversibility.** Adding an enum value is reversible. Renaming or removing one needs a migration plan from the `safe-migrate` skill.
 
+Done when: every machine has one owner, every effect in the table names the owner that runs it, and every status field the frontend shows has an API row.
+
 ## 5. Write the invariants and the tests
 
 An invariant is a sentence that holds in every state, in product words, such as "an approved request has exactly one grant" or "no request is out unless the state is `approving`". A rule that the union already enforces, such as "never a spinner and an error together", needs no test. Say that the type enforces it.
@@ -79,31 +81,19 @@ An invariant is a sentence that holds in every state, in product words, such as 
 | A reducer unit test for each table row, driving events and asserting the next state, plus one test for each ignored pair a user can actually hit | Every frontend machine |
 | A `switch` on `state.kind` and `event.type` that ends in a `never` assignment, so a new state fails the type-check until it is handled | Every frontend machine |
 | A spec for each transition, including two concurrent transitions from one state: one wins and its effects run once | Every backend machine |
-| The `statechart` skill: a TLA+ model whose INVARIANTs are this step's sentences | Two or more actors, a retry, a timeout, or a race |
+| The `statechart` skill, fed by [references/statechart.md](references/statechart.md): a TLA+ model whose INVARIANTs are this step's sentences | Two or more actors, a retry, a timeout, or a race |
 | `/state-machine` renders each UI state once it is built. Its switcher list equals this brief's UI states | A component with four or more reachable states |
 
 The `test-audit` skill sets the bar for each test.
 
-### Feeding statechart
-
-`statechart` is user-invoked, so read `~/.agents/skills/statechart/SKILL.md` and follow it. The brief already holds what its spec needs:
-
-| Brief | statechart |
-| --- | --- |
-| A state's product name | The label that `state(vars)` returns in the view |
-| A compound state | `state()` returns an array, parent first |
-| Parallel regions | `state()` returns an object with one key per region |
-| An event | One TLA+ action in `Next`, written as a disjunction. `step()` returns the event in the user's words |
-| A guard | The bracketed condition at the end of the `step()` label |
-| A final state | The `Done` action that holds only in final states |
-| An invariant | One INVARIANT line. Add a variable when no variable can express the rule |
-
-Each bug path in its report becomes a test that replays the path against the real code, one step per action, before the build starts. A path that does not reproduce means the model is wrong until shown otherwise.
+Done when: every invariant has a check or names the type that enforces it, and every statechart bug path has a replay test.
 
 ## 6. Draw it and record it
 
 - **Diagram.** When statechart ran, its `chart.mmd` is the diagram, because it was checked rather than drawn. Otherwise write a Mermaid `stateDiagram-v2` from the transition table, with compound states as nested blocks and parallel regions split by `--`. For a flow across services, add a `sequenceDiagram`. This terminal does not render Mermaid, so put the diagram on a page made with the `visual-artifacts` skill and open it.
 - **Record.** The binding text goes in the Linear parent as decision rows: the machine as an architecture row, status payload fields as API rows, and enum changes as database rows. Use the `workspace` skill, or write to the path the issue's `Writes to:` line names. The HTML page is only a view of it.
+
+Done when: the page is open with its path in the reply, and the Linear rows are written and read back.
 
 ## Output
 
