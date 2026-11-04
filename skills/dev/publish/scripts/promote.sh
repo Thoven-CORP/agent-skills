@@ -4,7 +4,7 @@
 #   plan [--be SHA|keep] [--fe SHA|keep] [--rollback] [--schema-stays]
 #   snapshot ID    Neon branch of prod; required before backend when migrations are added
 #   backend  ID [--redeploy]  thoven-api (health-gated), then thoven-worker; --redeploy applies config at the pinned SHA
-#   frontend ID    points thoven.co at the build of the pinned frontend SHA
+#   frontend ID    points thoven.co at the build of the pinned frontend SHA, waiting for the one plan started
 #   tag      ID    Daily's webhook must be ACTIVE; prod/<date>-<n> in both repos, then closes the release
 #   status         prints the open release
 #   abort    ID    closes the open release without tagging
@@ -13,7 +13,8 @@
 # release file and prints the ID; each later step names that ID, so the go Andres
 # gives on plan's output binds exactly what ships. Forward releases run backend,
 # then frontend. Rollbacks run frontend, then backend. backend and frontend can
-# each wait 30 minutes: run them in the background.
+# each wait 30 minutes: run them in the background. When no production build of the
+# frontend SHA is ready, plan starts one, so it builds while the backend steps run.
 set -eEuo pipefail
 trap 'echo "FAILED at line $LINENO: $BASH_COMMAND" >&2' ERR
 
@@ -40,7 +41,7 @@ REL_PTR=$LOCK/release
 
 die() { echo "REFUSED: $*" >&2; exit 1; }
 say() { echo "== $*"; }
-usage() { sed -n '2,16p' "$0"; exit 2; }
+usage() { sed -n '2,17p' "$0"; exit 2; }
 # Each attempt's output is kept apart, so a failed try never prefixes the good one.
 retry() {
   local out _
@@ -147,6 +148,36 @@ find_build() {
   jq -r --arg p "$VERCEL_PROJECT_ID" --arg s "$sha" --argjson e "$env_at" '
     [.deployments[] | select(.projectId==$p and .target=="production" and .meta.githubCommitSha==$s and .createdAt>=$e)]
     | .[0] | if . then "\(.uid) \(.url)" else empty end' <<<"$out"
+}
+
+# Starts a staged production build of the SHA and prints its deployment id.
+# forceNew=1 stops Vercel handing back an older deployment of the same commit.
+start_build() {
+  local rid d dep
+  rid=$(vercel_api "/v9/projects/$VERCEL_PROJECT_ID" | jq -r .link.repoId) || return 1
+  [[ $rid =~ ^[0-9]+$ ]] || { echo "cannot read the GitHub repo id of the Vercel project" >&2; return 1; }
+  d=$(jq -n --arg p "$VERCEL_PROJECT_ID" --arg s "$1" --argjson r "$rid" \
+      '{name:"thoven", project:$p, target:"production", autoAssignCustomDomains:false,
+        gitSource:{type:"github", repoId:$r, ref:"main", sha:$s}}' \
+    | vercel_api "/v13/deployments?forceNew=1" -X POST --input -) || return 1
+  dep=$(jq -r '.id // empty' <<<"$d")
+  [ -n "$dep" ] || return 1
+  echo "$dep"
+}
+
+# Waits up to 20 minutes for a build and prints "<uid> <url>" once it is READY.
+wait_build() {
+  local dep=$1 d deadline=$(( $(date +%s) + 1200 ))
+  while :; do
+    [ "$(date +%s)" -lt "$deadline" ] || die "build $dep not READY after 20 minutes"
+    if ! d=$(retry vercel_api "/v13/deployments/$dep"); then sleep 15; continue; fi
+    case "$(jq -r .readyState <<<"$d")" in
+      READY) echo "$dep $(jq -r .url <<<"$d")"; return 0 ;;
+      ERROR) die "build $dep failed: https://$(jq -r .url <<<"$d")" ;;
+      CANCELED) die "build $dep was canceled. vercel-ignore-build.sh skips docs-only commits; promote the last code commit instead" ;;
+    esac
+    sleep 15
+  done
 }
 
 cmd=${1:-help}; shift || true
@@ -312,9 +343,12 @@ Pass --schema-stays only if the older code runs on the newer schema."
       done
     fi
 
-    BUILD=""
+    BUILD=""; STARTED=""
     if [ "$FE" != "$PROD_FE" ]; then
       BUILD=$(find_build "$FE" "$([ "$ROLLBACK" = 1 ] && echo 0 || echo 1)") || die "cannot query Vercel deployments"
+      if [ -z "$BUILD" ]; then
+        STARTED=$(trap - ERR; start_build "$FE") || say "could not start a production build of ${FE:0:9}; the frontend step builds one"
+      fi
     fi
     if [ "$ROLLBACK" = 1 ]; then ORDER='["frontend","backend","tag"]'
     elif [ -n "$MIGS" ]; then ORDER='["snapshot","backend","frontend","tag"]'
@@ -323,9 +357,9 @@ Pass --schema-stays only if the older code runs on the newer schema."
     id="$(TZ=America/New_York date +%Y%m%d-%H%M%S)-${BE:0:7}-${FE:0:7}"
     REL="$RELEASES/$id.json"
     jq -n --arg id "$id" --arg be "$BE" --arg pbe "$PROD_BE" --arg fe "$FE" --arg pfe "$PROD_FE" \
-      --arg migs "$MIGS" --arg build "$BUILD" --arg staging_hold "$plan_hold" --argjson rb "$ROLLBACK" --argjson order "$ORDER" \
+      --arg migs "$MIGS" --arg build "$BUILD" --arg started "$STARTED" --arg staging_hold "$plan_hold" --argjson rb "$ROLLBACK" --argjson order "$ORDER" \
       '{id:$id, staging_hold:$staging_hold, rollback:($rb==1), order:$order, be:{from:$pbe,to:$be}, fe:{from:$pfe,to:$fe},
-        migrations:($migs|split("\n")|map(select(.!=""))), build_at_plan:$build,
+        migrations:($migs|split("\n")|map(select(.!=""))), build_at_plan:$build, build_started:(if $started == "" then null else $started end),
         snapshot:null, snapshot_at:null, tag:null,
         done:{snapshot:false, backend:false, api_healthy:false, frontend:false}}' >"$REL"
     echo "$REL" >"$REL_PTR"
@@ -335,7 +369,11 @@ Pass --schema-stays only if the older code runs on the newer schema."
     say "backend  ${PROD_BE:0:9} -> ${BE:0:9}$([ "$BE" = "$PROD_BE" ] && echo '  (unchanged)')"
     say "frontend ${PROD_FE:0:9} -> ${FE:0:9}$([ "$FE" = "$PROD_FE" ] && echo '  (unchanged)')"
     if [ -n "$MIGS" ]; then say "migrations:"; echo "$MIGS" | sed 's/^/   /'; else say "migrations: none"; fi
-    [ "$FE" = "$PROD_FE" ] || say "frontend build: ${BUILD:-none ready, the frontend step builds one (about 4 min)}"
+    if [ "$FE" != "$PROD_FE" ]; then
+      if [ -n "$BUILD" ]; then say "frontend build: $BUILD"
+      elif [ -n "$STARTED" ]; then say "frontend build: started $STARTED; the frontend step waits for it (about 5 min)"
+      else say "frontend build: none ready, the frontend step builds one (about 5 min)"; fi
+    fi
     say "next, one go each:"
     jq -r --arg id "$id" '.[] | "   promote.sh \(.) \($id)"' <<<"$ORDER"
     ;;
@@ -408,28 +446,20 @@ Pass --schema-stays only if the older code runs on the newer schema."
     if [ -n "$now" ] || [ "$(rel .rollback)" = false ]; then still_planned "$now" "$FROM" "$FE" thoven.co; fi
     auto_assign_off || die "Vercel autoAssignCustomDomains is on; switch it off before promoting"
 
-    pair=$(find_build "$FE" "$([ "$(rel .rollback)" = true ] && echo 0 || echo 1)") || die "cannot query Vercel deployments"
+    fresh=$([ "$(rel .rollback)" = true ] && echo 0 || echo 1)
+    pair=$(find_build "$FE" "$fresh") || die "cannot query Vercel deployments"
+    started=$(rel '.build_started // empty')
+    if [ -z "$pair" ] && [ -n "$started" ]; then
+      say "waiting for the build plan started, $started"
+      ( trap - ERR; wait_build "$started" >/dev/null ) \
+        || { rel_set '.build_started=null'; die "the build plan started did not finish; run frontend $ID again to build a fresh one"; }
+      pair=$(find_build "$FE" "$fresh") || die "cannot query Vercel deployments"
+      [ -n "$pair" ] || say "the build plan started predates the last production env change"
+    fi
     if [ -z "$pair" ]; then
       say "no usable production build of ${FE:0:9}; building one"
-      rid=$(vercel_api "/v9/projects/$VERCEL_PROJECT_ID" | jq -r .link.repoId)
-      [[ $rid =~ ^[0-9]+$ ]] || die "cannot read the GitHub repo id of the Vercel project"
-      d=$(jq -n --arg p "$VERCEL_PROJECT_ID" --arg s "$FE" --argjson r "$rid" \
-          '{name:"thoven", project:$p, target:"production", autoAssignCustomDomains:false,
-            gitSource:{type:"github", repoId:$r, ref:"main", sha:$s}}' \
-        | vercel_api /v13/deployments -X POST --input -) || die "Vercel refused to create a deployment"
-      dep=$(jq -r '.id // empty' <<<"$d")
-      [ -n "$dep" ] || die "Vercel returned no deployment id"
-      deadline=$(( $(date +%s) + 1200 ))
-      while :; do
-        [ "$(date +%s)" -lt "$deadline" ] || die "build $dep not READY after 20 minutes"
-        if ! d=$(retry vercel_api "/v13/deployments/$dep"); then sleep 15; continue; fi
-        case "$(jq -r .readyState <<<"$d")" in
-          READY) pair="$dep $(jq -r .url <<<"$d")"; break ;;
-          ERROR) die "build $dep failed: https://$(jq -r .url <<<"$d")" ;;
-          CANCELED) die "build $dep was canceled. vercel-ignore-build.sh skips docs-only commits; promote the last code commit instead" ;;
-        esac
-        sleep 15
-      done
+      dep=$(start_build "$FE") || die "Vercel refused to create a deployment"
+      pair=$(wait_build "$dep") || exit 1
     fi
     uid=${pair%% *}; url=${pair#* }
 
