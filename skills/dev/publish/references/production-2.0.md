@@ -17,7 +17,7 @@ Its progress and done lines start with `== ` and show SHAs as their first 9 char
    ~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh status
    ```
 
-   `plan` prints the release ID, backend and frontend as `from -> to`, the migrations it will run, the frontend build it found, and under `next, one go each:` the remaining commands in order. `status` prints the release file, with the full SHAs in `.be.to` and `.fe.to`. Done when `plan` printed a release ID.
+   `plan` prints the release ID, backend and frontend as `from -> to`, the migrations it will run, the frontend build it found or started, and under `next, one go each:` the remaining commands in order. `status` prints the release file, with the full SHAs in `.be.to` and `.fe.to`. Done when `plan` printed a release ID.
 
 3. **Each SHA is staging-green.** Run steps 2 to 5 of `references/staging-2.0.md` on each SHA that changes, unless that report already exists for this exact SHA in this session. Done when each changed repo reports staging-green. A gate that could not run (missing accounts, a skipped test) is not green: carry it into the plan in step 4.
 
@@ -60,7 +60,7 @@ Its progress and done lines start with `== ` and show SHAs as their first 9 char
    ~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh frontend <id>
    ```
 
-   It promotes Vercel's staged production build of `<fe-sha>`, or builds one first (about 4 minutes) when none is newer than the last production env change. Done when it prints `thoven.co serves <sha9>` or `thoven.co already serves <sha9>`. A `canceled` build means `vercel-ignore-build.sh` skipped a docs-only commit: tell Andres, and plan again with the last code commit.
+   It promotes Vercel's staged production build of `<fe-sha>`. When `plan` started that build, it waits for it; if that build fails, it stops without promoting, and running `frontend` again builds a fresh one. It builds one first (about 5 minutes) when none is newer than the last production env change. Done when it prints `thoven.co serves <sha9>` or `thoven.co already serves <sha9>`. A `canceled` build means `vercel-ignore-build.sh` skipped a docs-only commit: tell Andres, and plan again with the last code commit.
 
 9. **Production harness.** From a detached frontend checkout of `<fe-sha>` (`git -C ~/thoven/frontend worktree add --detach ~/thoven/frontend-publish-<fe-sha7> <fe-sha>`, then `pnpm install --frozen-lockfile` in it), with `thoven-prod.env` loaded as in step 7. Use the read-only `production` target (`e2e/ghost/target.ts`: thoven.co and api.thoven.co, `writes: false`, which no env var can change). The retired `ghost` target refuses to run.
 
