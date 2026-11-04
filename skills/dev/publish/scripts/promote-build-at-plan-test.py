@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Plan starts the production build it needs, and the frontend step waits for that build."""
+"""Plan starts the production build it needs, the frontend step waits for it, and builds that served
+production before go back through Vercel's rollback endpoint."""
 import json
 import os
 from pathlib import Path
@@ -33,10 +34,11 @@ elif path.startswith('/v13/deployments/'):
                                          target='production', createdAt=state.get('created', {}).get(dep, 2000),
                                          meta=dict(githubCommitSha=state['fe_to'])))
     out = dict(readyState=status, url=dep+'.vercel.app')
-elif '/promote/' in path:
-    state['site'] = state['fe_to']
+elif '/promote/' in path or '/rollback/' in path:
+    uid = path.split('/')[-1]
+    state['site'] = next(d['meta']['githubCommitSha'] for d in state['deployments'] if d['uid'] == uid)
     out = {}
-elif path.startswith('/v6/deployments'):
+elif path.startswith(('/v6/deployments', '/v7/deployments')):
     out = dict(deployments=state['deployments'])
 elif path.endswith('/env'):
     out = dict(envs=[dict(target=['production'], updatedAt=1000)])
@@ -133,17 +135,21 @@ class BuildAtPlanTest(unittest.TestCase):
     def promotes(self, events):
         return [e['path'].split('/')[-1] for e in events if '/promote/' in e['path']]
 
+    def rollbacks(self, events):
+        return [e['path'].split('/')[-1] for e in events if '/rollback/' in e['path']]
+
     def release(self):
         pointer = self.root / '.thoven/releases/lock/release'
         return json.loads(Path(pointer.read_text().strip()).read_text())
 
-    def open_release(self, build_started):
+    def open_release(self, build_started, rollback=False):
         lock = self.root / '.thoven/releases/lock'
         lock.mkdir(parents=True)
         release = self.root / '.thoven/releases/fixture.json'
         release.write_text(json.dumps(dict(
-            id='fixture', rollback=False, staging_hold='a' * 32,
-            be={'from': self.be, 'to': self.be}, fe={'from': self.fe_from, 'to': self.fe_to},
+            id='fixture', rollback=rollback, staging_hold='a' * 32,
+            be={'from': self.be, 'to': self.be},
+            fe={'from': self.fe_to, 'to': self.fe_from} if rollback else {'from': self.fe_from, 'to': self.fe_to},
             migrations=[], build_at_plan='', build_started=build_started,
             done=dict(snapshot=False, backend=False, api_healthy=False, frontend=False))))
         (lock / 'release').write_text(str(release))
@@ -159,6 +165,8 @@ class BuildAtPlanTest(unittest.TestCase):
         self.assertEqual(body['gitSource']['sha'], self.fe_to)
         self.assertEqual(self.release()['build_started'], 'dpl_new')
         self.assertIn('started dpl_new', result.stdout)
+        lookups = [e['path'] for e in events if e['path'].startswith('/v7/deployments')]
+        self.assertTrue(lookups and all(f'sha={self.fe_to}' in p for p in lookups), lookups)
 
     def test_plan_starts_nothing_when_a_fresh_build_is_ready(self):
         ready = dict(uid='dpl_ready', url='ready.vercel.app', projectId=PROJECT, target='production',
@@ -203,6 +211,28 @@ class BuildAtPlanTest(unittest.TestCase):
         self.assertNotIn('FAILED at line', result.stderr)
         self.assertIsNone(self.release()['build_started'])
         self.assertIn('the frontend step builds one', result.stdout)
+
+    def test_rollback_to_a_build_that_served_production_uses_vercels_rollback(self):
+        served = dict(uid='dpl_old', url='old.vercel.app', projectId=PROJECT, target='production',
+                      createdAt=500, readySubstate='PROMOTED', meta=dict(githubCommitSha=self.fe_from))
+        self.write_state(deployments=[served], site=self.fe_to)
+        self.open_release(None, rollback=True)
+        result, events = self.run_step('frontend', 'fixture')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.rollbacks(events), ['dpl_old'])
+        self.assertEqual(self.promotes(events), [])
+        self.assertEqual(self.creates(events), [])
+        self.assertIn(f'thoven.co serves {self.fe_from[:9]}', result.stdout)
+
+    def test_a_staged_build_is_promoted_not_rolled_back(self):
+        staged = dict(uid='dpl_staged', url='staged.vercel.app', projectId=PROJECT, target='production',
+                      createdAt=2000, readySubstate='STAGED', meta=dict(githubCommitSha=self.fe_to))
+        self.write_state(deployments=[staged])
+        self.open_release(None)
+        result, events = self.run_step('frontend', 'fixture')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.promotes(events), ['dpl_staged'])
+        self.assertEqual(self.rollbacks(events), [])
 
 
 if __name__ == '__main__':
