@@ -58,7 +58,7 @@ and decide from those tables.
 | `source` | Open |
 |---|---|
 | `colour_palette` | `tools/build-palette.mjs` and `__tests__/palette.test.ts` |
-| `type_ramp` | `app/globals.css` `@theme` `--text-*` and `__tests__/theme-tokens.test.ts` |
+| `type_ramp` | `app/globals.css` type roles; `__tests__/type-roles.test.ts` and `lib/cn-type-roles.test.ts`; role selection in `design/typography.md` |
 | `buttons` | `lib/live-lesson-tokens.ts` (`thovenButtonTokens`) and `components/ui/thoven-button.tsx` |
 | `icons` | `lib/icon-tokens.ts` |
 | `motion` | `lib/motion-config.ts` |
@@ -70,6 +70,21 @@ and decide from those tables.
 
 **A ruling made this session is not in a file yet.** Check what this session already ruled
 before answering from files, then hand it to `workspace` `capture`.
+
+## Text and neutral colour decisions
+
+For a content title or supporting text, read `design/typography.md` and its named CSS/test owners.
+A title's semantic heading level does not choose its display face. Use the existing content-title
+role and its family; do not introduce a new type framework or a one-off size. Pair supporting
+labels and values with `text-supporting` and an existing size role. Check the compiled result
+through `cn()` before changing a shared role. Essential names, dates, and instructions use readable
+supporting text; muted and disabled treatments require a state-specific reason.
+
+For neutral colours, follow `tools/build-palette.mjs`, `app/globals.css`, and `design/color.md`.
+Check contrast independently of hue. Neutral ledges and focus paint must follow their shared tokens.
+The named stage solid requires an approved consumer; adding it does not authorize replacing overlays.
+Keep page backgrounds separate from header styling. A bounded adoption lists its consumers and checks
+other affected pages without turning into a platform-wide migration.
 
 ## Rulings held in Linear
 
