@@ -101,11 +101,17 @@ missing-field flags. Remind him the portal step is Confirmed → Receipt Added.
 
 ## After the receipt (human-gated — do NOT execute unprompted)
 Receipt done ≠ order fulfilled. Mention as next steps when relevant, but each needs
-Andres's explicit go-ahead: load wallet credits, apply the locked ESA pricing model
-($210 order → Thoven keeps $10 flat, $200 teacher pool, 5 lessons at the $40
-platform-average rate, bonus lesson for the family), teacher payouts
-($40/delivered lesson via AdminTeacherPayoutService), and parent/teacher emails
-(drafts only — Andres sends manually).
+Andres's explicit go-ahead: load wallet credits, teacher payouts, and parent/teacher
+emails (drafts only — Andres sends manually).
+
+**Per $210 order (Andres, 2026-11-04):** the family gets 5 credits: the teacher's own
+4-lesson package (loaded through `OdysseyWalletLoadService`) plus 1 bonus lesson. The
+teacher is paid **their own listed package prices** for those 5 lessons: the 4-lesson
+package price plus their single-lesson price, through `AdminTeacherPayoutService`. Thoven
+keeps the rest. Read both prices from the teacher's `lesson_packages` rows; never assume
+$40 a lesson. Example: a $140 4-pack plus a $40 single is $180 to the teacher, so Thoven
+keeps $30. This replaces the earlier flat $40-a-lesson rate ($200 per order), which paid
+one teacher $200 for one order and $180 for the next with no note saying why.
 
 ## Channel reference
 | Channel | Portal | program / paid_label |
