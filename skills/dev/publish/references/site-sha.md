@@ -13,6 +13,6 @@ A push, a green CI run, or a finished deploy is not proof. The site answering wi
 | 1.0 frontend | `npm run verify:prod` | exit 0 |
 | 1.0 backend | `curl -s https://thovenbackend-am-andres234.replit.app/health` | `revision.sha` is a prefix of the release SHA |
 
-Both Vercel projects build `main`, so the host, not `ref`, tells staging from production. Service IDs: the Render runbook's services table.
+Both Vercel projects serve builds of `main`, so the host, not `ref`, tells staging from production. Service IDs: the Render runbook's services table.
 
 Done when every row you were asked about has its check output and a pass or fail.

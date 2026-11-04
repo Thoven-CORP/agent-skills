@@ -1,6 +1,6 @@
 # Publish: 2.0 staging
 
-Frontend merges still deploy to the Vercel `thoven-staging` project. Backend staging is one combined Render service, `thoven-api-staging`, with commit auto-deploy off. Blueprint Auto Sync must separately be set to No and verified before the combined-staging PR merges; otherwise a Blueprint change can still redeploy the service. Keep Auto Sync off and sync reviewed configuration explicitly under a deployment hold. Service auto-deploy off alone is not a no-deploy guarantee. See [Render Blueprint sync](https://render.com/docs/infrastructure-as-code#disabling-automatic-sync). The old `thoven-worker-staging` stays suspended and is never resumed by the lifecycle command; removing its Blueprint declaration does not suspend it.
+The Vercel `thoven-staging` project has no Git link, so merges do not deploy it; step 4 puts the frontend SHA there. Backend staging is one combined Render service, `thoven-api-staging`, with commit auto-deploy off. Blueprint Auto Sync must separately be set to No and verified before the combined-staging PR merges; otherwise a Blueprint change can still redeploy the service. Keep Auto Sync off and sync reviewed configuration explicitly under a deployment hold. Service auto-deploy off alone is not a no-deploy guarantee. See [Render Blueprint sync](https://render.com/docs/infrastructure-as-code#disabling-automatic-sync). The old `thoven-worker-staging` stays suspended and is never resumed by the lifecycle command; removing its Blueprint declaration does not suspend it.
 
 Before these gates, explicitly deploy the reviewed backend `main` SHA using backend `docs/deployment/staging-lifecycle.md`: acquire a hold, resume/probe the currently deployed revision, deploy the pinned SHA to the running web service, then verify actual revision and a fresh execution probe. The legacy worker must stop before the first combined cutover. Render can overlap old/new combined instances temporarily during deploys and maintenance; Solid Queue database coordination supports that handoff. This is one async runner per instance, not a global singleton or an exactly-once side-effect guarantee. Controlled migrations remain web preDeploy only.
 
@@ -48,13 +48,13 @@ Run each step in the repo it names. Steps 1 to 4 check each repo that changed. S
 
    Done when the combined web service shows `status` `live` with `commit` equal to the SHA, `revision.sha` is a prefix of it, the legacy worker is suspended, and the actual probe succeeds on `thoven-api-staging` with process kind `Worker`. A merge alone is not deployment evidence. A deploy still `build_in_progress`, `pre_deploy_in_progress`, or `update_in_progress` means wait and re-run; after 20 minutes, report it as stuck. A `pre_deploy_failed` status means `bin/controlled-migrate` refused: read the refusal section of the Render runbook (below).
 
-4. **Frontend: Vercel runs the SHA.**
+4. **Frontend: put the SHA on staging.** Run it under the same staging hold as the backend deploy:
 
    ```bash
-   curl -s https://staging.thoven.co/api/version
+   ~/thoven/agent-skills/skills/dev/publish/scripts/staging-frontend.sh <frontend sha from step 1>
    ```
 
-   Done when `sha` equals the SHA and `ref` is `main`.
+   Step 1's SHA is the tip of `main` (the script's default when given no SHA), so every merged commit reaches staging and the release plan that reads it. It builds the commit from GitHub, never from a local tree, so untracked and ignored files stay out, and it waits until staging serves the commit. Done when it prints `staging serves <sha9>` or `staging already serves <sha9>`, and `curl -s https://staging.thoven.co/api/version` shows that `sha` with `ref` `main`.
 
 5. **Staging gates on the SHA.** From a backend checkout of the backend SHA (`git -C ~/thoven/backend worktree add --detach ~/thoven/backend-publish-<sha7> <sha>`, then `bundle install` in it). `bin/dogfood-staging` needs no environment. The smoke teacher's login lives in `~/thoven/.secrets/staging.env` as `STAGING_SMOKE_TEACHER_EMAIL` and `STAGING_SMOKE_TEACHER_PASSWORD`. Never print either value.
 
