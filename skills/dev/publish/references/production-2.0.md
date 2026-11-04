@@ -87,7 +87,7 @@ SKIPS
    ~/thoven/agent-skills/skills/dev/publish/scripts/prod-db-check.sh <deploy-utc>
    ```
 
-   It confirms every migration at the live backend SHA is applied, the email ledger has a row for each mail sent since the deploy, no job failed since the deploy, and the 15-minute `LessonReminderJob` ran. Exit 3 means the deploy is under 16 minutes old: rerun it after the time its `WAIT` line names.
+   It confirms every migration at the live backend SHA is applied, the email ledger has a row for each mail sent since the deploy, no job failed since the deploy, and the 15-minute `LessonReminderJob` ran. Exit 3 means the deploy is under 16 minutes old: rerun it after the time its `WAIT` line names. It fetches the connection string from `neonctl` on every run, as `promote.sh` does, so it needs no stored password. Exit 2 with `cannot fetch the production connection string` means `neonctl` is signed out: run `neonctl auth`, then rerun. When it still cannot connect, run the same four queries read-only through the Neon plugin (`run_sql` on project `dry-sound-31987419`), report them as the plugin's results rather than the script's, and wait for Andres before treating the check as green.
 
    **Stop: harness failed or skipped.** Only when a test failed, the skip diff printed a line, or the database check exited 1. Tell Andres, with each failure and each unexpected skip's reason. Production already runs the SHA, so this is a rollback decision for Andres (section "Roll back").
 

@@ -9,12 +9,14 @@ if ! [[ $DEPLOY_UTC =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ 
   echo "usage: prod-db-check.sh <backend_deploy_utc>, e.g. 2026-10-15T22:24:00Z (the time promote.sh backend printed its done line)" >&2
   exit 2
 fi
-ENV_FILE=${THOVEN_PROD_ENV:-$HOME/thoven/.secrets/thoven-prod.env}
-set -a
-# shellcheck source=/dev/null
-. "$ENV_FILE" || { echo "cannot read $ENV_FILE" >&2; exit 2; }
-set +a
-[ -n "${THOVEN_PROD_DATABASE_URL:-}" ] || { echo "THOVEN_PROD_DATABASE_URL is not set in $ENV_FILE" >&2; exit 2; }
+# The connection string comes from neonctl on every run, as promote.sh's snapshot does, so no stored
+# password can go stale (2026-11-04: the one in thoven-prod.env had, and every check failed to connect).
+NEON_PROJECT=dry-sound-31987419
+NEON_PROD_BRANCH=br-lingering-frost-b5phtwra
+command -v neonctl >/dev/null || { echo "neonctl is not installed; promote.sh needs it too" >&2; exit 2; }
+THOVEN_PROD_DATABASE_URL=$(neonctl connection-string "$NEON_PROD_BRANCH" --project-id "$NEON_PROJECT" --role-name neondb_owner 2>/dev/null)
+[ -n "$THOVEN_PROD_DATABASE_URL" ] || { echo "cannot fetch the production connection string from neonctl; run neonctl auth" >&2; exit 2; }
+export THOVEN_PROD_DATABASE_URL
 
 fails=0; waits=0
 record() { [ "$1" = FAIL ] && fails=$((fails+1)); [ "$1" = WAIT ] && waits=$((waits+1)); printf '%-5s %-40s %s\n' "$1" "$2" "$3"; }
