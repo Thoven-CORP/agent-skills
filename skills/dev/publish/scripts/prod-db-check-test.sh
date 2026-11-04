@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Input refusals of prod-db-check.sh. None of these cases reaches the network or the database.
+# Input refusals of prod-db-check.sh. None of these cases reaches the network or the database:
+# a stub neonctl on PATH stands in for one that is signed out.
 set -u
 here=$(cd "$(dirname "$0")" && pwd)
 fail=0
@@ -11,10 +12,11 @@ expect() { # <label> <want_exit> <stderr_pattern> <env...> -- <args...>
   if [ "$rc" = "$want" ] && grep -q "$pat" <<<"$err"; then echo "ok   $label"
   else echo "FAIL $label: exit $rc, stderr: $err"; fail=1; fi
 }
-empty_env=$(mktemp); trap 'rm -f "$empty_env"' EXIT
-expect "no deploy time refuses"        2 usage   THOVEN_PROD_ENV=/dev/null --
-expect "empty deploy time refuses"     2 usage   THOVEN_PROD_ENV=/dev/null -- ""
-expect "local time refuses"            2 usage   THOVEN_PROD_ENV=/dev/null -- "2026-10-15 22:24"
-expect "missing env file refuses"      2 "cannot read" THOVEN_PROD_ENV=/nonexistent/thoven-prod.env -- 2026-10-15T22:24:00Z
-expect "env without the database url"  2 "THOVEN_PROD_DATABASE_URL is not set" THOVEN_PROD_ENV="$empty_env" THOVEN_PROD_DATABASE_URL= -- 2026-10-15T22:24:00Z
+fakebin=$(mktemp -d); trap 'rm -rf "$fakebin"' EXIT
+printf '#!/bin/sh\nexit 1\n' > "$fakebin/neonctl"; chmod +x "$fakebin/neonctl"
+expect "no deploy time refuses"          2 usage PATH=/usr/bin:/bin --
+expect "empty deploy time refuses"       2 usage PATH=/usr/bin:/bin -- ""
+expect "local time refuses"              2 usage PATH=/usr/bin:/bin -- "2026-10-15 22:24"
+expect "missing neonctl refuses"         2 "neonctl is not installed" PATH=/usr/bin:/bin -- 2026-10-15T22:24:00Z
+expect "empty connection string refuses" 2 "cannot fetch the production connection string" PATH="$fakebin:/usr/bin:/bin" -- 2026-10-15T22:24:00Z
 exit $fail
