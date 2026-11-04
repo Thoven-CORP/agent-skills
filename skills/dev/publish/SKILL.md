@@ -54,7 +54,7 @@ description: Use when Andres asks to publish, deploy, release, promote, or hotfi
 
 | Site | Runs | Moves when |
 |---|---|---|
-| staging.thoven.co (Vercel `thoven-staging`), Render `thoven-api-staging` + `thoven-worker-staging` | the tip of `main` | every merge to `main` |
+| staging.thoven.co (Vercel `thoven-staging`), Render `thoven-api-staging` + `thoven-worker-staging` | the pair last deployed on purpose | `scripts/staging-frontend.sh` for the frontend and the staging lifecycle deploy for the backend (`references/staging-2.0.md` steps 1 to 4). Merges deploy neither |
 | thoven.co (Vercel `thoven`) | the last promoted frontend SHA | `promote.sh frontend`. `plan` starts a staged production build of the pinned SHA when none is ready; nothing goes live by itself |
 | api.thoven.co (Render `thoven-api` + `thoven-worker`) | the last promoted backend SHA | `promote.sh backend`. Auto-deploy is off |
 | Replit 1.0 | `release/1.0` | Andres's Publish click. The 1.0 rollback until THV-712 retires it |
