@@ -113,7 +113,7 @@ Andres declares a rollback. An agent proposes one when production went live on a
 
    Done when it prints the release ID with `(ROLLBACK: frontend first)`. It refuses when the backend range holds migrations. `--schema-stays` overrides that only when the older code runs on the newer schema, which is Andres's call: show Andres the migration list and wait.
 
-2. **Stop: roll back the frontend.** After Andres's go: `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh frontend <id>`. Done when it prints `thoven.co serves <sha9>`, or `thoven.co already serves <sha9>` when the frontend did not move.
+2. **Stop: roll back the frontend.** After Andres's go: `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh frontend <id>`. A build that served production before goes back through Vercel's rollback, because Vercel refuses to promote a deployment twice; a build that never served is promoted. Done when it prints `thoven.co serves <sha9>`, or `thoven.co already serves <sha9>` when the frontend did not move.
 
 3. **Stop: roll back the backend.** After Andres's go: `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh backend <id>`. Done when it prints `backend on <sha9> (api healthy, worker live)`.
 

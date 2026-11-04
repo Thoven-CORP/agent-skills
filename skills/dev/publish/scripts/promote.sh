@@ -136,18 +136,19 @@ guard_snapshot_ttl() {
   [ -z "$msg" ] || die "$msg"
 }
 
-# Prints "<uid> <url>" of a READY production build of the SHA in the prod project.
+# Prints "<uid> <url> <STAGED|PROMOTED>" of a READY production build of the SHA in the prod project.
 # Forward releases also require the build to be newer than the last production env change.
+# The sha filter reaches builds of any age, not only the newest 100.
 find_build() {
   local sha=$1 fresh=$2 env_at=0 out
   if [ "$fresh" = 1 ]; then
     env_at=$(vercel_api "/v10/projects/$VERCEL_PROJECT_ID/env" \
       | jq '[.envs[] | select((.target // []) | index("production")) | .updatedAt // .createdAt] | max // 0') || return 1
   fi
-  out=$(vercel_api "/v6/deployments?projectId=$VERCEL_PROJECT_ID&target=production&state=READY&limit=100") || return 1
+  out=$(vercel_api "/v7/deployments?projectId=$VERCEL_PROJECT_ID&target=production&state=READY&sha=$sha&limit=100") || return 1
   jq -r --arg p "$VERCEL_PROJECT_ID" --arg s "$sha" --argjson e "$env_at" '
     [.deployments[] | select(.projectId==$p and .target=="production" and .meta.githubCommitSha==$s and .createdAt>=$e)]
-    | .[0] | if . then "\(.uid) \(.url)" else empty end' <<<"$out"
+    | .[0] | if . then "\(.uid) \(.url) \(.readySubstate // "STAGED")" else empty end' <<<"$out"
 }
 
 # shellcheck source=vercel-build.sh
@@ -434,12 +435,19 @@ Pass --schema-stays only if the older code runs on the newer schema."
       dep=$(start_build "$VERCEL_PROJECT_ID" thoven "$FE" false) || die "Vercel refused to create a deployment"
       pair=$(wait_build "$dep") || exit 1
     fi
-    uid=${pair%% *}; url=${pair#* }
+    read -r uid url substate <<<"$pair"
 
     trap 'guard_auto_assign' EXIT
-    say "promoting https://$url"
-    vercel_api "/v10/projects/$VERCEL_PROJECT_ID/promote/$uid" -X POST >/dev/null \
-      || say "the promote request failed; checking what thoven.co serves"
+    # Vercel refuses to promote a build that served production before; those go back through rollback.
+    if [ "${substate:-STAGED}" = PROMOTED ]; then
+      say "rolling back to https://$url, which served production before"
+      vercel_api "/v1/projects/$VERCEL_PROJECT_ID/rollback/$uid" -X POST >/dev/null \
+        || say "the rollback request failed; checking what thoven.co serves"
+    else
+      say "promoting https://$url"
+      vercel_api "/v10/projects/$VERCEL_PROJECT_ID/promote/$uid" -X POST >/dev/null \
+        || say "the promote request failed; checking what thoven.co serves"
+    fi
     guard_auto_assign
     got=""
     for _ in $(seq 30); do got=$(site_sha || true); [ "$got" = "$FE" ] && break; sleep 10; done
