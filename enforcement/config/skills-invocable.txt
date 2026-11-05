@@ -39,7 +39,6 @@ visual-artifacts
 andres-mode
 dispatch-work
 doc-freshness
-feature-ledger
 grill-with-docs
 investigate-thoven
 orchestrate
@@ -52,7 +51,6 @@ state-audit
 state-brief
 test-audit
 thoven-branding
-thoven-email-system
 verify
 workspace
 # Third-party skills the same steering files name (reflect 2026-11-05).
@@ -76,3 +74,21 @@ to-tickets
 triage
 typescript-best-practices
 writing-plans
+# Andres, 2026-11-05: the remaining principles, plus these by name.
+principle-attack-the-premise
+principle-boundary-discipline
+principle-exhaust-the-design-space
+principle-experience-first
+principle-explain-the-number
+principle-fix-root-causes
+principle-make-operations-idempotent
+principle-never-block-on-the-human
+principle-outcome-oriented-execution
+principle-separate-before-serializing-shared-state
+principle-test-behavior-not-implementation
+principle-type-system-discipline
+in-your-own-words
+interface-craft
+thoven-art
+animate
+mobile-native
