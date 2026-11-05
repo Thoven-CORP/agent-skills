@@ -9,7 +9,7 @@ reverting anything fixed by hand. This runs at SessionStart and puts the fixes
 back. It is idempotent and stays quiet unless it changed something or a patch
 went stale.
 
-Four parts:
+Five parts:
   A. Names — a skill whose frontmatter `name:` is not kebab-case gets it
      rewritten to its directory name. Claude Code resolves skills by directory,
      but the slash-command picker filters on the frontmatter name, so a name
@@ -27,6 +27,11 @@ Four parts:
   D. Resolution — report a name the router points at that no longer exists.
      Upstream renaming a leaf skill is otherwise a silent failure: the router
      keeps telling the model to use a skill that is not there.
+  E. Blocking — every other skill in ~/.agents/skills and ~/.claude/skills gets
+     `disable-model-invocation: true`. A reinstall ships Thoven skills without
+     the flag, and with ~270 open the harness drops descriptions from the skill
+     list, so the model sees names it cannot match (reflect 2026-11-05). Refuses
+     to run when skills-invocable.txt is missing or empty.
 
 A targeted patch that matches neither its old nor its new text is reported as
 STALE: upstream rewrote the line and the patch needs re-authoring.
@@ -137,6 +142,13 @@ ROUTERS = ["poteto-mode"]
 # router stays blocked, which is what keeps the always-loaded description list
 # small. The list is a plain file so it can be edited without touching code.
 ALWAYS_INVOCABLE_FILE = Path.home() / ".claude" / "skills-invocable.txt"
+
+# Trees part E blocks in. ~/.claude/skills mostly symlinks into ~/.agents/skills,
+# so the two must agree. Codex visibility is managed by apply-skill-visibility.sh.
+BLOCK_DIRS = [
+    Path.home() / ".agents" / "skills",
+    Path.home() / ".claude" / "skills",
+]
 
 # Whole-file local rewrites. A string patch cannot restore a skill that was
 # rewritten end to end, and `npx skills update` overwrites the file wholesale.
@@ -278,6 +290,32 @@ def ensure_model_invocable(skills, names):
     return unblocked
 
 
+def ensure_blocked(skills, names, curated):
+    """Add disable-model-invocation to every skill not in names. Frontmatter only.
+
+    Refuses (blocks nothing) when the curated list is empty, so a missing
+    skills-invocable.txt can never silence every skill on the machine.
+    """
+    if not curated:
+        return []
+    blocked = []
+    for skill_md in sorted(skills.glob("*/SKILL.md")):
+        if skill_md.parent.name in names:
+            continue
+        text = skill_md.read_text(encoding="utf-8")
+        if not text.startswith("---"):
+            continue
+        end = text.find("\n---", 3)
+        if end == -1:
+            continue
+        head, body = text[: end + 1], text[end + 1 :]
+        if BLOCK_LINE.search(head):
+            continue
+        skill_md.write_text(head + "disable-model-invocation: true\n" + body, encoding="utf-8")
+        blocked.append(skill_md.parent.name)
+    return blocked
+
+
 def check_resolution(skills, names):
     """A routed name with no skill directory is a dead reference."""
     return [
@@ -289,14 +327,20 @@ def check_resolution(skills, names):
 
 def main():
     renamed, failed, patched, stale, unblocked, dead, overridden = [], [], [], [], [], [], []
+    blocked = {}
     trees = [d for d in SKILL_DIRS if d.is_dir()]
     names = routed_names(trees)
+    curated = always_invocable()
     for skills in trees:
         tag = f"{skills.parent.name}/{skills.name}"
         r, f = normalize_names(skills)
         p, s = apply_patches(skills)
         o = apply_overrides(skills)
         u = ensure_model_invocable(skills, names)
+        if skills in BLOCK_DIRS:
+            b = ensure_blocked(skills, names, curated)
+            if b:
+                blocked[tag] = b
         renamed += [f"{tag}: {x}" for x in r]
         failed += [f"{tag}: {x}" for x in f]
         patched += [f"{tag}: {x}" for x in p]
@@ -306,7 +350,7 @@ def main():
         if skills.parent.name == ".claude":
             dead = check_resolution(skills, names)
 
-    if renamed or patched or unblocked or overridden or failed or stale:
+    if renamed or patched or unblocked or overridden or failed or stale or blocked:
         print("Skill patches re-applied (upstream had reverted them):")
         for line in renamed + patched:
             print(f"  fixed      {line}")
@@ -314,6 +358,8 @@ def main():
             print(f"  unblocked  {line}")
         for line in overridden:
             print(f"  restored   {line} (local rewrite, upstream had replaced it)")
+        for tag, names_blocked in blocked.items():
+            print(f"  blocked    {len(names_blocked)} skills in {tag} (not in skills-invocable.txt or routed)")
         for line in failed + stale:
             print(f"  STALE      {line}")
         if stale:

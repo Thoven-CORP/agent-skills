@@ -106,14 +106,19 @@ the skill trees, so this puts local fixes back: non-kebab frontmatter names,
 string patches across `SKILL.md` and its playbooks, whole-file overrides from
 `skill-overrides/`, and the model-invocation allowlist in
 `config/skills-invocable.txt`. It reads the router's own text each run, so an
-upstream update that adds a route unblocks that route too. Idempotent, and silent
-unless it changed something.
+upstream update that adds a route unblocks that route too, and it blocks every
+other skill in `~/.agents/skills` and `~/.claude/skills`, so a reinstall cannot
+reopen them. It blocks nothing when the list is missing or empty
+(`install/test_skill_blocks.py`). Idempotent, and silent unless it changed
+something.
 
 ## Config
 
 `config/skills-invocable.txt` lists skills the model may invoke on its own, one
 per line. Everything unlisted and not named by a router stays blocked, which is
-what keeps the always-loaded description list small. All 344 skills unblocked
+what keeps the always-loaded description list small. With ~270 open the harness
+dropped descriptions from the skill list and showed bare names (reflect
+2026-11-05). `sync.sh --apply` copies the file to `~/.claude/skills-invocable.txt`. All 344 skills unblocked
 costs roughly 34,800 tokens of descriptions every turn. The current list costs
 roughly 8,500.
 

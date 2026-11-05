@@ -5,8 +5,11 @@
 # sits in context every turn. All 344 unblocked costs ~34,800 tokens. This list
 # plus poteto-mode's routes costs ~8,500.
 #
-# Add a name, start a new session, and it is live. Removing a name does not
-# re-block it; do that by hand or say so and it can be made two-way.
+# Add a name, start a new session, and it is live. Remove a name and the next
+# session re-blocks it: reapply-skill-patches.py part E blocks every skill in
+# ~/.agents/skills and ~/.claude/skills that is neither listed nor routed, and
+# re-blocks anything a reinstall brings back open. enforcement/sync.sh --apply
+# copies this file to ~/.claude/skills-invocable.txt.
 
 verify-this
 graphify
@@ -30,3 +33,46 @@ thermo-nuclear-review
 thermo-nuclear-code-quality-review
 deslop
 visual-artifacts
+# Thoven skills that ~/thoven/CLAUDE.md, the repo CLAUDE.md files, ~/.claude/CLAUDE.md
+# or andres-mode tell agents to use by name (reflect 2026-11-05). Part E of
+# reapply-skill-patches.py blocks every skill not listed here or routed by poteto-mode.
+andres-mode
+dispatch-work
+doc-freshness
+feature-ledger
+grill-with-docs
+investigate-thoven
+orchestrate
+product-fundamentals
+prompt-generator
+publish
+qa
+remote-check
+state-audit
+state-brief
+test-audit
+thoven-branding
+thoven-email-system
+verify
+workspace
+# Third-party skills the same steering files name (reflect 2026-11-05).
+babysit-pr
+better-writing
+blast-radius
+build-design
+building-components
+code-review
+full-send
+full-stop
+modernize
+recall
+reflect
+sol-loop
+state-machine
+takeover
+test-master
+to-spec
+to-tickets
+triage
+typescript-best-practices
+writing-plans
