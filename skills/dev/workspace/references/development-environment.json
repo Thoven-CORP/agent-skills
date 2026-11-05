@@ -2757,6 +2757,32 @@
         "interface-review",
         "variant"
       ]
+    },
+    {
+      "source": "thiagofgf/mapping-product-flows-skill",
+      "observedUpstreamSha": "be560f959f648b9fd5280ad6a2d61283d522478b",
+      "status": "installed locally 2026-11-05 for the product map; requested for destination installation",
+      "skills": [
+        "mapping-product-flows"
+      ],
+      "requirements": [
+        "Python 3.10+",
+        "Playwright in the frontend repo",
+        "mcp-excalidraw-server only when rendering Excalidraw boards"
+      ],
+      "policy": "Model invocation stays off; a brief names it. The product map captures run on the mini."
+    },
+    {
+      "source": "manssorr/screenmap",
+      "observedUpstreamSha": "10d95ff401a431a67a6e33f6034bb29d149e2c25",
+      "status": "installed locally 2026-11-05 as a reference for the product map; requested for destination installation",
+      "skills": [
+        "screenmap"
+      ],
+      "requirements": [
+        "Expo, React Native or NativeScript app for its own captures; Thoven web uses its ideas, not its capture pipeline"
+      ],
+      "policy": "Model invocation stays off; a brief names it."
     }
   ],
   "claudeUserPlugins": [

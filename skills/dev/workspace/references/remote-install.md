@@ -38,7 +38,9 @@ the destination setup request; it does not authorize publication from the MacBoo
    names. Restore needed missing dependencies and record stale aliases without reinstalling them.
 4. Include the requested additions. Install all nine Theo tstack skills from `t3dotgg/tstack`.
    Complete Jakub Krehel's existing design set with `break`, `build-design`, `teardown`, and
-   `state-machine`. Pin reviewed upstream revisions and record them. Do not replace the full
+   `state-machine`. Install `mapping-product-flows` from `thiagofgf/mapping-product-flows-skill` and
+   `screenmap` from `manssorr/screenmap`; the mini runs the product map's captures. Pin reviewed
+   upstream revisions and record them. Do not replace the full
    requested catalog with a usage-based shortlist.
 5. Reconcile every `globalSkillsWithoutLock` entry. For vendor-installed skills, use the vendor's
    destination installer and compare its result. For custom skills, obtain reviewed skill assets
