@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-05 — stopping or resuming a prod service waits for a quiet window and a pinned SHA
+
+> reflect · 2026-11-05 · 01a19d6a · skill-gap · applied · seen 1
+
+**What happened.** A Redis move stopped prod's API and worker in the middle of the day, and the Render resume built the newest commit instead of the SHA production ran.
+**Why.** The skill covered promotes and rollbacks, not infrastructure changes that stop a service, and nothing said a resume rebuilds from the branch head.
+**What changed.** Pitfalls line: a prod change that stops or resumes a service waits for a quiet window and Andres's go by name, then redeploys the pinned SHA explicitly.
+
 ## 2026-10-31: a straight-through path for hotfixes, and the changelog moves to the start
 
 > session · 2026-10-31 · 16b02206 · request · applied · seen 2

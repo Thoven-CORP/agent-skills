@@ -5,6 +5,14 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-11-05 — a bundle yes is not a ruling on an unstated cost
+
+> reflect · 2026-11-05 · 489a6eae · edbbc3cf · correction · applied · seen 2
+
+**What happened.** A bundle "yes" or "run it" was recorded as a ruling. It covered a change to a spec-decided popup (489a6eae) and an unstated 200 ms on every sidebar click (edbbc3cf).
+**Why.** #126's "the confirmation is the go" read as blanket approval for everything in the bundle, including what the proposal never stated.
+**What changed.** The Ruling section now says a proposal becomes a ruling only when Andres answers it as its own question with its cost or design change stated; a bundle yes approves the disclosed write set only.
+
 ## 2026-10-31 — a grill or product brief writes in the same turn as the confirmation
 
 > reflect · 2026-10-31 · d041edf0 · correction · applied · seen 1

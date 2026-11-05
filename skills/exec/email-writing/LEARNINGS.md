@@ -7,11 +7,12 @@ New entries on top. Each one: what happened, why, what changed.
 
 ## 2026-10-25 — product updates start from the last update and the CHANGELOGs
 
-> reflect · 2026-10-25 · 01a151d4 · skill-gap · applied · seen 1
+> reflect · 2026-10-25 · 01a151d4 · 39a12a43 · skill-gap · applied · seen 2
 
 **What happened.** In a Codex session, a release email was drafted from the draft and sample Andres pasted, and it did not say what each feature does for users. Andres: "you need to say something like: It's a secondary camera so they can connect their phone".
 **Why.** The workflow gathered context from the user, not from the last sent update or the repos' CHANGELOGs, which already describe each feature.
 **What changed.** New Pitfalls section: a product-update email starts from the last update in Gmail and both CHANGELOGs, and describes each feature by what the user can now do.
+2026-11-05: a product-update email described all of Thoven's features rather than what changed (39a12a43). The Pitfall became a Step 3 workflow block: write from both CHANGELOGs since the last update, lead with the biggest user-visible change, and use screenshots of the current shipped UI.
 
 ## 2026-10-22 — no em dashes, "connect" not "chat", one proposed slot for scheduling
 

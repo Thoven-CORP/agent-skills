@@ -11,6 +11,7 @@ description: Use when Andres asks to publish, deploy, release, promote, or hotfi
 - Open a hotfix PR as soon as the targeted tests are green; `bin/verify` and the reviews run beside PR CI, and gate repairs go on their own branch. (LEARNINGS 2026-10-22)
 - Build the release plan's post-promote list from the range's merged tickets and a mem0 search, and run every backfill or rake task they owe as a numbered step before the production harness. (LEARNINGS 2026-10-22)
 - Start every 2.0 production release with the changelog: check that each PR in the range wrote its `[Unreleased]` entry, and add the missing ones in one PR before `plan`, never after the promote. (LEARNINGS 2026-10-22, 2026-10-31)
+- Hold any prod change that stops or resumes a service (API, worker, Redis) for a quiet window and Andres's go naming that change, then redeploy the pinned SHA explicitly, because a Render resume builds the newest commit. (LEARNINGS 2026-11-05)
 
 ## Route
 

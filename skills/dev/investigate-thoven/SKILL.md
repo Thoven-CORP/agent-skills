@@ -12,6 +12,7 @@ Read [enforcement-rules.md](references/enforcement-rules.md) before Phase 1.
 ## Pitfalls
 
 - Before diagnosing a display bug, write down who should receive or see the item and confirm it; a wrong label can be a routing bug, so the "what should happen" slot names the product rule, not the symptom. (LEARNINGS 2026-10-22)
+- For a named user's failure, pull that person's records from the prod DB, Render logs, Sentry, Mixpanel and Stripe before explaining it. (LEARNINGS 2026-11-05)
 
 ## MANDATORY First Action
 
@@ -600,3 +601,4 @@ python .claude/skills/investigate-thoven/scripts/log_error.py \
 - [agent-prompts.md](references/agent-prompts.md) — Agent prompt templates for each category
 - [common-errors.md](references/common-errors.md) — Known error patterns (30+ entries, 7 categories)
 - [debug-workflow.md](references/debug-workflow.md) — Agent selection guide and investigation strategies
+- [vendor-access.md](references/vendor-access.md) — Sentry org, prod SQL tool and project, Mixpanel MCP and project, SendGrid and Daily key notes

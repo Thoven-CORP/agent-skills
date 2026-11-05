@@ -1,6 +1,6 @@
 ---
 name: thoven-branding
-description: Copy a person reads, in Thoven's voice, on Thoven public pages, emails, ads and in-app copy. Use when writing Thoven copy (a headline, page, button, email, ad or social post), and when reviewing existing Thoven copy or a diff that changes it.
+description: Use for Thoven emails, parent notices, in-app and component text, buttons, headlines, public pages, ads and social posts, and before any Thoven copy reaches Andres even when better-writing or no-ai-slop already loaded. Writes or reviews the copy, or a diff that changes it, in Thoven's voice.
 ---
 
 # Thoven branding
@@ -29,6 +29,7 @@ vocabulary: the words tables are the inventory it builds, and section 4 sets the
 
 - **Write:** draft the copy. A headline on the homepage or an instrument page uses the locked header.
 - **Review:** run better-writing's review over the copy, with the step 3 findings beside it.
+- **One screen names each thing once.** Read the header, subheader, toolbar and buttons together; when two of them say the same phrase, keep it in the one that carries it and cut it from the rest.
 
 Done when, writing, every piece of copy the request names is drafted, or, reviewing, better-writing's
 findings table and its Block or Approve verdict are written.

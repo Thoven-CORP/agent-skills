@@ -29,7 +29,7 @@ per pane: reports, corrections, alerts and tokens.
 - Scope every size or gate rule in a brief to the code the pane writes, and exempt generated artifacts, manifests, routes.rb and files already over the limit. (LEARNINGS 2026-10-09)
 - Let `dispatch spawn` fill `{{MAIN_SESSION}}` from the live session. A name carried over from a summary goes stale. (LEARNINGS 2026-10-10)
 - Settle a proto sizing or layout edge case during a build by the rule Andres already set, write it into the brief's DECIDED IN CHAT as "Andres ruled" and tell him in one line. Ask him only a product call no rule covers. (LEARNINGS 2026-09-27)
-- Give a minor fix, fix round or review pass a clean existing tree. Run at most two heavy builder panes at once and stagger the rest, re-reading `df -h /`, `memory_pressure` and load before each spawn; when Andres's answer settles one of two risks you raised together, the standing rule still binds the other. (LEARNINGS 2026-10-25)
+- Give a minor fix, fix round or review pass a clean existing tree. Run at most two heavy builders across every main session on this Mac and stagger the rest. Before each spawn, count them from the live process list and re-read `df -h /`, `memory_pressure` and load; when Andres's answer settles one of two risks you raised together, the standing rule still binds the other. (LEARNINGS 2026-10-25)
 - List the ticket's Linear comments right before `gh pr merge`. A ruling newer than the last commit holds the merge until the diff applies it. (LEARNINGS 2026-10-03)
 - On a UI or copy ticket, show Andres the before and after at the builder's first DONE, so his notes ride fix round 1 and the verifier runs once on the final diff. (LEARNINGS 2026-10-22)
 - Run parity only on surfaces with a board frame. A copy or rename edit to an undesigned or legacy screen gets a before/after line, never a parity shot, and a "Where" list comes from the board frames, never a word grep. (LEARNINGS 2026-10-24)
@@ -81,8 +81,9 @@ tree.
 Then read [references/agents.md](references/agents.md). The ticket's complexity picks the tier,
 and `scripts/agents.py` says what that tier runs today. A Linear parent, or a chain of tickets that
 build on each other, goes to one pane as one dispatch: one agent in both repos (`--add-dir`), one
-branch and one PR per repo, each ticket committed there and every fix appended. Several small
-same-shape tickets go the same way.
+branch and one PR per repo, each ticket committed there and every fix appended. Give that pane a
+checkpoint at each child ticket: it posts a REPORT for the child before it starts the next, so a
+planned handoff lands between tickets. Several small same-shape tickets go the same way.
 
 Before dispatching onto an integration branch, compare its `lefthook.yml` and `bin/verify` with
 `origin/main`. When they differ, offer Andres a catch-up merge of `main` (merge commit) as a go first:
@@ -190,7 +191,7 @@ An alert line names the pane and the cause:
 | `TICK_ERROR` | The watcher failed to read this pane for 4 ticks in a row (about 2 minutes) and names the last error. Run `dispatch status <pane>`. Several panes timing out together (`rex call timed out`) means the machine is overloaded: check load and memory, then prune or hold panes before anything else. A single pane's Rex or herdr error is the backend's to fix; tell Andres in one line. While the status read itself fails, no other alert fires for that pane. |
 | `SETTLED` (Codex) | Read the pane's REPORT entry with `dispatch board <project> --ticket THV-x`, then handle it as the status table says. |
 
-When a UI fix round reports, push the pane's commits. The Parity check re-shoots. Read that grid.
+When a UI fix round reports, read the parity grid in its REPORT, then push the pane's commits.
 
 **Corrections and fix rounds go as a peer message plus a CORRECTION entry** (`dispatch post ...
 --kind correction`). A message reaches a busy pane between its tool calls, so it never waits for the

@@ -50,6 +50,8 @@ When Andres rules in the session, or a grill or spec session ends, write that ru
 
 This pass does not wait for capture, close, or log.
 
+Write only what Andres ruled. An agent's proposal becomes a ruling when he answers it as its own question, with its cost or design change stated. A bundle "yes" or "run it" approves the write set as disclosed; it does not rule on a cost the proposal left unstated or on a change to a surface the spec already decided. Ask each of those as its own question before writing or building it.
+
 ## Recipe
 
 1. Read [`references/PROJECT_SNAPSHOT.md`](references/PROJECT_SNAPSHOT.md). Its source order,

@@ -11,7 +11,7 @@ together.
   on this branch and your commits.
 - Commit as you go, by exact path, message ending in THV-<id>. Commit only: main pushes the branch
   and opens the PR.
-- Before DONE, a backend change regenerates the contract manifest and the frontend OpenAPI types, and runs `bin/ci fast --only guards,contract,schema` plus `script/check_openapi_breaking` when the schema changes. A frontend change runs `api-types:check` and `contract-check`, and `pnpm run knip` when exports or files change. The authorization cop runs with the other guards.
+- Before DONE, a backend change regenerates the contract manifest and the frontend OpenAPI types, and runs `bin/ci fast --only guards,contract,schema` plus `script/check_openapi_breaking` when the schema changes. A frontend change runs `api-types:check` and `contract-check`, and `pnpm run knip` when exports or files change. The authorization cop runs with the other guards. Every change carries a CHANGELOG `[Unreleased]` line, or your REPORT flags skip-changelog for main.
 - Talk to main by peer message (SendMessage to the session your brief names) plus a board entry,
   as the brief's ASK and REPORT say. A message from main can arrive mid-turn. Read it at once: a
   correction overrides the brief from that point.
@@ -40,9 +40,13 @@ together.
   uploads to the Linear issue and the board and then deletes. Point at a board frame or screenshot
   that already exists instead of saving a second copy. Your only test or verification files are
   the ticket's own red and green proof.
-- Parity, on a UI ticket with a named design source, before DONE: the Parity check on your PR shoots designed states only,
-  at each frame's width and 390, as the verify skill says. Add its grid, a short video of the flow and
-  the list of differences from the board.
+- Parity, on a UI ticket with a named design source, before DONE: CI does not shoot parity, so you
+  capture it. Run `scripts/verify/parity-run.mjs` behind `thoven-load-gate` as frontend `TESTING.md`
+  shows (Mini parity pilot), with `--out` set to the parity folder above. Cover every surface the
+  ticket names, sibling rows included, at each frame's width and 390. A named surface that
+  `parity-surfaces.json` does not map gets a 390 capture at the commit before your change, beside
+  the after. Put the grid in your REPORT with a short video of the flow and the list of differences
+  from the board.
 - Database (backend ticket): export the pane's own `DATABASE_URL` and `TEST_DATABASE_URL` in the
   same line as every backend command, `git commit` included.
 - Debt, bugs and smells in code this ticket or feature owns are fixed on this branch in the same

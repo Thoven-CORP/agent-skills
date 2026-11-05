@@ -122,8 +122,9 @@ STATUS is DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT or BLOCKED. The body is the AS
   Proof        command, red before, green after
   Commits      SHAs and git diff --stat against base
   Checks       each command you ran and its pass line
-  Parity       UI tickets: the Parity check's `parity-grid` link on your PR (standing.md, Parity), and each
-               difference from a frame: fixed, or confirmed with its ruling
+  Parity       UI tickets: the grid from your local parity run (standing.md, Parity) for every
+               surface the ticket names, and each difference from a frame: fixed, or confirmed
+               with its ruling
   Playbook     each native step verbatim: done with evidence, or "skip: <reason>" where allowed
   Skills       poteto-mode loading evidence, each routed or ACCESS skill loaded and when,
                and the work it produced; a skipped ACCESS line names why
@@ -148,6 +149,8 @@ Fix these only. Re-run the tests that cover each fix and name them: those files 
 plus typecheck and lint on the touched files. A UI fix runs only the browser test or parity state
 it touches. No bin/verify, no mutation sweep, no full e2e or browser suite this round. Copy follows
 design/lexicon/LEXICON.md, and focus and accessibility fixes use the existing Thoven components.
-On a UI fix, commit only. Main pushes this round so the Parity check re-shoots each touched state at its frame's width and 390.
-Main reads that grid. A change beyond the fixed element is a defect. Report as before.
+On a UI fix, commit only, and recapture each touched state at its frame's width and 390 with the
+local parity run (standing.md, Parity). The grid rides in your REPORT, where main reads it. A change
+beyond the fixed element is a defect.
+Post a REPORT entry, then message main your status line.
 ```

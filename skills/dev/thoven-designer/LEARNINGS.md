@@ -5,13 +5,22 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-05 — a first-time screen gets a Paper round before code
+
+> reflect · 2026-11-05 · e55ecd26 · aa149f6a · skill-gap · applied · seen 2
+
+**What happened.** First-time screens went straight to a lab or to code. In e55ecd26 Andres said it "should have been on paper"; in aa149f6a the agent edited three shipped files for a screen still being designed.
+**Why.** The skill said nothing about which medium a new screen starts in, so "build" read as code.
+**What changed.** Added a step under the scope paragraph: a screen designed for the first time gets one Paper polish round before any lab or code, only the moving part gets a storyboard proto, and while designing "build" means Paper unless the turn names code.
+
 ## 2026-10-31 — a variant of a shipped surface starts from the real route
 
-> reflect · 2026-10-31 · 0f23577b · 389b9590 · broken-rule · applied · seen 2
+> reflect · 2026-10-31 · 0f23577b · 389b9590 · aa149f6a · e3582b3d · 01a19d39 · broken-rule · applied · seen 5
 
 **What happened.** Andres: "when you're doing these prototypes on already real things, you actually look at the code." A later pass was told to change only the middle section.
 **Why.** Rule 16 said the slot is locked, and the skill never said to open the shipped page first.
 **What changed.** Before drawing a variant of a shipped surface or an attached mockup, open the real route, start from its shipped code, and state in two lines what stays and what changes.
+2026-11-05: the same miss outside drawing. Landing boxes did not match the live page (aa149f6a), a global component already existed (e3582b3d), and the concentric radius had already shipped (01a19d39). The step now also fires before a ticket fix, a design-system audit, or a token or shared-component proposal: open the live route and the global component, list what shipped, propose only the gap.
 
 ## 2026-10-25 — the skill never fired on drawings and protos
 

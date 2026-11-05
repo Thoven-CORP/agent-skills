@@ -18,7 +18,9 @@ The surface you were named is the only one in scope. Fitting a component into it
 Resizing the shell, the grid, or the neighbouring cards is a new decision that needs Andres.
 `feature-ledger` **rule 16**.
 
-Before drawing a variant of a shipped surface or an attached mockup, open the real route, start from its shipped code, and state in two lines what stays and what changes.
+Before drawing a variant of a shipped surface or an attached mockup, fixing a ticket on one, auditing the design system, or proposing a token or shared component, open the live route and the global component, start from their shipped code, and list what already shipped. State in two lines what stays and what changes, and propose only the gap.
+
+Design a screen that has never existed in Paper first, with one polish round there before any lab or code. Give only the moving part a storyboard proto. While designing, "build" means Paper unless the turn names code.
 
 ## Pitfalls
 

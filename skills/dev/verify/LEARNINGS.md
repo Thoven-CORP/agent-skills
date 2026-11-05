@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-05 — the builder runs parity itself; CI has no Parity check
+
+> reflect · 2026-11-05 · e3582b3d · broken-rule · applied · seen 1
+
+**What happened.** Frontend #575 removed the CI Parity check on Nov 2 ("remove CI parity"). Step 5 still told the builder to push and let the Parity check shoot the states, so in e3582b3d the agent leaned on a gate that no longer ran and never captured the Library row at 390 that its own ticket named.
+**Why.** The step delegated the capture to CI, and nothing told the builder when that gate went away.
+**What changed.** Step 5: the builder runs `parity-run.mjs` itself before DONE through frontend `TESTING.md`'s Mini parity pilot, for every surface the ticket names, sibling rows included; an unmapped surface gets a 390 capture of the commit before the change; the grid goes in the DONE report. The law's Design parity line says the same. Still open: andres-mode Parity, four dispatch-work references and CLAUDE-root.md:54 cite the old check (other owners this round).
+
 ## 2026-10-25 — mutation runs on GitHub; locally only on request
 
 > session · 2026-10-25 · c6bb2950 · correction · applied · seen 1

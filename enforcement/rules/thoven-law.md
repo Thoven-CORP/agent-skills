@@ -74,6 +74,8 @@ pointers and handoffs. Read relevant document bodies, not only links. tldraw and
 design/brainstorming; accepted choices are recorded in Linear with their named design sources.
 Local technical runbooks, API/schema details and historical documents remain useful context.
 Missing local project folders, `STATE.md`, `PRD.md` or `CONTINUE_HERE.md` do not block startup.
+A standing preference goes into the skill or law that governs it, never auto-memory, because
+memory is keyed per working directory and sessions in another tree never load it.
 Preserve history and user-unseen evidence. Keep branches and PRs when moving hosts; remote checks
 use dedicated disposable mirrors, and coding uses separate worktrees. The shared handoff procedure
 is `skills/dev/workspace/references/handoff.md`.
@@ -82,8 +84,11 @@ is `skills/dev/workspace/references/handoff.md`.
 any design sources the task names. Do not require a board for work without a design source.
 The verifier's report opens with SPEC PARITY.
 
-**Design parity.** A build that changes what a user sees captures every touched state, through the Parity check on its PR where the surface is mapped, at its board frame's width and
-390 beside the frame, plus a short video. The images go to the Linear issue as a comment (the
+**Design parity.** A build that changes what a user sees captures every touched state
+and every sibling row the ticket names, at its board frame's width and 390 beside the frame, plus a
+short video. The builder runs the parity capture itself before DONE (frontend `TESTING.md`, "Mini
+parity pilot"; CI has no Parity check), an unmapped surface gets a 390 capture of the commit before
+the change, and the grid goes in the report. The images go to the Linear issue as a comment (the
 parent when the work has no issue) and onto the board beside their frames. A difference from a
 confirmed frame that Andres did not approve is a defect. A frame binds what shows (elements,
 states, order, hierarchy, tokens), not sizing behaviour (fill or hug, stretch, reflow), which
@@ -103,7 +108,8 @@ reruns on push. Heavy work (e2e, builds, stacks, perf) runs through
 whose `~/.config/thoven/host.json` says `mini`. There, `bin/verify` takes a gate slot itself, so run
 it as is. On a `laptop` host the Bash guard denies verify, builds, e2e and whole suites: run
 `remote-verify` for verify and the `remote-check` skill for the rest. Stop the servers you started after each step, and
-delete scratch you can regenerate.
+delete scratch you can regenerate. A subagent runs a long command in the foreground with a
+timeout, because the harness blocks `sleep` and a subagent without Monitor cannot poll a background job.
 
 **Local database.** `thoven-worktree create` sets `TEST_DATABASE_URL` to `neondb_test_<slug>`, drops
 a `DATABASE_URL` that names the shared `thoven_development`, and creates `thoven_dev_<slug>` when the

@@ -9,7 +9,7 @@ A setup is a graph of named references, and a *dangling* one resolves to nothing
 
 This measures that graph against what actually happened, then routes each gap to whatever can hold it.
 
-It owns measurement and routing. The **retro** skill owns environment improvement candidates and the **automate-me** skill owns capturing conventions into a personal `-mode` skill. Call them and let them work.
+It owns measurement and routing. The **retro** skill owns environment improvement candidates and the **automate-me** skill owns capturing conventions into a personal `-mode` skill. Both are user-invoked (`retro` carries `disable-model-invocation: true`), so the report names `/retro` and `/automate-me` as the next commands for the user to type rather than calling them.
 
 ## Where things live per harness
 
@@ -62,7 +62,7 @@ Pick the cheapest layer that closes the gap. A rule already written and already 
 
 Route findings rather than fixing all of them here.
 
-Environment findings, meaning navigation, missing automated checks, tool economy, and no-ops in steering files, go to the **retro** skill, which owns that taxonomy.
+Environment findings, meaning navigation, missing automated checks, tool economy, and no-ops in steering files, go to the **retro** skill, which owns that taxonomy. Name `/retro` in the report as the next command to run.
 
 Conventions that repeated across sessions go to the **automate-me** skill. It is user-invoked by design, so name it in the report as the next command to run. Forward a convention only when you can point at two occurrences of it.
 

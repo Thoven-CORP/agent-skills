@@ -5,13 +5,77 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-05 — standing preferences go into the skill or law, not auto-memory
+
+> reflect · 2026-11-05 · aa149f6a, 39a12a43, e55ecd26 · broken-rule · applied · seen 3
+
+**What happened.** The ~/thoven "open it when it's done" memory never reached frontend session aa149f6a, and the frontend branding memory missed 39a12a43 and e55ecd26, so Andres repeated himself.
+**Why.** Auto-memory is keyed per working directory, so a session started in another tree never loads it.
+**What changed.** thoven-law "Where records live": a standing preference goes into the skill or law that governs it, never auto-memory.
+
+## 2026-11-05 — subagents run long commands in the foreground with a timeout
+
+> reflect · 2026-11-05 · a296e1df, a38ea181, a39eae81 (+36 more subagents) · tooling · applied · seen 39
+
+**What happened.** 39 subagent sessions hit "Blocked: sleep N followed by: cat …/tasks/*.output" or "No such tool available: Monitor", most of them poteto-agent.
+**Why.** The harness blocks `sleep`, and a subagent without Monitor cannot poll a background job it started.
+**What changed.** thoven-law "Targeted tests": a subagent runs a long command in the foreground with a timeout.
+
+## 2026-11-05 — the builder makes parity captures now that CI parity is gone
+
+> reflect · 2026-11-05 · e3582b3d · broken-rule · applied · seen 1
+
+**What happened.** Frontend #575 removed the CI Parity check on Nov 2 ("remove CI parity"). The agent still leaned on that gate and never captured the Library row at 390 that its own ticket named (e3582b3d).
+**Why.** Parity said "the Parity check on the PR makes the captures", so no one owned the captures once the check was gone.
+**What changed.** Parity, visual parity bullet: the builder makes the captures itself with the local parity run (`scripts/verify/parity-run.mjs`, the frontend `TESTING.md` Parity row) for every surface the ticket names, sibling rows included. A surface with no map entry gets a 390 capture beside the commit before the change. Older entries that cite the Parity check stay as history.
+
+## 2026-11-05 — install a third-party skill for Claude Code and Cursor
+
+> reflect · 2026-11-05 · 01a1a3ed · correction · applied · seen 1
+
+**What happened.** A Codex session installed a third-party skill with `-a codex`, so it was missing from Claude Code (01a1a3ed).
+**Why.** The session used its own agent flag and not the install form the README already gives.
+**What changed.** Logged. Install with `npx skills add <repo> -g -y -a claude-code -a cursor`. Promote at seen 2.
+
+## 2026-11-05 — after rotating a shared credential, check every consumer you named
+
+> reflect · 2026-11-05 · 96659353 · correction · applied · seen 1
+
+**What happened.** After rotating the Vercel token the agent did not check the lazyops collector, a consumer it had named itself (96659353).
+**Why.** The rotation was treated as done once the new token was saved.
+**What changed.** Logged. After rotating a shared credential, verify every consumer you named. Promote at seen 2.
+
+## 2026-11-05 — a status line says what was built, and end-to-end means the real flow
+
+> reflect · 2026-11-05 · 489a6eae · broken-rule · applied · seen 1
+
+**What happened.** A demo harness on mock data, in a route other than the spec-settled popup, was reported as an end-to-end run (489a6eae).
+**Why.** The status line named the result and not what produced it.
+**What changed.** Logged. A status line says what was built (real route, prototype on fake data, Paper design), and "end-to-end" means the real product in the spec-settled flow. Promote at seen 2.
+
+## 2026-11-05 — finished work opens itself, hard-reloaded
+
+> reflect · 2026-11-05 · e55ecd26 · aa149f6a · broken-rule · applied · seen 2
+
+**What happened.** Andres asked twice for finished work to be opened for him: "open it when it's done instead of asking me" (e55ecd26), "open and refresh it so we dont have stale css" (aa149f6a).
+**Why.** The rule lived only in a ~/thoven auto-memory that frontend sessions never load.
+**What changed.** Replies, the visual-explainer bullet: anything background work produces for him to look at opens the moment it lands with a cache-busting hard reload (`open -a Dia "<url>?r=$(date +%s)"`), the reply says what was opened, and it never asks first.
+
+## 2026-11-05 — restate his scope and hold to it
+
+> reflect · 2026-11-05 · e3582b3d · 01a19d39 · edbbc3cf · 01a1938b · broken-rule · applied · seen 4
+
+**What happened.** Plans grew past his ask: "fix too much" (e3582b3d), "way overscoping… check the shipped thing first" (01a19d39), "Harden means to refine what exists" (edbbc3cf). The reverse also happened: after "rebuild the full thing", a lifted constraint (privacy checks) came back as a precaution (01a1938b).
+**Why.** No step pinned his in- and out-of-scope before work began, so each plan drifted from its own momentum.
+**What changed.** Replies gains "Hold his scope": restate in- and out-of-scope in his words before starting and check each step against it. A plan that outgrows the ask stops for a grill through the ask tool. A widened scope or lifted constraint is rebuilt in one pass and recorded as removed, and comes back only when he says so.
+
 ## 2026-10-31 — confusion gets one sentence, then a picture
 
-> reflect · 2026-10-31 · 14531ef9 · 39a12a43 · 7c3d7896 · 16b02206 · broken-rule · applied · seen 4
+> reflect · 2026-10-31 · 14531ef9 · 39a12a43 · 7c3d7896 · 16b02206 · 01a19d39 · broken-rule · applied · seen 5
 
 **What happened.** Andres said he was confused and asked for an ASCII picture. The reply stayed in mechanism prose.
 **Why.** Replies said plain product English and had no trigger for "confused".
-**What changed.** Replies: one plain sentence, then an ASCII sketch or visual of what exists and what changed, opened that turn.
+**What changed.** Replies: one plain sentence, then an ASCII sketch or visual of what exists and what changed, opened that turn. 2026-11-05: a second "confused" in 01a19d39 ("You haven't even asked me what the things are that I wanted to change") got more forward work. The Confused bullet now stops new work on a second "confused" and opens the next reply with a where-are-we recap against his original asks, with a visual.
 
 ## 2026-10-31 — a turn ends on the work
 
@@ -39,11 +103,11 @@ New entries on top. Each one: what happened, why, what changed.
 
 ## 2026-10-31 — a done report accounts for every decided item
 
-> reflect · 2026-10-31 · 7c3d7896 · broken-rule · applied · seen 2
+> reflect · 2026-10-31 · 7c3d7896 · e3582b3d · 01a1938b · broken-rule · applied · seen 4
 
 **What happened.** Andres: "what did you leave out" and "I literally dont see any of the changes on the artifact."
 **Why.** "Where are we" walked tickets, not the brainstorm's decided items, and the reply defended the design.
-**What changed.** A done report lists every decided in-scope item as built, with where it renders, or left out with the reason. "I don't see it" opens the artifact he is looking at first.
+**What changed.** A done report lists every decided in-scope item as built, with where it renders, or left out with the reason. "I don't see it" opens the artifact he is looking at first. 2026-11-05: done reports built from working memory dropped the warm-colour typography fix (e3582b3d) and called Bun "included" when it was only researched (01a1938b). Where are we: before DONE, rebuild the in-scope list from the ticket and his in-session asks, and write chat-only asks onto the ticket before a long session compacts.
 
 ## 2026-10-31 — prove a credential before calling it wrong
 
@@ -245,11 +309,11 @@ In migration session 01a17981, Andres corrected the proposed transfer ceremony: 
 
 ## 2026-10-16 — every decision and grill round goes through the ask tool
 
-> reflect · 2026-10-16 · memory:feedback_decisions_via_askuserquestion · correction · applied · seen 2
+> reflect · 2026-10-16 · memory:feedback_decisions_via_askuserquestion · e3582b3d · correction · applied · seen 3
 
 **What happened.** On 10-12 three calls went on a show-me HTML page with typed reply codes ("1 C, 2 rec, 3 rec"); Andres added "Use ask question tool to ask me". On 10-16 a grill round written as Q1..Q5 markdown got "use the ask question tool".
 **Why.** The tool gives him clickable options and notes; typed codes are friction.
-**What changed.** Step in Replies, the "Do reversible in-scope work" line: grill rounds go through the tool too, four per call at most, previews for visual options; an HTML page is for looking.
+**What changed.** Step in Replies, the "Do reversible in-scope work" line: grill rounds go through the tool too, four per call at most, previews for visual options; an HTML page is for looking. 2026-11-05: Andres said "use the ask question tool" twice in e3582b3d, because the rule sat mid-bullet and a grilling skill loaded later, silent on the tool, won. Promoted to a Pitfall; the parallelising-grill Pitfall (09-03, seen 1) moved to Delegation as a plain bullet to hold the 10-line cap.
 
 ---
 
@@ -395,11 +459,11 @@ In migration session 01a17981, Andres corrected the proposed transfer ceremony: 
 
 ## 2026-09-14 — plain product language, no ids in chat
 
-> reflect · 2026-09-14 · memory:feedback_plain_language_reports_no_ticket_ids · 39a12a43 · d9f3ef92 · b40065c8 · broken-rule · applied · seen 5
+> reflect · 2026-09-14 · memory:feedback_plain_language_reports_no_ticket_ids · 39a12a43 · d9f3ef92 · b40065c8 · 96659353 · e55ecd26 · 16b02206 · broken-rule · applied · seen 8
 
 **What happened.** On 09-07, after about 50 autonomous turns with no report, Andres could not follow references like ticket and decision ids: "You're speaking to me as if I have the full context of all of Linear". On 09-14 grill questions phrased as "settles ADR5, D1" got "Can you stop speaking to me in adr 5 and d1".
 **Why.** Ids point into context he does not carry. This holds even when a skill or brief asks to cite ledger rows; they belong in the ledger write.
-**What changed.** Step in Replies, the "Lead with the finding" line: a plain report after a long stretch; no ticket or decision ids in chat or a question. 2026-10-25: three more sessions led status lists with ids ("describe the tickets in actual words instead of jus thet e ticket number", 39a12a43); promoted to a Pitfall naming each item by feature, PR and worktree.
+**What changed.** Step in Replies, the "Lead with the finding" line: a plain report after a long stretch; no ticket or decision ids in chat or a question. 2026-10-25: three more sessions led status lists with ids ("describe the tickets in actual words instead of jus thet e ticket number", 39a12a43); promoted to a Pitfall naming each item by feature, PR and worktree. 2026-11-05: questions named things he could not place ("the 51 accounts, is this teachers", 96659353; "what you said was not selected", e55ecd26; "q2) idk what this is talking about", 16b02206). The Lead-with-the-finding bullet now says every question or open item names what the thing is and where he saw it, so it stands without scrollback.
 
 ---
 

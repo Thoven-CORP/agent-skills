@@ -7,10 +7,6 @@ description: Write and send emails in Andres's voice. Use when user says "write 
 
 Write emails matching Andres's tone and style, organized by audience type.
 
-## Pitfalls
-
-- Start a product-update email from the last update email in Gmail and both repos' CHANGELOGs, and describe each feature by what the user can now do. (LEARNINGS 2026-10-25)
-
 ## Trigger Phrases
 
 - "write email", "draft email", "send email"
@@ -49,6 +45,14 @@ Get the specific recipient(s):
 | Investors | Progress highlights? Key metrics? Challenges? Next steps? |
 | Advisors | What question/feedback are you seeking? What context do they need? |
 | Partners | What's the purpose? What action do you want from them? |
+
+**Product-update email** (to Thoven teachers or families): write from what changed, not from what Thoven does.
+1. Find the last update email in Gmail and its send date.
+2. Read both repos' CHANGELOGs (`~/thoven/frontend/CHANGELOG.md`, `~/thoven/backend/CHANGELOG.md`) since that date.
+3. Lead with the biggest user-visible change, and describe each feature by what the user can now do.
+4. Illustrate with screenshots of the current shipped UI.
+
+Done when every feature in the draft traces to a CHANGELOG line since the last update.
 
 ### Step 4: Draft Email
 

@@ -5,6 +5,49 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-05 — the builder captures parity itself; CI no longer shoots it
+
+> reflect · 2026-11-05 · e3582b3d · broken-rule · applied · seen 1
+
+**What happened.** Frontend #575 (Nov 2) removed the CI Parity check ("remove CI parity"). The skill still sent builders and verifiers to "the Parity check on your PR", and the agent on e3582b3d leaned on that gate and never captured the Library row at 390 that its own ticket named.
+**Why.** standing.md, brief.md, review.md and SKILL.md step 4 all pointed at a CI artifact that no longer exists, so nobody owned the capture.
+**What changed.** standing.md Parity: the builder runs `scripts/verify/parity-run.mjs` behind the load gate as frontend `TESTING.md` shows, for every surface the ticket names, sibling rows included; an unmapped surface gets a 390 capture at the commit before the change. The grid rides in the REPORT, and brief.md (REPORT and fix round), review.md (Working if, verifier step 2) and SKILL.md step 4 read it there. The UI fix round's "commit only, main pushes" line existed so CI would re-shoot (2026-10-31 entry). That reason is gone; the general split (panes commit, main pushes) stands on main owning pushes, so the push wording is left for Andres to decide.
+
+## 2026-11-05 — a pane's DONE carries the CHANGELOG line
+
+> reflect · 2026-11-05 · fix-dep-22 · fix-thv-1558 · broken-rule · applied · seen 2
+
+**What happened.** Two fix rounds (fix-dep-22, fix-thv-1558) existed only to add the CHANGELOG `[Unreleased]` line.
+**Why.** The CHANGELOG rule sits in a "you are pushing" block, and panes only commit, so they never read it as theirs.
+**What changed.** standing.md's Before-DONE line: every change carries a CHANGELOG `[Unreleased]` line, or the REPORT flags skip-changelog for main.
+
+## 2026-11-05 — DONE with knip findings and a red direct-importer test
+
+> reflect · 2026-11-05 · build-thv-1572 · broken-rule · applied · seen 1
+
+**What happened.** build-thv-1572 reached DONE with two knip findings and a direct-importer test failing 4/12, though knip is already in standing.md.
+**Why.** The pane ran its touched test files and stopped there; standing.md's Before-DONE line does not name direct importers' tests.
+**What changed.** Logged. At seen 2, add "direct importers' tests by path" to standing.md's Before-DONE line.
+
+## 2026-11-05 — a fix round ends by posting a REPORT entry
+
+> reflect · 2026-11-05 · verify-thv-1577 · THV-1651 · broken-rule · applied · seen 2
+
+**What happened.** Fix rounds ending "Report as before" or "message main the SHA" produced 10 SETTLED_NO_REPORT alerts on verify-thv-1577. THV-1651's rounds, ending "Post a REPORT entry… then message main", produced none.
+**Why.** "Report as before" leaves the pane to recall a REPORT template from far back in its window, and "message main the SHA" skips the board entry.
+**What changed.** The fix-round template in brief.md ends "Post a REPORT entry, then message main your status line", and its stale "Parity check re-shoots" line is gone.
+
+## 2026-11-05 — a one-pane parent checkpoints at each child ticket
+
+> reflect · 2026-11-05 · build-thv-1506 · build-thv-1577 · skill-gap · applied · seen 2
+
+**What happened.** Parents dispatched as one pane handed off mid-ticket again and again: build-thv-1506 five times, build-thv-1577 five times.
+**Why.** A whole parent in one pane reaches the token budget mid-child, with no natural place to stop.
+**What changed.** SKILL.md step 1: a one-pane parent posts a REPORT at each child ticket before starting the next, so a planned handoff lands between tickets.
+
+
+---
+
 ## 2026-11-03 — the TypeScript row named a skill a fresh builder could not load
 
 > session · 2026-11-03 · state-brief-audit · correction · applied · seen 1
@@ -142,11 +185,11 @@ Andres then asked that a builder run poteto-mode as fully as the parent does and
 
 ## 2026-10-25 — two heavy builders at once; rex timeouts mean overload
 
-> reflect · 2026-10-25 · 39a12a43 · 7c3d7896 · broken-rule · applied · seen 2
+> reflect · 2026-10-25 · 39a12a43 · 7c3d7896 · 2026-11-05 · broken-rule · applied · seen 3
 
 **What happened.** On 10-23, four builders (THV-1383 to 1386) spawned together, and Claude Code killed 1383 at about 70 MB free. On 10-25 main asked Andres about the usage limit and about load 14 in one question. He answered "We are not out of claude", and three panes spawned at load 14 against the load-10 rule. Five builders then ran together, three panes raised TICK_ERROR "rex call timed out after 20s" at once, Andres posted HOLD, and all five hit LIMIT within seconds of it. THV-1379 ran for 4h26m. The TICK_ERROR row told main to blame the backend.
 **Why.** The 2026-10-11 Pitfall checked disk and memory once, at spawn, and could not see the load the panes add later. An answer to a bundled question was read as clearing both risks.
-**What changed.** The Pitfall now allows at most two heavy builders at once, staggers the rest, and re-reads disk, memory and load before each spawn. It also keeps the standing rule on any risk the answer did not settle. TICK_ERROR on several panes together now means overload, so prune or hold first. Backlog: tick's LIMIT/SETTLED_NO_REPORT double alert, FROZEN reading CPU only, and a `dispatch hold` state.
+**What changed.** The Pitfall now allows at most two heavy builders at once, staggers the rest, and re-reads disk, memory and load before each spawn. It also keeps the standing rule on any risk the answer did not settle. TICK_ERROR on several panes together now means overload, so prune or hold first. Backlog: tick's LIMIT/SETTLED_NO_REPORT double alert, FROZEN reading CPU only, and a `dispatch hold` state. 2026-11-05: 18 LIMIT alerts on 10-31 came from 3 to 5 Opus panes across three main sessions, and the Mac swapped (8.2 of 9.2 GB), because each main counted only its own panes. The Pitfall now caps heavy builders across every main session on this Mac, counted from the live process list before each spawn. Seen 3.
 
 ## 2026-10-25 — the brief carries the paired backend tree and a targeted Done-when
 
@@ -415,7 +458,7 @@ RULINGS, tells him in one line, and asks only a product call no rule covers.
 
 ## 2026-09-16 — a fix round carries about five findings
 
-> reflect · 2026-09-16 · memory:feedback_subagent_token_budget · 2026-10-27 · broken-rule · applied · seen 3
+> reflect · 2026-09-16 · memory:feedback_subagent_token_budget · 2026-10-27 · THV-1577 · THV-1580 · broken-rule · applied · seen 4
 
 **What happened.** The THV-538 build agent reached 347k tokens. Andres: "that feels excessive for
 one subagent ... make sure agents have tight [budgets]". A THV-578 fix-forward brief with 11 items
@@ -425,6 +468,7 @@ judgment degraded as the window filled.
 **What changed.** The 250k budget was already in `references/brief.md` STANDING. Step edit in the
 fix-round brief: carry about five findings per round and split a larger set by concern into panes
 whose files do not overlap. 2026-10-31: THV-918 still sent rounds of 10 and 11, so Handling findings now states the cap where main decides the round. Seen 3.
+2026-11-05: THV-1577 and THV-1580 still carried 15 to 18 items, because "user-facing" let code-review findings past the cap. Handling findings now counts every finding in the round, whatever review produced it. Seen 4.
 
 ---
 

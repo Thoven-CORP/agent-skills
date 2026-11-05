@@ -36,8 +36,9 @@ branch before starting the verifier. Each one that fails is a finding.
 - The REPORT's Playbook row lists every native step, with evidence of its work. Check the routed
   skill calls or reads and their outputs against the transcript. A printed list alone is not
   execution. A skip cites a native allowance; a mandatory step skipped is a finding.
-- A UI ticket's report links the Parity check's grid with every touched state at its frame's
-  width and 390 beside its board frame, and no blank image. A state with no board frame is not a parity row:
+- A UI ticket's REPORT carries the builder's parity grid: every surface the ticket names, sibling
+  rows included, at its frame's width and 390 beside its board frame, and no blank image. A named
+  surface the parity map does not cover has a 390 capture from the commit before the change. A state with no board frame is not a parity row:
   name it as off-design in the report instead.
 
 ## Verifier brief
@@ -61,7 +62,7 @@ whose claim you doubt, one per run; never `bin/verify`.
 1. SPEC PARITY. Read the parent's "Decisions (canonical)" in the snapshot. Trace every Acceptance line and every
    behaviour in the diff to a decision id. Name invented scope, a decision the diff missed or
    changed, and lexicon slips.
-2. DESIGN PARITY, on a UI ticket. Open the grid from the `parity-grid` artifact of the PR's Parity check
+2. DESIGN PARITY, on a UI ticket. Open the parity grid in the builder's REPORT
    first, then the board frames each decision cites. Compare every state yourself and recapture only a state that looks wrong. Run
    /better-ui and /thoven-designer over the built screens. A difference from a frame that Andres
    did not confirm is an important finding.
@@ -101,7 +102,7 @@ into an integration branch, run one /deslop and thermo pass over the merged rang
 ## Handling findings
 
 - **Gate repair, CI fixes and redesigns** go to Andres as one line with a choice.
-- **A round carries about five user-facing findings.** A larger set splits by concern into panes whose files do not overlap.
+- **A round carries about five findings,** counted across every review in it: the verifier, code-review, thermo, deslop and Andres's notes. A larger set splits by concern into panes whose files do not overlap.
 - **Critical or important:** a fix round (`brief.md`, fix-round brief) to the builder by peer message plus a CORRECTION entry,
   then a verifier re-run scoped to the fix diff. There are 3 fix rounds. Rounds 1 and 2 go to the
   builder's pane. Round 3 goes to a fresh pane one tier up. The ticket stays **Ready** throughout.
