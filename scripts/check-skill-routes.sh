@@ -47,9 +47,16 @@ done >> "$index"
 # working route deleted.
 find "$HOME/.claude/plugins" -path "*/skills/*" -name SKILL.md 2>/dev/null | while read -r f; do
   d="$(dirname "$f")"; name="$(basename "$d")"
-  up="$(dirname "$(dirname "$d")")"
-  case "$(basename "$up")" in [0-9]*.[0-9]*) up="$(dirname "$up")" ;; esac
-  printf '%s\n%s:%s\n' "$name" "$(basename "$up")" "$name"
+  rel="${f#"$HOME/.claude/plugins/"}"
+  if [[ "$rel" == cache/* ]]; then
+    # cache/<marketplace>/<plugin>/<version>/skills/[<group>/]<name>: a plugin may nest skills in groups.
+    plugin="$(cut -d/ -f3 <<<"$rel")"
+  else
+    up="$(dirname "$(dirname "$d")")"
+    case "$(basename "$up")" in [0-9]*.[0-9]*) up="$(dirname "$up")" ;; esac
+    plugin="$(basename "$up")"
+  fi
+  printf '%s\n%s:%s\n' "$name" "$plugin" "$name"
 done >> "$index"
 sort -u -o "$index" "$index"
 
@@ -72,7 +79,7 @@ for file in "$@"; do
       # a mid-line one. A destination is never followed by a slash, which is what
       # separates /deslop from a path segment like ~/mama-frontend/app.
       sed 's|$| |' "$file" \
-        | grep -ohE '(^|[^A-Za-z0-9_/-])/[a-z][a-z0-9-]*(:[a-z][a-z0-9-]*)?[^A-Za-z0-9_:/-]' \
+        | grep -ohE '(^|[^A-Za-z0-9_/<>~.-])/[a-z][a-z0-9-]*(:[a-z][a-z0-9-]*)?[^A-Za-z0-9_:/-]' \
         | grep -oE '/[a-z][a-z0-9:-]*' | sed 's|^/||' | sort -u
     fi
   )
@@ -89,7 +96,7 @@ for file in "$@"; do
   [ -f "$md" ] || { printf 'FAIL  no fallback md for %s\n' "$file"; dead=1; continue; }
   keys="$(jq -r '.questions | to_entries[] | .value.criteria | if type=="object" then keys[] else empty end' "$file" | sort -u)"
   slashes="$(sed 's|$| |' "$md" \
-    | grep -ohE '(^|[^A-Za-z0-9_/-])/[a-z][a-z0-9-]*(:[a-z][a-z0-9-]*)?[^A-Za-z0-9_:/-]' \
+    | grep -ohE '(^|[^A-Za-z0-9_/<>~.-])/[a-z][a-z0-9-]*(:[a-z][a-z0-9-]*)?[^A-Za-z0-9_:/-]' \
     | grep -oE '/[a-z][a-z0-9:-]*' | sed 's|^/||' | sort -u)"
   only_json="$(comm -23 <(printf '%s\n' "$keys") <(printf '%s\n' "$slashes"))"
   only_md="$(comm -13 <(printf '%s\n' "$keys") <(printf '%s\n' "$slashes"))"
