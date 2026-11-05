@@ -1,6 +1,6 @@
 "use strict";
 
-const GLYPH = { started: "▶", unstarted: "○", triage: "△", backlogged: "⌂", completed: "✓", canceled: "×" };
+const GLYPH = { started: "▶", unstarted: "○", triage: "△", backlog: "⌂", completed: "✓", canceled: "×" };
 const short = (text) => text.replace(/\s+/g, " ").slice(0, 68) + (text.length > 68 ? "…" : "");
 
 function renderSnapshot(snapshot) {

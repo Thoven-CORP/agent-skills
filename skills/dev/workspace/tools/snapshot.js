@@ -9,7 +9,7 @@ const { MCP_FETCH_HINT } = require("./linear.js");
 // statusType, and leaving it out made a Duplicate count as active — so a Project whose work
 // was entirely finished still reported BLOCKED, with the Duplicate named as the next issue.
 const TERMINAL = Object.freeze(["completed", "canceled", "duplicate"]);
-const rank = { started: 0, unstarted: 1, triage: 2, backlogged: 3, completed: 4, canceled: 5, duplicate: 6, unknown: 7 };
+const rank = { started: 0, unstarted: 1, triage: 2, backlog: 3, completed: 4, canceled: 5, duplicate: 6, unknown: 7 };
 
 function projectIssues(linear, identity) {
   const needle = (identity.name || "").toLowerCase();

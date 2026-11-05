@@ -128,7 +128,7 @@ Write only what Andres ruled. An agent's proposal becomes a ruling when he answe
 
    - `project` must equal `--project` (case-insensitive, exact string) or the issue is not in the
      ledger.
-   - The state type is the lifecycle glyph and sort key: `triage` · `backlogged` · `unstarted` ·
+   - The state type is the lifecycle glyph and sort key: `triage` · `backlog` · `unstarted` ·
      `started` · `completed` · `canceled`. Omit it and the issue still lists, sorted last, with a
      `·` glyph.
    - The state *name* is what the session gate reads; it must be the Linear state name
@@ -164,7 +164,7 @@ Write only what Andres ruled. An agent's proposal becomes a ruling when he answe
 
 | Event | Write |
 |---|---|
-| `started` | `node tools/set-status.js "In Progress" THV-n` |
+| `started` | `node tools/set-status.js "In Progress" THV-n`, plus its parent when the parent reads Todo or Backlog. Fires for main-session work with Andres too, not only a dispatched pane |
 | `pr <number>` | `set-status.js "Ready" THV-n`, then one comment: `PR #<number> opened` |
 | `report <STATUS>` | One comment: the report's status line and its Acceptance rows, nothing else. Take them from the newest REPORT entry that `~/.agents/skills/dispatch-work/scripts/dispatch board <project> --ticket THV-n` prints |
 | `merged <number>` | `set-status.js "Done" THV-n`, then one comment: `Merged #<number>`. List the open tickets the merge may close; moving them needs the Recipe |

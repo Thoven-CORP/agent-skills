@@ -94,3 +94,13 @@ test("missing project identity and inaccessible Linear data stay unknown", () =>
   assert.ok(snapshot.findings.some(f => f.code === "project-identity"));
   assert.match(snapshot.next, /Linear/);
 });
+
+test("a Backlog issue, typed `backlog` by Linear, gets its glyph and sorts above Done", () => {
+  const linear = normalizeLinear({ issues: [
+    { identifier: "THV-1", title: "Shipped", state: { type: "completed", name: "Done" }, project: { name: "Teacher: Shell" } },
+    { identifier: "THV-2", title: "Parked", state: { type: "backlog", name: "Backlog" }, project: { name: "Teacher: Shell" } },
+  ] });
+  const snapshot = deriveSnapshot({ identity: { name: "Teacher: Shell", dir: "/x/projects/shell" }, linear, git, projectState });
+  assert.deepEqual(snapshot.tickets.map((t) => t.identifier), ["THV-2", "THV-1"]);
+  assert.match(renderSnapshot(snapshot), /⌂ THV-2/);
+});

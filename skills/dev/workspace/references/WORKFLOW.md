@@ -69,15 +69,31 @@ or Work-tab names, not Issues.
 
 | State | Means |
 |---|---|
-| **Triage** | Appeared, not yet agreed to. Everything new lands here. |
-| **Backlog** | Agreed, not scheduled. |
-| **Todo** | Specced. Any agent may claim it. |
-| **In Progress** | An agent holds the lock. Protos and `app/dev/` are in scope on a document issue. Shipped product code waits for a Build issue. |
+| **Triage** | A report nobody has accepted yet. The Bug template and integrations put it here. |
+| **Backlog** | Parked by Andres in words ("park it", "later", "not this month"). |
+| **Todo** | The default. Every issue a session creates is born here. Any agent may claim it. |
+| **In Progress** | Someone is working on it now: a pane, or the main session with Andres. Protos and `app/dev/` are in scope on a document issue. Shipped product code waits for a Build issue. |
 | **Ready** | Come look. The work is executed. A surface still needs his eyes. Not a merge queue. |
 | **Done** | The issue's job is finished. Code executed. Design or PRD task complete. Merge is git and does not move this. |
 | **Canceled** | Closed without shipping. Cancel rather than delete, so the id keeps resolving. |
 
 Claim is `In Progress`. A `Writes to:` line names the Linear record or deliberately selected technical artifact. It does not pick a second lane.
+
+**Born in Todo.** Create an issue with `state` left out; the THV team default is Todo (read from
+Linear 2026-11-05). Pass `In Progress` instead when this session starts the work in the same turn.
+A follow-up, a deferral, a spec that is not fully specced, a sub-issue of a parent nobody is
+working: all Todo. How ready it is lives in its `Done when` line and its cycle, never in the
+status. Linear's Active view hides Backlog, so an issue there drops out of sight; 92 agent-created
+issues landed there before this rule.
+
+**Backlog takes Andres's words.** An issue moves to Backlog only when Andres parks it in this
+session, and the move's comment quotes his line. A reconcile, a cleanup, or a pane leaves Todo as
+Todo.
+
+**Work moves the status the turn it starts.** Any session that starts work on an issue sets
+`In Progress` in that turn, the main session included: a design or spec session with Andres counts
+the same as a dispatched pane. When a sub-issue goes `In Progress`, its parent goes `In Progress` in
+the same write if the parent reads Todo or Backlog.
 
 ### Artifacts
 
@@ -431,6 +447,10 @@ A dogfood observation stays there; the bug it turns into is born in Linear.
 *Paste into Linear → Settings → Agents → Additional guidance.*
 
 ```
+CREATING
+- Leave the status out when you create an issue; it is born in Todo.
+  Use In Progress if you start it now. Backlog only when Andres parks it.
+
 CLAIMING
 - Claim only from Todo. Anything past it is owned by another session.
   One issue = one agent session.
