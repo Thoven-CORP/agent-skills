@@ -96,6 +96,11 @@ follows component best practice and matches the frame at its own width. Parity m
 shared components; a missing component is built with `/building-components`. Procedure:
 `~/thoven/agent-skills/skills/dev/dispatch-work/references/brief.md`.
 
+**A named skill always loads.** The model picks on its own only the skills in
+`enforcement/config/skills-invocable.txt` and poteto-mode's routes, so their descriptions fit in
+context. When a doc, brief or routing table names any other skill and the Skill tool refuses it,
+read `~/.agents/skills/<name>/SKILL.md` in full and follow it.
+
 **Hardening keeps the design.** Refactor, performance and robustness work changes what a user sees
 only to fix an issue it found at another viewport, in motion or in performance. The commit or report
 names that issue beside the change.

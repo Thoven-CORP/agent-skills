@@ -96,6 +96,7 @@ DONE WHEN  <<the ticket's Done when, by pointer>>. Choose the smallest checks th
            line and each verdict in the report.
            Load each ACCESS skill at its moment and each native skill when the playbook routes
            to it. Use the Skill tool in Claude Code and the full SKILL.md in Codex, as above.
+           When the Skill tool refuses a skill, read ~/.agents/skills/<name>/SKILL.md in full.
 STANDING   Read ~/.agents/skills/dispatch-work/references/standing.md now and follow it.
 
 ASK
