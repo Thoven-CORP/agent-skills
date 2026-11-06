@@ -97,6 +97,10 @@ SKIPS
 
 6. **Report.** One line per repo: SHA, CI run URL, the proof from steps 3 and 4, and each gate's result, with the tick list's items ticked. Say "staging-green" only when every step passed. Done when Andres has the report.
 
+## Run code on staging
+
+`render ssh` needs a TTY and a registered key, so it fails from an agent. Run Rails code on staging as a Render one-off job instead: base64 the script into `bin/rails runner`, start the job against `thoven-api-staging`, and read its output with `render logs -r <job id>`. Print no emails or secrets from the script.
+
 ## Changelog
 
 Staging stamps no version. Each PR into `main` carries its own `[Unreleased]` entry.

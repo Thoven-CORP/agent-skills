@@ -88,7 +88,10 @@ in brackets.
   different guard, a rejection the production path never reaches, or a testid
   nothing mounts;
 - names or fixtures that promise more than the input exercises, such as a
-  "retires the window" test asserting the window was not cleared.
+  "retires the window" test asserting the window was not cleared;
+- a guard or scan tested only on hand-written samples, never on the real
+  files or output it guards; it stays green while the real files break the
+  rule.
 
 ## Value bar
 
