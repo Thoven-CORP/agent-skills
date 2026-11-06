@@ -37,7 +37,8 @@ Thoven has two senders (decision L16 in Linear Project P-THV-8), and L2 says whi
 - **Loops** sends lifecycle journeys: the post-intro purchase nudges now, onboarding journeys later.
   A Loops workflow enters a contact once, so Loops sends only a parent's first teacher acceptance;
   `Loops::PostIntroPurchase.teacher_accepted` returns false for a later one and Rails sends
-  `ParentMailer#class_confirmed`.
+  `ParentMailer#class_confirmed`. Loops sends no workflow email to an unsubscribed contact, so it
+  also returns false when the parent's Loops contact is unsubscribed or cannot be read (L18).
 
 Both render the same components, so the sender changes only steps 3 and 5. Loops is a vendor sender:
 it bypasses Rails's recipient filters (the staging test-account rule, SendGrid sandboxing), so on
@@ -98,6 +99,9 @@ Done when every line passed `thoven-branding` and, for Loops, both versions read
 6. A timer in the workflow that Rails also counts is named once in Rails beside the journey, as
    `Loops::PostIntroPurchase::TEACHER_NOTE_DELAY` mirrors the Day 10 timer. Changing it is two
    edits: the workflow in Loops and the constant.
+7. A paused workflow holds its triggers for 24 hours, then drops them, and Rails sends nothing in
+   their place (L18). Never leave the live workflow paused over 24 hours. Never stop it or set it to
+   Draft while any environment has a Loops key: remove the key first, so Rails sends its own email.
 
 Done when the view holds no markup of its own beyond component calls and slots.
 
