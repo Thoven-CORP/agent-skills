@@ -19,7 +19,10 @@ being mapped), with its paired backend checkout beside it as `../backend` or nam
 1. **Shoot.** On the MacBook: `bash scripts/product-map/refresh.sh <audience>` (`teacher`,
    `parent`, `student`, `adult-student`; add `lane,lane` to reshoot only those rows). It rebuilds
    the showcase world on the mini, shoots every step at 1440 and 390, and copies the shots to
-   `~/.cache/thoven-product-map/<audience>/shots/`. Done when it prints the `shots:` line. Each
+   `~/.cache/thoven-product-map/<audience>/shots/`. A lane-only run replaces just those rows and
+   keeps the rest. If it prints `still running on the mini`, collect with
+   `bash scripts/product-map/refresh.sh --fetch <audience> [lane,lane]` (the same lanes).
+   Done when it prints the `shots:` line. Each
    `STEP FAILED` line has a failure shot in `~/.cache/thoven-product-map/<audience>/failures/`;
    read the shot, and fix the journey script when the selector is ours, or record the product
    defect as a Noticed line when the app is wrong. Never fix product code from this skill.
