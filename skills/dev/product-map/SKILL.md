@@ -76,3 +76,8 @@ Then run Build for the changed rows.
 - Live lessons use a stubbed Daily room and a test camera (no Daily key on the mini); those
   cards carry a "Stubbed video" note.
 - Shots stay out of git and live only in the cache; Paper is the place to look.
+- Paper uploads an image when it renders it, so a swapped image can show broken until you
+  `get_screenshot` its row. Paper keys each upload by its local path: when an upload fails (the
+  `file-assets` URL from `get_computed_styles` stays 404 after a render), setting the same path
+  again reuses the dead asset. Rename the file to `<name>.r1.png` in `shots/` and in
+  `shots/manifest.json`, then run Refresh steps 3-5 again.
