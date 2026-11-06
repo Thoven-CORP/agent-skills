@@ -19,7 +19,8 @@ description: Use when Andres asks to publish, deploy, release, promote, or hotfi
 
    | Andres says | Path | Read |
    |---|---|---|
-   | "staging", "is it on staging", or a PR just merged into `main` | 2.0 staging | `references/staging-2.0.md` |
+   | "deploy to staging", "start staging", "put it on staging so I can review it", or extend or stop a staging session | start staging | load the `start-staging` skill and follow it instead of this one |
+   | "is it staging-green", "prove staging" before a production promote, or a PR just merged into `main` on a release | 2.0 staging | `references/staging-2.0.md` |
    | "ship this", "deploy to production", "promote" or "go live", with no mention of 1.0 or Replit | 2.0 production | `references/production-2.0.md` |
    | "hotfix", "fix the live site", "skip the ceremony", "straight through" or "no go's", with no mention of 1.0 or Replit | 2.0 straight through | `references/production-2.0.md`, section "Straight through" |
    | "roll back", "revert production", or production misbehaves after a promote | 2.0 rollback | `references/production-2.0.md`, section "Roll back" |
