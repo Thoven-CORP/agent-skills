@@ -55,8 +55,10 @@ table in that turn. The reply is the read-back line.
 ## Layout
 
 - **Rex:** one session per Linear Project. Main lives in window 1, `Meta · <Project>`. Each
-  dispatched pane is a split beside main in that window, labelled `<Kind> · <issue title> (THV-x)`.
-  `dispatch spawn` splits the pane it runs in. `--tab` opens its own window instead.
+  dispatched pane, verifier and sub-issue panes included, floats minimized in that window, labelled
+  `<Kind> · <issue title> (THV-x)`: `dispatch spawn` opens it, moves it into a floating layer and
+  minimizes it with Rex's own layer state, so main's layout never changes. `--tab` opens its own
+  window instead, only when Andres asks.
 - **herdr:** one space per Project. Main's tab is `Meta · <Project>`, and each dispatched pane is a
   split beside main with the same label. `--tab` opens its own tab instead.
 - Kind names the ticket's work. Pick it by the rule in
@@ -138,7 +140,7 @@ in Linear, then come back.
    It fills the `{{…}}` fields and `THV-<id>`, and refuses a brief with a `{{…}}` or `<<…>>` slot
    left, or one that reads `{{SNAPSHOT}}` before the snapshot exists. When the agent fails to start,
    the pane stays registered, so STARTUP or GONE reports it. A ticket that spans both repos gets one pane: spawn in the frontend tree and add `--add-dir <backend tree>`. The pane opens
-   as a split beside main. A sub-issue adds `--split-of <pane>` to split beside its parent's pane.
+   floating and minimized. A sub-issue adds `--split-of <pane>` to open beside its parent's pane.
    Add `--tab` only when Andres asks for a separate window. Add `--cli codex` only when Andres named Codex.
 3. On the first dispatch in this Project, label main's own pane (`$REX_BLOCK` in Rex, `$HERDR_PANE_ID` in herdr): `scripts/dispatch label <pane> Meta "<Project>" --tab`.
 4. Move the ticket to **In Progress** with `set-status.js`.
@@ -213,7 +215,7 @@ After main pushes and opens the ticket PR, arm one watcher for it with the Monit
 (`timeout_ms: 3600000`): `~/.agents/skills/babysit-pr/scripts/pr-wait <n> --until green`. Run
 nothing else that polls the PR. Exit 1 on a red check is a fix round to the pane, or a gate-repair
 line to Andres (review.md, "Handling findings"). BEHIND, or a base commit touching the PR's files,
-means main brings the branch up to date before the merge go. Re-arm after every push.
+means main brings the branch up to date before auto-merge lands it. Re-arm after every push.
 
 Follow [references/review.md](references/review.md): main's pass, then a verifier pane for a
 feature slice or a review subagent for cleanup and hardening.
@@ -234,9 +236,8 @@ After the verifier passes, show Andres the evidence table and, on a UI ticket, t
    Each `Noticed` line of the report, a problem outside the ticket's code, goes as one line into an
    existing grouped Linear issue, or a new issue only when none fits.
 3. `scripts/dispatch close <pane>` for every pane this dispatch opened. Remove the ticket's own tree
-   with `thoven-worktree remove` (it drops the tree's databases), never a live integration tree, then
-   run `thoven-branch-prune --delete --repo <checkout>` to delete its merged branches. GitHub deletes
-   them on origin at merge, and the 30-minute sync runs the same prune.
+   with `thoven-worktree remove`, never a live integration tree. It drops the tree's databases and
+   deletes every local branch whose PR merged; GitHub deletes the branch on origin at merge.
 4. After Andres has looked at the evidence, `scripts/dispatch clean <project> --ticket THV-x` and
    delete `~/.thoven-artifacts/THV-<id>/evidence/`. When the Project closes, `dispatch clean <project>`.
 

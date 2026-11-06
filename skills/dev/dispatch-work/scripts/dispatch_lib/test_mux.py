@@ -130,6 +130,26 @@ class RexSpawn(unittest.TestCase):
         self.assertEqual(seen, [ref])
         self.assertEqual(ref, PaneRef("rex", "block:n", "session:s"))
 
+    def test_a_floating_pane_is_floated_then_minimized(self):
+        run = FakeRunner({
+            ("rex", "split"): Result(0, json.dumps({"block_ids": ["block:n"]}), ""),
+            ("rex", "api", "call", "-s", "session:s", "session.float_block"): Result(0, '{"layer_id": "layer:f"}', ""),
+            ("rex", "api", "call", "-s", "session:s", "session.set_layer_state"): Result(0, '{"revision": 1}', "")})
+        launch = Launch("claude", "build-thv-1", ("claude",), "go")
+        with mock.patch.dict(os.environ, {"REX_SESSION": "session:s"}):
+            RexMux(run).spawn("/tree", "Build · x (THV-1)", launch, "block:main", lambda r, t: None, floating=True)
+        api = [(c[5], json.loads(c[6])) for c in run.calls if c[1:3] == ["api", "call"]]
+        self.assertEqual(api, [
+            ("session.float_block", {"session_id": "session:s", "block_id": "block:n", "bounds": [0.1, 0.1, 0.8, 0.8]}),
+            ("session.set_layer_state", {"session_id": "session:s", "layer_id": "layer:f", "state": "minimized"})])
+
+    def test_a_docked_pane_makes_no_layer(self):
+        run = FakeRunner({("rex", "split"): Result(0, json.dumps({"block_ids": ["block:n"]}), "")})
+        launch = Launch("claude", "build-thv-1", ("claude",), "go")
+        with mock.patch.dict(os.environ, {"REX_SESSION": "session:s"}):
+            RexMux(run).spawn("/tree", "Build · x (THV-1)", launch, "block:b", lambda r, t: None)
+        self.assertFalse([c for c in run.calls if c[1:3] == ["api", "call"]])
+
 
 class HerdrSpawn(unittest.TestCase):
     def test_the_opening_prompt_rides_agent_start_and_nothing_is_typed(self):

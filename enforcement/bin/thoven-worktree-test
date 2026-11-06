@@ -12,6 +12,9 @@ TMP="$(cd "$T" && pwd -P)"
 export THOVEN_ROOT="$TMP"
 export THOVEN_WORKTREE_SKIP_INSTALL=1
 export THOVEN_WORKTREE_REGISTRY="$TMP/projects.tsv"
+# thoven-branch-prune has its own test; here a stub records each call.
+printf '#!/bin/sh\necho "prune $*" >> "$TMP/prunes"\n' > "$TMP/prune-stub" && chmod +x "$TMP/prune-stub"
+export THOVEN_BRANCH_PRUNE="$TMP/prune-stub"
 export GIT_CONFIG_GLOBAL="$TMP/gitconfig"
 export GIT_CONFIG_NOSYSTEM=1
 git config --file "$GIT_CONFIG_GLOBAL" user.name test
@@ -349,16 +352,26 @@ expect "remove refuses the main checkout" "$code" 1
 # archived, then git worktree remove --force deletes them.
 SPECS="$TMP/backend-thv-980"
 "$TOOL" create be specs 980 >/dev/null 2>&1
+expect "create prunes merged branches once its tree exists" "$(tail -n 1 "$TMP/prunes")" \
+  "prune --repo $TMP/backend --delete"
 mkdir -p "$SPECS/.specs"
 printf 'spec\n' > "$SPECS/.specs/notes.md"
 mkdir -p "$SPECS/build" && printf 'rebuildable\n' > "$SPECS/build/out.txt"
+before=$(wc -l < "$TMP/prunes" | tr -d " ")
 err="$("$TOOL" remove "$SPECS" 2>&1 >/dev/null)"; code=$?
 expect "remove of a tree with an untracked .specs/ exit" "$code" 0
+expect "remove prunes merged branches once its tree is gone" "$(wc -l < "$TMP/prunes" | tr -d " ")" "$((before + 1))"
 if [ -e "$SPECS" ]; then fail "remove of a tree with an untracked .specs/ deletes it" "still there"; else ok "remove of a tree with an untracked .specs/ deletes it"; fi
 SPECS_ARCH="$TMP/archive/backend-thv-980-$(date +%Y-%m-%d)"
 expect "the untracked file is archived with its path" "$(cat "$SPECS_ARCH/.specs/notes.md" 2>/dev/null)" "spec"
 has_line "remove reports the untracked archive" "$err" "thoven-worktree: archived 1 untracked file(s) to $SPECS_ARCH"
 if [ -e "$SPECS_ARCH/build" ]; then fail "untracked build output is not archived" "archived"; else ok "untracked build output is not archived"; fi
+
+printf '#!/bin/sh\necho "gh: offline"; exit 1\n' > "$TMP/prune-fail" && chmod +x "$TMP/prune-fail"
+err="$(THOVEN_BRANCH_PRUNE="$TMP/prune-fail" "$TOOL" create be offline 985 2>&1 >/dev/null)"; code=$?
+expect "a failed prune does not fail create" "$code" 0
+has_line "a failed prune is logged" "$err" "thoven-worktree: gh: offline"
+"$TOOL" remove "$TMP/backend-thv-985" >/dev/null 2>&1
 
 NEST="$TMP/backend-thv-984"
 "$TOOL" create be nest 984 >/dev/null 2>&1

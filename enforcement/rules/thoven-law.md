@@ -39,7 +39,9 @@ a rebase ate a day of the onboarding prototype.)
   copies the env file and installs dependencies. Add `--new "<reason>"` for a fresh tree when your
   files overlap another live tree's dirty files, or the work is risky and long. From Claude,
   `claude --worktree <area>-thv-<n>` runs the same script.
-- Open a held PR into `main`, and merge it on Andres's "merge it", gated by the required `CI` check.
+- Open a PR into `main` and arm auto-merge as it opens, with the method below; GitHub merges it once
+  the required `CI` check passes. No PR waits for a go from Andres, UI included: he reviews screens on
+  staging, and production still moves only through `promote.sh` (Andres, 2026-11-05).
   `CI` runs the affected tests on every PR, whatever its target, and broad coverage when a
   dependency is unknown; a nightly or manual full run audits what selection skips. A ticket PR into
   an integration branch merges on that `CI`, its test lines and the verifier's pass.
@@ -53,7 +55,7 @@ a rebase ate a day of the onboarding prototype.)
   | A catch-up of `main` into an integration branch | `--merge`, so `main` stays an ancestor |
   | An integration branch landing in `main` | `--auto --merge`, so each ticket's commit and THV id survive for later conflict resolution |
 
-  Every merge go names source, target and method: "scheduling/improvements → main, merge commit".
+  Every merge line names source, target and method: "scheduling/improvements → main, merge commit".
   (#256 and #318 squashed 282 and 403 commits into one each, and later Private Lessons conflicts
   traced to a 470-file commit with no ticket id.)
 - When an integration branch lands in `main`, retire it: remove its `worktree-projects.tsv` row and
@@ -62,10 +64,9 @@ a rebase ate a day of the onboarding prototype.)
 - An agent-skills PR is not held. It merges in the same pass, then `enforcement/sync.sh
   --apply` runs until `sync.sh` reports every harness copy matches. Commit and merge only on a
   branch in a tree, never in a `main` checkout: `co.thoven.sync` fast-forwards the clean `main` checkouts every 30 minutes.
-- Unattended PR work: `/full-stop` proves, files, babysits and stops at ready-to-merge. It serves
-  the frontend and any PR that changes what a user sees. `/full-send` also merges, on Andres's "full
-  send", only in agent-skills, tooling, and backend PRs that change nothing a user sees. Its merge
-  follows the method table and backend-first order above. Both call `/sol-loop`: with no GPT Sol
+- Unattended PR work: `/full-stop` proves, files and babysits; the auto-merge armed at open lands
+  it on green `CI`. `/full-send`, on Andres's "full send", also merges a PR whose required check
+  cannot run, in any repo. Its merge follows the method table and backend-first order above. Both call `/sol-loop`: with no GPT Sol
   route, run `dispatch-work/references/review.md` "Every PR put to Andres" in its place and say so.
   `pr-wait` runs `--until green`, since Thoven has no Greptile or Macroscope.
 - Production moves only through `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh`.

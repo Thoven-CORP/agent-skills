@@ -319,6 +319,7 @@ class Spawn(Harness):
                                        "post --ticket THV-5\n")
         cwd, label, launch, split = self.mux.spawned[0]
         self.assertEqual((cwd, label, split), (self.tree, "Build · Cart (THV-5)", "block:main"))
+        self.assertEqual(self.mux.floating, [True])
         self.assertEqual(launch.prompt, 'Invoke /poteto-mode feature THV-5 "Cart" to start.\n\n'
                                         f"You are build-thv-5-2; main andres-main; board {self.home}/proj/board.md; "
                                         f"spec {self.home}/proj/snapshots/THV-5.md; project proj.\n"
@@ -334,6 +335,7 @@ class Spawn(Harness):
         self.assertEqual(self.spawn("--tab"), 0)
         self.assertEqual(self.spawn("--split-of", "block:builder"), 0)
         self.assertEqual([s[3] for s in self.mux.spawned], [None, "block:builder"])
+        self.assertEqual(self.mux.floating, [False, True])
 
     def test_brief_flag_uses_another_file(self):
         self.brief("/poteto-mode Verify THV-5 \"Cart\"\nverify {{AGENT_NAME}}\n", name="THV-5-verify.md")

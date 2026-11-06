@@ -261,6 +261,13 @@ same bytes, because it never deletes and never makes symlinks. It exits 2 for no
 directory, a missing or empty directory, `$HOME`, `/`, or `/Users`, and 1 when any
 file fails to link. `bin/thoven-evidence-dedupe-test` proves it in a `mktemp -d` tree.
 
+`bin/thoven-branch-prune` deletes local branches whose PR merged and that hold nothing the PR
+lacked; a checked-out branch, the base of an open PR, and a branch with no PR stay. It previews
+unless `--delete`. `thoven-worktree create` runs it once the new tree exists and `remove` runs it
+once the tree is gone, so branches go when branch work happens, never on a timer. GitHub deletes
+the branch on origin at merge (`delete_branch_on_merge`); `thoven-branch-prune --remote` previews
+what that missed. `bin/thoven-branch-prune-test` proves it, empty PR list included.
+
 `bin/thoven-sync` runs every 30 minutes from the launchd agent `co.thoven.sync`,
 installed by `install/launchd.py`. It runs `git fetch --prune` in both main
 checkouts and fast-forwards each one only when it is on `main` with no tracked changes.
@@ -270,11 +277,7 @@ fast-forward changes `pnpm-lock.yaml`, it runs `pnpm install --frozen-lockfile`,
 unless a dev server (`next`, `vite`) works in that tree or in a worktree whose
 `node_modules` links into it; the log line then names the pid and the command. Local main
 is never committed on, so it only ever fast-forwards. It lists worktrees with
-uncommitted files in `~/.thoven/sync.log` and never touches them. It then runs
-`bin/thoven-branch-prune --delete` on each checkout, which deletes local branches whose PR
-merged and holds nothing the PR lacked; a checked-out branch or the base of an open PR stays.
-GitHub deletes the branch on origin at merge (`delete_branch_on_merge`); run
-`thoven-branch-prune --remote` by hand to preview what it missed, and add `--delete` to remove it. A session-start
+uncommitted files in `~/.thoven/sync.log` and never touches them. A session-start
 trigger was rejected: it fires in every session in any directory, and none fires
 before herdr or the Codex app pick their base. `install/gitconfig.py` sets
 `fetch.prune`, `push.autoSetupRemote` and `branch.autoSetupMerge=simple` in both

@@ -5,6 +5,16 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-05 — every PR merges itself on green CI
+
+> session · 2026-11-05 · ruling · applied · seen 1
+
+**What happened.** Andres asked to turn on auto-merge "instead of me having to say merge", and answered "everything" when offered to keep UI into `main` held for his look.
+**Why.** Every PR waited on a "merge it" turn, and auto-merge was already enabled on GitHub with `CI` required on `main`; the hold was only in the instructions.
+**What changed.** Delegation and Replies lines and the tooling pitfall: arm auto-merge when the PR opens, no merge go, UI included. thoven-law.md, workspace WORKFLOW.md, publish staging step 0, dispatch-work and test-audit follow. Production still moves only through `promote.sh`; 1.0 hotfix PRs keep their "merge it" stop.
+
+---
+
 ## 2026-11-05 — standing preferences go into the skill or law, not auto-memory
 
 > reflect · 2026-11-05 · aa149f6a, 39a12a43, e55ecd26 · broken-rule · applied · seen 3

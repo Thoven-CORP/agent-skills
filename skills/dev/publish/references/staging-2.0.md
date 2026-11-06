@@ -14,7 +14,7 @@ Before QA, use the backend's `docs/deployment/staging-lifecycle.md` to acquire a
 
 ## Steps
 
-0. **Stop: merge the PR.** Only when the PR is not merged yet. Merging needs Andres's "merge it" for that PR (see "Who does what" in the Render runbook). Done when `gh pr view <number> --json state -q .state` prints `MERGED`.
+0. **Stop: merge the PR.** Only when the PR is not merged yet. Its auto-merge, armed when it opened, lands it on green `CI` with no go from Andres; arm it with the thoven-law.md method if it is not armed. Done when `gh pr view <number> --json state -q .state` prints `MERGED`.
 
 Run each step in the repo it names. Steps 1 to 4 check each repo that changed. Step 5 runs in full every time, because its gates exercise both halves. Stop at the first failure and report it with its output.
 
