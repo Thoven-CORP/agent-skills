@@ -17,6 +17,9 @@ git config --file "$GIT_CONFIG_GLOBAL" user.name test
 git config --file "$GIT_CONFIG_GLOBAL" user.email test@example.com
 git config --file "$GIT_CONFIG_GLOBAL" init.defaultBranch main
 export THOVEN_SYNC_LOG="$TMP/logs/sync.log"
+# thoven-branch-prune has its own test; here a stub records each call.
+printf '#!/bin/sh\necho "prune $*" >> "$TMP/prunes"\n' > "$TMP/prune-stub" && chmod +x "$TMP/prune-stub"
+export THOVEN_BRANCH_PRUNE="$TMP/prune-stub"
 
 # pnpm, ps and lsof stubs: installs log to $TMP/installs; $TMP/ps is the process table and
 # $TMP/cwd-<pid> each listed process's working directory.
@@ -84,6 +87,8 @@ push_upstream backend
 
 out="$("$TOOL" 2>/dev/null)"; code=$?
 expect "sync exit" "$code" 0
+expect "merged local branches are pruned in both checkouts" "$(cat "$TMP/prunes")" \
+  "$(printf 'prune --repo %s --delete\nprune --repo %s --delete' "$TMP/frontend" "$TMP/backend")"
 expect "behind clean main fast-forwards" "$(head_of "$TMP/frontend")" "$(origin_main frontend)"
 has_line "fast-forward is reported" "$out" "$TMP/frontend: fast-forwarded 2 commit(s) to origin/main"
 expect "dirty main is not moved" "$(head_of "$TMP/backend")" "$BE_HEAD"

@@ -10,6 +10,7 @@ THOVEN_ROOT="${THOVEN_ROOT:-$HOME/thoven}"
 REPOS=(frontend backend)
 LOCK="${TMPDIR:-/tmp}/thoven-sync.lock"
 LOG="${THOVEN_SYNC_LOG:-$HOME/.thoven/sync.log}"
+PRUNE="${THOVEN_BRANCH_PRUNE:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/thoven-branch-prune}"
 mkdir -p "$(dirname "$LOG")" 2>/dev/null
 
 emit() {
@@ -129,6 +130,8 @@ report() {
     git -C "$main" rev-parse --git-dir >/dev/null 2>&1 || { emit "$main: not a git checkout, skipped"; continue; }
     main="$(cd "$main" && pwd -P)"
     emit "$main: $(sync_main "$main")"
+    # Local branches whose PR merged; GitHub already deletes them on origin.
+    while IFS= read -r line; do emit "$line"; done < <("$PRUNE" --repo "$main" --delete 2>&1)
     while IFS=$'\t' read -r path branch; do
       count="$(dirty_count "$path")"
       if [ "$count" -gt 0 ]; then emit "$path ($branch): $count uncommitted file(s)"; fi

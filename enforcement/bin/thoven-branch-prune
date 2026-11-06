@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+"""Deletes branches whose work GitHub already merged. Prints what it would delete unless --delete.
+
+  thoven-branch-prune [--repo PATH ...] [--delete] [--remote]
+
+Repos default to $THOVEN_ROOT/frontend and $THOVEN_ROOT/backend. A branch goes only when all hold:
+  - it is not main, and no worktree has it checked out;
+  - gh shows a merged PR from it, and its tip is that PR's head commit, an ancestor of it, or
+    already on origin/main. A squash merge leaves the branch's own commits off main; GitHub
+    keeps them under the PR, so nothing is lost;
+  - no open PR uses it as head or base, so a live integration branch stays.
+A branch with no PR, or with commits the merged PR never had, is never touched.
+
+--remote applies the same test to origin's branches. GitHub already deletes a PR's head branch
+on merge in frontend and backend; this clears what that missed. Each deletion prints the sha it
+removed: `git branch <name> <sha>`, or "Restore branch" on the PR page, brings it back.
+THOVEN_PRUNE_PRS names a JSON file to read instead of calling gh (tests).
+"""
+import argparse
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+
+def git(repo, *args, check=True):
+    out = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True)
+    if check and out.returncode != 0:
+        raise RuntimeError(f"git {' '.join(args)}: {out.stderr.strip()}")
+    return out
+
+
+def is_ancestor(repo, a, b):
+    return git(repo, "merge-base", "--is-ancestor", a, b, check=False).returncode == 0
+
+
+def has_commit(repo, sha):
+    return git(repo, "cat-file", "-e", f"{sha}^{{commit}}", check=False).returncode == 0
+
+
+def pull_requests(repo):
+    fixture = os.environ.get("THOVEN_PRUNE_PRS")
+    if fixture:
+        return json.loads(Path(fixture).read_text())
+    out = subprocess.run(
+        ["gh", "pr", "list", "--state", "all", "--limit", "3000",
+         "--json", "number,state,headRefName,headRefOid,baseRefName"],
+        cwd=repo, capture_output=True, text=True)
+    if out.returncode != 0:
+        raise RuntimeError(f"gh pr list: {out.stderr.strip()}")
+    return json.loads(out.stdout)
+
+
+def checked_out(repo):
+    lines = git(repo, "worktree", "list", "--porcelain").stdout.splitlines()
+    return {l.removeprefix("branch refs/heads/") for l in lines if l.startswith("branch ")}
+
+
+def branches(repo, prefix):
+    out = git(repo, "for-each-ref", "--format=%(refname)\t%(objectname)", prefix).stdout
+    rows = {}
+    for line in out.splitlines():
+        ref, sha = line.split("\t")
+        name = ref.removeprefix(prefix)
+        if name not in ("HEAD", "main"):
+            rows[name] = sha
+    return rows
+
+
+def merged_by(repo, tip, prs):
+    """The merged PR whose work contains tip, or None."""
+    for pr in prs:
+        head = pr["headRefOid"]
+        if tip == head or is_ancestor(repo, tip, "origin/main") or (
+                has_commit(repo, head) and is_ancestor(repo, tip, head)):
+            return pr
+    return None
+
+
+def candidates(repo, rows, prs, skip):
+    open_names = set()
+    merged = {}
+    for pr in prs:
+        if pr["state"] == "OPEN":
+            open_names.update((pr["headRefName"], pr["baseRefName"]))
+        elif pr["state"] == "MERGED":
+            merged.setdefault(pr["headRefName"], []).append(pr)
+    found = []
+    for name, tip in sorted(rows.items()):
+        if name in skip or name in open_names or name not in merged:
+            continue
+        pr = merged_by(repo, tip, merged[name])
+        if pr:
+            found.append((name, tip, pr["number"]))
+    return found
+
+
+def prune(repo, delete, remote):
+    repo = Path(repo).resolve()
+    git(repo, "fetch", "--quiet", "--prune", "origin")
+    prs = pull_requests(repo)
+    if not prs:
+        raise RuntimeError("gh returned no pull requests, so nothing can be proved merged")
+    verb = "deleted" if delete else "would delete"
+    local = candidates(repo, branches(repo, "refs/heads/"), prs, checked_out(repo))
+    for name, sha, number in local:
+        if delete:
+            git(repo, "update-ref", "-d", f"refs/heads/{name}", sha)
+            git(repo, "config", "--remove-section", f"branch.{name}", check=False)
+        print(f"{repo.name}: {verb} local {name} {sha[:12]} (PR #{number})")
+    gone = 0
+    if remote:
+        for name, sha, number in candidates(repo, branches(repo, "refs/remotes/origin/"), prs, set()):
+            if delete:
+                push = git(repo, "push", "--quiet", f"--force-with-lease=refs/heads/{name}:{sha}",
+                           "origin", f":refs/heads/{name}", check=False)
+                if push.returncode != 0:
+                    print(f"{repo.name}: kept origin/{name}: {push.stderr.strip()}")
+                    continue
+            gone += 1
+            print(f"{repo.name}: {verb} origin/{name} {sha[:12]} (PR #{number})")
+    print(f"{repo.name}: {verb} {len(local)} local" + (f" and {gone} origin" if remote else "")
+          + " branch(es)")
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--repo", action="append")
+    parser.add_argument("--delete", action="store_true")
+    parser.add_argument("--remote", action="store_true")
+    args = parser.parse_args()
+    root = Path(os.environ.get("THOVEN_ROOT", Path.home() / "thoven"))
+    status = 0
+    for repo in args.repo or [root / "frontend", root / "backend"]:
+        try:
+            prune(repo, args.delete, args.remote)
+        except RuntimeError as err:
+            print(f"{Path(repo).name}: skipped, {err}")
+            status = 1
+    return status
+
+
+if __name__ == "__main__":
+    sys.exit(main())

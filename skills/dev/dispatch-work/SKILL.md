@@ -234,8 +234,9 @@ After the verifier passes, show Andres the evidence table and, on a UI ticket, t
    Each `Noticed` line of the report, a problem outside the ticket's code, goes as one line into an
    existing grouped Linear issue, or a new issue only when none fits.
 3. `scripts/dispatch close <pane>` for every pane this dispatch opened. Remove the ticket's own tree
-   with `thoven-worktree remove` (it drops the tree's databases), never a live integration tree, and
-   delete the ticket's merged branches locally and on origin.
+   with `thoven-worktree remove` (it drops the tree's databases), never a live integration tree, then
+   run `thoven-branch-prune --delete --repo <checkout>` to delete its merged branches. GitHub deletes
+   them on origin at merge, and the 30-minute sync runs the same prune.
 4. After Andres has looked at the evidence, `scripts/dispatch clean <project> --ticket THV-x` and
    delete `~/.thoven-artifacts/THV-<id>/evidence/`. When the Project closes, `dispatch clean <project>`.
 

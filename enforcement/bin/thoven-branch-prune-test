@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# Exercises thoven-branch-prune against throwaway repos under a temp dir, with a PR list fixture
+# in place of gh; never reads or writes the real ~/thoven checkouts.
+set -uo pipefail
+
+TOOL="$(cd "$(dirname "$0")" && pwd)/thoven-branch-prune"
+T=$(mktemp -d /tmp/thvprune.XXXXXX) || exit 1
+case "$T" in /tmp/thvprune.*) ;; *) exit 1 ;; esac
+trap 'rm -rf "$T"' EXIT
+TMP="$(cd "$T" && pwd -P)"
+
+export GIT_CONFIG_GLOBAL="$TMP/gitconfig" GIT_CONFIG_NOSYSTEM=1
+git config --file "$GIT_CONFIG_GLOBAL" user.name test
+git config --file "$GIT_CONFIG_GLOBAL" user.email test@example.com
+git config --file "$GIT_CONFIG_GLOBAL" init.defaultBranch main
+
+ok() { printf 'ok %s\n' "$1"; }
+fail() { printf 'FAIL %s: got %s\n' "$1" "$2"; exit 1; }
+expect() { if [ "$2" = "$3" ]; then ok "$1"; else fail "$1" "'$2' (want '$3')"; fi; }
+local_has() { git -C "$REPO" rev-parse --verify --quiet "refs/heads/$1" >/dev/null && echo yes || echo no; }
+origin_has() { git -C "$TMP/origin.git" rev-parse --verify --quiet "refs/heads/$1" >/dev/null && echo yes || echo no; }
+
+git init -q --bare "$TMP/origin.git"
+REPO="$TMP/repo"
+git clone -q "$TMP/origin.git" "$REPO" 2>/dev/null
+git -C "$REPO" commit -q --allow-empty -m root
+git -C "$REPO" push -q origin main
+
+# branch <name> [commits]: a branch off main with that many commits, pushed to origin
+branch() {
+  git -C "$REPO" checkout -q -b "$1" main
+  for i in $(seq "${2:-1}"); do git -C "$REPO" commit -q --allow-empty -m "$1 $i"; done
+  git -C "$REPO" push -q origin "$1"
+  git -C "$REPO" checkout -q main
+}
+tip() { git -C "$REPO" rev-parse "$1"; }
+
+branch squashed            # merged by squash: its commit never reaches main
+branch extra               # merged, then a commit the PR never had
+branch held                # merged, still checked out in a worktree
+branch integration         # merged once, now the base of an open PR
+branch nopr                # never had a PR
+branch older 2             # merged at its second commit; local copy stopped at the first
+branch remote-only         # merged; only origin still has it
+git -C "$REPO" fetch -q origin
+
+SQUASHED=$(tip squashed) EXTRA=$(tip extra) HELD=$(tip held) INTEGRATION=$(tip integration)
+OLDER=$(tip older) REMOTE_ONLY=$(tip remote-only)
+git -C "$REPO" update-ref refs/heads/older "$OLDER~1"
+git -C "$REPO" checkout -q extra && git -C "$REPO" commit -q --allow-empty -m "after merge" && git -C "$REPO" checkout -q main
+git -C "$REPO" worktree add -q "$TMP/held-tree" held
+git -C "$REPO" branch -q -D remote-only
+
+pr() { printf '{"number":%s,"state":"%s","headRefName":"%s","headRefOid":"%s","baseRefName":"%s"}' "$@"; }
+cat > "$TMP/prs.json" <<EOF
+[$(pr 1 MERGED squashed "$SQUASHED" main),
+ $(pr 2 MERGED extra "$EXTRA" main),
+ $(pr 3 MERGED held "$HELD" main),
+ $(pr 4 MERGED integration "$INTEGRATION" main),
+ $(pr 5 OPEN feature "$SQUASHED" integration),
+ $(pr 6 MERGED older "$OLDER" main),
+ $(pr 7 MERGED remote-only "$REMOTE_ONLY" main)]
+EOF
+export THOVEN_PRUNE_PRS="$TMP/prs.json"
+
+"$TOOL" --repo "$REPO" --remote >/dev/null
+expect "a dry run deletes no local branch" "$(local_has squashed)" yes
+expect "a dry run deletes no origin branch" "$(origin_has remote-only)" yes
+
+"$TOOL" --repo "$REPO" --delete --remote >/dev/null
+expect "a squash-merged branch at its PR head is deleted" "$(local_has squashed)" no
+expect "a branch behind its merged PR head is deleted" "$(local_has older)" no
+expect "a branch with commits the PR never had is kept" "$(local_has extra)" yes
+expect "a branch checked out in a worktree is kept" "$(local_has held)" yes
+expect "the base of an open PR is kept" "$(local_has integration)" yes
+expect "a branch with no PR is kept" "$(local_has nopr)" yes
+expect "a merged branch is deleted on origin with --remote" "$(origin_has remote-only)" no
+expect "the base of an open PR is kept on origin" "$(origin_has integration)" yes
+expect "an origin branch with no PR is kept" "$(origin_has nopr)" yes
+
+echo '[]' > "$TMP/empty.json"
+out=$(THOVEN_PRUNE_PRS="$TMP/empty.json" "$TOOL" --repo "$REPO" --delete)
+expect "an empty PR list is refused" "$?" 1
+expect "an empty PR list deletes nothing" "$(local_has nopr)" yes
+case "$out" in *"skipped, gh returned no pull requests"*) ok "the refusal says why" ;; *) fail "the refusal says why" "$out" ;; esac
+
+echo "all thoven-branch-prune tests passed"

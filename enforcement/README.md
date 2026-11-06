@@ -270,7 +270,11 @@ fast-forward changes `pnpm-lock.yaml`, it runs `pnpm install --frozen-lockfile`,
 unless a dev server (`next`, `vite`) works in that tree or in a worktree whose
 `node_modules` links into it; the log line then names the pid and the command. Local main
 is never committed on, so it only ever fast-forwards. It lists worktrees with
-uncommitted files in `~/.thoven/sync.log` and never touches them. A session-start
+uncommitted files in `~/.thoven/sync.log` and never touches them. It then runs
+`bin/thoven-branch-prune --delete` on each checkout, which deletes local branches whose PR
+merged and holds nothing the PR lacked; a checked-out branch or the base of an open PR stays.
+GitHub deletes the branch on origin at merge (`delete_branch_on_merge`); run
+`thoven-branch-prune --remote` by hand to preview what it missed, and add `--delete` to remove it. A session-start
 trigger was rejected: it fires in every session in any directory, and none fires
 before herdr or the Codex app pick their base. `install/gitconfig.py` sets
 `fetch.prune`, `push.autoSetupRemote` and `branch.autoSetupMerge=simple` in both
