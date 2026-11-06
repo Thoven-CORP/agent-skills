@@ -1,0 +1,4 @@
+interface:
+  display_name: "Start staging"
+  short_description: "Start a timed Thoven staging session on demand"
+  default_prompt: "Use $start-staging to start a four-hour staging session with matching frontend and backend versions."

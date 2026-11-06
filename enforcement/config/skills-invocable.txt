@@ -96,3 +96,4 @@ agent-browser
 control-ui
 control-cli
 product-map
+start-staging
