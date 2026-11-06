@@ -1,262 +1,116 @@
 ---
 name: thoven-email-system
-description: Use when creating, modifying, or debugging email templates and mailer methods. Triggers on new mailer work, email formatting issues, SendGrid category questions, or email rendering problems.
+description: Use when writing, changing, converting or checking a Thoven email, either a Rails mailer and its views or a Loops journey email.
 ---
 
-# Email Development
+# Thoven email system
 
-## Overview
+Every Thoven email is one design, whoever sends it: the intro-call confirmation email (Paper file
+"Thoven Music Passport", page "08 Hand-off screens", frame "Cell · Confirmation email"). A view holds
+only its words and calls components. A design change is one edit in the layer, never in a view.
 
-Reference guide for Thoven's email standards. All emails must follow these patterns for SendGrid categories, HTML/text templates, mailer methods, and brand consistency.
+Paths below are in the backend repo. Read the file a step names; it holds the values.
 
-## SendGrid Categories
+## The layer
 
-| Category | Trigger | Examples |
-|----------|---------|----------|
-| `transactional` | User action triggered it | booking_approved, payment_received, reset_password |
-| `nurture` | Automated sequence or celebration | onboarding_day1-14, parent_welcome, milestone |
-| `promotional` | Broadcast/announcement | service_status, product_feedback |
+| File | Holds |
+|---|---|
+| `app/helpers/email_tokens.rb` | every colour, font, radius, width, logo, mascot, support address and postal address |
+| `app/helpers/email_helper.rb` | the components and their arguments: heading, paragraph, strong, link, support link, button, callout, card, detail, rows, mascot, image |
+| `app/views/layouts/thoven_email.html.erb`, `_thoven_email_card.html.erb` | the document, fonts, logo, card and footer, with the `:title`, `:preheader`, `:footer` and `:unsubscribe` slots |
+| `app/views/layouts/thoven_email.text.erb` | the plain-text footer |
+| `app/views/layouts/thoven_email_mjml.html.erb` | the same card wrapped as MJML for Loops, filling `:unsubscribe` with Loops' link |
+| `app/views/renewal_mailer/email.html.erb` | the worked example of a Rails view |
+| `app/views/loops_emails/post_intro_day0.html.erb` | the worked example of a Loops view |
 
-**Decision:** User action? `transactional`. Automated sequence? `nurture`. Broadcast? `promotional`.
+A component or token the email needs and the layer lacks gets added to `email_helper.rb` or
+`email_tokens.rb`, so every email can use it.
 
-## SendGrid Click Tracking (CRITICAL - DO NOT REMOVE)
+## 1. Pick the sender
 
-**Click tracking is DISABLED globally** via `set_sendgrid_category()` in `ApplicationMailer`. This is **intentional** and must NOT be reverted.
+Decisions L2 and L16 in Linear Project P-THV-8 send through both.
 
-**Why:** SendGrid rewrites all email links through a tracking proxy domain (`url*.thoven.co`). That domain has an invalid SSL certificate, causing `ERR_CERT_COMMON_NAME_INVALID` errors for every CTA link in every email. Disabling click tracking at the code level ensures links are delivered as-is.
+- **Rails (SendGrid)** sends mail tied to app state: bookings, payments, reminders, consent, alerts.
+- **Loops** sends lifecycle journeys: the post-intro purchase nudges now, onboarding journeys later.
 
-**Rules:**
-- ALWAYS use `set_sendgrid_category(category)` — it handles both the category AND disabling click tracking
-- NEVER set the `X-SMTPAPI` header manually (the helper does it correctly)
-- NEVER re-enable click tracking (`enable: 1`) unless SendGrid Link Branding SSL is fixed first
-- If SendGrid Link Branding is fixed in the future, the filter can be removed from `ApplicationMailer#set_sendgrid_category`
+Both render the same components, so the sender changes only steps 3 and 5.
 
-```ruby
-# ApplicationMailer#set_sendgrid_category sets this automatically:
-headers["X-SMTPAPI"] = {
-  category: [category],
-  filters: { clicktrack: { settings: { enable: 0 } } }
-}.to_json
-```
+## 2. Write the words
 
-## Company Address (CRITICAL - Use Correct Address)
+Run the `thoven-branding` skill on every line a reader sees (it reads `BRANDING.md`). The email
+helps the reader take the next step; it explains what happens and what to do. Support is
+`thovie@thoven.co` through `email_support_link`.
 
-**ALL email footers MUST use this address:**
+For Loops, two content rules bind:
 
-```
-Thoven Corp.
-1555 Plasentia Ave
-Coral Gables, FL 33134
-```
+- **L4.** Loops receives no child data: no child's name, age or anything about the learner. The kid
+  version says "your kid".
+- **L15.** Each journey email has a kid version and an adult version. The view branches on the `kid`
+  local.
 
-**DO NOT USE the old address** (Thoven Music Inc. / 340 S Lemon Ave / Walnut, CA) — that entity no longer exists.
+Done when every line passed `thoven-branding` and, for Loops, both versions read correctly.
 
-**Copyright line:** `(c) <%= Date.current.year %> Thoven Corp. All rights reserved.`
+## 3. Build the view
 
-## Email Addresses (CRITICAL — Use Correct Address)
+**Rails.**
 
-**The ONLY valid email for Thoven:**
+1. `ApplicationMailer` sets the thoven_email layout, so a new mailer gets it by inheriting. Opt an
+   action out only for a plain personal letter, as `TeacherApplicationMailer#application_approved`
+   does.
+2. Write `<action>.html.erb` the way `renewal_mailer/email.html.erb` does: set `:title` and
+   `:preheader`, put the reason the reader gets this email and the support line in `:footer`, then
+   the body from `EmailHelper` calls only.
+3. Write `<action>.text.erb` with the same words in plain text. The text layout adds the footer.
+4. In the mailer method, call `set_sendgrid_category` with `transactional`, `nurture` or
+   `promotional` before `mail` (`app/mailers/application_mailer.rb`). The category also turns
+   SendGrid click tracking off, because SendGrid's tracking domain serves an invalid certificate and
+   every rewritten link fails.
+5. Build frontend links from `ENV["FRONTEND_URL"]`; a link to the Rails host 404s.
+6. Format times in the recipient's zone: `formatted_time_range_in_timezone(profile.timezone_or_inferred)`.
+   `formatted_time_range_with_timezone` uses the slot's or teacher's zone and shows a parent the
+   teacher's clock.
 
-| Purpose | Address |
-|---------|---------|
-| **From** | `Thovie from Thoven <thovie@thoven.co>` or `Thoven <thovie@thoven.co>` |
-| **Reply-To** | `thovie@thoven.co` |
-| **Support links in footers** | `thovie@thoven.co` |
+**Loops.**
 
-**DO NOT USE `hello@thoven.co`** — this address does not exist. It was used by mistake in early mailers and caused bounced replies. See CLAUDE.md Bug 10.
+1. Add `app/views/loops_emails/<view>.html.erb`, shaped like `post_intro_day0.html.erb`. Every
+   dynamic value is a Loops merge tag from the constants in `app/services/loops/emails.rb`; add a
+   constant there for a new event property. There is no text view: Loops writes the plain text.
+2. Register the Loops node names in `Loops::Emails::ALL`, one kid row and one adult row.
+3. `bin/rails loops:emails OUT=<dir>` writes `<node>/index.mjml` and `<node>.zip` for each email.
+   Andres uploads the zip in Loops.
 
-When creating ANY new mailer:
-```ruby
-class NewMailer < ApplicationMailer
-  default from: "Thovie from Thoven <thovie@thoven.co>",
-          reply_to: "thovie@thoven.co"
-```
+Done when the view holds no markup of its own beyond component calls and slots.
 
-When adding support links in templates:
-```html
-<!-- HTML -->
-<a href="mailto:thovie@thoven.co">Support</a>
-```
-```text
-<!-- Text -->
-Support: thovie@thoven.co
-```
+## 4. Check it
 
-## Mailer Method Standards
+Name the pane's own `DATABASE_URL` and `TEST_DATABASE_URL` on every command.
 
-```ruby
-def booking_approved(booking_request_id)
-  # 1. Eager load associations
-  @booking_request = SimpleBookingRequest
-    .includes(:parent, :teacher, :student, simple_booking_slots: [])
-    .find(booking_request_id)
+1. **Mailer spec.** Assert the words, links, recipients and subject on the mail ActionMailer renders
+   (`mail.html_part.body.decoded`, `mail.text_part.body.decoded`), as
+   `spec/mailers/renewal_mailer_spec.rb` does. Read decoded parts: the footer's `©` makes every part
+   quoted-printable, so `body.encoded` wraps long lines and links. Leave colours, fonts, logo and
+   footer to the layer spec and the scan; a mailer spec that repeats them goes stale on the next
+   design change. Loops emails are checked in `spec/services/loops/emails_spec.rb`.
+2. **Scan spec.** `bundle exec rspec spec/mailers/email_view_scan_spec.rb` reads every email view and
+   names any that carries a full document, a colour literal or a font.
+3. **Layer spec.** After a change to `email_helper.rb`, `email_tokens.rb` or a layout, run
+   `bundle exec rspec spec/mailers/thoven_email_layer_spec.rb`.
+4. **Look at it.** Write the rendered HTML to `tmp/<name>.html`. For Rails, write
+   `mail.html_part.body.decoded`. For Loops, render
+   `Loops::Emails::Renderer.render(template: "loops_emails/<view>", layout: "thoven_email", locals: { kid: true })`
+   through `bin/rails runner` and replace the merge tags with sample values. Then run
+   `scripts/shoot-email.sh tmp/<name>.html` from this skill's folder, read both PNGs (640 and 390)
+   beside the design frame, and delete the scratch files.
 
-  # 2. Safe navigation for optional data
-  @original_date = @reschedule_request.original_date&.strftime("%A, %B %d, %Y")
-  @instruments = @student.instruments_of_interest&.join(", ") || "Not specified"
+Done when each spec run is green, both PNGs match the frame, and the report pastes each command with
+its pass line.
 
-  # 3. Reuse model helpers over inline formatting — in the RECIPIENT's zone
-  @class_title = @enrollment.class_title
-  recipient_timezone = @parent_profile.timezone_or_inferred
-  @time_range = @slot.formatted_time_range_in_timezone(recipient_timezone)
+## Pitfalls
 
-  # 4. Production URL fallback (NEVER localhost)
-  @dashboard_url = "#{ENV.fetch('FRONTEND_URL', 'https://thoven.co')}/parent/dashboard"
-
-  # 5. SendGrid category LAST before mail()
-  set_sendgrid_category('transactional')
-  mail(to: @profile.email, subject: "Subject with emoji")
-end
-```
-
-**Parameter patterns:**
-- Direct ID: `def booking_approved(booking_request_id)` then `find(id)`
-- With params: `def onboarding_day1` then `Profile.find(params[:profile_id])`
-
-## Color Palette
-
-| Purpose | Hex |
-|---------|-----|
-| Primary orange | `#ff8c1a` |
-| Primary dark | `#b45309` |
-| Accent bg (info box) | `#fffbeb` |
-| Accent border | `#fef3c7` |
-| Text dark | `#1f2937` |
-| Text medium | `#4b5563` |
-| Text light | `#9ca3af` |
-| Footer bg | `#fafafa` |
-| Border | `#e5e7eb` |
-| Body bg | `#f9fafb` |
-
-## HTML Template
-
-**See:** `templates/html_skeleton.erb` for full boilerplate.
-
-**Required structure (in order):**
-1. DOCTYPE + Outlook namespace declarations
-2. Meta tags (charset, viewport, color-scheme, MSO)
-3. Google Fonts import (Fredoka + Montserrat)
-4. CSS reset for email clients + dark mode prevention
-5. Mobile media queries (480px breakpoint)
-6. Preheader text (hidden preview)
-7. Full-width wrapper table (`#f9fafb` background)
-8. 600px centered container with MSO conditionals
-9. Header with Thoven logo (`https://thoven.co/ThovenLogo.png`)
-10. Main content area
-11. Footer with branding ("Learn. Teach. Play. All in one place.")
-
-**Fonts:** Fredoka for headings (`h1, h2, h3, .fredoka`), Montserrat for body text.
-
-## Text Template
-
-**See:** `templates/text_skeleton.erb`
-
-**Rules:**
-- Section headers: ALL CAPS + `======` underline
-- Bullets: `- ` prefix (dash + space)
-- No HTML tags ever
-- URLs as plain text
-- Separators: `---`
-- Pluralization: `credit<%= @count == 1 ? '' : 's' %>`
-
-## Components
-
-**See:** `templates/components.md` for copy-paste HTML snippets.
-
-Available components: Info Box, Primary CTA Button (with Outlook VML), Secondary Button, Bullet List, Slot Iteration Block, Urgency Callout.
-
-## Subject Line Emojis
-
-| Emoji | Use |
-|-------|-----|
-| Celebratory (approved, enrolled) | Use in subject line |
-| Notes/content | Use in subject line |
-| Calendar/scheduling | Use in subject line |
-| Payment requests | Use in subject line |
-| Music/booking | Use in subject line |
-| Money received | Use in subject line |
-
-## Testing Checklist
-
-### RSpec (required)
-
-```ruby
-RSpec.describe ParentMailer, type: :mailer do
-  describe '#method_name' do
-    let(:mail) { described_class.method_name(resource_id) }
-
-    it 'renders the headers' do
-      expect(mail.subject).to include('expected text')
-      expect(mail.to).to eq(['recipient@example.com'])
-    end
-
-    it 'sets SendGrid category and disables click tracking' do
-      smtpapi = JSON.parse(mail.header['X-SMTPAPI'].value)
-      expect(smtpapi['category']).to eq(['transactional'])
-      expect(smtpapi.dig('filters', 'clicktrack', 'settings', 'enable')).to eq(0)
-    end
-
-    context 'HTML part' do
-      let(:html_part) { mail.parts.find { |p| p.content_type.match?(/html/) } || mail }
-      it('includes branding') { expect(html_part.body.encoded).to match('Learn. Teach. Play.') }
-    end
-
-    context 'text part' do
-      let(:text_part) { mail.parts.find { |p| p.content_type.match?(/plain/) } || mail }
-      it('has section headers') { expect(text_part.body.encoded).to match(/^[A-Z ]+\n=+/) }
-    end
-  end
-end
-```
-
-### Manual Verification (required)
-
-```ruby
-# In rails console - send test email
-ParentMailer.booking_approved(BookingRequest.last.id).deliver_now
-# OR for param-based:
-TeacherMailer.with(profile_id: Profile.last.id).onboarding_day1.deliver_now
-```
-
-Verify: desktop rendering, mobile rendering, images load, links work, text version readable.
-
-## Debugging Workflow
-
-1. **Mailer method** - Eager loading? Safe navigation? URL fallback (no localhost)? SendGrid category set?
-2. **HTML template** - Follows skeleton? MSO conditionals? Mobile classes? Correct hex codes?
-3. **Text template** - Matches HTML content? CAPS headers? No HTML tags?
-4. **Send test** - Render in actual email client
-
-## Common Instance Variables
-
-- `@parent_profile`, `@teacher_profile` - Profile records
-- `@student` - Student record
-- `@dashboard_url` - Link to user's dashboard
-- `@slots` / `@approved_slots` / `@requested_slots` - Array of slot hashes
-
-**Slot hash structure.** Resolve the recipient's zone first — the hash below gets copied
-wholesale into new mailers, so it has to carry its own correctness:
-
-```ruby
-recipient_timezone = @parent_profile.timezone_or_inferred   # or @teacher_profile, whoever receives it
-
-{ date: slot.date.strftime("%A, %B %d, %Y"),
-  time: slot.formatted_time_range_in_timezone(recipient_timezone),
-  duration: slot.duration_minutes }
-```
-
-> **Never `formatted_time_range_with_timezone` in a mailer.** It resolves to the SLOT's zone and
-> falls back to the TEACHER's (`simple_booking_slot.rb:356`), so a Pacific parent reads their
-> teacher's Eastern clock as if it were their own. This doc taught the wrong helper in two places
-> and Bug 13 recurred twice off the back of it (TD-118, D-1 in the 2026-08-08 QA run). The live
-> mailers had already diverged from this doc to do it correctly — `parent_mailer.rb:51`,
-> `teacher_mailer.rb:44`.
-
-## Key Files
-
-- `app/mailers/application_mailer.rb` - Base class with `set_sendgrid_category`
-- `app/mailers/parent_mailer.rb` - Parent email examples
-- `app/mailers/teacher_mailer.rb` - Teacher email examples
-- `app/helpers/mailer_helper.rb` - Shared helper methods
-- `app/views/parent_mailer/` - HTML/text template examples
-- `spec/mailers/` - Test patterns
+- Colour comes from the components. Amber appears only on the filled button and the logo (THV-1396);
+  text uses the app grays. A colour the components cannot draw is a new token in `email_tokens.rb`.
+- The footer address, logo and company line come from the layout. A view that types them drifts.
+- A view pasted from an old email or another tool brings its own `<!DOCTYPE>`, `<head>` and inline
+  styles, and the email then carries two documents. The scan refuses it; keep only the words and
+  rebuild them from components.
+- The mailer's `from` and `reply_to` use `thovie@thoven.co`.
