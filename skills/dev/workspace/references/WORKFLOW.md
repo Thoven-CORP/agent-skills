@@ -239,6 +239,10 @@ Teacher 2.0 ── the name prefix
 A Project is done when every one of its milestones reads 100%. The product appears before that: each
 Build issue lands in the worktree the moment it works.
 
+When the Project is done, its integration branch goes. GitHub deletes it on origin when it lands in
+`main`. Remove each of its trees with `thoven-worktree remove`, which deletes the local branch once no
+tree holds it and no open PR targets it.
+
 ---
 
 ## 4. The loop
@@ -475,10 +479,11 @@ BUILDING
 BRANCHES AND PULL REQUESTS
 - Branch, PR and worktree rules: `~/thoven/agent-skills/enforcement/rules/thoven-law.md`.
   `thoven-worktree create <fe|be> <area> <id>` gives `<area>/thv-<id>`, the same name in both repos.
-- Open a held PR into `main`. On Andres's "merge it", backend first. The method follows the PR's role (thoven-law.md "Branches and PRs"): a ticket squashes (`gh pr merge --auto --squash` into `main`; into an integration branch, `--squash` on green targeted CI and the verifier's pass), a docs-only PR merges in the same pass, and an integration branch landing in `main` or a catch-up of `main` merges with `--merge`. Name source, target and method in the go line.
+- Open a PR into `main` and arm auto-merge as it opens; GitHub merges it on green `CI`, backend first, with no go from Andres, UI included (2026-11-05). The method follows the PR's role (thoven-law.md "Branches and PRs"): a ticket squashes (`gh pr merge --auto --squash` into `main`; into an integration branch, `--squash` on green targeted CI and the verifier's pass), a docs-only PR merges in the same pass, and an integration branch landing in `main` or a catch-up of `main` merges with `--merge`. Name source, target and method in the report line.
 - Put `THV-<id>` in the commit message with no magic word. `Fixes` auto-closes Linear. Merge does not own Done.
 - A ticket that takes more than one PR: an id in the branch name or PR title links that PR as closing, so its first merge moves the ticket to Done. Keep the id out of both and write `Part of THV-<id>` in the PR body, which links without closing. (2026-10-25: the test-cadence ticket closed on its first of five PRs.)
-- Write Ready if a surface still needs his eyes. Write Done when the job is finished. Main merges UI after Andres sees the evidence images.
+- Write Ready if a surface still needs his eyes. Write Done when the job is finished, and only after
+  `dispatch-work`'s close step has run for it: panes closed, its tree removed, its merged branches gone. UI merges on green `CI` too; Andres reviews it on staging.
 - `--auto` merges once the `CI` check passes. Watch a PR unattended with `/babysit-pr` (`pr-wait --until green`), or with `/loop-on-ci` when you watch CI in the terminal.
 - A PR or branch behind `main`: `/modernize` gives MODERNIZE, REWORK or CLOSE before any rebase. On a shared integration branch take the verdict only; the catch-up stays a merge commit.
 - Another person's or agent's PR, branch or dead pane: `/takeover` re-proves it and keeps their credit.

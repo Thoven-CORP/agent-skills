@@ -311,16 +311,29 @@ install_deps() {
   fi
 }
 
-# The registry caches Linear's Project to integration-branch mapping: branch names, never paths.
-registry_file() {
+# script_dir: this script's real directory, through any install symlink.
+script_dir() {
   local src="${BASH_SOURCE[0]}" d
-  if [ -n "${THOVEN_WORKTREE_REGISTRY:-}" ]; then printf '%s\n' "$THOVEN_WORKTREE_REGISTRY"; return; fi
   while [ -L "$src" ]; do
     d="$(cd "$(dirname "$src")" && pwd)"
     src="$(readlink "$src")"
     [[ "$src" = /* ]] || src="$d/$src"
   done
-  printf '%s/../worktree-projects.tsv\n' "$(cd "$(dirname "$src")" && pwd)"
+  cd "$(dirname "$src")" && pwd
+}
+
+# The registry caches Linear's Project to integration-branch mapping: branch names, never paths.
+registry_file() {
+  if [ -n "${THOVEN_WORKTREE_REGISTRY:-}" ]; then printf '%s\n' "$THOVEN_WORKTREE_REGISTRY"; return; fi
+  printf '%s/../worktree-projects.tsv\n' "$(script_dir)"
+}
+
+# prune_merged <checkout>: deletes the checkout's local branches whose PR merged, so branches
+# go when branch work happens rather than on a timer. A checked-out branch is never touched, so
+# create calls this only once its tree exists. A failure (gh offline) is logged, never fatal.
+prune_merged() {
+  local prune="${THOVEN_BRANCH_PRUNE:-$(script_dir)/thoven-branch-prune}" line
+  while IFS= read -r line; do log "$line"; done < <("$prune" --repo "$1" --delete 2>&1 || true)
 }
 
 # plain_arg <name> <value>: usage error on an empty value or one holding a tab or newline.
@@ -590,6 +603,7 @@ create() {
     fi
   fi
 
+  prune_merged "$main"
   bootstrap "$path"
   printf '%s\n' "$path"
 }
@@ -714,6 +728,7 @@ $procs"
   fi
   git -C "$main" worktree remove --force "$path" >&2 || die 1 "git worktree remove --force $path failed, so no database was dropped"
   log "removed $path"
+  prune_merged "$main"
   # A database another live worktree still names is shared, not this one's to drop.
   local still
   still="$(referenced_dbs "$main")"

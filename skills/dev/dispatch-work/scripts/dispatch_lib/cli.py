@@ -229,7 +229,8 @@ class App:
 
         try:
             split = a.split_of or (None if a.tab else main_pane().pane)
-            ref = self.mux(backend).spawn(cwd, label, launch, split, on_pane)
+            # Every dispatched pane floats minimized (Andres, 2026-11-05); --tab is his ask for a window.
+            ref = self.mux(backend).spawn(cwd, label, launch, split, on_pane, floating=not a.tab)
         except Exception as e:
             if not regs:
                 raise
@@ -456,7 +457,7 @@ def parser() -> argparse.ArgumentParser:
     x.add_argument("--cli", choices=("claude", "codex"))
     x.add_argument("--model", help="override the tier's model (same CLI)")
     x.add_argument("--add-dir")
-    x.add_argument("--split-of", metavar="PANE", help="split this pane (default: the pane you run in)")
+    x.add_argument("--split-of", metavar="PANE", help="open beside this pane before floating (default: the pane you run in)")
     x.add_argument("--tab", action="store_true", help="open a new Rex window or herdr tab instead of a split")
     x.add_argument("--base", metavar="SHA")
     x.add_argument("--brief", metavar="FILE", help="default briefs/<THV-x>.md")

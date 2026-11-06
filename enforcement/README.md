@@ -261,6 +261,13 @@ same bytes, because it never deletes and never makes symlinks. It exits 2 for no
 directory, a missing or empty directory, `$HOME`, `/`, or `/Users`, and 1 when any
 file fails to link. `bin/thoven-evidence-dedupe-test` proves it in a `mktemp -d` tree.
 
+`bin/thoven-branch-prune` deletes local branches whose PR merged and that hold nothing the PR
+lacked; a checked-out branch, the base of an open PR, and a branch with no PR stay. It previews
+unless `--delete`. `thoven-worktree create` runs it once the new tree exists and `remove` runs it
+once the tree is gone, so branches go when branch work happens, never on a timer. GitHub deletes
+the branch on origin at merge (`delete_branch_on_merge`); `thoven-branch-prune --remote` previews
+what that missed. `bin/thoven-branch-prune-test` proves it, empty PR list included.
+
 `bin/thoven-sync` runs every 30 minutes from the launchd agent `co.thoven.sync`,
 installed by `install/launchd.py`. It runs `git fetch --prune` in both main
 checkouts and fast-forwards each one only when it is on `main` with no tracked changes.

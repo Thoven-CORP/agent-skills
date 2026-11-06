@@ -33,9 +33,10 @@ class Launch:
 
 class Mux(Protocol):
     def spawn(self, cwd: str, label: str, launch: Launch, split_of: str | None,
-              on_pane: Callable[[PaneRef, str], None]) -> PaneRef:
+              on_pane: Callable[[PaneRef, str], None], floating: bool = False) -> PaneRef:
         """Open a pane and start the agent. on_pane(ref, launched_at) runs as soon as the pane id exists and
-        again when the agent starts, so a spawn that fails later still leaves the pane registered."""
+        again when the agent starts, so a spawn that fails later still leaves the pane registered. floating
+        moves the pane into a minimized floating layer where the multiplexer has one (Rex)."""
     def label(self, pane: PaneRef, label: str, tab: bool) -> None: ...
     def status(self, pane: PaneRef) -> Status: ...
     def read(self, pane: PaneRef, lines: int) -> str: ...
@@ -105,7 +106,7 @@ class RexMux:
             return None
         return _json(res, f"rex block call {method}")
 
-    def spawn(self, cwd, label, launch, split_of, on_pane):
+    def spawn(self, cwd, label, launch, split_of, on_pane, floating=False):
         session = os.environ.get("REX_SESSION")
         if not session:
             raise UsageError("REX_SESSION is unset: run dispatch spawn from main's Rex pane")
@@ -121,7 +122,20 @@ class RexMux:
         ref = PaneRef("rex", out["block_ids"][0], session)
         on_pane(ref, launched)
         self._rex("block", "rename", "-s", session, ref.pane, label)
+        if floating:
+            self._float_minimized(ref)
         return ref
+
+    # Dispatched panes float minimized, off main's layout and one click from view (Andres, 2026-11-05).
+    FLOAT_BOUNDS = [0.1, 0.1, 0.8, 0.8]
+
+    def _api(self, pane, method, args):
+        body = json.dumps({"session_id": pane.session, **args})
+        return _json(self._rex("api", "call", "-s", pane.session, method, body), f"rex {method}")
+
+    def _float_minimized(self, pane):
+        layer = self._api(pane, "session.float_block", {"block_id": pane.pane, "bounds": self.FLOAT_BOUNDS})
+        self._api(pane, "session.set_layer_state", {"layer_id": layer["layer_id"], "state": "minimized"})
 
     def label(self, pane, label, tab):
         self._ok(self._rex("block", "rename", "-s", pane.session, pane.pane, label), "rex block rename")
@@ -206,7 +220,7 @@ class HerdrMux:
             raise MuxError(f"herdr {what} failed: {(res.err or res.out).strip()[:300]}")
         return res
 
-    def spawn(self, cwd, label, launch, split_of, on_pane):
+    def spawn(self, cwd, label, launch, split_of, on_pane, floating=False):
         workspace = os.environ.get("HERDR_WORKSPACE_ID")
         if split_of:
             out = _json(self._h("pane", "split", split_of, "--direction", "right", "--cwd", cwd, "--no-focus"),
