@@ -47,7 +47,8 @@ For a new audience page, a new row, or a row whose steps changed in the spec.
 2. `node scripts/product-map/paper.mjs build <audience>` prints, per row, the artboard to create
    (`name`, `styles`) and the `write_html` calls in order. A row that already exists on the page:
    delete only that artboard first.
-3. Per row: `create_artboard` on the audience's `pageId`; then each write in order with
+3. Per row: `create_artboard` on the audience's `pageId`, then `update_styles` its `left` and `top`
+   to the planned values, since `create_artboard` places it in free space; then each write in order with
    `write_html` mode `insert-children`, into the artboard when `into` is `artboard`, otherwise
    into the node whose layer name is `into` (the row container, from the previous result's
    `createdNodes`).
