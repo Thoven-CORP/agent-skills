@@ -15,7 +15,7 @@
 # share, so there the block arrives by merge and sync only reports.
 set -uo pipefail
 
-cd "$(dirname "$0")"
+cd "$(dirname "$0")" || exit 1
 SRC="$PWD/hooks"
 APPLY=0
 [ "${1:-}" = "--apply" ] && APPLY=1
@@ -54,6 +54,30 @@ done
 for pair in "${PAIRS[@]}"; do
   check "${pair%%|*}" "${pair#*|}" ""
 done
+
+# Whole-file skill rewrites. reapply-skill-patches.py reads them from ~/.claude/skill-overrides at
+# SessionStart and lays each over its skill whenever upstream's copy comes back. Unlike a hook, an
+# override the harness lacks is installed, not skipped: a missing one is a fix that never lands
+# (2026-11-08: three merged overrides reached no skill until copied by hand). Only *.SKILL.md files
+# the repo ships are written; an override placed by hand is left alone.
+OVERRIDES_DST="$HOME/.claude/skill-overrides"
+if [ -d "$HOME/.claude" ]; then
+  for src in "$PWD"/skill-overrides/*.SKILL.md; do
+    [ -f "$src" ] || continue
+    dst="$OVERRIDES_DST/$(basename "$src")"
+    if [ -f "$dst" ]; then
+      check "$src" "$dst" ""
+      continue
+    fi
+    drift=$((drift + 1))
+    if [ "$APPLY" -eq 1 ]; then
+      mkdir -p "$OVERRIDES_DST" && cp "$src" "$dst"
+      printf 'installed %s\n' "${dst/#$HOME/~}"
+    else
+      printf 'MISSING  %s\n' "${dst/#$HOME/~}"
+    fi
+  done
+fi
 
 law_args=()
 [ "$APPLY" -eq 1 ] && [ -n "${THOVEN_LAW_REPOS:-}" ] && law_args+=(--apply)
