@@ -95,4 +95,10 @@ for control_hostname in Mac Mac.local; do
   [ "$(cat "$scratch/route")" = ready ]
 done
 echo 'PASS: the canonical mini executes locally with or without a DHCP suffix'
+source "$(dirname "${BASH_SOURCE[0]}")/staging-hold.sh"
+t=$(STAGING_CONTROL=local staging_hold_acquire local 2>/dev/null)
+[ "$t" = 00000000000000000000000000000000 ]
+STAGING_CONTROL=local staging_hold_release "$t"
+if STAGING_CONTROL=local staging_control 2>/dev/null; then exit 1; fi
+echo 'PASS: STAGING_CONTROL=local takes no hold, releases nothing, and refuses an unknown command'
 echo 'all passed'
