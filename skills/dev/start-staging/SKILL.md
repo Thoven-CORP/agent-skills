@@ -5,58 +5,67 @@ description: Start a deliberate, timed Thoven staging session with selected fron
 
 # Start staging
 
-Make `https://staging.thoven.co` usable for a bounded testing session. Merging to `main` neither starts staging nor updates an active session's selected versions. Discussing or editing this skill authorizes no provider changes.
+Make `https://staging.thoven.co` usable for a bounded testing session. Merging to `main` neither starts staging nor changes the commits a running session serves. Discussing or editing this skill authorizes no provider changes.
 
-## Sources and authority
+Read `~/thoven/backend/docs/deployment/staging-lifecycle.md` before operating, and [the governing staging decision](https://linear.app/thoven/issue/DEP-52/reduce-render-costs-with-smaller-redis-and-on-demand-staging), D4, for current policy. A request to start staging covers ordinary resume, deployment and readiness probes. Migrations, money, COPPA, sends and production keep their own gates.
 
-Read `~/thoven/backend/docs/deployment/staging-lifecycle.md` before operating. The installed controller on `thoven-mini-ssh` owns fixed resource identities, leases, holds, locking, dependency order and safe shutdown. Reuse it. Read [the governing staging decision](https://linear.app/thoven/issue/DEP-52/reduce-render-costs-with-smaller-redis-and-on-demand-staging), D4, for current policy.
+## Tools
 
-A request to start staging covers ordinary staging resume, deployment and readiness probes. Preserve independent gates for migrations, money, COPPA, sends and production. Inspect pending migrations before wake: Render resume can trigger a build and pre-deploy migrations. Keep credentials in the existing private environment; never print them.
+The staging backend sleeps between sessions to save money. Waking it and putting it back to sleep is the only work that needs a Render API key, because Render's CLI and plugin cannot suspend or resume a web service. That work belongs to the **controller**, `~/thoven/backend/bin/staging-lifecycle` on `thoven-mini-ssh`, the one program that reads `RENDER_API_KEY` from the mini's `~/.config/thoven/staging-lifecycle.env`. Everything else runs under the account logins of the CLIs and plugins.
 
-Use installed Render/Vercel CLI help and skills for provider syntax. Older publish instructions saying frontend merges deploy staging describe the former setup, not proof of manual control.
+| Work | Tool |
+|---|---|
+| Read services, deploys, logs, metrics | `render` CLI under `render login`, or `/render-monitor` |
+| Deploy a backend SHA | `render deploys create` |
+| Run Rails code on staging | a Render one-off job (`render jobs`), read with `render logs` |
+| Deploy, inspect or promote the frontend | `vercel` CLI through `/vercel-cli` |
+| Wake, sleep, hold, and the job probe | the controller over ssh |
+
+Run controller commands as `ssh thoven-mini-ssh 'set -a; . ~/.config/thoven/staging-lifecycle.env; set +a; ~/thoven/backend/bin/staging-lifecycle <command>'`, so its secrets load on the mini and never pass through your shell. Its tokens stay in that file; print none of them.
+
+The staging resources, as the CLI sees them:
+
+```sh
+render services -e evm-dao4703m8hqs73d71rfg -o json --confirm \
+  | jq -c '.[] | (.service // .keyValue) | {name, suspended, status, autoDeployTrigger}'
+```
+
+`thoven-api-staging` is the combined web service, `thoven-keyvalue-staging` its Key Value, and `thoven-worker-staging` the legacy worker, which stays `suspended`.
+
+**A dead key.** When the controller refuses with `Render rejected RENDER_API_KEY`, the key is revoked or expired. Stop and ask Andres for a new key from Render's Account settings > API keys, placed in that file. `check-key` confirms the replacement with `Render API key: accepted`. While the key is dead the scheduler cannot put staging to sleep, so report whether `thoven-api-staging` is still `not_suspended`.
 
 ## Start
 
-1. **Pin the pair.** Fetch both repositories and resolve one full frontend SHA and one full backend SHA. Default to each `origin/main`; honor explicitly requested revisions. Require successful required CI for each selected source tree. For a merged SHA without its own run, verify tree identity against the final green PR head and record both SHAs; an older different tree is insufficient. Preserve dirty work and keep this pair fixed throughout startup. If staging is active, reuse an identical pair; confirm replacement with its current user when versions or active holds conflict.
+1. **Pin the pair.** Fetch both repositories and resolve one full frontend SHA and one full backend SHA, by default each `origin/main`, or the revisions Andres named. Each needs green required CI. A merged SHA without its own run counts when its tree matches the final green PR head; record both SHAs. Keep the pair fixed through startup. If staging is already running the same pair, reuse it; when versions or active holds conflict, confirm the replacement with the session's current user. Done when you hold two full SHAs and their CI evidence.
 
-2. **Prove manual control.** Inspect effective settings: Render staging auto-deploy off, Blueprint Auto Sync off, legacy worker suspended; Vercel Git deployments disabled specifically for project `thoven-staging`, scope `andres-3203s-projects`. Inspect project identity and confirm its backend configuration points to staging.
+2. **Prove manual control.** Through the CLI command above: `autoDeployTrigger` is `off` on both services and the legacy worker is `suspended`. Blueprint Auto Sync is off (dashboard only). Through `/vercel-cli`: project `thoven-staging`, scope `andres-3203s-projects`, has no Git deployments, and its backend configuration points at staging. Both Vercel projects share one `vercel.json`, so leave project `thoven` and that file alone. The staging project uses Vercel's Production environment, so `--prod` alone names no project. Any gap is **setup incomplete**: name it and stop, since this skill authorizes no setup. Done when every control is confirmed.
 
-   Both Vercel projects consume the shared `vercel.json`; blanket changes can disable real production builds. The separate staging project uses Vercel's **Production environment**, so `--prod` alone identifies no project. Keep project `thoven` unchanged. If setup is incomplete, identify the exact gap and finish any separately authorized configuration first. Creating this skill does not authorize live setup.
+3. **Check migrations.** List the migrations the backend SHA adds over what staging last ran. A resume can build the configured branch and run its pre-deploy migrations even with auto-deploy off. Done when each pending migration is within this request's authorization, or you have stopped on it.
 
-3. **Hold and wake.** On the canonical mini, load its private controller environment, inspect `status`, and verify the expiry scheduler is loaded with `launchctl print "user/$(id -u)/co.thoven.staging-expire"`. If absent after a headless reboot, bootstrap its existing reviewed plist, then require a successful expiry run before wake. Resolve hostname/profile refusals through the reviewed controller setup; never bypass its host guard. Acquire a bounded deployment hold with a unique reason and save its token. Run `up --hours 4 --apply`, or the requested duration within the supported bounds.
+4. **Hold and wake.** On the mini, confirm the expiry scheduler is loaded: `launchctl print "user/$(id -u)/co.thoven.staging-expire"`. After a headless reboot it can be missing: bootstrap its existing reviewed plist and require one successful expiry run before waking. Then through the controller: acquire a hold with a unique `--reason` and save its token, and run `up --hours 4 --apply`, or the requested duration within 1 to 24 hours. A host-guard refusal is resolved through the controller's reviewed setup, never around it. `up` pins no revision: watch any cold-resume deploy with `render deploys list srv-dao470bm8hqs73d71sh0 -o json --confirm` until it ends, and on a health timeout during a build, wait for the build and retry `up` instead of starting a second deploy. Done when `up` prints `combined staging: ready` and you hold the hold token.
 
-   Resume can build the configured branch even with auto-deploy off; `up` does not pin a revision. If executing an unselected commit or its migrations exceeds authorization, resolve that before wake. Inspect any cold-resume deployment until terminal before explicitly deploying. A health timeout while the build progresses calls for observation and a controller retry after completion, not competing deployments.
-
-4. **Deploy the backend.** On the running combined service, deploy the pinned backend SHA unless the cold-resume deployment already reached `live` at that exact SHA. Reuse that proven deployment instead of rebuilding identical source:
+5. **Deploy the backend.** Skip this when the cold-resume deploy is already `live` at the pinned SHA. Otherwise:
 
    ```sh
    render deploys create srv-dao470bm8hqs73d71sh0 --commit <backend-full-sha> --wait --confirm -o json
    ```
 
-   If cold resume already produced a live deployment at the selected SHA, reuse it rather than rebuilding identical source. Require provider status `live` at that SHA, `/up` HTTP 200, a matching `/health` `revision.sha`, and the mini controller's `probe --apply` completing a real background job. The legacy worker stays suspended. Approved migrations run only through web pre-deploy.
+   Done when the deploy is `live` at that SHA, `https://thoven-api-staging.onrender.com/up` answers 200, `/health` `revision.sha` matches, and the controller's `probe --apply` prints `worker execution readiness: verified on thoven-api-staging`. Migrations run only in the web pre-deploy step.
 
-5. **Deploy the frontend.** Use a clean checkout of the pinned frontend SHA under existing worktree rules. Vercel uploads local source; a SHA label cannot prove a dirty checkout. Explicitly target staging and withhold domain assignment:
+6. **Deploy the frontend.** `~/thoven/agent-skills/skills/dev/publish/scripts/staging-frontend.sh <frontend-full-sha>` builds the commit from GitHub, puts it on staging and waits for `staging.thoven.co/api/version` to serve it. Done when it prints `staging serves <sha9>` or `staging already serves <sha9>`.
 
-   ```sh
-   vercel deploy <clean-frontend-checkout> --project thoven-staging --scope andres-3203s-projects --prod --skip-domain
-   ```
+   When the session needs a candidate checked before the domain moves, deploy a clean checkout of the SHA with `vercel deploy <checkout> --project thoven-staging --scope andres-3203s-projects --prod --skip-domain`, check it through `/vercel-cli`, then `vercel promote <candidate-url> --cwd <staging-linked-checkout> --scope andres-3203s-projects`. Record the previous staging deployment first and promote it back if the browser check in step 7 fails. A protected candidate URL, or one outside Rails CORS, is checked through authenticated CLI access, never by widening CORS.
 
-   Require `Ready`, correct project identity and source provenance. Check the deployment URL's `/api/version`. CLI uploads may omit Git metadata; use supported build metadata/environment configuration to supply the truthful checked-out SHA, and verify the response. Build remotely; any heavy local work runs on the designated mini. Access protected deployments through authenticated CLI access.
-
-6. **Verify and expose.** Check the candidate version, its staging backend configuration, and an existing staging login plus harmless authenticated backend read. The temporary Vercel URL may be protected or absent from Rails CORS; do not widen CORS for a disposable URL. In that case record the previous staging alias and validate the actual browser integration immediately after the staging-only domain switch, restoring the previous alias if it fails. A frontend `/api/health` 200 does not check Rails. If the candidate URL is protected or outside the existing Rails CORS allowlist, verify its version through authenticated CLI access and check backend authentication directly before the staging-only domain switch; then require the real browser integration check on `staging.thoven.co`. Record the previous staging deployment first and restore it if that check fails. Do not expand CORS just for this probe. Respect independent data/send gates. Verify the candidate belongs to `thoven-staging` and use a checkout whose resolved Vercel link is that same project for `vercel promote <candidate-url> --cwd <staging-linked-checkout> --scope andres-3203s-projects`. Recheck `staging.thoven.co/api/version` and prove authenticated API-dependent behavior in a browser after promotion; a direct backend read alone cannot establish frontend readiness.
-
-   Once verified, release only this operation's deployment hold. Continuing QA/release work maintains its own bounded hold. Report the URL, both SHAs, actual expiry with timezone and remaining holds. Startup readiness is separate from full release QA and production publication.
+7. **Verify and hand over.** On `staging.thoven.co`: `/api/version` shows the frontend SHA, an existing staging account signs in in a browser, and an API-backed screen loads. A frontend `/api/health` 200 does not reach Rails. Then release this operation's hold through the controller (`release-hold --token <token> --apply`). QA or release work keeps its own hold. Done when you report the URL, both SHAs, the session expiry with timezone, and any holds still open.
 
 ## Check, extend, stop
 
-- **Check:** inspect controller `status`, deployment records and public versions read-only. A status question never wakes staging.
-- **Extend:** for a running session at the selected pair, renew with `up --hours N --apply`, verify versions remain unchanged, and report the new expiry. If suspended, follow the full start path. Renewal does not deploy newer `main` commits.
-- **Stop:** coordinate active use, then use `down --apply`. Respect every hold and drain check; release only holds this operation owns.
+- **Check:** read-only, so it works even with a dead key. Run the CLI resource command above, `curl -s https://staging.thoven.co/api/version` and `curl -s https://thoven-api-staging.onrender.com/health | jq .revision`, and read the session and holds on the mini: `cat ~/.local/state/thoven/staging-lifecycle/session.json; ls ~/.local/state/thoven/staging-lifecycle/holds`. A status question never wakes staging.
+- **Extend:** for a running session on the selected pair, run the controller's `up --hours N --apply`, confirm both versions are unchanged, and report the new expiry. A suspended staging takes the full start path. Extending deploys nothing newer.
+- **Stop:** coordinate with anyone using staging, then the controller's `down --apply`. It honours every hold and drain check; release only holds this operation owns.
 
-The existing five-minute scheduler attempts shutdown after lease expiry, subject to holds and safe-drain checks. The scheduler depends on the mini remaining available and its user-domain task staying loaded; a host outage or reboot can delay expiry until it is restored. Vercel's frontend can remain reachable while backend features are unavailable; expiry does not delete its deployment.
+The scheduler on the mini tries `expire --apply` every five minutes and puts staging to sleep once the session ends, unless a hold, a running deploy or claimed jobs block it. It needs the mini up, its task loaded and a live key; while any of them is missing, staging keeps running and billing. Sleep leaves the Vercel frontend reachable with its backend features down.
 
 ## Stop conditions
 
-Stop on failed CI, identity mismatch, refused controller checks, unexpected migrations, failed deployments or smoke checks. Inspect a timed-out mutation before retrying; observe startup for at most 20 minutes per provider before reporting the running operation and blocker. Keep the lease bounded and disclose remaining holds/expiries. Preserve the previous frontend domain assignment until candidate checks pass; the protected/CORS exception above permits a staging-only switch with immediate rollback if browser integration fails. Report a partial startup accurately.
-
-Call staging ready only with the selected pair, API-dependent smoke and recorded expiry. Missing manual controls mean **setup incomplete**. Production promotion commands are outside this workflow.
+Stop on failed CI, an identity mismatch, a controller refusal, an unexpected migration, a failed deploy or a failed smoke check. Inspect a timed-out mutation before retrying it. Watch startup for at most 20 minutes per provider, then report what is running and what blocks it. Keep the previous frontend deployment until the candidate passes. Call staging ready only with the selected pair, the API-backed browser check and a recorded expiry; otherwise report a partial startup as partial. Production commands are outside this skill.
