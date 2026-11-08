@@ -8,9 +8,9 @@ On this path `/publish` does not deploy staging. It proves the explicitly select
 
 ## Availability hold
 
-Before QA, use the backend's `docs/deployment/staging-lifecycle.md` to acquire a hold on `thoven-mini-ssh`, run `up --apply`, and verify its combined web and async runner. Wake requires a private `STAGING_ADMIN_TOKEN` and a real job probe before it reports ready. A four-hour session expires automatically unless renewed; QA must maintain its own bounded hold throughout active work. Release the hold when the checks finish. QA holds and release holds are separate.
+Wake staging, hold it and probe its job runner through the mini's controller, as `start-staging` describes under "Tools". The controller is the only program that holds the Render API key; every other Render and Vercel look in this file runs under the `render` and `vercel` CLI logins, or `/render-monitor` and `/vercel-cli`. A four-hour session expires unless renewed, so QA keeps its own bounded hold for the whole of its work and releases it when the checks finish. QA holds and release holds are separate. A refusal that starts `Render rejected RENDER_API_KEY` means the mini's key is dead: follow `start-staging`, "A dead key".
 
-`promote.sh plan` acquires a shared staging hold before provider requests. Each subsequent release command renews it for 24 hours. Selecting staging during planning also requires the combined-service execution probe; an absent token, sleeping service, live legacy worker or failed probe blocks the plan and gives explicit deploy/wake/probe instructions. Production planning never silently deploys or wakes staging. The mini must have the matching backend lifecycle command at `~/thoven/backend/bin/staging-lifecycle`. Install that backend change before adopting this promotion change. An unreachable mini or a missing lifecycle command blocks release work. A release idle for more than 24 hours needs a new hold before further QA. Only enable staging shutdown after the companion integration and hold round trip have been verified as described in the backend runbook.
+`promote.sh plan` acquires a shared staging hold before provider requests, and each later release command renews it for 24 hours. Selecting staging during planning also requires the controller's job probe: a missing admin token, a sleeping service, a live legacy worker or a failed probe blocks the plan with deploy, wake and probe instructions. Planning never deploys or wakes staging by itself. An unreachable mini blocks release work. `STAGING_CONTROL=local` runs a release from this machine with no hold and no job probe; it is Andres's call, and the report names it as a gap. A release idle for more than 24 hours needs a new hold before more QA.
 
 ## Steps
 
@@ -43,8 +43,8 @@ Run each step in the repo it names. Steps 1 to 4 check each repo that changed. S
 
    ```bash
    render deploys list srv-dao470bm8hqs73d71sh0 -o json --confirm | jq '.[0] | {status, commit: .commit.id}'
-   # On the mini, with its private staging admin token:
-   ~/thoven/backend/bin/staging-lifecycle probe --apply
+   render services -e evm-dao4703m8hqs73d71rfg -o json --confirm | jq -c '.[] | (.service // .keyValue) | {name, suspended, status}'
+   ssh thoven-mini-ssh 'set -a; . ~/.config/thoven/staging-lifecycle.env; set +a; ~/thoven/backend/bin/staging-lifecycle probe --apply'
    curl -s https://thoven-api-staging.onrender.com/health | jq '.revision'
    ```
 
