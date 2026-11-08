@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# Runs sync.sh against a throwaway HOME; never reads or writes the real harness copies.
+# Covers the skill-overrides copy: reapply-skill-patches.py reads ~/.claude/skill-overrides, and
+# until 2026-11-08 sync.sh never wrote there, so merged overrides reached no skill.
+set -uo pipefail
+
+ENF="$(cd "$(dirname "$0")/.." && pwd)"
+T=$(mktemp -d /tmp/sync-test.XXXXXX) || exit 1
+case "$T" in /tmp/sync-test.*) ;; *) exit 1 ;; esac
+trap 'rm -rf "$T"' EXIT
+export HOME="$T/home"
+mkdir -p "$HOME" "$T/law"
+: >"$T/law/CLAUDE.md"
+python3 "$ENF/install/law.py" --apply "$T/law" >/dev/null
+export THOVEN_LAW_REPOS="$T/law"
+
+failed=0
+ok() { printf 'ok %s\n' "$1"; }
+fail() { printf 'FAIL %s: %s\n' "$1" "$2"; failed=1; }
+expect() { if [ "$2" = "$3" ]; then ok "$1"; else fail "$1" "got '$2' (want '$3')"; fi; }
+sync() { out="$("$ENF/sync.sh" "$@" 2>&1)"; rc=$?; }
+lines() { printf '%s\n' "$out" | grep -c "$1"; }
+
+shipped=("$ENF"/skill-overrides/*.SKILL.md)
+n=${#shipped[@]}
+[ "$n" -gt 0 ] && [ -f "${shipped[0]}" ] || { echo "FAIL the repo ships no overrides to test with"; exit 1; }
+DST="$HOME/.claude/skill-overrides"
+
+# Empty input: no ~/.claude, so no Claude harness here. Nothing is written and nothing differs.
+sync --apply
+expect "no ~/.claude: nothing is created" "$([ -e "$HOME/.claude" ] && echo created || echo none)" "none"
+expect "no ~/.claude: every copy matches" "$rc $(lines 'every harness copy matches')" "0 1"
+
+# A Claude harness with no overrides dir: the dry run names each missing override and writes nothing.
+mkdir -p "$HOME/.claude"
+sync
+expect "dry run reports each shipped override missing" "$rc $(lines '^MISSING  ~/.claude/skill-overrides/')" "1 $n"
+expect "dry run writes nothing" "$([ -e "$DST" ] && echo written || echo none)" "none"
+
+sync --apply
+expect "--apply installs each shipped override" "$(lines '^installed ~/.claude/skill-overrides/')" "$n"
+same=0
+for src in "${shipped[@]}"; do cmp -s "$src" "$DST/$(basename "$src")" && same=$((same + 1)); done
+expect "each installed override matches the repo byte for byte" "$same" "$n"
+sync
+expect "after --apply every copy matches" "$rc $(lines 'every harness copy matches')" "0 1"
+
+# A stale copy is reported, then refreshed; an override placed by hand is left alone.
+one="$(basename "${shipped[0]}")"
+echo stale >"$DST/$one"
+echo mine >"$DST/hand-made.SKILL.md"
+sync
+expect "a stale override is drift" "$rc $(lines "^DRIFT    ~/.claude/skill-overrides/$one")" "1 1"
+sync --apply
+expect "--apply refreshes the stale override" "$(cmp -s "${shipped[0]}" "$DST/$one" && echo same || echo differs)" "same"
+expect "an override placed by hand is untouched" "$(cat "$DST/hand-made.SKILL.md")" "mine"
+
+[ "$failed" -eq 0 ] || exit 1
+echo "all passed"
