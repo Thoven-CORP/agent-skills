@@ -30,7 +30,7 @@ lists.
 - Fewer turns beats a cheaper token. A cheap model that takes three times the turns costs more.
   Tier 4 is for work that is transcription plus a test.
 
-## Verifier and fix rounds
+## Verifier and fix round
 
 - The verifier is a fresh tier-2 pane that did not build the ticket. A fresh pane is the
   independence that matters (Andres, 2026-09-27). A verifier on another CLI runs only when Andres

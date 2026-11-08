@@ -63,8 +63,8 @@ PATCHES = [
         "the **deslop** skill (`/deslop`)",
     ),
     # Review cost cuts (Andres, 2026-11-08 usage audit): deslop and no-comments run
-    # only when asked, and the architect/arena panels are sized to the ticket. Each
-    # `old` is the text after the patch above, so these must stay below it.
+    # only when asked, and the architect/arena panels are sized to the ticket. The
+    # deslop `old` strings assume the patch above, so they stay below it.
     (
         "poteto-mode",
         "- Before commit → the **deslop** skill (`/deslop`).\n- Before review → the **no-comments** skill (`/no-comments`).",

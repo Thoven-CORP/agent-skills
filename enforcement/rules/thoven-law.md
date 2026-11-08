@@ -48,15 +48,14 @@ a rebase ate a day of the onboarding prototype.)
   2026-11-08: one session opened 15 PRs, 4 of them needed.)
 - Open a PR into `main` and push to it while the session still has known work for that ticket; arm
   auto-merge with `gh pr merge --auto` once its last known unit is committed. No PR waits for a go
-  from Andres, UI included: he reviews screens on staging, and production still moves only through
-  `promote.sh` (Andres, 2026-11-05). `main` runs GitHub's merge queue (THV-1707): a push to the PR runs
-  cheap affected tests (frontend unit tests, backend path-mapped specs), auto-merge queues the PR
-  once that `CI` is green, and the queue's own `CI` run, on the commit that will land, runs the broad
-  tests and merges it with a merge commit. Green PR checks are not a merge: a queue failure takes the
-  PR out of the queue unmerged, and `main` does not move. A PR into an integration branch
-  has no queue; its `CI` runs the affected tests and broad coverage when a dependency is unknown, and
-  a ticket PR there merges on that `CI`, its test lines and the verifier's pass. A nightly or manual
-  full run audits what selection skips.
+  from Andres, UI included: he reviews screens on staging (Andres, 2026-11-05). `main` runs GitHub's
+  merge queue (THV-1707): a push to the PR runs cheap affected tests (frontend unit tests, backend
+  path-mapped specs), auto-merge queues the PR once that `CI` is green, and the queue's own `CI`
+  run, on the commit that will land, runs the broad tests and merges it with a merge commit. Green
+  PR checks are not a merge: a queue failure takes the PR out of the queue unmerged, and `main` does
+  not move. A PR into an integration branch has no queue; its `CI` runs the affected tests and broad
+  coverage when a dependency is unknown, and a ticket PR there merges on that `CI`, its test lines
+  and the verifier's pass. A nightly or manual full run audits what selection skips.
   The method follows the PR's role:
 
   | PR | Merge |
@@ -128,15 +127,16 @@ only to fix an issue it found at another viewport, in motion or in performance. 
 names that issue beside the change.
 
 **Targeted tests.** The verify cadence lives in `skills/andres-mode/SKILL.md`, "Check your own work":
-targeted checks while editing and at DONE, CI on every PR, the full `bin/verify --base <integration
-branch>` only when Andres asks or once at the parent before the integration PR into `main`, nothing
-reruns on push. Heavy work (e2e, builds, stacks, perf) runs through
-`~/thoven/agent-skills/enforcement/bin/thoven-load-gate -- <cmd>`. Heavy work runs on the host
-whose `~/.config/thoven/host.json` says `mini`. There, `bin/verify` takes a gate slot itself, so run
-it as is. On a `laptop` host the Bash guard denies verify, builds, e2e and whole suites: run
-`remote-verify` for verify and the `remote-check` skill for the rest. Stop the servers you started after each step, and
-delete scratch you can regenerate. A subagent runs a long command in the foreground with a
-timeout, because the harness blocks `sleep` and a subagent without Monitor cannot poll a background job.
+targeted checks while editing and at DONE, CI on every PR, the full `bin/verify --base
+<integration branch>` only when Andres asks or once at the parent before the integration PR into
+`main`, nothing reruns on push. Heavy work (e2e, builds, stacks, perf) runs on the host whose
+`~/.config/thoven/host.json` says `mini`, through
+`~/thoven/agent-skills/enforcement/bin/thoven-load-gate -- <cmd>`. There, `bin/verify` takes a gate
+slot itself, so run it as is. On a `laptop` host the Bash guard denies verify, builds, e2e and whole
+suites: run `remote-verify` for verify and the `remote-check` skill for the rest. Stop the servers
+you started after each step, and delete scratch you can regenerate. A subagent runs a long command
+in the foreground with a timeout, because the harness blocks `sleep` and a subagent without Monitor
+cannot poll a background job.
 
 **Local database.** `thoven-worktree create` sets `TEST_DATABASE_URL` to `neondb_test_<slug>`, drops
 a `DATABASE_URL` that names the shared `thoven_development`, and creates `thoven_dev_<slug>` when the
@@ -149,7 +149,7 @@ touched files and merges backend before the frontend that reads it. Backend-firs
 backward-compatible change: a newly required request field stays optional until the frontend that
 sends it is on staging. (Backend #278 made `source_timezone` required hours before the frontend
 sent it, and staging refused every reschedule for six hours.) Evidence goes on the work-session
-page. Procedure: `dispatch-work/references/review.md`.
+page (andres-mode, Replies). Procedure: `dispatch-work/references/review.md`.
 
 **Scope.** Make the surgical edit the ticket asks for. Debt, bugs and smells in code the ticket or
 feature owns are fixed on its branch in the same round. A problem outside it gets one line in an

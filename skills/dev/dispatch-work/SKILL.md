@@ -88,8 +88,7 @@ checkpoint at each child ticket: it posts a REPORT for the child before it start
 planned handoff lands between tickets. Several small same-shape tickets go the same way.
 
 Before dispatching onto an integration branch, compare its `lefthook.yml` and `bin/verify` with
-`origin/main`. When they differ, run `/modernize` on the branch for its verdict only: an old
-branch's pre-push hook runs checks `main` dropped, and panes end up pushing with `--no-verify`.
+`origin/main`. When they differ, run `/modernize` on the branch for its verdict only.
 MODERNIZE: make the catch-up merge of `main` (a merge commit; a shared integration branch is never
 rebased) and note it on the work-session page. REWORK or CLOSE is a finding for Andres.
 
@@ -177,7 +176,7 @@ A peer message from a pane carries a status line and its entry path:
 | `DONE_WITH_CONCERNS THV-x` | Read the concerns. Correctness or scope concerns get a fix round first. Observations go to step 5. |
 | `NEEDS_CONTEXT THV-x` | Answer from Linear and this conversation, by peer message plus an ANSWER entry. A product call goes to Andres word for word; relay his answer and add it to the Linear parent. |
 | `BLOCKED THV-x` | Context gap: answer it. Too hard: fresh pane one tier up. Too big: split the ticket. Product call: ask Andres. |
-| `HANDOFF THV-x` | The pane hit its budget. Spawn a fresh pane on the same brief plus the HANDOFF entry and the takeover line below. |
+| `HANDOFF THV-x` | The pane reached its HANDOFF point. Spawn a fresh pane on the same brief plus the HANDOFF entry and the takeover line below. |
 
 An alert line names the pane and the cause:
 
@@ -197,8 +196,8 @@ When a UI fix round reports, read the parity grid in its REPORT, then push the p
 **Corrections to a working pane go as a peer message plus a CORRECTION entry** (`dispatch post ...
 --kind correction`); a message reaches a busy pane between its tool calls. Use `dispatch interrupt`
 only to stop work going the wrong way. A Codex pane gets its correction with `dispatch send <pane>
-<file>` once it is idle. Hold the verifier until the pane has answered the last correction. A pane
-that reported DONE gets no new work: the fix round goes to a fresh pane (`references/brief.md`, Fix-round brief).
+<file>` once it is idle. Hold the verifier until the pane has answered the last correction. The
+fix round goes to a fresh pane (`references/brief.md`, "Fix-round brief").
 
 **Takeover.** A replacement pane gets the same brief with its opening line changed to
 `/poteto-mode session-pickup THV-x "<title>"`, plus this line: `Pick up on <branch> from <last

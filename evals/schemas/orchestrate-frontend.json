@@ -54,7 +54,7 @@
         "vercel-react-best-practices": "Render cost, bundle size, re-renders",
         "javascript-pro": "Plain JS, Node, tooling",
         "playwright-expert": "Drive or inspect a real browser",
-        "deslop": "Strip AI slop from a diff; Pre-commit",
+        "deslop": "Strip AI slop from a diff",
         "unslop": "Sharpen prose, remove AI tells",
         "no-comments": "Remove comments that restate the code",
         "code-review": "Review a branch against standards and spec",
