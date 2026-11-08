@@ -45,6 +45,58 @@ relpath_from() {
   printf '%s\n' "${out:-.}"
 }
 
+# True when $1 names the checkout $3 through the spelling $2 (absolute, workspace-relative or
+# cwd-relative) as a whole path. Two near misses no longer count (2026-11-08):
+#   a prefix: ~/thoven/frontend inside ~/thoven/frontend-<tree>, which scanned the main checkout's
+#     14,770 untracked scratch files after every command in a worktree;
+#   a parent: ~/thoven inside ~/thoven/<checkout>/..., which scanned the workspace root's 32,781
+#     untracked files after every command that named any checkout. That path belongs to the
+#     nested checkout ($checkouts lists them), not to the root.
+names_path() {
+  local command="$1" path="$2" repo="$3" rest before after child
+  [ -n "$path" ] && [ "$path" != . ] || return 1
+  rest="$command"
+  while [[ "$rest" == *"$path"* ]]; do
+    before="${rest%%"$path"*}"
+    after="${rest#*"$path"}"
+    rest="$after"
+    [[ "${before: -1}" == [[:alnum:]_.-] || "${after:0:1}" == [[:alnum:]_.-] ]] && continue
+    if [ "${after:0:1}" = / ]; then
+      child="${after#/}"
+      child="${child%%[/[:space:]\"\'\;\&\|\)]*}"
+      [ -n "$child" ] && [[ $'\n'"$checkouts"$'\n' == *$'\n'"$repo/$child"$'\n'* ]] && continue
+    fi
+    return 0
+  done
+  return 1
+}
+
+# Prints each path git reports changed in checkout $1 that is newer than $boundary, deletions
+# included. One Python pass over the NUL records: a bash loop took ~8s per call on the workspace
+# root's 32,781 entries. Porcelain -z reports a rename's destination first and its source as a
+# second record, which is consumed without being treated as a status.
+changed_paths() {
+  git -C "$1" status --porcelain -z --untracked-files=all 2>/dev/null | python3 -c '
+import os, sys
+repo, boundary = os.fsencode(sys.argv[1]), os.stat(sys.argv[2]).st_mtime_ns
+records = iter(sys.stdin.buffer.read().split(b"\0"))
+out = sys.stdout.buffer
+for record in records:
+    if not record:
+        continue
+    status, rel = record[:2], record[3:]
+    if b"R" in status or b"C" in status:
+        next(records, None)
+    path = repo + b"/" + rel
+    if os.path.isfile(path):
+        if os.stat(path).st_mtime_ns < boundary:
+            continue
+    elif b"D" not in status:
+        continue
+    out.write(path + b"\n")
+' "$1" "$boundary"
+}
+
 payload="$(cat)"
 case "$dialect" in
   cursor)
@@ -125,72 +177,57 @@ PY_PATH
 
     boundary="$state/started"
     [ -f "$state/cmd-started" ] && boundary="$state/cmd-started"
+    touch "$edited_file"
+    candidates="$state/candidates.$$"
+    : > "$candidates"
 
     toplevel="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null)"
-    newly=()
-    if [ -n "$toplevel" ]; then
-      touch "$edited_file"
-      while IFS= read -r -d '' line; do
-        [ -n "$line" ] || continue
-        rel="${line:3}"
-        # Porcelain -z reports the destination first and the rename source
-        # as a second NUL record. Consume it without treating it as status.
-        case "${line:0:2}" in *R*|*C*) IFS= read -r -d '' || break ;; esac
-        abs="$toplevel/$rel"
-        if [ ! -f "$abs" ] && [[ "${line:0:2}" != *D* ]]; then
-          continue
-        fi
-        if [ -f "$abs" ] && [ "$abs" -ot "$boundary" ]; then
-          continue
-        fi
-        grep -qxF "$abs" "$edited_file" && continue
-        echo "$abs" >> "$edited_file"
-        newly+=("$abs")
-        touch "$state/last-edit"
-      done < <(git -C "$cwd" status --porcelain -z --untracked-files=all 2>/dev/null)
-
-      if [ "$dialect" = claude ] && [ ! -f "$state/ui-rule-shown" ]; then
-        match=0
-        for p in "${newly[@]:-}"; do
-          [ -n "$p" ] || continue
-          case "$p" in
-            */components/*) match=1 ;;
-          esac
-          case "$p" in
-            */app/*.tsx) match=1 ;;
-          esac
-        done
-        if [ "$match" -eq 1 ]; then
-          printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"Thoven UI rule: before changing a component, run the thoven-designer skill to find the binding token file for the value in question. The surface named in the task is the only one in scope."}}'
-          touch "$state/ui-rule-shown"
-        fi
-      fi
-    fi
+    [ -n "$toplevel" ] && changed_paths "$toplevel" >> "$candidates"
     # A command can edit a sibling checkout that `git status` from cwd cannot see.
     # Inspect only checkouts named in the
     # command, and use the same mtime boundary as the cwd path.
     case "$cwd" in
       "$HOME/thoven"|"$HOME"/thoven/*)
-      while IFS= read -r dotgit; do
-        [ -n "$dotgit" ] || continue
-        repo="${dotgit%/.git}"
+      checkouts="$(find "$HOME/thoven" -maxdepth 2 -name .git -print 2>/dev/null | sed 's|/\.git$||')"
+      while IFS= read -r repo; do
+        [ -n "$repo" ] || continue
+        [ "$repo" = "$toplevel" ] && continue
         relative="${repo#"$HOME/thoven"/}"
-        if [[ "$command" != *"$repo"* && "$command" != *"$relative"* ]]; then
-          relative_from_cwd="$(relpath_from "$cwd" "$repo")"
-          [[ "$command" == *"$relative_from_cwd"* ]] || continue
+        if ! names_path "$command" "$repo" "$repo" && ! names_path "$command" "$relative" "$repo"; then
+          names_path "$command" "$(relpath_from "$cwd" "$repo")" "$repo" || continue
         fi
-        while IFS= read -r -d '' line; do
-          [ -n "$line" ] || continue
-          rel="${line:3}"
-          case "${line:0:2}" in *R*|*C*) IFS= read -r -d '' || break ;; esac
-          abs="$repo/$rel"
-          if [ ! -f "$abs" ] && [[ "${line:0:2}" != *D* ]]; then continue; fi
-          if [ -f "$abs" ] && [ "$abs" -ot "$boundary" ]; then continue; fi
-          grep -qxF "$abs" "$edited_file" || { echo "$abs" >> "$edited_file"; touch "$state/last-edit"; }
-        done < <(git -C "$repo" status --porcelain -z --untracked-files=all 2>/dev/null)
-      done < <(find "$HOME/thoven" -maxdepth 2 -name .git -print 2>/dev/null)
+        changed_paths "$repo" >> "$candidates"
+      done <<<"$checkouts"
       ;;
     esac
+
+    # One pass against the edited list, however long either grows: a grep per path held two
+    # sessions' hooks at ~86% CPU on a 24,000-line list (2026-11-08). FILENAME, not NR == FNR,
+    # because an empty edited list would otherwise read the candidates as already seen.
+    newly=()
+    while IFS= read -r path; do
+      newly+=("$path")
+    done < <(awk 'FILENAME == ARGV[1] { seen[$0] = 1; next } !($0 in seen) { seen[$0] = 1; print }' "$edited_file" "$candidates")
+    rm -f "$candidates"
+    if [ "${#newly[@]}" -gt 0 ]; then
+      printf '%s\n' "${newly[@]}" >> "$edited_file"
+      touch "$state/last-edit"
+    fi
+
+    # The UI nudge reads only this checkout's paths, as before siblings shared the list.
+    if [ "$dialect" = claude ] && [ -n "$toplevel" ] && [ ! -f "$state/ui-rule-shown" ]; then
+      match=0
+      for p in "${newly[@]:-}"; do
+        case "$p" in "$toplevel"/*) ;; *) continue ;; esac
+        case "$p" in
+          */components/*|*/app/*.tsx) match=1 ;;
+        esac
+      done
+      if [ "$match" -eq 1 ]; then
+        printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"Thoven UI rule: before changing a component, run the thoven-designer skill to find the binding token file for the value in question. The surface named in the task is the only one in scope."}}'
+        touch "$state/ui-rule-shown"
+      fi
+    fi
     rm -f "$state/cmd-started"
     ;;
 esac
