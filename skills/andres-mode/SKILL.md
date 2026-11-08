@@ -99,6 +99,7 @@ The builder checks its own homework before DONE; the reviewer runs the same list
 - Leave `disable-model-invocation` off a skill unless the user says that skill must never self-trigger, and search installed skills under `~/.agents/skills`, since `grep -r` skips the `~/.claude/skills` symlinks.
 - Before any dispatch, ask the mini's load gate for free slots (`thoven-load-gate --check-only --profile ~/.config/thoven/host.json`); with none free, prune first, and never a worktree for a minor fix. A dev server and a browser QA loop each hold a slot, and verify takes its own.
 - When work lands and the user has seen the evidence, close its pane, stop its dev servers, remove its worktrees, protos and scratch, and report what was cleared in one line. Demo servers and long or heavy jobs start under a time cap and stop that turn. Force-killing a process you did not start needs a yes that names its pid and owner. Never remove unpushed work. Delete your own one-off probes and scratch scripts once you have checked them, and say so.
+- When the machine is slow, rank processes by memory and swap, trace each to the session that owns it, and propose stopping only processes that break a rule (a headless browser or `next-server` on the laptop). Never suggest closing a Claude session. (LEARNINGS 2026-11-08)
 
 ## Replies
 

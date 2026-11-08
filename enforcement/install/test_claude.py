@@ -69,6 +69,17 @@ try:
                           ("SubagentStop", "thoven-session-procs end --agent")):
         found = [h["command"] for e in data()["hooks"][event] for h in e["hooks"] if "thoven-session-procs" in h["command"]]
         assert len(found) == 1 and found[0].endswith(suffix), (event, found)
+
+    # A retired hook already installed is stripped; a live hook in the same block and on the same event stays.
+    hooks_dir = tmp / ".claude" / "hooks"
+    write({"hooks": {"Stop": [{"hooks": [{"type": "command", "command": f"{hooks_dir}/thoven-uncommitted", "timeout": 10}]},
+                              {"hooks": [{"type": "command", "command": "/opt/notify", "timeout": 5},
+                                         {"type": "command", "command": f"{hooks_dir}/thoven-uncommitted --dialect claude"}]}]}})
+    out = run()
+    assert out.count("- retired hook: remove Stop:") == 2, out
+    run("--apply")
+    assert data()["hooks"]["Stop"] == [{"hooks": [{"type": "command", "command": "/opt/notify", "timeout": 5}]}], data()["hooks"]["Stop"]
+    assert "retired hook" not in run("--apply")
 finally:
     assert tmp.name.startswith("thv1063.") and str(tmp.parent) == "/tmp", tmp
     shutil.rmtree(tmp)

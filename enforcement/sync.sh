@@ -27,7 +27,7 @@ TARGETS=("$HOME/.claude/hooks" "$HOME/.codex/hooks" "$HOME/.cursor/hooks"
 
 # Files that are not hooks: "repo path|harness path", same only-if-present rule.
 PAIRS=("$PWD/opencode/thoven-guard.js|$HOME/.config/opencode/plugins/thoven-guard.js"
-  "$PWD/opencode/thoven-uncommitted.js|$HOME/.config/opencode/plugins/thoven-uncommitted.js"
+  "$PWD/opencode/thoven-track-edits.js|$HOME/.config/opencode/plugins/thoven-track-edits.js"
   "$PWD/config/skills-invocable.txt|$HOME/.claude/skills-invocable.txt")
 
 drift=0

@@ -5,6 +5,16 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-08 — a slow laptop is traced to owners, and sessions stay open
+
+> session · 2026-11-08 · ef2a1ea6 · correction · applied · seen 1
+
+**What happened.** The laptop froze. Andres said "i am not going to clsoe any claude session we might be using but headless chrome should nto be running on my computer."
+**Why.** The cleanup offered to close sessions instead of finding the processes that broke the laptop rule; the real load was a hook bug and a capture's headless Chrome.
+**What changed.** Delegation bullet: rank by memory and swap, trace to the owning session, stop only rule-breaking processes, never suggest closing a session.
+
+---
+
 ## 2026-11-05 — every PR merges itself on green CI
 
 > session · 2026-11-05 · ruling · applied · seen 1

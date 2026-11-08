@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Installs the shell guard, its plugin adapter, the uncommitted-edits plugin, and the deny list into OpenCode.
+"""Installs the shell guard, its plugin adapter, the edit-tracker plugin, and the deny list into OpenCode.
 
 OpenCode has no shell-hook config. A plugin's tool.execute.before runs the guard
 and throws to block (opencode.ai/docs/plugins). The deny list becomes
 permission.bash glob rules; the last matching rule wins, so they are appended
-(opencode.ai/docs/permissions). thoven-uncommitted.js feeds thoven-track-edits from
-tool.execute.after and warns on session.idle, which cannot block.
+(opencode.ai/docs/permissions). thoven-track-edits.js feeds thoven-track-edits from
+tool.execute.after.
 opencode.jsonc is only edited when it parses as plain JSON, because rewriting it
 would drop its comments.
 
@@ -27,8 +27,12 @@ FILES = [
     (GUARD, OPENCODE_DIR / "hooks" / "thoven-guard-bash", True),
     (ENFORCEMENT_DIR / "opencode" / "thoven-guard.js", OPENCODE_DIR / "plugins" / "thoven-guard.js", False),
     (ENFORCEMENT_DIR / "hooks" / "thoven-track-edits", OPENCODE_DIR / "hooks" / "thoven-track-edits", True),
-    (ENFORCEMENT_DIR / "hooks" / "thoven-uncommitted", OPENCODE_DIR / "hooks" / "thoven-uncommitted", True),
-    (ENFORCEMENT_DIR / "opencode" / "thoven-uncommitted.js", OPENCODE_DIR / "plugins" / "thoven-uncommitted.js", False),
+    (ENFORCEMENT_DIR / "opencode" / "thoven-track-edits.js", OPENCODE_DIR / "plugins" / "thoven-track-edits.js", False),
+]
+# Installed by earlier versions. OpenCode loads every file in plugins/, so a retired plugin is deleted.
+RETIRED_FILES = [
+    OPENCODE_DIR / "plugins" / "thoven-uncommitted.js",
+    OPENCODE_DIR / "hooks" / "thoven-uncommitted",
 ]
 
 
@@ -75,6 +79,9 @@ def main():
             skip_reason = f"{CONFIG} has comments or is not plain JSON; not rewriting JSONC"
 
     print(f"Target config dir: {OPENCODE_DIR}")
+    for path in RETIRED_FILES:
+        if path.exists():
+            print(f"- {path}: remove (retired)")
     for src, dest, exe, copy_needed in plan:
         print(f"- {dest}: copy={'yes' if copy_needed else 'no (already matches)'}")
     if skip_reason:
@@ -90,6 +97,11 @@ def main():
         return
 
     changed = False
+    for path in RETIRED_FILES:
+        if path.exists():
+            path.unlink()
+            print(f"Removed retired {path}")
+            changed = True
     for src, dest, exe, copy_needed in plan:
         if copy_needed:
             copy_file(src, dest, executable=exe)

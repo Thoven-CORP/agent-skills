@@ -6,7 +6,7 @@
 #                  no cwd, so the first workspace root (cursor.com/docs/hooks)
 #   devin          PostToolUse; tool_name edit|write|notebook_edit carry tool_input.file_path, exec and
 #                  apply_patch are scanned; no cwd, so DEVIN_PROJECT_DIR (docs.devin.ai/cli/extensibility/hooks)
-#   OpenCode's plugin sends the claude shape (opencode/thoven-uncommitted.js).
+#   OpenCode's plugin sends the claude shape (opencode/thoven-track-edits.js).
 #   thoven-track-edits [--dialect claude|cursor|devin] [--pre]
 #
 # --pre runs before a shell call and only stamps $state/cmd-started. The Bash scan then attributes

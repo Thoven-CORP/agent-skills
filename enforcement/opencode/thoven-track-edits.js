@@ -1,15 +1,12 @@
-// Records this session's edits through thoven-track-edits after each tool call, and runs
-// thoven-uncommitted when the session goes idle and prints its question.
-// Warn only: session.idle is published after the turn has ended, so a plugin cannot hold
-// the session open the way a Claude or Codex Stop hook can (opencode.ai/docs/plugins).
-// Source: agent-skills/enforcement/opencode/thoven-uncommitted.js. Copied out by install/opencode.py.
+// Records this session's edits through thoven-track-edits after each tool call. The Bash guard
+// reads that log to allow a path-scoped undo of this session's own files.
+// Source: agent-skills/enforcement/opencode/thoven-track-edits.js. Copied out by install/opencode.py.
 
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // Resolved beside this file, as thoven-guard.js resolves its guard.
-const HOOK = fileURLToPath(new URL("../hooks/thoven-uncommitted", import.meta.url));
 const TRACK = fileURLToPath(new URL("../hooks/thoven-track-edits", import.meta.url));
 
 let warned = false;
@@ -25,7 +22,7 @@ function runHook(script, args, payload) {
     if (!warned) {
       warned = true;
       const why = result.error ? result.error.message : `exit ${result.status}`;
-      console.error(`thoven-uncommitted: hook did not run (${why})`);
+      console.error(`thoven-track-edits: hook did not run (${why})`);
     }
     return null;
   }
@@ -51,21 +48,13 @@ function trackPayload(input, directory) {
   }
 }
 
-export const ThovenUncommittedPlugin = async (ctx) => {
+export const ThovenTrackEditsPlugin = async (ctx) => {
   const directory = ctx?.directory;
   return {
     "tool.execute.after": async (input) => {
       if (!input?.sessionID || !directory) return;
       const payload = trackPayload(input, directory);
       if (payload) runHook(TRACK, [], payload);
-    },
-    event: async ({ event }) => {
-      if (event?.type !== "session.idle") return;
-      const sessionID = event.properties?.sessionID;
-      if (!sessionID) return;
-      const result = runHook(HOOK, ["--dialect", "warn"], { session_id: sessionID, cwd: directory });
-      const message = (result?.stderr || "").trim();
-      if (message) console.error(message);
     },
   };
 };

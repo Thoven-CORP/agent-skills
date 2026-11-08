@@ -284,27 +284,16 @@ before herdr or the Codex app pick their base. `install/gitconfig.py` sets
 main checkouts. `git maintenance` was left out because its prefetch never moves
 `origin/*`.
 
-`thoven-uncommitted` runs at stop. It reads paths recorded by `thoven-track-edits` and splits the
-ones still uncommitted by whether git tracks them.
+`thoven-track-edits` writes each session's edit log (Claude and Codex on PostToolUse, Cursor on
+`afterFileEdit` and `afterShellExecution`, Devin on `PostToolUse`, OpenCode from the plugin's
+`tool.execute.after`). The Bash guard reads it to allow a path-scoped undo of the session's own files.
 
-A tracked file with an uncommitted change blocks every stop, `stop_hook_active` and Cursor's
-`loop_count` included, until it is committed or kept on purpose with
-`thoven-uncommitted keep <session> <absolute path> "<reason>"`. The block message carries the exact
-command, and asks the agent to name each kept path and its reason to Andres.
-`/tmp/claude-thoven/<session>/uncommitted-kept` records them. After 3 blocks on the same set it lets
-the stop through and says so on stderr, so a session that cannot act does not loop. A changed set
-starts the count again. The full list lives in `uncommitted-tracked.paths`.
-
-A new untracked file is asked about once per absolute path, since probes and scratch stay
-uncommitted by law. Tracking is not proof of ownership:
-shell scans can include peer edits in shared worktrees. A partial commit does
-not repeat previously raised paths; genuinely new paths still get a warning.
-Warnings show at most 12 paths and retain the full absolute-path manifest under
-`/tmp/claude-thoven/<session>/uncommitted-pending.paths`. Legacy whole-list
-notifications are migrated without repeating them. It never stages or commits. OpenCode's `session.idle` cannot block, so
-there it warns. Every tool writes the edit log: Cursor on `afterFileEdit` and
-`afterShellExecution`, Devin on `PostToolUse`, OpenCode from the plugin's
-`tool.execute.after`.
+There is no stop-time "uncommitted files" check. `thoven-uncommitted` blocked stops on files still
+uncommitted, and was retired on 2026-11-08: in all 151 recorded "keep" entries the flagged file was
+another pane's work in progress, never a session's own forgotten work, because a shared tree cannot
+tell which pane wrote a file. The guard's refusal of whole-tree stash, reset and clean is what
+protects shared trees, and builders commit by exact path at DONE. `install/common.py`
+`RETIRED_HOOKS` strips it from installed configs.
 
 ## Harness coverage
 

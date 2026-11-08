@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-"""Installs the enforcement agents, the shell guard, the edit tracker, the uncommitted-edits stop hook, and the deny list into Cursor.
+"""Installs the enforcement agents, the shell guard, the edit tracker, and the deny list into Cursor.
 
 The guard runs on Cursor's beforeShellExecution event, which the IDE and the
 cursor-agent CLI both fire (cursor.com/docs/hooks). The deny list goes into
 ~/.cursor/cli-config.json as Shell(command:args) tokens: Cursor matches
 Shell(x) against the first token only, and command:args globs the arguments
 (cursor.com/docs/cli/reference/permissions). thoven-track-edits writes the session's
-edit log on afterFileEdit and afterShellExecution, and thoven-uncommitted reads it on
-`stop` and continues the agent with a followup_message (cursor.com/docs/hooks).
+edit log on afterFileEdit and afterShellExecution (cursor.com/docs/hooks).
 
 Dry run by default. Pass --apply to write.
 """
@@ -16,7 +15,7 @@ import copy
 import sys
 from pathlib import Path
 
-from common import ENFORCEMENT_DIR, add_missing, copy_file, load_denies, needs_copy, read_json, write_json
+from common import ENFORCEMENT_DIR, add_missing, copy_file, drop_retired, load_denies, needs_copy, read_json, write_json
 
 CURSOR_DIR = Path.home() / ".cursor"
 CURSOR_AGENTS_DIR = CURSOR_DIR / "agents"
@@ -32,7 +31,6 @@ HOOK_ENTRIES = [
     ("thoven-track-edits", "beforeShellExecution", 10, " --pre"),
     ("thoven-track-edits", "afterFileEdit", 10, ""),
     ("thoven-track-edits", "afterShellExecution", 10, ""),
-    ("thoven-uncommitted", "stop", 10, ""),
 ]
 
 
@@ -53,6 +51,8 @@ def main():
 
     hooks_orig = read_json(HOOKS_JSON, {"version": 1, "hooks": {}})
     hooks_cfg = copy.deepcopy(hooks_orig)
+    for entry in drop_retired(hooks_cfg):
+        print(f"- retired hook: remove {entry}")
     hook_plan = []
     for script_name, event, timeout, extra in HOOK_ENTRIES:
         src = ENFORCEMENT_DIR / "hooks" / script_name
