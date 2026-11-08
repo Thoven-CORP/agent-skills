@@ -39,7 +39,15 @@ a rebase ate a day of the onboarding prototype.)
   copies the env file and installs dependencies. Add `--new "<reason>"` for a fresh tree when your
   files overlap another live tree's dirty files, or the work is risky and long. From Claude,
   `claude --worktree <area>-thv-<n>` runs the same script.
-- Open a PR into `main` and arm auto-merge as it opens with `gh pr merge --auto`; no PR waits for a go
+- One ticket, one PR per repo, in any session: a Linear parent, a ticket worked directly, or a chain
+  of same-area follow-ups that day gets one branch and one PR per repo, and every fix, follow-up and
+  gap found in code it just changed is appended there. A new PR is for new work, never for the next
+  fix. Each code PR into `main` pays a full merge-queue run whatever its size, so code PRs batch
+  hardest; agent-skills and docs-only PRs cost attention, not CI minutes. Keep docs-only and code
+  changes in separate PRs, since a code diff takes the docs-only PR off its fast path. (Andres,
+  2026-11-08: one session opened 15 PRs, 4 of them needed.)
+- Open a PR into `main` and push to it while the session still has known work for that ticket; arm
+  auto-merge with `gh pr merge --auto` once its last known unit is committed. No PR waits for a go
   from Andres, UI included: he reviews screens on staging, and production still moves only through
   `promote.sh` (Andres, 2026-11-05). `main` runs GitHub's merge queue (THV-1707): a push to the PR runs
   cheap affected tests (frontend unit tests, backend path-mapped specs), auto-merge queues the PR
@@ -67,10 +75,13 @@ a rebase ate a day of the onboarding prototype.)
   its tree, and point follow-up tickets at `origin/main`. A Project that continues cuts a fresh
   `<project-slug>/integration` from `main`.
 - An agent-skills PR is not held. It merges in the same pass, then `enforcement/sync.sh
-  --apply` runs until `sync.sh` reports every harness copy matches. Commit and merge only on a
+  --apply` runs until `sync.sh` reports every harness copy matches. The law block in each product
+  repo's `CLAUDE.md` is the exception: it rides the next PR already going into that repo, or one
+  docs-only sync PR a day, and gets a PR of its own only when the change alters a command agents
+  run. Commit and merge only on a
   branch in a tree, never in a `main` checkout: `co.thoven.sync` fast-forwards the clean `main` checkouts every 30 minutes.
-- Unattended PR work: `/full-stop` proves, files and babysits; the auto-merge armed at open lands
-  it on green `CI`. `/full-send`, on Andres's "full send", also merges a PR whose required check
+- Unattended PR work: `/full-stop` proves, files and babysits; the auto-merge armed after the last
+  known unit lands it on green `CI`. `/full-send`, on Andres's "full send", also merges a PR whose required check
   cannot run, in any repo. Its merge follows the method table and backend-first order above. Both call `/sol-loop`: with no GPT Sol
   route, run `dispatch-work/references/review.md` "Every PR put to Andres" in its place and say so.
   `pr-wait` runs `--until green`, since Thoven has no Greptile or Macroscope. For a PR into `main`,

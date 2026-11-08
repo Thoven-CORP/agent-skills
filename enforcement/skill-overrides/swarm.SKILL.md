@@ -31,6 +31,8 @@ Every brief stands alone. Include the goal, scope, exact slice or race arm, how 
 
 If a worker drops out, proceed with N-1 and note it.
 
+A worker stops every watcher and background command it started before it sends its final report. Main stops each worker as soon as that report lands, so none keeps waiting after it is done (2026-11-08: one kept a watcher running for 10 hours after reporting).
+
 ## Phase C: Aggregate
 
 Read the terminal results. Drop a result that does not record the SHAs and method its brief names, and respawn that worker once. After a second miss, record a gap. A gap does not count as a pass. For coverage, every required slice needs a result. For a race, apply the selection rule declared up front. Use first pass, rank all, or best-of. Do not paste raw worker dumps.

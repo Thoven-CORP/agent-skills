@@ -105,7 +105,7 @@ SKIPS
 
 ## Changelog
 
-Staging stamps no version. Each PR into `main` carries its own `[Unreleased]` entry.
+Staging stamps no version. PRs into `main` do not edit `CHANGELOG.md`; `/publish` writes it at each production release (`references/production.md`, "Changelog").
 
 ## The Render runbook
 

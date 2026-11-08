@@ -11,7 +11,7 @@ together.
   on this branch and your commits.
 - Commit as you go, by exact path, message ending in THV-<id>. Commit only: main pushes the branch
   and opens the PR.
-- Before DONE, a backend change regenerates the contract manifest and the frontend OpenAPI types, and runs `bin/ci fast --only guards,contract,schema` plus `script/check_openapi_breaking` when the schema changes. A frontend change runs `api-types:check` and `contract-check`, and `pnpm run knip` when exports or files change. The authorization cop runs with the other guards. Every change carries a CHANGELOG `[Unreleased]` line, or your REPORT flags skip-changelog for main.
+- Before DONE, a backend change regenerates the contract manifest and the frontend OpenAPI types, and runs `bin/ci fast --only guards,contract,schema` plus `script/check_openapi_breaking` when the schema changes. A frontend change runs `api-types:check` and `contract-check`, and `pnpm run knip` when exports or files change. The authorization cop runs with the other guards. No PR edits `CHANGELOG.md`: `/publish` writes the release's changelog from the merged PRs and their Linear tickets.
 - Talk to main by peer message (SendMessage to the session your brief names) plus a board entry,
   as the brief's ASK and REPORT say. A message from main can arrive mid-turn. Read it at once: a
   correction overrides the brief from that point.

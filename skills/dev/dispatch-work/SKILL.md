@@ -214,8 +214,9 @@ as `/takeover` in a brief: the pane loads it instead of poteto-mode.
 After main pushes and opens the ticket PR, arm one watcher for it with the Monitor tool
 (`timeout_ms: 3600000`): `~/.agents/skills/babysit-pr/scripts/pr-wait <n> --until green`. Run
 nothing else that polls the PR. Exit 1 on a red check is a fix round to the pane, or a gate-repair
-line to Andres (review.md, "Handling findings"). BEHIND, or a base commit touching the PR's files,
-means main brings the branch up to date before auto-merge lands it. Re-arm after every push. On a PR
+line to Andres (review.md, "Handling findings"). On a PR into `main`, BEHIND needs nothing: the
+merge queue tests it on top of current `main`. Rebase only when it is DIRTY. On an integration
+branch, BEHIND or a base commit touching the PR's files means main brings it up to date first. Re-arm after every push. On a PR
 into `main`, green means queued: then arm `~/thoven/agent-skills/enforcement/bin/pr-queue-wait <owner/repo> <n>`,
 which exits 0 on the merge and 1 when the merge queue rejects the PR.
 

@@ -8,7 +8,7 @@ Its progress and done lines start with `== ` and show SHAs as their first 9 char
 
 ## Steps
 
-1. **Show the changelog, then pick the SHAs.** List the range's PRs per repo with `git -C <repo> log --oneline --first-parent <last prod tag>..origin/main`. Read each one's `[Unreleased]` entry in that repo's `CHANGELOG.md` and write the **changelog list**: a Frontend and a Backend heading, then one plain-English bullet per PR saying what a teacher, parent or student will notice, with its PR number. A PR labelled `skip-changelog` gets a bullet that says "no user-facing change". A PR with neither gets a bullet that says its entry is missing; add the missing entries in one PR into `main` and pin that merge, so the release ships its own notes. Then pick the SHAs. A normal promote takes what staging runs now: `plan` with no `--be` or `--fe` reads it, so bring staging's frontend to the tip of `main` first (`references/staging.md` step 4). A hotfix merges its PR into `main` first (`references/staging.md` step 0, "Stop: merge the PR"), then pins only the half that changed: `--be <sha> --fe keep`, or `--fe <sha> --be keep`, where `<sha>` is the merge commit (`gh pr view <number> --json mergeCommit -q .mergeCommit.oid`). Pinning it also ships every unpromoted commit before it on `main`: list them in the plan with `git -C <repo> log --oneline <from>..<sha>`. Done when every PR in the range has its bullet in the changelog list and you hold the exact `plan` command.
+1. **Show the changelog, then pick the SHAs.** List the range's PRs per repo with `git -C <repo> log --oneline --first-parent <last prod tag>..origin/main`. Read each PR's title and body and the Linear tickets its commits cite, and write the **changelog list**: a Frontend and a Backend heading, then one plain-English bullet per PR saying what a teacher, parent or student will notice, with its PR number and ticket ids; a PR nobody would notice gets "no user-facing change". PRs do not edit `CHANGELOG.md`, so nothing is ever missing from it; after the promote, step 11's report prepends the list to `CHANGELOG.md` under the `prod/` tag, in one docs-only PR. Then pick the SHAs. A normal promote takes what staging runs now: `plan` with no `--be` or `--fe` reads it, so bring staging's frontend to the tip of `main` first (`references/staging.md` step 4). A hotfix merges its PR into `main` first (`references/staging.md` step 0, "Stop: merge the PR"), then pins only the half that changed: `--be <sha> --fe keep`, or `--fe <sha> --be keep`, where `<sha>` is the merge commit (`gh pr view <number> --json mergeCommit -q .mergeCommit.oid`). Pinning it also ships every unpromoted commit before it on `main`: list them in the plan with `git -C <repo> log --oneline <from>..<sha>`. Done when every PR in the range has its bullet in the changelog list and you hold the exact `plan` command.
 
 2. **Plan the release.** Run step 7's accounts check first (`accounts-loaded`), so a missing-accounts gap is in the plan. Then:
 
@@ -99,7 +99,7 @@ SKIPS
 
    It checks both services and thoven.co run the pinned SHAs, refuses unless Daily's production webhook is ACTIVE, then pushes `prod/YYYY-MM-DD-N` to both repos and closes the release. Done when it prints `tagged prod/<date>-<n>; release <id> closed`. A rollback can only return to a SHA with a `prod/*` tag, so an untagged release is not a rollback target.
 
-11. **Report.** The changelog list from step 1, then per repo: the SHA, the `promote.sh` line that proved it, and the tag, then the Checks table (SKILL.md, "Rules on every path"), with the tick list's items ticked. Say "production runs `<sha>`" only for a repo whose step printed its done line. Done when Andres has the report.
+11. **Report.** Prepend the changelog list from step 1 to each repo's `CHANGELOG.md` under the new `prod/` tag, in one docs-only PR per repo. Then report the changelog list, then per repo: the SHA, the `promote.sh` line that proved it, and the tag, then the Checks table (SKILL.md, "Rules on every path"), with the tick list's items ticked. Say "production runs `<sha>`" only for a repo whose step printed its done line. Done when Andres has the report.
 
 ## Roll back
 
@@ -125,7 +125,7 @@ The fix goes into `main` as a PR and reaches production through a normal promote
 
 ## Changelog
 
-Production stamps no version. Each PR carries its own `[Unreleased]` entry, and step 1 turns the release's entries into the changelog list Andres reads.
+Production stamps no version. No PR edits `CHANGELOG.md`: every PR into `main` edited the same `[Unreleased]` block, and that file was in 25 of 43 merge conflicts from 2026-10-08 to 2026-11-08, 17 of them on nothing else. Step 1 synthesises the release's list from the merged PRs and their Linear tickets, and only `/publish` writes `CHANGELOG.md`, one section per `prod/` tag.
 
 ## Straight through
 

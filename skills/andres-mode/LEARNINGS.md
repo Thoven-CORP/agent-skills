@@ -5,6 +5,16 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-08 — batch PRs by ticket; light is not one PR per fix
+
+> reflect · 2026-11-08 · ef2a1ea6 · broken-rule · applied · seen 15
+
+**What happened.** One session opened 15 PRs; 4 were needed code PRs. Auto-merge armed at open landed each PR in minutes, so the next unit of the same ticket needed a new PR; each law edit became a CLAUDE.md PR in both product repos; and gaps found in code just merged were filed, asked about and shipped one PR at a time. A wrong guess about GitHub's queue behaviour, written into the law before a run proved it, cost one more law revision and two more PRs. Andres: "Maybe we can just do bigger batches."
+**Why.** "One parent, one PR per repo" lived only in dispatch-work and the root CLAUDE.md, so direct main-session work never applied it; "ship light: one small PR" read as one PR per fix.
+**What changed.** thoven-law "Branches and PRs": one ticket, one PR per repo in any session; arm auto-merge after the last known unit; the repo law block rides the next PR. Pitfalls here: light is not one PR per fix; prove platform behaviour before writing it down.
+
+---
+
 ## 2026-11-08 — a slow laptop is traced to owners, and sessions stay open
 
 > session · 2026-11-08 · ef2a1ea6 · correction · applied · seen 1

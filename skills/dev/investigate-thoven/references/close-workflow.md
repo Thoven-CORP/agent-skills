@@ -32,7 +32,7 @@ Conditional close workflow based on context classification (Standalone / Feature
 
 1. **Log pattern:** Run mandatory pattern quality gate (see below)
 2. **Commit and push:** Stage, commit, and push immediately
-3. **CHANGELOG:** Add entry to `[Unreleased]` section in `CHANGELOG.md`
+3. **CHANGELOG:** none. PRs do not edit `CHANGELOG.md`; `/publish` writes it from the merged PRs and their Linear tickets
 4. **Deploy reminder:** Tell user: "Fix pushed. Deploy with `/publish`; the branch picks the path."
 5. **Summarize:** Full incident summary — symptom, root cause, fix, files changed
 
