@@ -226,6 +226,15 @@ expect "sed -i then restore of another session's dirty file is denied" "$(decisi
 expect "stash push -u of an untracked file is denied" "$(decision claude "git stash push -u -- untracked.txt" "$RR")" "deny"
 expect "restore of a clean directory is denied" "$(decision claude "git restore lib" "$RR")" "deny"
 expect "restore \$f is denied" "$(decision claude 'for f in clean.txt; do git restore $f; done' "$RR")" "deny"
+# 2026-11-08: logs the pre-#153 tracker wrote named sibling checkouts' files, so a file another
+# session changed before this session began was on the list and passed as this session's edit.
+echo stale >"$RR/stale.txt"; g -C "$RR" add stale.txt && g -C "$RR" commit -q -m stale
+echo dirty >>"$RR/stale.txt"; touch -t 202601010000 "$RR/stale.txt"
+printf '%s\n' "$RR/stale.txt" "$RR/gone.txt" >>"/tmp/claude-thoven/$SESSION/edited"
+expect "restore of a logged file last changed before the session started is denied" "$(decision claude "git restore stale.txt" "$RR")" "deny"
+expect "stash push -- of a logged file older than the session is denied" "$(decision claude "git stash push -- stale.txt" "$RR")" "deny"
+expect "restore of a logged file the session deleted is allowed" "$(decision claude "git restore gone.txt" "$RR")" "allow"
+expect "restore <edited> still allowed beside the stale check" "$(decision claude "git restore a.txt" "$RR")" "allow"
 expect "pnpm vitest run 2>&1 | tail stays a whole suite" "$(decision claude "pnpm vitest run 2>&1 | tail")" "deny"
 
 # branch -D of a branch this session created (THV-1361). Each starts at ahead, so it holds a commit
