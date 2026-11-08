@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-08 — The stop-time uncommitted check is retired
+
+**What happened.** After the track-edits fix, Andres asked whether `thoven-uncommitted` was useful at all. Its record: 151 "keep" entries across 65 sessions, every one another pane's or builder's work in progress; four sessions were each asked about 4,000–16,000 files, 16,001 of one session's 16,048 older than the session itself.
+**Why.** It inferred ownership from "a file changed while this session ran", which every peer pane's write satisfies in a shared tree. It protected nothing destructive; the guard's refusal of whole-tree stash, reset and clean does that.
+**What changed.** The hook, its test and its stop entries are gone from all five harnesses; `install/common.py` `RETIRED_HOOKS` strips installed copies, and OpenCode's plugin is tracker-only (`thoven-track-edits.js`). The edit log stays for the guard's path-scoped undo.
+
+---
+
 ## 2026-11-08 — A hook that runs on every call costs the same however old the session is
 
 > reflect · 2026-11-08 · ef2a1ea6 · slow-hook · applied · seen 1

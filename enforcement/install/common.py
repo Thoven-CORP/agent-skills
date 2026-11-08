@@ -1,5 +1,6 @@
 """Helpers every installer shares: the deny list, one-time backups, copies."""
 import json
+import re
 import shutil
 import stat
 from pathlib import Path
@@ -47,6 +48,44 @@ def write_json(path: Path, data) -> None:
     backup_once(path)
     path.write_text(json.dumps(data, indent=2) + "\n")
     print(f"Wrote {path}")
+
+
+# Hooks once installed and since removed. An installer only adds entries, so each strips these
+# from the config it owns. thoven-uncommitted blocked stops on files that turned out, in all 151
+# recorded keeps, to be another pane's work in progress; the Bash guard is what protects shared
+# trees (2026-11-08).
+RETIRED_HOOKS = ("thoven-uncommitted",)
+
+
+def retired(command) -> bool:
+    return isinstance(command, str) and any(
+        re.search(rf"(^|/){re.escape(name)}(\s|$)", command) for name in RETIRED_HOOKS)
+
+
+def drop_retired(config: dict) -> list:
+    """Removes retired hooks from a {"hooks": {event: [...]}} config, in place. Handles both the
+    nested Claude, Codex and Devin shape and Cursor's flat one. Returns what it removed."""
+    removed = []
+    hooks = config.get("hooks") if isinstance(config, dict) else None
+    if not isinstance(hooks, dict):
+        return removed
+    for event in list(hooks):
+        kept = []
+        for block in hooks[event]:
+            if isinstance(block, dict) and "hooks" in block:
+                inner = [h for h in block["hooks"] if not retired(h.get("command"))]
+                removed += [f"{event}: {h['command']}" for h in block["hooks"] if retired(h.get("command"))]
+                if inner:
+                    kept.append({**block, "hooks": inner})
+            elif isinstance(block, dict) and retired(block.get("command")):
+                removed.append(f"{event}: {block['command']}")
+            else:
+                kept.append(block)
+        if kept:
+            hooks[event] = kept
+        else:
+            del hooks[event]
+    return removed
 
 
 def add_missing(items: list, wanted: list) -> list:

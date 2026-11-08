@@ -14,7 +14,7 @@ import os
 import sys
 from pathlib import Path
 
-from common import ENFORCEMENT_DIR, add_missing, copy_file, load_denies, needs_copy, read_json, write_json
+from common import ENFORCEMENT_DIR, add_missing, copy_file, drop_retired, load_denies, needs_copy, read_json, write_json
 
 CLAUDE_DIR = Path.home() / ".claude"
 HOOKS_DIR = CLAUDE_DIR / "hooks"
@@ -33,7 +33,6 @@ HOOK_SPECS = [
     ("thoven-session-procs", "PostToolUse", "Bash", 10, " record"),
     ("thoven-session-procs", "SessionEnd", None, 30, " end"),
     ("thoven-session-procs", "SubagentStop", None, 30, " end --agent"),
-    ("thoven-uncommitted", "Stop", None, 10, ""),
     ("thoven-andres-mode", "SessionStart", "startup|clear|compact", 10, ""),
     ("thoven-ticket-recall", "UserPromptSubmit", None, 6, " --harness claude"),
 ]
@@ -94,6 +93,8 @@ def main():
 
     original = read_json(SETTINGS, {})
     settings = copy.deepcopy(original)
+    for entry in drop_retired(settings):
+        print(f"- retired hook: remove {entry}")
 
     plan = []
     for script_name, event, matcher, timeout, extra in HOOK_SPECS:

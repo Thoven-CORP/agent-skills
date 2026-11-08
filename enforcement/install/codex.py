@@ -17,7 +17,7 @@ import shlex
 import sys
 from pathlib import Path
 
-from common import ENFORCEMENT_DIR, backup_once, copy_file, load_denies, needs_copy, read_json, write_json
+from common import ENFORCEMENT_DIR, backup_once, copy_file, drop_retired, load_denies, needs_copy, read_json, write_json
 
 CODEX_DIR = Path.home() / ".codex"
 HOOKS_DIR = CODEX_DIR / "hooks"
@@ -67,7 +67,6 @@ HOOK_SPECS = [
     ("thoven-guard-bash", "PreToolUse", "Bash", 10, ""),
     ("thoven-track-edits", "PreToolUse", "Bash", 10, " --pre"),
     ("thoven-track-edits", "PostToolUse", "Edit|Write|Bash", 10, ""),
-    ("thoven-uncommitted", "Stop", None, 10, ""),
     ("thoven-andres-mode", "SessionStart", "startup|clear|compact", 10, ""),
     ("thoven-ticket-recall", "UserPromptSubmit", None, 6, " --harness codex"),
 ]
@@ -128,6 +127,8 @@ def main():
 
     original = read_json(HOOKS_JSON, {"hooks": {}})
     config = copy.deepcopy(original)
+    for entry in drop_retired(config):
+        print(f"- retired hook: remove {entry}")
     notifications_changed = soften_stop_notifications(config)
 
     plan = []

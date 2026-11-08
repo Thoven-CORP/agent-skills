@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Installs the shell guard, the edit tracker, the uncommitted-edits stop hook, and the deny list into Devin CLI's config.json.
+"""Installs the shell guard, the edit tracker, and the deny list into Devin CLI's config.json.
 
 Devin's config here sets read_config_from.claude=false, so it never sees
 Claude's settings and gets its own entries. Its PreToolUse matcher is a regex
@@ -7,9 +7,7 @@ on tool_name and its shell tool is "exec"; it blocks only on exit 2
 (docs.devin.ai/cli/extensibility/hooks/overview). Deny rules are Exec(prefix)
 tokens and always beat an allow such as Exec(git)
 (docs.devin.ai/cli/reference/permissions). thoven-track-edits writes the session's
-edit log on PostToolUse for the file tools and exec. thoven-uncommitted reads it on
-Stop, which blocks with {"decision":"block","reason":...} on stdout and sends
-stop_hook_active (docs.devin.ai/cli/extensibility/hooks/lifecycle-hooks).
+edit log on PostToolUse for the file tools and exec.
 
 Dry run by default. Pass --apply to write.
 """
@@ -18,7 +16,7 @@ import copy
 import sys
 from pathlib import Path
 
-from common import ENFORCEMENT_DIR, add_missing, copy_file, load_denies, needs_copy, read_json, write_json
+from common import ENFORCEMENT_DIR, add_missing, copy_file, drop_retired, load_denies, needs_copy, read_json, write_json
 
 DEVIN_DIR = Path.home() / ".config" / "devin"
 HOOKS_DIR = DEVIN_DIR / "hooks"
@@ -29,7 +27,6 @@ HOOK_ENTRIES = [
     ("thoven-guard-bash", "PreToolUse", "^exec$", 10, ""),
     ("thoven-track-edits", "PreToolUse", "^exec$", 10, " --pre"),
     ("thoven-track-edits", "PostToolUse", "^(edit|write|notebook_edit|apply_patch|exec)$", 10, ""),
-    ("thoven-uncommitted", "Stop", "", 10, ""),
 ]
 
 
@@ -52,6 +49,8 @@ def main():
 
     original = read_json(CONFIG, {})
     config = copy.deepcopy(original)
+    for entry in drop_retired(config):
+        print(f"- retired hook: remove {entry}")
     hook_plan = []
     for script_name, event, matcher, timeout, extra in HOOK_ENTRIES:
         src = ENFORCEMENT_DIR / "hooks" / script_name
