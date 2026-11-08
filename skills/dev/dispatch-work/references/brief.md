@@ -16,10 +16,8 @@ ONE LINE) are the pane's to fill: leave them.
   `Andres ruled <date>: …`, `main recommends: …` or `guess: …`.
 - RULES: every binding rule you hold, scoped to the files this pane writes, with its exemptions
   (generated files, manifests, routes.rb, files already over a limit).
-- For a Codex pane write `$poteto-mode`. `dispatch spawn` opens the pane with `Invoke <first line>
-  to start.` followed by the rest of the brief as text, so the pane never opens a file to learn its
-  task. It refuses a brief that opens with anything but a skill line. The filled brief is still saved
-  under `briefs/` as the record.
+- For a Codex pane write `$poteto-mode`. `dispatch spawn` sends `Invoke <first line> to start.` and
+  the rest of the brief as text, and refuses a brief that opens with anything but a skill line.
 - In a subagent prompt the opening skill line is text. Keep FIRST TURN intact so the builder
   explicitly loads the skill in its own harness.
 
@@ -41,18 +39,18 @@ FIRST TURN Load poteto-mode before task work. In Claude Code, invoke the Skill t
            parent does, including its routed skills and delegation. The snapshot's decisions bind
            the options architect weighs. Keep a skipped step as "skip: <reason>" only where the
            native playbook allows it. Done when loading is evidenced and every step is printed.
-           The REPORT's Playbook row records each step's outcome and evidence.
 
 FITS       <<one line: where this ticket sits in its parent issue and what it unblocks>>
 CONTEXT    <<relevant Linear brief/documents: source ids/URLs, read time, governing content and missing sources>>
-           Read the actual supplied content and state its governing decisions before work. A link
-           alone does not establish reading. Re-read live records when accessible; report missing
-           required context rather than substituting old local docs.
+           State its governing decisions before work; a link alone is not a read. Re-read live
+           records when you can, and report missing context instead of using old local docs.
 EXECUTION  <<mode and host; source host; browser/automation/app hosts and verified access>>
 PAIRED     <<paired repo absolute worktree, branch and base HEAD, or none with reason>>
 SPEC       {{SNAPSHOT}}. Read it in full first. It holds the ticket, its comments and the parent's
            decisions as main read them. Build it as written. When the snapshot and the code
            disagree, or the snapshot needs a choice it does not make, ASK.
+READ LIST  <<the sections this ticket needs beyond SPEC, each a file plus its heading or line range>>
+           Read those sections, not whole documents. Find anything else as standing.md, Machine, says.
 DECISIONS  <<decision ids, each with its board frame>>
 DECIDED IN CHAT
            <<labelled chat rulings, one per line>>
@@ -74,29 +72,25 @@ KNOWN      <<interfaces, rulings and commits from earlier tickets this one build
 ACCESS     <<the skill lines from skills.md this ticket reaches, each with its moment>>
            Tools: graphify for callers and impact, Context7 for vendor docs, control-cli and
            control-ui for a running app, tier-5 subagents for wide reads.
-DONE WHEN  <<the ticket's Done when, by pointer>>. Choose the smallest checks that prove each
-           changed behaviour on its matching surface. Reuse valid evidence for unchanged claims.
-           A unit or request spec alone does not prove visual parity or performance.
+STOP WHEN  <<the ticket's Done when, by pointer>>, then REPORT and stop; findings come back as at
+           most one fix round, in a fresh pane. Choose the smallest checks that prove
+           each changed behaviour on its matching surface. Reuse valid evidence for unchanged
+           claims. A unit or request spec alone does not prove visual parity or performance.
            Seams: <<where the tests sit>>. Proof goes red before your change and green after it.
            Verify each changed behaviour with `~/.agents/skills/verify-this/SKILL.md`: one
            falsifiable claim per behaviour, baseline and treatment on the smallest surface it
-           routes to, one verdict each. This runs at your first DONE and in every fix round, and
-           a fix round verifies only the claims it changed.
+           routes to, one verdict each.
            Run the check list in `~/.agents/skills/verify/SKILL.md` once, at your first DONE: lint
            and types, the touched test files one per run, the design scan suite on any component
            or token diff, `__tests__/mail-link-routes.test.ts` on a diff that adds or moves a
-           route, and the direct importers' test files by path. A fix round runs only the test
-           files it touched, once: no type-check, oxlint or eslint sweep, no scan suite, no
-           red-first rerun. CI on your PR runs those.
-           On a `laptop` host (`~/.config/thoven/host.json`) run the scan suite, an e2e or browser
-           spec and any build through `/remote-check` on the mini, as standing.md says. On the
-           mini run them through the load gate. An e2e or browser test is the one spec that covers your change,
-           never the whole suite. The full `bin/verify` runs only when Andres asks or once at the
+           route, and the direct importers' test files by path.
+           On a `laptop` host run the scan suite, an e2e or browser spec and any build through
+           `/remote-check` on the mini, as standing.md says; on the mini, through the load gate.
+           An e2e or browser test is the one spec that covers your change, never the suite. The full `bin/verify` runs only when Andres asks or once at the
            parent, before the integration PR into `main`. Paste each command, its host, its pass
            line and each verdict in the report.
-           Load each ACCESS skill at its moment and each native skill when the playbook routes
-           to it. Use the Skill tool in Claude Code and the full SKILL.md in Codex, as above.
-           When the Skill tool refuses a skill, read ~/.agents/skills/<name>/SKILL.md in full.
+           Load each ACCESS skill at its moment and each routed skill when the playbook reaches
+           it, as FIRST TURN says; when the Skill tool refuses one, read its SKILL.md in full.
 STANDING   Read ~/.agents/skills/dispatch-work/references/standing.md now and follow it.
 
 ASK
@@ -108,9 +102,10 @@ every part the question does not touch:
   (ENTRY_PATH is the path the post command printed.)
 Main answers by peer message. Codex: post the entry only, then stop and wait.
 
-BUDGET
-Near 250k tokens, write a handoff to a file (what is done with commit SHAs, what is left, the
-exact next step) and post it:
+HANDOFF
+After about 150 tool calls, or once your context has been compacted, finish the unit in hand,
+commit, write a handoff to a file (what is done with commit SHAs, what is left, the exact next
+step) and post it:
   $DISPATCH post {{PROJECT}} --ticket THV-<id> --kind handoff --status HANDOFF --from {{AGENT_NAME}} < HANDOFF_FILE
   then SendMessage to {{MAIN_SESSION}}: "HANDOFF THV-<id>: ONE LINE. Entry: ENTRY_PATH".
 Codex: post the entry only, then stop.
@@ -139,19 +134,23 @@ End by printing the block in this pane.
 
 ## Fix-round brief
 
-Carry about five findings per round. Split a larger set by concern into panes whose files do not
-overlap. Post it as a CORRECTION entry, then send the same text to the builder by peer message
-(Codex: `dispatch send <pane> <file>` once it is idle):
+The one fix round goes to a fresh pane, never the pane that reported DONE. Write it to
+`briefs/THV-x-fix.md`, post it as a CORRECTION entry, and spawn it with `--brief <that file>`:
 
 ```text
-FIX ROUND <<n>>/3 THV-<<id>>. Base for this round: <<sha>>.
+/poteto-mode session-pickup THV-<id> "<<ticket title>>"
+You are {{AGENT_NAME}}. Main is the Claude session {{MAIN_SESSION}}. Project board: {{BOARD}}.
+DISPATCH = ~/.agents/skills/dispatch-work/scripts/dispatch
+Read the original brief <<its path>> first: its FIRST TURN, ASK, HANDOFF, REPORT and STANDING bind.
+Rulings since it: <<each labelled as in DECIDED IN CHAT, or none>>. Last REPORT: <<entry path>>.
+FIX ROUND THV-<id>, the only one. Branch <<branch>>, base for this round <<sha>>.
 <<each open finding, verbatim, with file:line>>
-Fix these only. Re-run the tests that cover each fix and name them: those files one per run,
-plus typecheck and lint on the touched files. A UI fix runs only the browser test or parity state
-it touches. No bin/verify, no mutation sweep, no full e2e or browser suite this round. Copy follows
-design/lexicon/LEXICON.md, and focus and accessibility fixes use the existing Thoven components.
-On a UI fix, commit only, and recapture each touched state at its frame's width and 390 with the
-local parity run (standing.md, Parity). The grid rides in your REPORT, where main reads it. A change
-beyond the fixed element is a defect.
-Post a REPORT entry, then message main your status line.
+Fix these only; commit only. Re-run the tests covering each fix, one file per run, typecheck
+and lint on the touched files, and /verify-this on each claim the fix changed. A UI fix runs only
+the browser test or parity state it touches and recaptures each touched state at its frame's width
+and 390 (standing.md, Parity). No bin/verify, mutation sweep, or full e2e or browser suite. Copy
+follows design/lexicon/LEXICON.md; focus and accessibility fixes use the existing Thoven
+components. A change beyond the fixed element is a defect.
+STOP WHEN each finding above is fixed and its covering test is green. Post a REPORT entry, message
+main your status line, and stop.
 ```

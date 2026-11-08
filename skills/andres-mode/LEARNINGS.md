@@ -5,6 +5,16 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-08 — the work-session page is the view; one fix round; fresh agents per round
+
+> session · 2026-11-08 · usage audit · ruling · applied · seen 1
+
+**What happened.** Main sessions asked Andres 738 questions in the audit window, about 31% of them merge gos or evidence confirmations, and he kept re-asking "show me" because status sat in chat appends, monitors and local files. Andres: "when it creates the visual artefacts, it should try to keep the visual artefact as the source of truth", "The key thing is to remain tight", "The evidence that you need as an agent is different than the evidence I need."
+**Why.** Replies pushed status as chat lines and "Show, then claim" put receipts in chat; nothing held one current view.
+**What changed.** Replies: "Status is pushed" became the work-session page bullet (one living visual-artifacts page per multi-step session, refreshed in place, a one-line pointer in chat, its human parts posted to Linear). Show-then-claim and show-then-ask point at the page; local evidence stays until Linear and the page carry it. Check your own work: one fix round, user-hit bugs only. Delegation: a new task or round goes to a fresh agent with the brief, rulings since and last report. The light-lane pitfall drops "thermo rounds"; thermo follows dispatch-work review.md's risk tier.
+
+---
+
 ## 2026-11-08 — batch PRs by ticket; light is not one PR per fix
 
 > reflect · 2026-11-08 · ef2a1ea6 · broken-rule · applied · seen 15

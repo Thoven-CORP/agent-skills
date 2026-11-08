@@ -36,7 +36,7 @@ stay there rather than being repeated in ACCESS.
 | Before reading Sentry, prod SQL, Mixpanel or SendGrid | `~/.agents/skills/investigate-thoven/references/vendor-access.md` for the org, project and tool to use |
 | A specific claim is disputed or lacks evidence | `/verify-this`, scoped to that claim |
 | A change affects documented behaviour or setup, before handoff | `/doc-freshness`, scoped to the affected docs |
-| Each changed behaviour, at the first DONE and in every fix round | `/verify-this`, one claim per behaviour; a fix round re-verifies only the claims it changed |
+| Each changed behaviour, at the first DONE and in the fix round | `/verify-this`, one claim per behaviour; the fix round re-verifies only the claims it changed |
 | The first DONE | `/verify`'s check list once, through `/remote-check` on a `laptop` host; full `bin/verify` only on Andres's request or once at the parent before integration into `main` |
 
 Before dispatch, run `~/thoven/agent-skills/scripts/check-skill-routes.sh` on the filled brief; every

@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-08 — review once on the final diff, one fix round, fresh agents, the page as the view
+
+> session · 2026-11-08 · usage audit · ruling · applied · seen 1
+
+**What happened.** The 2026-11-08 usage audit found about half of a dispatched ticket's cost after the builder's first DONE: code-review, thermo and deslop reran at the verifier, on every fix round and on every PR put to Andres, and any important finding opened another round up to three. About 16% of sampled findings were bugs a user hits; deslop's yield was nits, while thermo bug/security and interrogate caught real bugs. Leads sent new rounds to the same teammate (53% of top agents' cost came after the first follow-up), the 250K handoff could not fire because an agent cannot see its tokens, and shell `cat` of whole files was about 11% of subagent spend. Andres: "I like your one-pass tiered." "we should reduce Deslop to be more manual."
+**Why.** review.md and the brief ran every review per round, the fix-round loop allowed three rounds, and nothing scoped a pane's reads or ended its life at DONE.
+**What changed.** review.md: verifier step 4 is the PR review, run once on the PR's final diff: code-review, thermo-nuclear-review only on money, auth, personal data, migrations or 300+ lines, interrogate only on a contested design; deslop, no-comments, code-quality thermo and /thermos run when Andres asks. One fix round, critical and important only, in a fresh pane; minor and structural findings are a line in the follow-up ticket. brief.md: READ LIST and STOP WHEN fields, HANDOFF at about 150 tool calls or after a compaction, and a fix-round brief that spawns a fresh pane with the brief, rulings since and last REPORT. standing.md: read by section with `rg -n`; browser and Paper driving go to a Sonnet subagent. SKILL.md: the catch-up merge, evidence and close run with no go; status goes on the work-session page (andres-mode, Replies). Supersedes the review sizing of 2026-10-22, the trio rule of 2026-10-31 and the sharding of 2026-09-06.
+
 ## 2026-11-05 — the builder captures parity itself; CI no longer shoots it
 
 > reflect · 2026-11-05 · e3582b3d · broken-rule · applied · seen 1

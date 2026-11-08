@@ -15,7 +15,8 @@ Five parts:
      but the slash-command picker filters on the frontmatter name, so a name
      like "Poteto Mode" makes /poteto-mode unfindable.
   B. Text patches — string replacements for skills that reference leaf skills
-     under a name that does not resolve here. Applied to SKILL.md and to every
+     under a name that does not resolve here, or that carry a step Andres ruled
+     out of the default flow. Applied to SKILL.md and to every
      playbook and reference file beside it, because a router's real routing
      table is spread across those.
   C. Model invocation — a router skill can only route to skills the model is
@@ -60,6 +61,49 @@ PATCHES = [
         "poteto-mode",
         "the `deslop` skill from the `cursor-team-kit` plugin (`/deslop`)",
         "the **deslop** skill (`/deslop`)",
+    ),
+    # Review cost cuts (Andres, 2026-11-08 usage audit): deslop and no-comments run
+    # only when asked, and the architect/arena panels are sized to the ticket. Each
+    # `old` is the text after the patch above, so these must stay below it.
+    (
+        "poteto-mode",
+        "- Before commit → the **deslop** skill (`/deslop`).\n- Before review → the **no-comments** skill (`/no-comments`).",
+        "- The user asks for a slop pass → the **deslop** skill (`/deslop`); a comment pass → the **no-comments** skill (`/no-comments`). Neither runs by default.",
+    ),
+    (
+        "poteto-mode",
+        "The code is ready only after the slop-strip (the **deslop** skill (`/deslop`)) and the `/no-comments` pass, so the full swarm runs on finished code.",
+        "The slop-strip (the **deslop** skill (`/deslop`)) and the `/no-comments` pass run only when the user asks.",
+    ),
+    (
+        "poteto-mode",
+        "**PRs.** Run `/deslop` from `cursor-team-kit` over the diff before commit and `/no-comments` before review.",
+        "**PRs.** Run `/deslop` and `/no-comments` only when the user asks.",
+    ),
+    (
+        "poteto-mode",
+        "A subagent that opens a PR runs `/deslop` and `/no-comments`, and posts the URL.",
+        "A subagent that opens a PR posts the URL.",
+    ),
+    (
+        "poteto-mode",
+        "- [ ] Run `/deslop` before each commit and `/no-comments` before review.",
+        "- [ ] Run `/deslop` and `/no-comments` only when the user asks.",
+    ),
+    (
+        "poteto-mode",
+        "- Code crossing a function boundary → the **architect** skill, parallel design exploration before implementing.",
+        "- Code crossing a function boundary on a ticket that spans more than one surface → the **architect** skill, parallel design exploration before implementing. A single-surface ticket names its shape inline.",
+    ),
+    (
+        "poteto-mode",
+        "2. `architect` for parallel design exploration.\n",
+        "2. `architect` for parallel design exploration when the ticket spans more than one surface. A single-surface ticket names its shape inline and runs no panel.\n",
+    ),
+    (
+        "poteto-mode",
+        "When the implementation admits multiple valid shapes (error handling, abstraction layer, test structure), delegate via the **arena** skill instead",
+        "When a multi-surface implementation admits multiple valid shapes (error handling, abstraction layer, test structure), delegate via the **arena** skill instead",
     ),
     (
         "poteto-mode",
