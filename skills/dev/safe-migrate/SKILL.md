@@ -11,9 +11,9 @@ description: Use when preparing or reviewing a database migration — db:migrate
 **production reality** (read-only), and produces a deploy **runbook** — then runs the migration
 **locally only** and stops. It never writes to the production (Neon) database.
 
-Why advisor-only: **the deploy runs the production migration.** On 2.0 that is Render's preDeploy
-(`bin/controlled-migrate` on the web service, gated by `config/migration-policy.yml`). On a 1.0
-hotfix it is Replit Publish. The production migration already has an owner. The agent's job is to make
+Why advisor-only: **the deploy runs the production migration.** That is Render's preDeploy
+(`bin/controlled-migrate` on the web service, gated by `config/migration-policy.yml`). The
+production migration already has an owner. The agent's job is to make
 sure that migration is *safe* before it ships — not to run it.
 
 Defense-in-depth: the `strong_migrations` gem is the **runtime backstop** — it refuses unsafe
@@ -149,10 +149,9 @@ Neon.
 1. bundle exec rails db:migrate          # local (helium)
 2. bundle exec rspec                      # full suite green
 3. Add the version to `permitted` in `config/migration-policy.yml`, commit, open the PR
-4. Deploy with `/publish`. The branch picks the path:
-   2.0: merge to `main`, staging preDeploy runs `bin/controlled-migrate`; production runs
-        `promote.sh snapshot`, then `promote.sh backend` (publish's `references/production-2.0.md`)
-   1.0 hotfix: `references/hotfix-1.0-backend.md` (Replit Publish migrates Neon)
+4. Deploy with `/publish`. Merge to `main` (a merge deploys nothing); staging's preDeploy runs
+   `bin/controlled-migrate` when a `start-staging` session puts the SHA there; production runs
+   `promote.sh snapshot`, then `promote.sh backend` (publish's `references/production.md`)
 5. Verify BOTH environments (local + prod read-only `\d table`, rake deploy:verify)
 ```
 

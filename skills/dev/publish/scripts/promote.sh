@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Promote a commit of main to 2.0 production (THV-968).
+# Promote a commit of main to production (THV-968).
 #
 #   plan [--be SHA|keep] [--fe SHA|keep] [--rollback] [--schema-stays]
 #   snapshot ID    Neon branch of prod; required before backend when migrations are added

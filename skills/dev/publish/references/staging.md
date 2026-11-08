@@ -1,10 +1,10 @@
-# Publish: 2.0 staging
+# Publish: staging proof
 
 The Vercel `thoven-staging` project has no Git link, so merges do not deploy it; step 4 puts the frontend SHA there. Backend staging is one combined Render service, `thoven-api-staging`, with commit auto-deploy off. Blueprint Auto Sync must separately be set to No and verified before the combined-staging PR merges; otherwise a Blueprint change can still redeploy the service. Keep Auto Sync off and sync reviewed configuration explicitly under a deployment hold. Service auto-deploy off alone is not a no-deploy guarantee. See [Render Blueprint sync](https://render.com/docs/infrastructure-as-code#disabling-automatic-sync). The old `thoven-worker-staging` stays suspended and is never resumed by the lifecycle command; removing its Blueprint declaration does not suspend it.
 
 Before these gates, explicitly deploy the reviewed backend `main` SHA using backend `docs/deployment/staging-lifecycle.md`: acquire a hold, resume/probe the currently deployed revision, deploy the pinned SHA to the running web service, then verify actual revision and a fresh execution probe. The legacy worker must stop before the first combined cutover. Render can overlap old/new combined instances temporarily during deploys and maintenance; Solid Queue database coordination supports that handoff. This is one async runner per instance, not a global singleton or an exactly-once side-effect guarantee. Controlled migrations remain web preDeploy only.
 
-On this path `/publish` does not deploy staging. It proves the explicitly selected staging revision and gates. A SHA that passes every step here is **staging-green**, the only kind `references/production-2.0.md` promotes.
+On this path `/publish` does not deploy staging. It proves the explicitly selected staging revision and gates. A SHA that passes every step here is **staging-green**, the only kind `references/production.md` promotes.
 
 ## Availability hold
 
@@ -95,7 +95,7 @@ SKIPS
 
    **Stop: harness skipped a test.** Only when the diff prints a line, such as a skipped job round trip (missing `GHOST_ADMIN_*`) or any skip not in the list. Report each skip with its reason. A skipped test is not a pass.
 
-6. **Report.** One line per repo: SHA, CI run URL, the proof from steps 3 and 4, and each gate's result, with the tick list's items ticked. Say "staging-green" only when every step passed. Done when Andres has the report.
+6. **Report.** One line per repo: SHA, CI run URL, and the proof from steps 3 and 4, then the Checks table (SKILL.md, "Rules on every path"), with the tick list's items ticked. Say "staging-green" only when every step passed. Done when Andres has the report.
 
 ## Run code on staging
 

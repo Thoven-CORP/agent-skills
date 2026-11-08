@@ -1,4 +1,4 @@
-# Publish: 2.0 production ("deploy to production", a 2.0 hotfix, a rollback)
+# Publish: production ("deploy to production", a hotfix, a rollback)
 
 Production moves only through `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh`, called `promote.sh` below. It is not on `PATH`: type the full path every time, including for the commands it prints. Run it with no arguments for its usage. It needs `render login` done, and `vercel`, `neonctl`, `jq` and `ruby` installed. A refusal about `autoAssignCustomDomains` is Andres's to fix in Vercel. It moves thoven.co (Vercel `thoven`) and api.thoven.co (Render `thoven-api`, then `thoven-worker`) to SHAs already on `main`, and it holds the checks: the lock, the pinned SHAs, the migration policy, the Neon snapshot, the API health gate, and the build it promotes. Production shows exactly what staging already showed.
 
@@ -8,7 +8,7 @@ Its progress and done lines start with `== ` and show SHAs as their first 9 char
 
 ## Steps
 
-1. **Pick the SHAs.** Start with the changelog. List the range's PRs per repo with `git -C <repo> log --oneline --first-parent <last prod tag>..origin/main`, and check that each one wrote its `[Unreleased]` entry in `CHANGELOG.md`. A PR labelled `skip-changelog` needs none. Add the missing entries in one PR into `main` and pin that merge, so the release ships its own notes. Then pick the SHAs. A normal promote takes what staging runs now: `plan` with no `--be` or `--fe` reads it, so bring staging's frontend to the tip of `main` first (`references/staging-2.0.md` step 4). A hotfix merges its PR into `main` first (`references/staging-2.0.md` step 0, "Stop: merge the PR"), then pins only the half that changed: `--be <sha> --fe keep`, or `--fe <sha> --be keep`, where `<sha>` is the merge commit (`gh pr view <number> --json mergeCommit -q .mergeCommit.oid`). Pinning it also ships every unpromoted commit before it on `main`: list them in the plan with `git -C <repo> log --oneline <from>..<sha>`. Done when every PR in the range has its changelog entry and you hold the exact `plan` command.
+1. **Show the changelog, then pick the SHAs.** List the range's PRs per repo with `git -C <repo> log --oneline --first-parent <last prod tag>..origin/main`. Read each one's `[Unreleased]` entry in that repo's `CHANGELOG.md` and write the **changelog list**: a Frontend and a Backend heading, then one plain-English bullet per PR saying what a teacher, parent or student will notice, with its PR number. A PR labelled `skip-changelog` gets a bullet that says "no user-facing change". A PR with neither gets a bullet that says its entry is missing; add the missing entries in one PR into `main` and pin that merge, so the release ships its own notes. Then pick the SHAs. A normal promote takes what staging runs now: `plan` with no `--be` or `--fe` reads it, so bring staging's frontend to the tip of `main` first (`references/staging.md` step 4). A hotfix merges its PR into `main` first (`references/staging.md` step 0, "Stop: merge the PR"), then pins only the half that changed: `--be <sha> --fe keep`, or `--fe <sha> --be keep`, where `<sha>` is the merge commit (`gh pr view <number> --json mergeCommit -q .mergeCommit.oid`). Pinning it also ships every unpromoted commit before it on `main`: list them in the plan with `git -C <repo> log --oneline <from>..<sha>`. Done when every PR in the range has its bullet in the changelog list and you hold the exact `plan` command.
 
 2. **Plan the release.** Run step 7's accounts check first (`accounts-loaded`), so a missing-accounts gap is in the plan. Then:
 
@@ -19,9 +19,9 @@ Its progress and done lines start with `== ` and show SHAs as their first 9 char
 
    `plan` prints the release ID, backend and frontend as `from -> to`, the migrations it will run, the frontend build it found or started, and under `next, one go each:` the remaining commands in order. `status` prints the release file, with the full SHAs in `.be.to` and `.fe.to`. Done when `plan` printed a release ID.
 
-3. **Each SHA is staging-green.** Run steps 2 to 5 of `references/staging-2.0.md` on each SHA that changes, unless that report already exists for this exact SHA in this session. Done when each changed repo reports staging-green. A gate that could not run (missing accounts, a skipped test) is not green: carry it into the plan in step 4.
+3. **Each SHA is staging-green.** Run steps 2 to 5 of `references/staging.md` on each SHA that changes, unless that report already exists for this exact SHA in this session. Done when each changed repo reports staging-green. A gate that could not run (missing accounts, a skipped test) is not green: carry it into the plan in step 4.
 
-4. **Show the plan.** Show Andres one block: the `plan` output, the staging proof from step 3, and every gate that did not run and why. A go on the plan authorizes none of the commands after it, and accepts only the gaps it lists: name each gap again at each stop. Done when Andres has the block.
+4. **Show the plan.** Show Andres one block: the changelog list from step 1 first, then the `plan` output, the staging proof from step 3, and every gate that did not run and why. A go on the plan authorizes none of the commands after it, and accepts only the gaps it lists: name each gap again at each stop. Done when Andres has the block.
 
 5. **Stop: take the snapshot.** Only when `plan` listed migrations. After Andres's go:
 
@@ -99,7 +99,7 @@ SKIPS
 
    It checks both services and thoven.co run the pinned SHAs, refuses unless Daily's production webhook is ACTIVE, then pushes `prod/YYYY-MM-DD-N` to both repos and closes the release. Done when it prints `tagged prod/<date>-<n>; release <id> closed`. A rollback can only return to a SHA with a `prod/*` tag, so an untagged release is not a rollback target.
 
-11. **Report.** Per repo: the SHA, the `promote.sh` line that proved it, the tag, and each gate's result, with the tick list's items ticked. Say "production runs `<sha>`" only for a repo whose step printed its done line. Done when Andres has the report.
+11. **Report.** The changelog list from step 1, then per repo: the SHA, the `promote.sh` line that proved it, and the tag, then the Checks table (SKILL.md, "Rules on every path"), with the tick list's items ticked. Say "production runs `<sha>`" only for a repo whose step printed its done line. Done when Andres has the report.
 
 ## Roll back
 
@@ -125,7 +125,7 @@ The fix goes into `main` as a PR and reaches production through a normal promote
 
 ## Changelog
 
-2.0 production stamps no version. Each PR carries its own `[Unreleased]` entry.
+Production stamps no version. Each PR carries its own `[Unreleased]` entry, and step 1 turns the release's entries into the changelog list Andres reads.
 
 ## Straight through
 
@@ -135,7 +135,7 @@ A hotfix, or any release Andres asks for with "skip the ceremony", "straight thr
    - Migrations listed: take the snapshot (step 5) right before the backend.
    - Backend unchanged: `backend` still runs, because it is the API health gate and the Daily webhook check.
    - The range's tickets owe a backfill or rake task (from the Pitfalls line on owed steps): run it as a numbered step before the harness.
-2. **Staging-green, the short form.** Confirm staging serves each SHA that changes. Use the latest `thoven-staging` deployment's commit (`/vercel-cli`) and the staging Render deploy (`/render-monitor`), plus green required CI on the merge commit. A run of `staging-2.0.md` already done in this session for the same SHA also counts.
+2. **Staging-green, the short form.** Confirm staging serves each SHA that changes. Use the latest `thoven-staging` deployment's commit (`/vercel-cli`) and the staging Render deploy (`/render-monitor`), plus green required CI on the merge commit. A run of `staging.md` already done in this session for the same SHA also counts.
 3. **Promote.** Run steps 5 to 10 in order, without waiting between them. Run the backend smoke (step 7) and the production harness (step 9) on this machine.
 4. **Stop only for these.** Show Andres the output and wait:
    - a `REFUSED:` or `FAILED at line` line, including a refusal whose named fix writes outside this release (a Neon branch, a webhook, an env var);
