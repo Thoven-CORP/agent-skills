@@ -298,6 +298,21 @@ split_subcommands() {
     }'
 }
 
+# A logged path counts only when its file changed after the session started. Before agent-skills
+# #153 the tracker charged every sibling checkout's files to a session, so logs of up to 27,000
+# lines named files the session never touched, and each granted an undo (2026-11-08). The start
+# marker is written after a session's first edit can land, so it gets ten minutes of grace.
+# A logged path that no longer exists still counts: restoring it overwrites nothing.
+started_at=""
+logged_since_start() {
+  local abs="$1" mtime
+  grep -qxF "$abs" "$edited_file" 2>/dev/null || return 1
+  [ -e "$abs" ] || [ -L "$abs" ] || return 0
+  [ -n "$started_at" ] || started_at="$(stat -c %Y "$state/started" 2>/dev/null || stat -f %m "$state/started" 2>/dev/null)"
+  mtime="$(stat -c %Y "$abs" 2>/dev/null || stat -f %m "$abs" 2>/dev/null)"
+  [ -n "$started_at" ] && [ -n "$mtime" ] && [ "$mtime" -ge $((started_at - 600)) ]
+}
+
 # A path passes when this session edited it, or when it is a file with no changes as the guard runs:
 # then all the command can discard is what the command itself writes, as in `sed -i ... f; git restore f`.
 # A directory or glob is never taken as clean, since a long command leaves time for another
@@ -309,7 +324,7 @@ paths_all_edited() {
   for p in "${paths[@]}"; do
     case "$p" in *'$'*|*'`'*) return 1 ;; esac
     abs="$(resolve_in "$git_dir" "$p")"
-    grep -qxF "$abs" "$edited_file" 2>/dev/null && continue
+    logged_since_start "$abs" && continue
     [ -f "$abs" ] || return 1
     changes="$(git -C "$git_dir" status --porcelain --untracked-files=all -- "$abs" 2>/dev/null)" || return 1
     [ -z "$changes" ] || return 1

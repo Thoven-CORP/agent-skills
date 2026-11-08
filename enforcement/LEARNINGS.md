@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-08 — Undo rights need a file changed after the session started
+
+**What happened.** The pre-#153 tracker left 43 of 60 session edit logs polluted: 451,533 lines, of which 11,687 named files changed after their session began. `thoven-guard-bash` granted `git restore`, `checkout --` and `stash push --` on any logged path, so a session could undo another pane's dirty file.
+**Why.** The guard trusted the log's membership alone.
+**What changed.** A logged path counts only when its file changed after the session's start marker (ten minutes' grace) or no longer exists. The logs were purged by the same rule; the pre-purge copies are in `/tmp/claude-thoven-edited-pre-purge-2026-11-08.tgz`.
+
+---
+
 ## 2026-11-08 — The stop-time uncommitted check is retired
 
 **What happened.** After the track-edits fix, Andres asked whether `thoven-uncommitted` was useful at all. Its record: 151 "keep" entries across 65 sessions, every one another pane's or builder's work in progress; four sessions were each asked about 4,000–16,000 files, 16,001 of one session's 16,048 older than the session itself.
