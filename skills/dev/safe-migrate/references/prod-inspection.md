@@ -11,8 +11,8 @@ This reference is loaded by the **Live production inspection** step of `safe-mig
 
 > **NEVER run INSERT / UPDATE / DELETE / DDL (or any write) against Neon. SELECT only.**
 
-The deploy runs the production migration: Render preDeploy `bin/controlled-migrate` on 2.0, Replit
-Publish on a 1.0 hotfix (see the runbook in `SKILL.md`).
+The deploy runs the production migration: Render preDeploy `bin/controlled-migrate` (see the
+runbook in `SKILL.md`).
 This inspection exists to *describe* production, never to *change* it.
 
 If you catch yourself about to run anything other than a `SELECT`, stop — that is the executor

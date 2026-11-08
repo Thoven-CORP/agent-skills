@@ -28,18 +28,14 @@ PROJECT = "docs/Platform/projects/platform-upgrade-and-hosting"
 
 # checklist section -> (source file key, first heading of the range, heading that ends it)
 SECTIONS = [
-    ("2.0 on staging", "staging", "## Steps", "## Changelog"),
-    ("2.0 to production", "production", "## Steps", "## Roll back"),
-    ("Roll back 2.0 production", "production", "## Roll back", "## Changelog"),
-    ("1.0 frontend hotfix", "hotfix-frontend", None, None),
-    ("1.0 backend hotfix", "hotfix-backend", None, None),
+    ("Staging proof", "staging", "## Steps", "## Run code on staging"),
+    ("To production", "production", "## Steps", "## Roll back"),
+    ("Roll back production", "production", "## Roll back", "## Changelog"),
 ]
 
 SOURCE_NAMES = {
-    "staging": "staging-2.0.md",
-    "production": "production-2.0.md",
-    "hotfix-frontend": "hotfix-1.0-frontend.md",
-    "hotfix-backend": "hotfix-1.0-backend.md",
+    "staging": "staging.md",
+    "production": "production.md",
 }
 
 STEP_LABEL = re.compile(r"^(?:\d+[a-z]?\.\s+|-\s+)?\*\*([^*]+?)\*\*")
@@ -111,10 +107,8 @@ def main(skill_dir, fe_root, ref=None):
     skill, fe = Path(skill_dir), Path(fe_root)
     read_fe = reader(fe, ref)
     sources = {
-        "staging": skill / "references/staging-2.0.md",
-        "production": skill / "references/production-2.0.md",
-        "hotfix-frontend": skill / "references/hotfix-1.0-frontend.md",
-        "hotfix-backend": skill / "references/hotfix-1.0-backend.md",
+        "staging": skill / "references/staging.md",
+        "production": skill / "references/production.md",
     }
     texts = {key: path.read_text() for key, path in sources.items()}
     checklist = read_fe(f"{PROJECT}/PUBLISH_CHECKLIST.md")

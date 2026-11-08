@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Read-only checks of the production database after a backend promote (production-2.0.md step 9).
+# Read-only checks of the production database after a backend promote (references/production.md step 9).
 # Every query runs in a read-only transaction with a 15 s timeout.
 # Usage: prod-db-check.sh <backend_deploy_utc>   e.g. prod-db-check.sh 2026-10-15T22:24:00Z
 # Exit 0 when every check passed, 1 when one failed, 2 on bad input, 3 when one must wait and rerun.
