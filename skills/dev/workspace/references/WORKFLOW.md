@@ -297,7 +297,11 @@ live yet.
 
 ### Done when
 
-Every issue carries one, and it names something a person can check:
+Every issue carries one, and it names something a person can check. An issue moves to Done only
+when every `Done when` line has an artifact. Until then its branch and worktree stay, and an
+unproven line is finished on that branch, never split into a new issue or PR. (2026-11-08: the
+merge-queue ticket closed with its rejection proof still open, and the leftovers became new trees,
+two sync PRs and a probe PR.)
 
 ```
 Done when: a teacher on /teacher/dashboard sees notification rows grouped by
@@ -479,7 +483,7 @@ BUILDING
 BRANCHES AND PULL REQUESTS
 - Branch, PR and worktree rules: `~/thoven/agent-skills/enforcement/rules/thoven-law.md`.
   `thoven-worktree create <fe|be> <area> <id>` gives `<area>/thv-<id>`, the same name in both repos.
-- Open a PR into `main` and arm auto-merge as it opens; GitHub merges it on green `CI`, backend first, with no go from Andres, UI included (2026-11-05). The method follows the PR's role (thoven-law.md "Branches and PRs"): a PR into `main` queues with `gh pr merge --auto` and `main`'s merge queue lands it as a merge commit (THV-1707); a ticket into an integration branch squashes (`--squash` on green targeted CI and the verifier's pass); a docs-only PR merges in the same pass; a catch-up of `main` into an integration branch merges with `--merge`. Name source, target and method in the report line.
+- Open a PR into `main`, append the ticket's remaining known work to it, and arm auto-merge once the last known unit is committed; GitHub merges it on green `CI`, backend first, with no go from Andres, UI included (2026-11-05). The method follows the PR's role (thoven-law.md "Branches and PRs"): a PR into `main` queues with `gh pr merge --auto` and `main`'s merge queue lands it as a merge commit (THV-1707); a ticket into an integration branch squashes (`--squash` on green targeted CI and the verifier's pass); a docs-only PR merges in the same pass; a catch-up of `main` into an integration branch merges with `--merge`. Name source, target and method in the report line.
 - Put `THV-<id>` in the commit message with no magic word. `Fixes` auto-closes Linear. Merge does not own Done.
 - A ticket that takes more than one PR: an id in the branch name or PR title links that PR as closing, so its first merge moves the ticket to Done. Keep the id out of both and write `Part of THV-<id>` in the PR body, which links without closing. (2026-10-25: the test-cadence ticket closed on its first of five PRs.)
 - Write Ready if a surface still needs his eyes. Write Done when the job is finished, and only after

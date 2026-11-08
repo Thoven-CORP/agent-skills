@@ -12,8 +12,10 @@ theirs; the commands, examples and scope rules are Thoven's.
 Three modes, one value bar. Authoring mode gates every new or changed test at
 write time. Audit mode runs focused sweeps of tests that re-assert source,
 duplicate stronger proof, couple behavior to implementation, or keep test-only
-production seams alive. Continue broad audits as separate coherent follow-up
-PRs; optimize for confidence, not deletion count. Campaign mode prunes one
+production seams alive. Later rounds of one audit session append to its open
+branch: one PR per repo per audit session. Prefer the canonical existing test,
+fixture or helper over a new one, and consolidate rather than add; optimize for
+confidence, not deletion count. Campaign mode prunes one
 whole area's test surface (every test file a feature or domain owns); before
 starting one, read [CAMPAIGN.md](CAMPAIGN.md).
 
@@ -49,6 +51,10 @@ Bug regression tests must fail on the pre-fix code for the intended reason and
 pass after the owner-boundary repair. A regression test that never demonstrably
 failed proves the mock, not the fix. One regression at the owner boundary
 covers the bug; do not replay the same scenario at every layer it crosses.
+
+A test that starts a CI script or another child process sets or clears every
+environment variable the CI workflow sets that the child reads, so the
+workflow's own value cannot leak in and fail the test only in CI.
 
 When no test passes the gate, add none, and report the check you ran instead
 (a targeted script, a browser path, a real payload). In the handoff, name each
@@ -200,9 +206,10 @@ Commit, push, open a PR, or land only when authorized. Follow the Thoven law in
 the repo `CLAUDE.md`: one worktree per ticket from `thoven-worktree create`,
 stage exact paths, a PR into `main` that merges itself with
 `gh pr merge --auto` once the required `CI` check is green; `main`'s merge queue lands it. One PR per
-repo per batch; when both repos change, say which merges first. After landing,
-refresh from current `main` and rerun read-only discovery for the next
-high-confidence batch.
+repo per audit session, every batch appended to it, and auto-merge armed once
+the session's last batch is committed; when both repos change, say which merges
+first. A new audit session refreshes from current `main` and reruns read-only
+discovery.
 
 ## Handoff
 

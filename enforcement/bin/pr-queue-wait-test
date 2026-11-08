@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Runs pr-queue-wait against a stub gh; never calls GitHub.
+set -uo pipefail
+TOOL="$(cd "$(dirname "$0")" && pwd)/pr-queue-wait"
+T=$(mktemp -d /tmp/pr-queue-wait-test.XXXXXX) || exit 1
+case "$T" in /tmp/pr-queue-wait-test.*) ;; *) exit 1 ;; esac
+trap 'rm -rf "$T"' EXIT
+mkdir -p "$T/bin"
+# The stub answers the PR-state query from $T/states, one line per call (the last line repeats),
+# the last-commit query from $T/since, and `gh run list` from $T/runs.
+cat >"$T/bin/gh" <<'STUB'
+#!/usr/bin/env bash
+case "$*" in
+  *"run list"*) cat "$STUB_DIR/runs" ;;
+  *commits\(last:1\)*) cat "$STUB_DIR/since" ;;
+  *graphql*)
+    n=$(cat "$STUB_DIR/calls" 2>/dev/null || echo 0); n=$((n + 1)); echo "$n" >"$STUB_DIR/calls"
+    total=$(wc -l <"$STUB_DIR/states" | tr -d ' ')
+    [ "$n" -gt "$total" ] && n=$total
+    sed -n "${n}p" "$STUB_DIR/states" ;;
+esac
+STUB
+chmod +x "$T/bin/gh"
+export PATH="$T/bin:$PATH" STUB_DIR="$T"
+failed=0
+expect() { if [ "$2" = "$3" ]; then printf 'ok %s\n' "$1"; else printf 'FAIL %s: got %s (want %s)\n' "$1" "$2" "$3"; failed=1; fi; }
+OPEN_OUT="state=OPEN inQueue=false entry=- auto=off commit=-"
+QUEUED="state=OPEN inQueue=true entry=AWAITING_CHECKS auto=off commit=-"
+setup() { rm -f "$T/calls"; printf '%s\n' "$@" >"$T/states"; echo '2026-11-08T21:00:00Z' >"$T/since"; echo '[]' >"$T/runs"; }
+# rc_within <seconds> <args...>: the exit code, or "running" if it is still waiting after that long.
+rc_within() {
+  local s="$1"; shift
+  "$TOOL" "$@" >"$T/out" 2>&1 & local pid=$!
+  for _ in $(seq $((s * 10))); do kill -0 "$pid" 2>/dev/null || { wait "$pid"; echo $?; return; }; sleep 0.1; done
+  pkill -P "$pid" 2>/dev/null; kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null; echo running
+}
+
+expect "no arguments are refused" "$(rc_within 2)" 2
+expect "a non-numeric PR is refused" "$(rc_within 2 o/r abc)" 2
+
+setup "state=MERGED inQueue=false entry=- auto=off commit=abc"
+expect "a merged PR exits 0" "$(rc_within 2 o/r 7 --interval 0)" 0
+
+setup "$QUEUED" "$OPEN_OUT"
+expect "a PR that leaves the queue unmerged exits 1" "$(rc_within 3 o/r 7 --interval 0)" 1
+
+setup "$OPEN_OUT"
+echo '[{"headBranch":"gh-readonly-queue/main/pr-7-abc","conclusion":"failure","createdAt":"2026-11-08T21:10:00Z"}]' >"$T/runs"
+expect "started after a bounce, it exits 1" "$(rc_within 3 o/r 7 --interval 0)" 1
+expect "and says the PR was already removed" "$(grep -c 'already removed' "$T/out")" 1
+
+setup "$OPEN_OUT"
+echo '[{"headBranch":"gh-readonly-queue/main/pr-7-abc","conclusion":"failure","createdAt":"2026-11-08T20:00:00Z"}]' >"$T/runs"
+expect "a failed queue run older than the last commit is not a bounce" "$(rc_within 2 o/r 7 --interval 0)" running
+
+setup "$OPEN_OUT"
+echo '[{"headBranch":"gh-readonly-queue/main/pr-77-abc","conclusion":"failure","createdAt":"2026-11-08T21:10:00Z"}]' >"$T/runs"
+expect "another PR's failed queue run is not a bounce" "$(rc_within 2 o/r 7 --interval 0)" running
+
+[ "$failed" -eq 0 ] || exit 1
+echo "all passed"
