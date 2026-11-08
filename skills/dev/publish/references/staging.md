@@ -27,15 +27,17 @@ Run each step in the repo it names. Steps 1 to 4 check each repo that changed. S
 
    Done when both commands exit 0 and you hold one full SHA per repo.
 
-2. **CI is green on that SHA.**
+2. **CI is green on that SHA.** A push to `main` runs no CI, so a merge commit has none until you dispatch it. In each repo that changed, check for a run, and dispatch one on `main` when there is none; the dispatched run tests `main`'s tip, which is step 1's SHA:
 
    ```bash
    gh run list --workflow CI --branch main --commit <sha> --json status,conclusion,url
+   gh workflow run ci.yml --ref main    # only when the list above is empty
+   gh run list --workflow CI --branch main --commit <sha> --json status,conclusion,url
    ```
 
-   Done when a run shows `completed` and `success`. An empty list means CI has not started yet: wait 30 seconds and re-run, for up to 15 minutes. An empty list is never a failure and never green. `in_progress` means wait and re-run the command. `failure` stops the path.
+   Done when a run shows `completed` and `success`. An empty list right after the dispatch means the run has not registered yet: wait 30 seconds and re-run the list, for up to 15 minutes. An empty list is never a failure and never green. `in_progress` means wait and re-run the command. `failure` stops the path.
 
-   **Stop: CI never started.** Only when the list is still empty after 15 minutes, for example on a `[skip ci]` commit. Tell Andres. The SHA is not staging-green without CI.
+   **Stop: CI never started.** Only when the list is still empty 15 minutes after the dispatch, for example when `main` moved past the SHA before the dispatch ran. Tell Andres. The SHA is not staging-green without CI.
 
 3. **Backend: Render runs the SHA.** Service IDs: the Render runbook's services table.
 
@@ -56,7 +58,7 @@ Run each step in the repo it names. Steps 1 to 4 check each repo that changed. S
 
    Step 1's SHA is the tip of `main` (the script's default when given no SHA), so every merged commit reaches staging and the release plan that reads it. It builds the commit from GitHub, never from a local tree, so untracked and ignored files stay out, and it waits until staging serves the commit. Done when it prints `staging serves <sha9>` or `staging already serves <sha9>`, and `curl -s https://staging.thoven.co/api/version` shows that `sha` with `ref` `main`.
 
-5. **Staging gates on the SHA.** From a backend checkout of the backend SHA (`git -C ~/thoven/backend worktree add --detach ~/thoven/backend-publish-<sha7> <sha>`, then `bundle install` in it). `bin/dogfood-staging` needs no environment. The smoke teacher's login lives in `~/thoven/.secrets/staging.env` as `STAGING_SMOKE_TEACHER_EMAIL` and `STAGING_SMOKE_TEACHER_PASSWORD`. Never print either value.
+5. **Staging gates on the SHA.** From a backend checkout of the backend SHA (`git -C ~/thoven/backend worktree add --detach ~/thoven/backend-publish-<sha7> <sha>`, then `bundle install` in it). `bin/dogfood-staging` and the smoke both read `~/thoven/.secrets/staging.env`: the dogfood flows need its `STAGING_KERI_*` household, and the smoke teacher's login is `STAGING_SMOKE_TEACHER_EMAIL` and `STAGING_SMOKE_TEACHER_PASSWORD`. Load it first, in the shell that runs both. Never print any of its values.
 
    ```bash
    set -a; . ~/thoven/.secrets/staging.env; set +a
