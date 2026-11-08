@@ -1,6 +1,19 @@
 #!/usr/bin/env bash
 
 staging_control() {
+  # STAGING_CONTROL=local runs a release from this machine without the mini's controller: no
+  # staging hold is taken, and the probe only checks staging answers. Andres, 2026-11-08, when the
+  # mini's Render key stopped working.
+  if [ "${STAGING_CONTROL:-}" = local ]; then
+    case "${1:-}" in
+      hold) echo 'STAGING_CONTROL=local: no staging hold taken; the mini controller is skipped' >&2; printf '%032d\n' 0 ;;
+      release-hold) ;;
+      probe) curl -fsS --max-time 20 -o /dev/null https://thoven-api-staging.onrender.com/up \
+               && echo 'STAGING_CONTROL=local: staging /up answered 200; no job probe ran' >&2 ;;
+      *) echo "STAGING_CONTROL=local has no '${1:-}'" >&2; return 1 ;;
+    esac
+    return
+  fi
   local command='if [ -f "$HOME/.config/thoven/staging-lifecycle.env" ]; then set -a; . "$HOME/.config/thoven/staging-lifecycle.env" || exit; set +a; fi; exec "$HOME/thoven/backend/bin/staging-lifecycle"' argument control_hostname
   for argument in "$@"; do printf -v command '%s %q' "$command" "$argument"; done
   control_hostname=$(hostname)
