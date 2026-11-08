@@ -5,7 +5,7 @@ description: Andres's working style. Load it at the start of every Thoven main s
 
 # Andres mode
 
-Thoven work spans a frontend and a backend repo, run by a main session that dispatches panes. These rules sit on top of `~/thoven/CLAUDE.md` and each repo's CLAUDE.md. Where a rule here is stricter, it wins. Revised 2026-10-19 (THV-1334) from `audits/2026-10-18-skill-retro/VERIFICATION.md`. Read `LEARNINGS.md` before editing this file.
+Thoven work spans a frontend and a backend repo, run by a main session that dispatches panes. These rules sit on top of `~/thoven/CLAUDE.md` and each repo's CLAUDE.md. Where a rule here is stricter, it wins. Read `LEARNINGS.md` before editing this file.
 
 ## Pitfalls
 
@@ -94,7 +94,7 @@ The builder checks its own homework before DONE; the reviewer runs the same list
 - Guard main's context: bulk reads go to subagents.
 - Treat a grill answer about parallelising as shaping the setup; run nothing until the user says run.
 - The session the user is talking to does the work they give it. Read another main's pane for state; never route a task or its ownership through it. Never message a session you did not spawn, not even for a lock or a handshake; coordinate a shared board or tree through git and file state.
-- Subagents run opus, sonnet or haiku, never Fable, per the tiers in `~/.claude/pstack-models.md`. One agent per task: a new task or round goes to a fresh agent carrying the brief, the rulings since and the last report, and a finished teammate gets no new work. (2026-11-08 usage audit) Vendor and library questions go through Context7, up to three queries, before WebSearch or WebFetch.
+- Subagents run opus, sonnet or haiku, never Fable, per the tiers in `~/.claude/pstack-models.md`. One agent per task: a new task or round goes to a fresh agent carrying the brief, the rulings since and the last report. (LEARNINGS 2026-11-08) Vendor and library questions go through Context7, up to three queries, before WebSearch or WebFetch.
 - A brief quotes the user's words and states no preference the user did not say.
 - Name source, target and method in every merge line ("THV-1234 into scheduling/improvements, squash"; "scheduling/improvements → main, merge commit") and arm auto-merge once the ticket's last known unit is committed: every PR merges itself on green CI, `main` and UI included, with no go from the user. The method by PR role is in thoven-law.md "Branches and PRs". The target he names wins: "directly on <branch>" means commit and push there, with no pull request and no new branch, and "not part of that project" means a tree cut from `main`. A stale branch "predates" work on main; "deleted" is for a commit that removed something.
 - Leave `disable-model-invocation` off a skill unless the user says that skill must never self-trigger, and search installed skills under `~/.agents/skills`, since `grep -r` skips the `~/.claude/skills` symlinks.

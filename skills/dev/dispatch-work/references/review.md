@@ -91,9 +91,9 @@ edge cases, test nits, style).
 
 Every PR gets the PR review (verifier step 4) once, on its final diff, before auto-merge is armed:
 from the verifier of its last ticket, or from main for a hotfix, follow-up or CI-fix PR with no
-verifier pane. /deslop, /no-comments, /thermo-nuclear-code-quality-review and /thermos run only
-when Andres asks. The PR merges itself on green with no go from Andres (`~/thoven/CLAUDE.md`), and
-the work-session page says in one line what merged.
+verifier pane. /deslop, /no-comments, /thermo-nuclear-code-quality-review and /thermos run only when
+Andres asks. The PR merges itself on green with no go from Andres (thoven-law.md
+"Branches and PRs"), and the work-session page says in one line what merged.
 
 ## Handling findings
 
@@ -106,8 +106,8 @@ the work-session page says in one line what merged.
 - **After the fix round:** main rules on each finding still open. Wrong or contestable: park it
   with the reason in the Linear comment. Real: one line in the follow-up ticket. A critical finding
   still open goes to Andres as one line with a choice.
-- **Minor and structural findings** start no fix round. Each is one line in the follow-up ticket:
-  an existing grouped Linear issue, or a new one only when none fits.
+- **Minor and structural findings** start no fix round. Each is one line in the follow-up ticket
+  (`SKILL.md` close step 6.2).
 
 **Done when:** the verifier replied VERIFIED, or every finding is fixed, parked or lined into the
 follow-up ticket, and the work-session page shows the outcome.

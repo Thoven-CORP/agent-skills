@@ -72,10 +72,10 @@ KNOWN      <<interfaces, rulings and commits from earlier tickets this one build
 ACCESS     <<the skill lines from skills.md this ticket reaches, each with its moment>>
            Tools: graphify for callers and impact, Context7 for vendor docs, control-cli and
            control-ui for a running app, tier-5 subagents for wide reads.
-STOP WHEN  <<the ticket's Done when, by pointer>>, then REPORT and stop; findings come back as at
-           most one fix round, in a fresh pane. Choose the smallest checks that prove
-           each changed behaviour on its matching surface. Reuse valid evidence for unchanged
-           claims. A unit or request spec alone does not prove visual parity or performance.
+STOP WHEN  <<the ticket's Done when, by pointer>>, then REPORT and stop. Choose the smallest
+           checks that prove each changed behaviour on its matching surface. Reuse valid evidence
+           for unchanged claims. A unit or request spec alone does not prove visual parity or
+           performance.
            Seams: <<where the tests sit>>. Proof goes red before your change and green after it.
            Verify each changed behaviour with `~/.agents/skills/verify-this/SKILL.md`: one
            falsifiable claim per behaviour, baseline and treatment on the smallest surface it
@@ -86,9 +86,10 @@ STOP WHEN  <<the ticket's Done when, by pointer>>, then REPORT and stop; finding
            route, and the direct importers' test files by path.
            On a `laptop` host run the scan suite, an e2e or browser spec and any build through
            `/remote-check` on the mini, as standing.md says; on the mini, through the load gate.
-           An e2e or browser test is the one spec that covers your change, never the suite. The full `bin/verify` runs only when Andres asks or once at the
-           parent, before the integration PR into `main`. Paste each command, its host, its pass
-           line and each verdict in the report.
+           An e2e or browser test is the one spec that covers your change, never the suite. The
+           full `bin/verify` runs only when Andres asks or once at the parent, before the
+           integration PR into `main`. Paste each command, its host, its pass line and each
+           verdict in the report.
            Load each ACCESS skill at its moment and each routed skill when the playbook reaches
            it, as FIRST TURN says; when the Skill tool refuses one, read its SKILL.md in full.
 STANDING   Read ~/.agents/skills/dispatch-work/references/standing.md now and follow it.
@@ -134,8 +135,8 @@ End by printing the block in this pane.
 
 ## Fix-round brief
 
-The one fix round goes to a fresh pane, never the pane that reported DONE. Write it to
-`briefs/THV-x-fix.md`, post it as a CORRECTION entry, and spawn it with `--brief <that file>`:
+The one fix round goes to a fresh pane. Write it to `briefs/THV-x-fix.md`, post it as a
+CORRECTION entry, and spawn it with `--brief <that file>`:
 
 ```text
 /poteto-mode session-pickup THV-<id> "<<ticket title>>"
