@@ -8,7 +8,7 @@ Codex, Devin, Cursor and Droid launch only when Andres names one in this session
 
 | Tier | Work |
 | -- | -- |
-| 1 | Hard or extremely complex: cross-cutting design, concurrency, a large unit, a fix loop that failed two rounds |
+| 1 | Hard or extremely complex: cross-cutting design, concurrency, a large unit, a fix round that did not close |
 | 2 | Build, design, orchestration, verification |
 | 3 | Well-specified multi-file builds where the spec is decided |
 | 4 | Easy mechanical bulk writes: transcription plus a test |
@@ -35,8 +35,7 @@ lists.
 - The verifier is a fresh tier-2 pane that did not build the ticket. A fresh pane is the
   independence that matters (Andres, 2026-09-27). A verifier on another CLI runs only when Andres
   asks for a second family.
-- Fix rounds follow `review.md` "Handling findings". The fresh round-3 pane is one tier up, told:
-  "A prior agent attempted this twice. Read its commits and the findings."
+- The one fix round follows `review.md` "Handling findings", in a fresh pane on the builder's tier.
 
 ## Launch lines
 

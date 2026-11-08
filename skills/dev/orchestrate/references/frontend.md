@@ -146,7 +146,7 @@ A chain is worth naming when the order matters and the wrong order wastes work.
 | New component | `/thoven-designer` → `/building-components` → `/verify` |
 | New component with motion | `/thoven-designer` → `/motion` → `/motion-react` → `/verify` |
 | Pre-ship quality pass | `/impeccable polish` → `/accessibility-check` → `/qa-flow` → `/publish` |
-| Pre-commit | `/deslop` → `/no-comments` → `/mattpocock-skills:code-review` → `/verify` |
+| Before the PR merges | `/verify` → `/mattpocock-skills:code-review` once on the final diff |
 | Screen from a frame | `/thoven-designer` → `/build-design` → `/state-machine` → `/verify` |
 | Ship | `/verify` → `/publish` → `/babysit-pr` |
 

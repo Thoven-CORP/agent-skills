@@ -83,7 +83,7 @@ a rebase ate a day of the onboarding prototype.)
 - Unattended PR work: `/full-stop` proves, files and babysits; the auto-merge armed after the last
   known unit lands it on green `CI`. `/full-send`, on Andres's "full send", also merges a PR whose required check
   cannot run, in any repo. Its merge follows the method table and backend-first order above. Both call `/sol-loop`: with no GPT Sol
-  route, run `dispatch-work/references/review.md` "Every PR put to Andres" in its place and say so.
+  route, run `dispatch-work/references/review.md` "Every PR" in its place and say so.
   `pr-wait` runs `--until green`, since Thoven has no Greptile or Macroscope. For a PR into `main`,
   green means queued, not merged: then wait with `enforcement/bin/pr-queue-wait <owner/repo> <n>`,
   which exits 0 when the PR merges and 1 when it leaves the queue unmerged. On 1, read the failed
@@ -148,8 +148,8 @@ subagent of main reviews cleanup and hardening work. Both open with spec parity.
 touched files and merges backend before the frontend that reads it. Backend-first holds only for a
 backward-compatible change: a newly required request field stays optional until the frontend that
 sends it is on staging. (Backend #278 made `source_timezone` required hours before the frontend
-sent it, and staging refused every reschedule for six hours.) UI merges after Andres sees the
-evidence. Procedure: `dispatch-work/references/review.md`.
+sent it, and staging refused every reschedule for six hours.) Evidence goes on the work-session
+page. Procedure: `dispatch-work/references/review.md`.
 
 **Scope.** Make the surgical edit the ticket asks for. Debt, bugs and smells in code the ticket or
 feature owns are fixed on its branch in the same round. A problem outside it gets one line in an
