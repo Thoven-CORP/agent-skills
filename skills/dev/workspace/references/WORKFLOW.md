@@ -484,7 +484,7 @@ BRANCHES AND PULL REQUESTS
 - A ticket that takes more than one PR: an id in the branch name or PR title links that PR as closing, so its first merge moves the ticket to Done. Keep the id out of both and write `Part of THV-<id>` in the PR body, which links without closing. (2026-10-25: the test-cadence ticket closed on its first of five PRs.)
 - Write Ready if a surface still needs his eyes. Write Done when the job is finished, and only after
   `dispatch-work`'s close step has run for it: panes closed, its tree removed, its merged branches gone. UI merges on green `CI` too; Andres reviews it on staging.
-- `--auto` queues a PR into `main` once its `CI` check passes, and the queue's broad `CI` run merges it. Watch a PR unattended with `/babysit-pr` (`pr-wait --until green`, then again until it reports `merged`), or with `/loop-on-ci` when you watch CI in the terminal. A PR left open with auto-merge off was rejected by the queue.
+- `--auto` queues a PR into `main` once its `CI` check passes, and the queue's broad `CI` run merges it. Watch a PR unattended with `/babysit-pr` (`pr-wait --until green`), then for a PR into `main` with `enforcement/bin/pr-queue-wait <owner/repo> <n>` until it merges (exit 0) or leaves the queue unmerged (exit 1), or with `/loop-on-ci` when you watch CI in the terminal.
 - A PR or branch behind `main`: `/modernize` gives MODERNIZE, REWORK or CLOSE before any rebase. On a shared integration branch take the verdict only; the catch-up stays a merge commit.
 - Another person's or agent's PR, branch or dead pane: `/takeover` re-proves it and keeps their credit.
 - In the same comment, say what you did AND what you deliberately did not do.

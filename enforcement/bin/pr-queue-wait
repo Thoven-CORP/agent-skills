@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Waits for a PR into a merge-queue branch to land. Prints one line per change in its PR and queue
+# state, then exits 0 when the PR merged, 1 when it left the queue unmerged (the queue rejected it,
+# or someone dequeued it) or closed, 2 on bad arguments. `pr-wait --until green` stops at green PR
+# checks, which on a queue branch only means "queued" (THV-1707). GitHub turns auto-merge off while
+# a PR waits in the queue, so auto-merge off is not by itself a rejection: the queue entry is.
+#   pr-queue-wait <owner/repo> <pr> [--interval 30]
+set -uo pipefail
+repo="${1:-}" pr="${2:-}" interval=30
+[ "${3:-}" = --interval ] && interval="${4:-30}"
+if [[ ! "$repo" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ || ! "$pr" =~ ^[0-9]+$ || ! "$interval" =~ ^[0-9]+$ ]]; then
+  echo "usage: pr-queue-wait <owner/repo> <pr> [--interval 30]" >&2
+  exit 2
+fi
+query='query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){state isInMergeQueue mergeQueueEntry{state position} autoMergeRequest{mergeMethod} mergeCommit{oid}}}}'
+prev="" queued=0
+while true; do
+  line=$(gh api graphql -f query="$query" -F o="${repo%%/*}" -F r="${repo#*/}" -F n="$pr" --jq '.data.repository.pullRequest |
+    "state=\(.state) inQueue=\(.isInMergeQueue) entry=\(.mergeQueueEntry.state // "-") auto=\(.autoMergeRequest.mergeMethod // "off") commit=\(.mergeCommit.oid // "-")"' 2>/dev/null) || { sleep "$interval"; continue; }
+  [ "$line" != "$prev" ] && echo "$repo#$pr $line"
+  prev="$line"
+  case "$line" in
+    *state=MERGED*) exit 0 ;;
+    *state=CLOSED*) echo "$repo#$pr closed without merging"; exit 1 ;;
+  esac
+  [[ "$line" == *inQueue=true* ]] && queued=1
+  if [ "$queued" = 1 ] && [[ "$line" == *inQueue=false* ]]; then
+    echo "$repo#$pr left the merge queue without merging: read its failed merge_group run"
+    exit 1
+  fi
+  sleep "$interval"
+done

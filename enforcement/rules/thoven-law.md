@@ -45,7 +45,7 @@ a rebase ate a day of the onboarding prototype.)
   cheap affected tests (frontend unit tests, backend path-mapped specs), auto-merge queues the PR
   once that `CI` is green, and the queue's own `CI` run, on the commit that will land, runs the broad
   tests and merges it with a merge commit. Green PR checks are not a merge: a queue failure takes the
-  PR out of the queue with auto-merge off, and `main` does not move. A PR into an integration branch
+  PR out of the queue unmerged, and `main` does not move. A PR into an integration branch
   has no queue; its `CI` runs the affected tests and broad coverage when a dependency is unknown, and
   a ticket PR there merges on that `CI`, its test lines and the verifier's pass. A nightly or manual
   full run audits what selection skips.
@@ -74,9 +74,10 @@ a rebase ate a day of the onboarding prototype.)
   cannot run, in any repo. Its merge follows the method table and backend-first order above. Both call `/sol-loop`: with no GPT Sol
   route, run `dispatch-work/references/review.md` "Every PR put to Andres" in its place and say so.
   `pr-wait` runs `--until green`, since Thoven has no Greptile or Macroscope. For a PR into `main`,
-  green means queued: run `pr-wait` again, and the PR is done only when it reports `merged`. When
-  `gh pr view <n> --json state,autoMergeRequest` shows the PR open with auto-merge off, the queue
-  rejected it; read the failed `merge_group` run, fix it, push and arm auto-merge again.
+  green means queued, not merged: then wait with `enforcement/bin/pr-queue-wait <owner/repo> <n>`,
+  which exits 0 when the PR merges and 1 when it leaves the queue unmerged. On 1, read the failed
+  `merge_group` run, fix it, push and arm auto-merge again. GitHub turns auto-merge off while a PR
+  waits in the queue, so auto-merge off alone is not a rejection.
 - Production moves only through `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh`.
 
 **Where records live.** Linear holds current Project briefs, accepted decisions, status, evidence
