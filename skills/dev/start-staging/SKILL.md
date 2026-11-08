@@ -32,7 +32,7 @@ render services -e evm-dao4703m8hqs73d71rfg -o json --confirm \
 
 `thoven-api-staging` is the combined web service, `thoven-keyvalue-staging` its Key Value, and `thoven-worker-staging` the legacy worker, which stays `suspended`.
 
-**A dead key.** When the controller refuses with `Render rejected RENDER_API_KEY`, the key is revoked or expired. Stop and ask Andres for a new key from Render's Account settings > API keys, placed in that file. `check-key` confirms the replacement with `Render API key: accepted`. While the key is dead the scheduler cannot put staging to sleep, so report whether `thoven-api-staging` is still `not_suspended`.
+**A dead key.** When the controller refuses with `Render rejected RENDER_API_KEY`, the key is revoked or expired. Stop and ask Andres for a new key from Render's Account settings > API keys, placed in that file. `check-key` confirms the replacement with `Render API key: accepted`; a controller that answers `invalid choice: 'check-key'` predates backend #491, so report its checkout as stale and confirm the key with `status` instead. While the key is dead the scheduler cannot put staging to sleep, so report whether `thoven-api-staging` is still `not_suspended`.
 
 ## Start
 
