@@ -53,6 +53,20 @@ expect "path-traversing session id is ignored" "$(run codex '{"session_id":"../e
 reset
 expect "claude allows when stop_hook_active is true" "$(run claude "$(stop_payload true)")" "rc=0 "
 expect "claude blocks on uncommitted edits, repo-relative across two repos" "$(run claude "$(stop_payload)")" "rc=0 $BLOCK"
+# 2026-11-08: a git call per logged path needed minutes on a 10,000-line log, past the 10 s Stop
+# timeout, so the gate let those sessions stop unchecked. 20,000 lines over two repos, two pending.
+reset
+cp "$STATE/edited" "$STATE/edited.orig"
+{ for i in $(seq 1 10000); do printf '%s\n' "$A/clean-$i.txt" "$B/elsewhere/clean-$i.txt"; done
+  printf '%s\n' "$A/a.txt" "$B/sub/b.txt"; } >"$STATE/edited"
+started=$(date +%s)
+scaled="$(run claude "$(stop_payload)")"
+elapsed=$(( $(date +%s) - started ))
+expect "a 20,000-line log still blocks on the two uncommitted files" "$scaled" "rc=0 $BLOCK"
+if [ "$elapsed" -le 5 ]; then ok "a 20,000-line log is checked in ${elapsed}s, inside the Stop timeout"
+else fail "a 20,000-line log is checked inside the Stop timeout" "${elapsed}s"; fi
+mv "$STATE/edited.orig" "$STATE/edited"
+
 expect "claude does not ask the same list twice" "$(run claude "$(stop_payload)")" "rc=0 "
 
 reset

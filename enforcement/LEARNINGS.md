@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-08 — A hook that runs on every call costs the same however old the session is
+
+> reflect · 2026-11-08 · ef2a1ea6 · slow-hook · applied · seen 1
+
+**What happened.** The laptop swapped 14 GB at load 25. After every shell call `thoven-track-edits` listed each named checkout's changed files and ran one `grep` per path against a session edit log of 24–27k lines. A substring test also counted `~/thoven/frontend-<tree>` as naming `~/thoven/frontend`, which held 14,770 untracked scratch files, and as naming the `~/thoven` root, a repo with 32,781 untracked files. Each call hit its 10 s hook timeout and was killed with the log half-written. `thoven-uncommitted` ran a git call per logged path (74 s on 2,000 lines), so the Stop gate was killed too and let those sessions stop unchecked.
+**Why.** Per-path subprocess loops against state that only grows, and path matching by substring. Tests used a handful of paths, and nothing tested at the size or timeout the hooks really run at.
+**What changed.** Both hooks do one batched pass: one `git status -z` per checkout, then one awk or Python set join. A checkout is named only by a whole path, and a path inside a nested checkout names that checkout, not its parent. Rules for any hook: it runs under macOS bash 3.2 (no associative arrays; a here-doc inside `<( )` is misread); never start a subprocess per item of a list that grows; `awk 'NR == FNR'` treats an empty first file's partner as seen, so use `FILENAME == ARGV[1]`; ship a test at tens of thousands of entries that must finish inside the hook's configured timeout (`THOVEN_CLAUDE_STATE` isolates state). Logs written before this change still carry wrongly charged paths, and `thoven-guard-bash` grants path-scoped undo from them. That is filed, not fixed here.
+
 ## 2026-10-22 — CI gates only PRs into main; backend-first needs backward compatibility; docs merge in the pass
 
 > reflect · 2026-10-22 · 39a12a43 · 889d1f76 · d9f3ef92 · a010cb0c · 01a151d4 · broken-rule · applied · seen 4

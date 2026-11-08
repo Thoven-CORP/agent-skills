@@ -151,6 +151,68 @@ class TrackEditsTest(unittest.TestCase):
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertLess(elapsed, 2.0, f"hook took {elapsed:.1f}s on a large node_modules tree")
 
+    # 2026-11-08: ~/thoven/frontend is a prefix of ~/thoven/frontend-<tree>, so a command naming the worktree
+    # scanned the main checkout's 14,770 untracked scratch files and charged them to this session.
+    def test_command_naming_a_prefixed_tree_does_not_scan_the_shorter_checkout(self):
+        shorter = self.workspace / "frontend"
+        (shorter / "tmp").mkdir(parents=True)
+        subprocess.run(["git", "init", str(shorter)], check=True, capture_output=True)
+        stray = shorter / "tmp" / "scratch.txt"
+        stray.write_text("not this session's\n")
+        result = self.invoke(f"ls {self.workspace / 'frontend-thv-1131'}/src", cwd=self.repo)
+        self.assertEqual(0, result.returncode, result.stderr)
+        edited = (self.state / "edited").read_text().splitlines()
+        self.assertNotIn(str(stray), edited)
+        self.assertIn(str(self.file), edited)
+
+    def test_command_naming_the_shorter_checkout_still_scans_it(self):
+        shorter = self.workspace / "frontend"
+        (shorter / "src").mkdir(parents=True)
+        subprocess.run(["git", "init", str(shorter)], check=True, capture_output=True)
+        changed = shorter / "src" / "change.ts"
+        changed.write_text("export const changed = 1\n")
+        for command in (f"cat {shorter}/src/change.ts", f"git -C {shorter} status", "cd ../frontend && ls"):
+            result = self.invoke(command, cwd=self.repo)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertIn(str(changed), (self.state / "edited").read_text().splitlines(), command)
+            (self.state / "edited").write_text("")
+
+    # 2026-11-08: ~/thoven is itself a checkout, and every command naming ~/thoven/<checkout>/... also named
+    # it, so each call walked the workspace root's 32,781 untracked files.
+    def test_path_inside_a_nested_checkout_does_not_name_the_workspace_root(self):
+        subprocess.run(["git", "init", str(self.workspace)], check=True, capture_output=True)
+        root_file = self.workspace / "prototypes" / "draft.html"
+        root_file.parent.mkdir()
+        root_file.write_text("<p>root</p>\n")
+        result = self.invoke(f"ls {self.repo}/src", cwd=self.repo)
+        self.assertEqual(0, result.returncode, result.stderr)
+        edited = (self.state / "edited").read_text().splitlines()
+        self.assertNotIn(str(root_file), edited)
+        self.assertIn(str(self.file), edited)
+        result = self.invoke(f"cat {self.workspace}/prototypes/draft.html", cwd=self.repo)
+        self.assertIn(str(root_file), (self.state / "edited").read_text().splitlines(), "a root path still names the root")
+
+    # 2026-11-08: one grep per changed path against a 24,000-line edited list held two sessions' hooks at
+    # ~86% CPU after every shell call.
+    def test_many_new_paths_against_a_long_edited_list_stay_fast(self):
+        (self.state / "edited").write_text("".join(f"/elsewhere/old-{index}.txt\n" for index in range(25000)))
+        scratch = self.repo / "tmp"
+        scratch.mkdir()
+        for index in range(4000):
+            (scratch / f"file-{index}.txt").write_text("x\n")
+        started = time.monotonic()
+        result = self.invoke(f"ls {self.repo}", cwd=self.repo)
+        elapsed = time.monotonic() - started
+        self.assertEqual(0, result.returncode, result.stderr)
+        edited = (self.state / "edited").read_text().splitlines()
+        self.assertEqual(25000 + 4001, len(edited))
+        self.assertEqual(len(edited), len(set(edited)), "a path is recorded once")
+        self.assertLess(elapsed, 3.0, f"hook took {elapsed:.1f}s on 4,000 new paths and a 25,000-line list")
+        started = time.monotonic()
+        self.invoke(f"ls {self.repo}", cwd=self.repo)
+        self.assertLess(time.monotonic() - started, 3.0, "a second call with nothing new is fast too")
+        self.assertEqual(25000 + 4001, len((self.state / "edited").read_text().splitlines()))
+
     def test_scan_leaves_the_index_unwritten(self):
         kept = self.repo / "kept.txt"
         kept.write_text("same\n")
