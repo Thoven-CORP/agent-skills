@@ -199,7 +199,7 @@ the same worktree.
 Commit, push, open a PR, or land only when authorized. Follow the Thoven law in
 the repo `CLAUDE.md`: one worktree per ticket from `thoven-worktree create`,
 stage exact paths, a PR into `main` that merges itself with
-`gh pr merge --auto --squash` once the required `CI` check is green. One PR per
+`gh pr merge --auto` once the required `CI` check is green; `main`'s merge queue lands it. One PR per
 repo per batch; when both repos change, say which merges first. After landing,
 refresh from current `main` and rerun read-only discovery for the next
 high-confidence batch.

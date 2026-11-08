@@ -39,23 +39,28 @@ a rebase ate a day of the onboarding prototype.)
   copies the env file and installs dependencies. Add `--new "<reason>"` for a fresh tree when your
   files overlap another live tree's dirty files, or the work is risky and long. From Claude,
   `claude --worktree <area>-thv-<n>` runs the same script.
-- Open a PR into `main` and arm auto-merge as it opens, with the method below; GitHub merges it once
-  the required `CI` check passes. No PR waits for a go from Andres, UI included: he reviews screens on
-  staging, and production still moves only through `promote.sh` (Andres, 2026-11-05).
-  `CI` runs the affected tests on every PR, whatever its target, and broad coverage when a
-  dependency is unknown; a nightly or manual full run audits what selection skips. A ticket PR into
-  an integration branch merges on that `CI`, its test lines and the verifier's pass.
+- Open a PR into `main` and arm auto-merge as it opens with `gh pr merge --auto`; no PR waits for a go
+  from Andres, UI included: he reviews screens on staging, and production still moves only through
+  `promote.sh` (Andres, 2026-11-05). `main` runs GitHub's merge queue (THV-1707): a push to the PR runs
+  cheap affected tests (frontend unit tests, backend path-mapped specs), auto-merge queues the PR
+  once that `CI` is green, and the queue's own `CI` run, on the commit that will land, runs the broad
+  tests and merges it with a merge commit. Green PR checks are not a merge: a queue failure takes the
+  PR out of the queue with auto-merge off, and `main` does not move. A PR into an integration branch
+  has no queue; its `CI` runs the affected tests and broad coverage when a dependency is unknown, and
+  a ticket PR there merges on that `CI`, its test lines and the verifier's pass. A nightly or manual
+  full run audits what selection skips.
   The method follows the PR's role:
 
   | PR | Merge |
   |---|---|
-  | A ticket into `main` | `gh pr merge --auto --squash` |
+  | A ticket into `main` | `gh pr merge --auto`; the queue lands it as a merge commit |
   | A ticket into an integration branch | `gh pr merge --squash` on green targeted CI and the verifier's pass |
   | Docs only (no code, config or tests) | squash in the same pass, like an agent-skills PR |
   | A catch-up of `main` into an integration branch | `--merge`, so `main` stays an ancestor |
-  | An integration branch landing in `main` | `--auto --merge`, so each ticket's commit and THV id survive for later conflict resolution |
+  | An integration branch landing in `main` | `gh pr merge --auto`; the queue's merge commit keeps each ticket's commit and THV id for later conflict resolution |
 
   Every merge line names source, target and method: "scheduling/improvements → main, merge commit".
+  The queue has one method, and it is the merge commit, so an integration branch is never squashed.
   (#256 and #318 squashed 282 and 403 commits into one each, and later Private Lessons conflicts
   traced to a 470-file commit with no ticket id.)
 - When an integration branch lands in `main`, retire it: remove its `worktree-projects.tsv` row and
@@ -68,7 +73,10 @@ a rebase ate a day of the onboarding prototype.)
   it on green `CI`. `/full-send`, on Andres's "full send", also merges a PR whose required check
   cannot run, in any repo. Its merge follows the method table and backend-first order above. Both call `/sol-loop`: with no GPT Sol
   route, run `dispatch-work/references/review.md` "Every PR put to Andres" in its place and say so.
-  `pr-wait` runs `--until green`, since Thoven has no Greptile or Macroscope.
+  `pr-wait` runs `--until green`, since Thoven has no Greptile or Macroscope. For a PR into `main`,
+  green means queued: run `pr-wait` again, and the PR is done only when it reports `merged`. When
+  `gh pr view <n> --json state,autoMergeRequest` shows the PR open with auto-merge off, the queue
+  rejected it; read the failed `merge_group` run, fix it, push and arm auto-merge again.
 - Production moves only through `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh`.
 
 **Where records live.** Linear holds current Project briefs, accepted decisions, status, evidence
