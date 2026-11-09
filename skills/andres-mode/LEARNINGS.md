@@ -5,6 +5,16 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-09 — hard rules go first; CI runs on the integration landing, not each ticket
+
+> session · 2026-11-09 · automate-me mining of Claude sessions since 10-07 · broken-rule · applied · seen 1+
+
+**What happened.** Andres corrected the same things across many days: full verify and CI on each ticket PR ("why are these small changes running full CI"), remote-verify per ticket, a reran PR in another session ("thats ours, just a different session"), a script where the Render or Neon CLI or plugin was the tool, a placeholder screen where a Paper frame existed, and a status line in place of an answer ("who's going to get this review?").
+**Why.** Each rule was already written, but it sat in the middle of the file or in a section agents read only for their own task. The CI rule also conflicted across `thoven-law.md`, `verify/SKILL.md` and this file.
+**What changed.** A Hard rules section opens the file. The cadence bullet, the verify skill's item 8 and the law's merge table say no CI on a ticket PR into an integration branch; CI and remote-verify run when the integration branch lands in `main`. Dispatch no longer waits for a load check (Andres, 2026-11-09). Replies and Delegation gained the answer-first, evidence, vendor-CLI and other-session rules.
+
+---
+
 ## 2026-11-08 — the work-session page is the view; one fix round; fresh agents per round
 
 > session · 2026-11-08 · usage audit · ruling · applied · seen 1

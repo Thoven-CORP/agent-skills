@@ -7,6 +7,18 @@ description: Andres's working style. Load it at the start of every Thoven main s
 
 Thoven work spans a frontend and a backend repo, run by a main session that dispatches panes. These rules sit on top of `~/thoven/CLAUDE.md` and each repo's CLAUDE.md. Where a rule here is stricter, it wins. Read `LEARNINGS.md` before editing this file.
 
+## Hard rules
+
+Each rule's detail sits in the section named in brackets.
+
+- **Verify small.** Targeted checks while editing and at DONE; remote-verify and CI run once per integration branch, when it lands in `main`. [Check your own work]
+- **Ship without flags.** Add no feature flag, hold, throttle or on-switch unless he asks for one. [Replies, Hold his scope]
+- **Build the designed thing.** Build from the Paper frame that exists, and restyle only what the frame says differs. [Parity]
+- **Use the vendor's tool.** Platform work runs through the vendor's CLI or attached plugin before any repo script. [Delegation]
+- **Stay in your own sessions.** Act only on PRs, branches and panes this session opened. [Delegation]
+- **Verify facts first.** Look up a business or product fact before stating it. [Check your own work]
+- **Answer first.** Open with the answer to the question he asked, then the status. [Replies]
+
 ## Pitfalls
 
 - On "pause" or "realign", stop writes and audit tickets, docs, code and live systems read-only against settled decisions; bring the user only the gaps no decision covers. (LEARNINGS 2026-09-24)
@@ -84,7 +96,7 @@ The builder checks its own homework before DONE; the reviewer runs the same list
 - **Red then green on the behaviour the ticket names**, in the file's own test. A test that passes with the change reverted is not a test.
 - **Check a claim before saying it.** Before calling something missing, search `~/thoven/frontend` and every sibling worktree, and name which you covered. Before calling a design missing or choosing a look yourself, also search Paper, the boards and the open integration branches. (2026-11-05: the first Loops emails went out in the editor theme while the email design sat on Paper and an integration branch.) Open a cited doc line's heading before calling it a lock. A fact not checked this session is called unverified in the same sentence. A credential or vendor choice is proved with the vendor's plugin or docs before it is called wrong. Keys are fetched through the plugin. Evidence he pasted stays.
 - **Other people's tests run once.** Lint on changed files, cached typecheck, direct importers once. Mutation runs on GitHub on PRs into `main`, and locally only when the user asks. Never per hunk over the suite.
-- **One cadence.** Targeted checks while editing; `remote-verify` with the deep rows at DONE; CI runs the affected tests on every PR, and a nightly or manual full run audits what it skips; the full suite once at the parent, on the mini, before the integration PR into `main`; nothing on push. A main-session test-and-fix run proves each behaviour with `/verify-this`. A FAIL row is fixed or raised by name, never described away.
+- **One cadence.** Targeted checks while editing and at DONE: lint, type-check, and the touched test files by path. A ticket PR into an integration branch runs no CI and merges on its targeted lines and the verifier's pass. Remote-verify with the deep rows and CI run once per integration branch, when it lands in `main`; a nightly or manual full run audits what CI skips. The full suite runs when Andres asks. Nothing reruns on push. A main-session test-and-fix run proves each behaviour with `/verify-this`. A FAIL row is fixed or raised by name, never described away.
 - **A CI failure is real until proven a flake**: the same SHA passes on rerun and the test passes on `main`'s latest run. Red CI on `main` gets a named owner the day it appears.
 - A test that fails only under load is rerun alone on the mini once; a pass alone makes it a timing bug with one Linear line.
 - **Show, then claim**, on the work-session page. Done means merged and a user can reach it.
@@ -94,21 +106,26 @@ The builder checks its own homework before DONE; the reviewer runs the same list
 
 - Roles: dispatch-work (Roles table). Panes run Claude Code under `/poteto-mode`; Codex only when the user asks for it by name in this session.
 - Guard main's context: bulk reads go to subagents.
-- Treat a grill answer about parallelising as shaping the setup; run nothing until the user says run.
-- The session the user is talking to does the work they give it. Read another main's pane for state; never route a task or its ownership through it. Never message a session you did not spawn, not even for a lock or a handshake; coordinate a shared board or tree through git and file state.
+- A grill answer about parallelising shapes the setup. Once he asks for the work, spawn it now; do not wait for a load check first. (2026-10-24, 2026-11-03, 2026-11-05, 2026-11-06)
+- The session the user is talking to does the work they give it. Read another main's pane for state; never route a task or its ownership through it. Never message a session you did not spawn, not even for a lock or a handshake; coordinate a shared board or tree through git and file state. Do not rerun, merge or edit another session's PR, even when it looks stuck. (2026-11-09)
 - Subagents run opus, sonnet or haiku, never Fable, per the tiers in `~/.claude/pstack-models.md`. One agent per task: a new task or round goes to a fresh agent carrying the brief, the rulings since and the last report. (LEARNINGS 2026-11-08) Vendor and library questions go through Context7, up to three queries, before WebSearch or WebFetch.
 - A brief quotes the user's words and states no preference the user did not say.
 - Name source, target and method in every merge line ("THV-1234 into scheduling/improvements, squash"; "scheduling/improvements → main, merge commit") and arm auto-merge once the PR review on its final diff passes: every PR merges itself on green CI, `main` and UI included, with no go from the user. The method by PR role is in thoven-law.md "Branches and PRs". The target he names wins: "directly on <branch>" means commit and push there, with no pull request and no new branch, and "not part of that project" means a tree cut from `main`. A stale branch "predates" work on main; "deleted" is for a commit that removed something.
 - Leave `disable-model-invocation` off a skill unless the user says that skill must never self-trigger, and search installed skills under `~/.agents/skills`, since `grep -r` skips the `~/.claude/skills` symlinks.
-- Before any dispatch, ask the mini's load gate for free slots (`thoven-load-gate --check-only --profile ~/.config/thoven/host.json`); with none free, prune first, and never a worktree for a minor fix. A dev server and a browser QA loop each hold a slot, and verify takes its own.
+- Spawn parallel work without a load check first. Stop a spawned pane only when the machine freezes, then rank processes by memory and swap (see the slow-machine bullet below). Never a worktree for a minor fix. A dev server and a browser QA loop each hold a load-gate slot, and verify takes its own. (2026-10-24, 2026-11-06; Andres chose spawn-now, 2026-11-09)
+- Platform actions go through the vendor's CLI or the attached plugin (Render, Vercel, Neon, Stripe, Mixpanel, Linear, Sentry) before any repo script. A script is the last resort, not the first move. (2026-11-04, 2026-11-08, 2026-11-09)
 - When work lands and its evidence is on the page and Linear, close its pane, stop its dev servers, remove its worktrees, protos and scratch, and report what was cleared in one line. Demo servers and long or heavy jobs start under a time cap and stop that turn. Force-killing a process you did not start needs a yes that names its pid and owner. Never remove unpushed work. Delete your own one-off probes and scratch scripts once you have checked them, and say so.
 - When the machine is slow, rank processes by memory and swap, trace each to the session that owns it, and propose stopping only processes that break a rule (a headless browser or `next-server` on the laptop). Never suggest closing a Claude session. (LEARNINGS 2026-11-08)
 
 ## Replies
 
 - **Show, then ask.** Put the screenshot or grid on the work-session page, or the still image in the terminal under Rex, before any question about it. A question about something the user cannot see is a wasted turn.
-- **Hold his scope.** Before starting, restate what is in and out of scope in his words, and check each step against it. When the plan outgrows his ask, stop and grill through the ask tool. When he widens scope or lifts a constraint, rebuild to the new shape in one pass and record the constraint as removed; reinstate it only when he says so.
+- **Hold his scope.** Before starting, restate what is in and out of scope in his words, and check each step against it. Add no feature flag, hold, throttle or on-switch he did not ask for. When the plan outgrows his ask, stop and grill through the ask tool. When he widens scope or lifts a constraint, rebuild to the new shape in one pass and record the constraint as removed; reinstate it only when he says so.
 - **A question is not a work order.** Answer an understanding question in full from what is known and end the turn; the decision comes in a later turn. An investigation runs only when the user asks, in subagents; otherwise it goes on the owning ticket.
+- **Answer first.** The first line answers the question he asked; status follows.
+- **Evidence is short and visual.** One canonical artifact per topic, with the video or run of the use case, and screens sized to read at a glance. Commit logs stay out of chat and the artifact.
+- **Say what changed in one line**, not how you got there.
+- **Show the thing.** When he asks to see a screen or a design, open the frame or screen; a description is not an answer.
 - Lead with the finding or the next step. Eight lines or fewer for status. Plain product English, naming things by what they do. No ticket or decision ids in chat or a question, and no skill or hook names unless the user must act on them. Every question or open item names what the thing is and where he saw it, so it stands without scrollback.
 - **"Where are we" walks the user's own list.** Fetch first (`gh pr list --state merged`, `git log origin/main`, the Linear tickets), then go item by item through what the user asked for: done with its PR, open with its PR, dropped, missed. Each part of a two-part ticket gets its own line. Before DONE, rebuild the in-scope list from the ticket and his in-session asks, not from memory, and write chat-only asks onto the ticket before a long session compacts. A done report lists every decided in-scope item as built, with where it renders, or left out with the reason. When he says he does not see the change, open the artifact he is looking at first.
 - **The work-session page is the view**, and opens the reply after a long autonomous stretch. Multi-step or dispatched work keeps one living page under `~/.thoven-artifacts/dev/<topic>/`, updated in place as work lands: what is done and next in plain words, flows and architecture, screenshots and grids as evidence, and each failure as one plain line on what it means. Agent evidence (test lists, type-check output, receipts) stays with the agents and the PRs. When something lands, or he asks for an update, refresh it and send one line pointing at it. Evidence and merges go there, never as a go. Its human-readable parts are what Linear gets as evidence. With several parents live, each reply names the parent in hand.
