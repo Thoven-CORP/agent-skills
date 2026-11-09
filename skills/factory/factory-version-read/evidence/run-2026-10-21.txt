@@ -1,0 +1,34 @@
+# Staging vs main heads read through cursor-github at 4:34 PM EDT (FE 189b2f30a0f3388e9036d78a93fe57b4002fd561, BE b99aa74b8c1b8d61935e93f2ae57fba416034e2c)
+Version read for staging at 2026-10-21 16:49 EDT
+PASS frontend: https://staging.thoven.co/api/version sha 189b2f30a0f3388e9036d78a93fe57b4002fd561 equals the expected full SHA.
+PASS api: https://thoven-api-staging.onrender.com/health revision.sha b99aa74 is a prefix of the expected b99aa74b8c1b8d61935e93f2ae57fba416034e2c.
+WORKER: unverified, inferred from prod tag. No Render read access exists yet (open decision 5).
+RESULT: PASS
+exit=0
+
+# Prod vs SHAs of tag prod/2026-10-21-1 resolved from all tag pages
+Version read for prod at 2026-10-21 16:49 EDT
+PASS tag: prod/2026-10-21-1 points at the expected FE and BE SHAs (13 FE and 13 BE prod tags read).
+PASS frontend: https://thoven.co/api/version sha b2b68d1f197405ed58d64214947846d5c97a1cb0 equals the expected full SHA.
+PASS api: https://api.thoven.co/health revision.sha 35e7911 is a prefix of the expected 35e79118aba9d87f0520ae2d72293c1c9938def2.
+WORKER: unverified, inferred from prod tag. No Render read access exists yet (open decision 5).
+RESULT: PASS
+exit=0
+
+# Negative control: prod vs main heads (must fail)
+Version read for prod at 2026-10-21 16:49 EDT
+FAIL tag: prod/2026-10-21-1 points at FE b2b68d1f197405ed58d64214947846d5c97a1cb0 and BE 35e79118aba9d87f0520ae2d72293c1c9938def2, which do not both equal the expected SHAs.
+FAIL frontend: https://thoven.co/api/version returned HTTP 200 with sha 'b2b68d1f197405ed58d64214947846d5c97a1cb0'. Expected 189b2f30a0f3388e9036d78a93fe57b4002fd561.
+FAIL api: https://api.thoven.co/health returned HTTP 200 with revision.sha '35e7911', which is not a 7+ character prefix of b99aa74b8c1b8d61935e93f2ae57fba416034e2c.
+WORKER: unverified, inferred from prod tag. No Render read access exists yet (open decision 5).
+RESULT: MISMATCH
+exit=1
+
+# Negative control: empty tag list (must fail plainly)
+Version read for prod at 2026-10-21 16:49 EDT
+FAIL tag: no prod/YYYY-MM-DD-N tag exists in frontend (NONE) or backend (NONE). A prod read cannot pass without one.
+PASS frontend: https://thoven.co/api/version sha b2b68d1f197405ed58d64214947846d5c97a1cb0 equals the expected full SHA.
+PASS api: https://api.thoven.co/health revision.sha 35e7911 is a prefix of the expected 35e79118aba9d87f0520ae2d72293c1c9938def2.
+WORKER: unverified, inferred from prod tag. No Render read access exists yet (open decision 5).
+RESULT: MISMATCH
+exit=1
