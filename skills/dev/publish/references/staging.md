@@ -105,7 +105,7 @@ SKIPS
 
 ## Changelog
 
-Staging stamps no version. PRs into `main` do not edit `CHANGELOG.md`; `/publish` writes it at each production release (`references/production.md`, "Changelog").
+Staging stamps no version. Release notes are GitHub Releases on each production `prod/` tag (`references/production.md`, "Changelog").
 
 ## The Render runbook
 

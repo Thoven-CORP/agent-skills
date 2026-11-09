@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-09 — release notes move to GitHub Releases; CHANGELOG.md is retired
+
+**What happened.** After `prod/2026-11-09-1`, step 11 opened a docs-only PR to write the release's section into `CHANGELOG.md`. Andres asked why release notes still cost a PR.
+**Why.** `main` takes changes only through a PR and the merge queue, so a file written at every release costs a PR and a queue run every release, on top of the merge conflicts that made PRs stop editing it.
+**What changed.** Step 11 publishes the changelog list with `gh release create` on the `prod/` tag in each repo, and the Changelog sections and the Pitfalls line say so. Both repos' `CHANGELOG.md` became a pointer to Releases.
+
+---
+
 ## 2026-11-05 — stopping or resuming a prod service waits for a quiet window and a pinned SHA
 
 > reflect · 2026-11-05 · 01a19d6a · skill-gap · applied · seen 1
