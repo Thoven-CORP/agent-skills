@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-09 — Record by product flow, test like a literal user, split dev from prod, report visually
+
+> session · 2026-11-09 · 96e39a9f, 14531ef9 · correction · applied · seen 2
+
+**What happened.** Andres, after the reflect run: QA "will run one kind of journey and record that… we don't need four different recordings especially when things are non-destructive, like going back and forth, which is actually how people navigate." AI QA "acts like too much of a perfect human because… you read the length requirements"; "Some of the Qa-flow runs should act like a dumb user, in which they just take the UI literally." Development QA should be a wider bug hunt than production checks, and the synthesis "a little bit more visual… videos tightly (not just a bunch of screenshots)… do not show just a bunch of tables." On 2026-10-29 (14531ef9) he had asked for "the tech illiterate user… doing things even tho the UI signals the opposite".
+**Why.** The real-user moves read as separate checks, so each could become its own recording. The tester always knew the code. QA had no mode, so prod checks and dev bug hunts looked alike. The report step named `visual-artifacts` but not its shape.
+**What changed.** framing.md: the real-user take is one take per product flow with reversible moves woven in, and a literal-user take run by a tester given only the URL, persona and goal, working from the screen. SKILL.md Step 2 gains a Mode row (in development: wide hunt; production: read-only confirmation per user type). Step 3 Review defines the report: one page by flow, embedded videos with chapter marks, finding cards, performance as a `dataviz` chart, no test tables. §7 Journey matches.
+
 ## 2026-11-09 — A real-user take: act like a person, then check what persisted
 
 > reflect · 2026-11-09 · 14531ef9, 39a12a43, d7e67eac · skill-gap · applied · seen 3

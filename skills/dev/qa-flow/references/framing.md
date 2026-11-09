@@ -45,7 +45,7 @@ Decide which layers the change **touches in the product**, which is not the same
 
 **Feature:** happy path through each part, plus the cross-part journeys (state that carries across logins). Then the two passes below, at the depth SKILL.md Step 2 sets.
 
-**Real-user take.** Act like a person, not a script, in one recorded take, and after each move check what persisted:
+**Real-user take.** Act like a person, not a script. Group by product flow: each flow is one recorded take, and the reversible moves below happen inside it, the way people actually navigate, rather than as separate recordings. Start a new take only for a destructive action or a different persona. After each move, check what persisted:
 
 - back and forward, and refresh mid-flow;
 - leave the page and come back; open the same flow in a second tab (`agent-browser tab new`);
@@ -55,6 +55,8 @@ Decide which layers the change **touches in the product**, which is not the same
 - two actors on one resource at once (a teacher declines while the parent pays); this and any multi-persona or stress take run on the mini behind `thoven-load-gate -- <cmd>`, and an unavailable mini defers it.
 
 The impatient user, the confused one who clicks what the UI signals against, and the breaker who pastes junk are examples of the mindset, not a script. Record these steps as `ru-` flows in `steps.jsonl`.
+
+**Literal-user take.** An agent that has read the code already knows the length rules and the right input, so it tests like a perfect user. Some runs must not. Give a separate tester only the URL, the persona and the goal in a user's words, with no diff, code or schema. It works from what the screen shows (`agent-browser screenshot` and `snapshot`, never selectors or source) and takes every label, hint and button literally: it does the obvious thing, types the shortest answer that seems to fit (two words in a text box), skips anything marked optional, and taps what a label says even when the code means something else. Each place the literal reading fails is a finding: a hidden minimum the screen never states, an "optional" field that blocks, a button that does something other than its label, an error that does not say how to fix it. Record these as `lu-` flows.
 
 **Dependency checks.** List each off-screen effect the diff adds and check each one on staging after the take, quoting counts or ids: the Solid Queue job ran without a failed execution, the `email_deliveries` row exists, the Stripe object exists once, the Mixpanel event arrived (Mixpanel MCP), the migration or backfill ran. Read rows with `~/.agents/skills/publish/references/staging.md` "Run code on staging", using the same queries as `~/.agents/skills/publish/scripts/prod-db-check.sh`. For a large feature, first list where its tests stub a real service; that list is the plan. QA writes nothing to production.
 
