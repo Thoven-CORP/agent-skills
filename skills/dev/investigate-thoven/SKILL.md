@@ -529,7 +529,7 @@ HIGH or CRITICAL severity invokes the `verify` skill on top of the row above.
 
 1. **Log pattern:** Run mandatory pattern quality gate (see below)
 2. **Commit and push:** Stage, commit, and push immediately
-3. **CHANGELOG:** none. PRs do not edit `CHANGELOG.md`; `/publish` writes it from the merged PRs and their Linear tickets
+3. **Release notes:** none. `/publish` writes the GitHub Release from the merged PR
 4. **Deploy reminder:** Tell user: "Fix pushed. Deploy with `/publish`; the branch picks the path."
 5. **Summarize:** Full incident summary — symptom, root cause, fix, files changed
 
@@ -588,7 +588,6 @@ python .claude/skills/investigate-thoven/scripts/log_error.py \
 - [ ] Pattern quality gate evaluated
 - [ ] Pattern logged if it passed the gate (or reason stated for skipping)
 - [ ] Commit made (standalone/production) or noted for feature commit (feature-dev)
-- [ ] CHANGELOG updated (production incidents only)
 - [ ] Deploy reminder given (production incidents only)
 
 ---

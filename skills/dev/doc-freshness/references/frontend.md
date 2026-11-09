@@ -21,7 +21,7 @@ When invoked, ask the user which scope to run:
 | Scope | What it covers |
 |-------|---------------|
 | **quick** | Tier 1 only (5 critical docs in `.claude/docs/`) |
-| **standard** | Tier 1 + Tier 2 (+ CLAUDE.md, TECH_DEBT.md, TODO.md, CHANGELOG.md) |
+| **standard** | Tier 1 + Tier 2 (+ CLAUDE.md, TECH_DEBT.md, TODO.md) |
 | **full** | All 4 tiers including feature docs in `docs/` and architecture diagrams |
 | **targeted** | Specific doc or directory the user names |
 
@@ -109,7 +109,6 @@ For each approved doc:
 - Update counts, table sizes, and summary numbers for code-tracked docs (e.g., "61 API modules" -> "63 API modules") — never derive Project snapshot claims; that belongs to bare `workspace`
 - Never remove historical context or architectural decision records unless the decision was reversed
 - Use Edit tool for surgical updates — NEVER rewrite entire docs with Write tool
-- For CHANGELOG.md: voice polish only. NEVER delete, replace, or regenerate entries.
 
 ### Phase 4: Verify
 
@@ -127,7 +126,6 @@ Documentation health:
   CLAUDE.md           Updated (skills count 46→47)
   TECH_DEBT.md        Current — no changes needed
   TODO.md             Updated (marked 3 items complete)
-  CHANGELOG.md        Current — no changes needed
 ```
 
 ## After /publish or /ship
@@ -135,7 +133,6 @@ Documentation health:
 When this skill runs post-release, also:
 - Check if CLAUDE.md Quick Reference numbers are still accurate (skill count, agent count, API module count)
 - Verify the Context Files table paths in CLAUDE.md still exist
-- Cross-reference CHANGELOG unreleased section state
 
 ## Common Mistakes
 
@@ -146,7 +143,6 @@ When this skill runs post-release, also:
 | Missing new files added since last doc update | Use `Glob` to find all files in watched dirs, not just changed ones |
 | Forgetting to update summary counts | After content changes, search for "N tables", "N routes", etc. and update |
 | Not checking CLAUDE.md after updating .claude/docs/ | CLAUDE.md references these docs — verify cross-references still hold |
-| Clobbering CHANGELOG entries | Voice polish only. Never delete, replace, or regenerate CHANGELOG content |
 
 ## Boundary vs the Project snapshot
 

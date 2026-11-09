@@ -1,6 +1,6 @@
 # Conventions
 
-Adapted from the frontend `manual-qa` skill (`references/no-token-injection.md`, `execute-mode.md`). These are the rules every dogfood run inherits.
+Adapted from the `qa-flow` skill. These are the rules every dogfood run inherits.
 
 ## Full-UI login — never token injection
 
@@ -33,7 +33,7 @@ State the **account · URL · what to look for · what NOT to see**, then wait f
 
 ## Destructive actions — allowed, household-scoped
 
-Unlike `manual-qa` (read-only on prod), dogfood **does** book, approve, pay, and text — that is the point. The safety comes from *scope*: every action is between the household accounts (parent ↔ dogfood-teacher ↔ student). Never approve/refund/delete against a real user's record.
+Unlike a read-only prod check, dogfood **does** book, approve, pay, and text — that is the point. The safety comes from *scope*: every action is between the household accounts (parent ↔ dogfood-teacher ↔ student). Never approve/refund/delete against a real user's record.
 
 ## Post-publish transient rule
 

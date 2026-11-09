@@ -30,7 +30,7 @@ Identities + current state live in `state.json` — sibling of this file: `~/.cl
 
 **The household is *ready* only when `filled: true` AND `parent.email` is set AND `students` is non-empty.** If it is not ready, **STOP** — tell Andres to finish the household standup first (the P0 `[Andres-action]`: create the parent on +17049930943, add student(s), confirm the dogfood teacher exists in prod). There is nothing to dogfood until then.
 
-**Calibration — the first *ready* run** (when `last_dogfooded` is empty): resolve the household's DB IDs (look up `teacher_id` / `student_id` / parent `profile_id` by email, store in `household.local.json`), pin the standing-checklist URLs/selectors against the live app, run the **standing core only** (skip changelog bucketing), and record the current published FE+BE versions as the baseline. Bucketing begins the run *after* calibration.
+**Calibration — the first *ready* run** (when `last_dogfooded` is empty): resolve the household's DB IDs (look up `teacher_id` / `student_id` / parent `profile_id` by email, store in `household.local.json`), pin the standing-checklist URLs/selectors against the live app, run the **standing core only** (skip changelog bucketing), and record the newest `prod/*` release tag in each repo as the baseline. Bucketing begins the run *after* calibration.
 
 Read the `last_known_state` snapshot aloud at the start so any failure carries its repro context.
 
@@ -41,10 +41,10 @@ Read `state.json` (+ `household.local.json` override): household identities, `la
 **Done when:** household readiness is confirmed, identities + the entering-state snapshot are stated, and the branch is chosen.
 
 ### 2. Build the run sheet
-- **weekly:** read FE + BE `CHANGELOG.md` for every **published** version above `last_dogfooded` (skip `Unreleased`/Not-Published — not live on prod yet; they're picked up next run once published). Bucket each entry → `references/changelog-buckets.md`. Script the user-visible + integration + contract-removal buckets; list BE-only-not-clickable out-of-band. Append the standing core → `references/standing-checklist.md`.
+- **weekly:** read the GitHub Releases on every `prod/*` tag newer than `last_dogfooded` (`gh release list --repo Thoven-CORP/frontend-remote` and `--repo Thoven-CORP/backend-remote`, then `gh release view <tag>`); a release is live on prod by definition, and anything unreleased is picked up next run. Bucket each bullet → `references/changelog-buckets.md`. Script the user-visible + integration + contract-removal buckets; list BE-only-not-clickable out-of-band. Append the standing core → `references/standing-checklist.md`.
 - **ad-hoc:** resolve `<feature>` to its standing-checklist domain(s); if none match, search the code for the feature and synthesize steps in the same shape (UI check + exact value + backend assertion where state-critical).
 - **status:** print the run sheet and **STOP** — no login, no log.
-**Done when:** every changelog entry since `last_dogfooded` is bucketed and either scripted into a step or explicitly listed out-of-band; the standing core is appended.
+**Done when:** every release bullet since `last_dogfooded` is bucketed and either scripted into a step or explicitly listed out-of-band; the standing core is appended.
 
 ### 3. Run it (guided-manual)
 Walk the sheet one check at a time (see non-negotiables). The scripted core yields an unambiguous ✅/❌; the **grill** tail is open exploration — capture "what felt bad." For money/state-critical steps (wallet, booking), confirm the backend truth with a read-only prod assertion, not just the UI. → `references/standing-checklist.md`
@@ -55,7 +55,7 @@ A real bug (something broken) → mint it into the bug tracker and link it. Soft
 **Done when:** every ❌/⚠️ is either a linked bug or a recorded friction note.
 
 ### 5. Log the run & advance state
-Create the Notion **Dogfood Runs** row (versions, buckets, Result = Go/No-Go, entering-state, linked bugs; detail in the page body) → `references/logging.md`. Then update `state.json`: bump `last_dogfooded` to the versions just tested, set `last_run_date`, refresh `last_known_state`.
+Create the Notion **Dogfood Runs** row (versions, buckets, Result = Go/No-Go, entering-state, linked bugs; detail in the page body) → `references/logging.md`. Then update `state.json`: bump `last_dogfooded` to the `prod/*` tags just tested, set `last_run_date`, refresh `last_known_state`.
 **Done when:** the run row exists and `state.json` reflects this run.
 
 ## Go/No-Go gate

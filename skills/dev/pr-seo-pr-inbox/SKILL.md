@@ -20,7 +20,6 @@ From `/Users/andresmartinez/thoven/frontend`, read:
 - `lib/resource-articles.ts` — the single source of truth for `/resources` articles
 - `public/llms.txt`
 - `app/sitemap.ts` (derives) and `app/sitemap.test.ts` (derives)
-- `CHANGELOG.md`
 
 Preserve unrelated dirty files. Never stage broad paths.
 
