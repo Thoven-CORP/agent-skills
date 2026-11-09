@@ -1,0 +1,14 @@
+#!/bin/bash
+# SessionStart: say something only when this session starts in a primary checkout that is behind
+# GitHub main or off main. Worktrees are cut from origin/main and stay silent. 2026-11-09: the
+# frontend checkout sat 359 commits behind for eight days while sessions started in it.
+payload="$(cat)"
+cwd="$(printf '%s' "$payload" | jq -r '.cwd // empty' 2>/dev/null)"; [ -n "$cwd" ] || cwd="$PWD"
+bin="$HOME/thoven/agent-skills/enforcement/bin/thoven-behind"
+facts="$("$bin" "$cwd" 2>/dev/null)" || exit 0
+eval "$(printf '%s\n' "$facts" | sed -n -E 's/^(root|branch|main_checkout|behind|blockers)=(.*)$/\1=\x27\2\x27/p')"
+[ "$main_checkout" = 1 ] || exit 0
+[ "$behind" -ge 5 ] || [ "$branch" != main ] || exit 0
+printf 'STALE CHECKOUT: %s is on %s and %s commits behind GitHub main. Code, skills, CLAUDE.md and the law read from here are out of date. Tell Andres in your first reply, and do not dispatch panes or cut worktrees from this checkout until it is current.' "$root" "$branch" "$behind"
+[ -n "$blockers" ] && printf ' A fast-forward is blocked by uncommitted edits to: %s.' "$blockers"
+printf ' Fix: from a clean checkout run `git -C %s merge --ff-only origin/main`, or start the session in a worktree made by thoven-worktree.\n' "$root"

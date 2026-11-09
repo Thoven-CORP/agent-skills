@@ -79,9 +79,10 @@ sync_main() {
   git -C "$main" rev-parse --verify --quiet origin/main >/dev/null || { echo "skipped, no origin/main"; return; }
   branch="$(git -C "$main" symbolic-ref --quiet --short HEAD)"
   [ "$branch" = main ] || { echo "skipped, on '${branch:-detached HEAD}', not main"; return; }
-  # A fast-forward never touches untracked files, and refuses on its own to overwrite one.
-  [ -z "$(git --no-optional-locks -C "$main" status --porcelain --untracked-files=no)" ] ||
-    { echo "skipped, uncommitted changes"; return; }
+  # A fast-forward keeps uncommitted edits and untracked files, and git itself refuses when an
+  # incoming change touches a file with uncommitted edits. So git decides, not a dirty check: an
+  # edit to a file main never changes must not freeze the checkout (frontend, Nov 1 to 9: 359
+  # commits behind because of one lint-baseline edit).
   ahead="$(git -C "$main" rev-list --count origin/main..HEAD)"
   if [ "$ahead" -gt 0 ]; then
     echo "skipped, main has $ahead commit(s) origin/main lacks; local main only fast-forwards, so move them to a branch by hand"
@@ -93,7 +94,33 @@ sync_main() {
   if err="$(git -C "$main" merge --ff-only --quiet origin/main 2>&1 >/dev/null)"; then
     echo "fast-forwarded $behind commit(s) to origin/main$(install_after "$main" "$before")"
   else
-    echo "skipped, git merge --ff-only origin/main failed: ${err%%$'\n'*}"
+    echo "skipped, blocked by uncommitted edits to: $(blockers "$main"); ${err%%$'\n'*}"
+  fi
+}
+
+# blockers <checkout>: uncommitted tracked files that origin/main also changes (what stops a fast-forward).
+blockers() {
+  comm -12 <(git --no-optional-locks -C "$1" status --porcelain --untracked-files=no | awk '{print $NF}' | sort) \
+           <(git -C "$1" diff --name-only HEAD origin/main | sort) | paste -sd, -
+}
+
+# alert <repo> <what happened>: a macOS notification when a primary checkout stays stuck. Counts
+# consecutive stuck runs per repo; speaks on the 3rd, then at most every 6 hours.
+STATE="${THOVEN_SYNC_STATE:-$HOME/.thoven/sync-state}"
+alert() {
+  local repo="$1" outcome="$2" main="$3" behind n last now
+  mkdir -p "$STATE" 2>/dev/null
+  case "$outcome" in
+    skipped*) ;;
+    *) rm -f "$STATE/$repo.stuck" "$STATE/$repo.alerted"; return ;;
+  esac
+  n=$(( $(cat "$STATE/$repo.stuck" 2>/dev/null || echo 0) + 1 )); echo "$n" > "$STATE/$repo.stuck"
+  behind="$(git -C "$main" rev-list --count HEAD..origin/main 2>/dev/null || echo 0)"
+  now="$(date +%s)"; last="$(cat "$STATE/$repo.alerted" 2>/dev/null || echo 0)"
+  if [ "$n" -ge 3 ] && [ "$behind" -ge 5 ] && [ $((now - last)) -ge 21600 ]; then
+    echo "$now" > "$STATE/$repo.alerted"
+    osascript -e "display notification \"$repo main is $behind commits behind GitHub: ${outcome:0:90}\" with title \"thoven-sync\"" >/dev/null 2>&1
+    emit "ALERT $repo: $behind commit(s) behind GitHub for $n runs: $outcome"
   fi
 }
 
@@ -123,15 +150,27 @@ dirty_count() {
 }
 
 report() {
-  local repo main path branch count
+  local repo main path branch count outcome n line key unpushed
   for repo in "${REPOS[@]}"; do
     main="$THOVEN_ROOT/$repo"
     git -C "$main" rev-parse --git-dir >/dev/null 2>&1 || { emit "$main: not a git checkout, skipped"; continue; }
     main="$(cd "$main" && pwd -P)"
-    emit "$main: $(sync_main "$main")"
+    outcome="$(sync_main "$main")"
+    emit "$main: $outcome"
+    alert "$repo" "$outcome" "$main"
     while IFS=$'\t' read -r path branch; do
       count="$(dirty_count "$path")"
-      if [ "$count" -gt 0 ]; then emit "$path ($branch): $count uncommitted file(s)"; fi
+      unpushed=""
+      if [ "$branch" != detached ] && ! git -C "$path" rev-parse --abbrev-ref "$branch@{upstream}" >/dev/null 2>&1; then
+        n="$(git -C "$path" rev-list --count origin/main..HEAD 2>/dev/null || echo 0)"
+        [ "$n" -gt 0 ] && unpushed="$n commit(s) on no remote branch"
+      fi
+      line="$path ($branch): $count uncommitted file(s)${unpushed:+; $unpushed}"
+      # One line per worktree, and only when it changed since the last run.
+      key="$(printf '%s' "$path" | tr '/' '_')"
+      if { [ "$count" -gt 0 ] || [ -n "$unpushed" ]; } && [ "$(cat "$STATE/$key.last" 2>/dev/null)" != "$line" ]; then
+        emit "$line"; mkdir -p "$STATE"; printf '%s' "$line" > "$STATE/$key.last"
+      elif [ "$count" -eq 0 ] && [ -z "$unpushed" ]; then rm -f "$STATE/$key.last" 2>/dev/null; fi
     done < <(worktrees "$main")
   done
 }

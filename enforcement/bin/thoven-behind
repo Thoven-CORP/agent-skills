@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# thoven-behind [dir]: how far a checkout sits behind GitHub main, as key=value lines.
+# Read-only; it never fetches (thoven-sync fetches every 30 minutes), so it is fast enough for a
+# status bar. Fields: root, branch, main_checkout (1 when dir is the primary checkout of its repo),
+# behind, ahead, blockers (dirty tracked files that origin/main also changed: they stop a
+# fast-forward; git itself refuses on exactly these).
+dir="${1:-$PWD}"
+root="$(git --no-optional-locks -C "$dir" rev-parse --show-toplevel 2>/dev/null)" || exit 1
+git -C "$root" rev-parse --verify --quiet origin/main >/dev/null || exit 1
+branch="$(git -C "$root" symbolic-ref --quiet --short HEAD 2>/dev/null || echo detached)"
+gitdir="$(git -C "$root" rev-parse --absolute-git-dir)"
+common="$(cd "$root" && cd "$(git rev-parse --git-common-dir)" && pwd -P)"
+main_checkout=0; [ "$gitdir" = "$common" ] && main_checkout=1
+read -r behind ahead < <(git -C "$root" rev-list --left-right --count origin/main...HEAD 2>/dev/null)
+blockers=""
+if [ "${behind:-0}" -gt 0 ]; then
+  blockers="$(comm -12 \
+    <(git --no-optional-locks -C "$root" status --porcelain --untracked-files=no | awk '{print $NF}' | sort) \
+    <(git -C "$root" diff --name-only HEAD origin/main | sort) | paste -sd, -)"
+fi
+printf 'root=%s\nbranch=%s\nmain_checkout=%s\nbehind=%s\nahead=%s\nblockers=%s\n' \
+  "$root" "$branch" "$main_checkout" "${behind:-0}" "${ahead:-0}" "$blockers"

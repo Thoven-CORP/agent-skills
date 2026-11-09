@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Claude Code status line: herdr's usage bar, then how far this checkout is behind GitHub main.
+# A primary checkout (~/thoven/frontend, ~/thoven/backend) that is behind or off main shows in red,
+# since sessions started there read stale code. A worktree shows a quiet "↓N main".
+input="$(cat)"
+base="$(printf '%s' "$input" | HERDR_PLUGIN_STATE_DIR="$HOME/.local/state/herdr/plugins/herdr-agent-usage" \
+  "$HOME/src/herdr-agent-usage/target/release/herdr-agent-usage" claude-statusline 2>/dev/null)"
+cwd="$(printf '%s' "$input" | jq -r '.workspace.current_dir // .cwd // empty' 2>/dev/null)"
+seg=""
+if [ -n "$cwd" ] && facts="$("$(dirname "$0")/thoven-behind" "$cwd" 2>/dev/null)"; then
+  eval "$(printf '%s\n' "$facts" | sed -n -E 's/^(branch|main_checkout|behind|blockers)=(.*)$/\1=\x27\2\x27/p')"
+  if [ "$main_checkout" = 1 ] && { [ "$behind" -gt 0 ] || [ "$branch" != main ]; }; then
+    seg=$'\033[1;31m'"⚠ ${branch} ↓${behind} behind GitHub"
+    [ -n "$blockers" ] && seg+=" · blocked by ${blockers}"
+    seg+=$'\033[0m'
+  elif [ "$behind" -gt 0 ]; then
+    seg=$'\033[2m'"↓${behind} main"$'\033[0m'
+  fi
+fi
+printf '%s' "$base"
+[ -n "$seg" ] && printf ' · %s' "$seg"
+printf '\n'
