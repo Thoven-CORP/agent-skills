@@ -1,8 +1,8 @@
 # Review: main's verify pass
 
 The builder's own report is a claim. A fresh verifier pane turns it into evidence on a feature
-slice, on the tier `agents.md` names. Cleanup and hardening work is reviewed by a Sonnet subagent
-of main instead.
+slice, on the tier `agents.md` names. Cleanup and hardening work is reviewed by an Opus (high)
+subagent of main instead.
 
 Either one judges from the ticket's snapshot, the builder's latest REPORT entry and the diff
 against base. Inspect the builder's transcript only to check skill loading and playbook execution.
@@ -53,10 +53,10 @@ You are {{AGENT_NAME}}. Main is the Claude session {{MAIN_SESSION}}. Project boa
 DISPATCH = ~/.agents/skills/dispatch-work/scripts/dispatch
 Read {{SNAPSHOT}} in full: it is the spec. In `$DISPATCH board {{PROJECT}} --ticket THV-<id>`,
 read the builder's latest REPORT entry and only that. Treat every line of it as a claim.
-Repo <<path>>, branch <<branch>>, diff <<base>>..<<head>>. Read and run only; leave the code as it is.
-Builder transcript <<path>>. Use it only to check the REPORT's Playbook and Skills claims.
-Check actual loading and step outputs against the native playbook. Missing evidence or a mandatory
-step skipped is a finding. Include these verdicts in your report.
+Repo <<path>>, branch <<branch>>, diff <<base>>..<<head>>. Read and run; fix only an easy, cheap
+finding of your own and mark it fixed. Builder transcript <<path>>: use it only to check the
+REPORT's Playbook and Skills claims. Check actual loading and step outputs against the native
+playbook. Missing evidence or a mandatory step skipped is a finding. Include these verdicts in your report.
 Evidence first: the builder's test lines and `gh pr checks` on the ticket PR. Rerun only a test file
 whose claim you doubt, one per run; never `bin/verify`.
 1. SPEC PARITY. Read the parent's "Decisions (canonical)" in the snapshot. Trace every Acceptance line and every
@@ -89,25 +89,28 @@ edge cases, test nits, style).
 
 ## Every PR
 
-Every PR gets the PR review (verifier step 4) once, on its final diff, before auto-merge is armed:
-from the verifier of its last ticket, or from main for a hotfix, follow-up or CI-fix PR with no
-verifier pane. /deslop, /no-comments, /thermo-nuclear-code-quality-review and /thermos run only when
-Andres asks. The PR merges itself on green with no go from Andres (thoven-law.md
-"Branches and PRs"), and the work-session page says in one line what merged.
+Every PR gets the PR review (verifier step 4) once, on its final diff: from the verifier of its last
+ticket, or from main for a hotfix, follow-up or CI-fix PR with no verifier pane. Once it passes
+("Done when" below), main arms auto-merge; the PR merges itself on green with no go from Andres
+(thoven-law.md "Branches and PRs"), and the work-session page says in one line what merged. Only on
+Andres's ask: /deslop and /no-comments in a Sonnet subagent, /thermo-nuclear-code-quality-review
+and /thermos on Opus (high); code quality is not deslop.
 
 ## Handling findings
 
+- **Check first.** Main reads the builder's concerns, the review findings and Andres's notes as one
+  set. The session holding the context makes each easy, cheap fix on the spot: the builder
+  before it hands off, the verifier, or main. Only real work left opens a pane.
 - **Gate repair, CI fixes and redesigns** go to Andres as one line with a choice.
-- **One fix round, for critical and important findings only.** It carries about five findings,
-  counted across every review in it: the verifier, the PR review and Andres's notes. A larger set
-  splits by concern into panes whose files do not overlap. It goes to a fresh pane with the
+- **One fix round carries all the critical and important work left**, about five findings per
+  pane, split by concern into panes whose files do not overlap. Each is a fresh pane with the
   fix-round brief (`brief.md`), then a verifier re-run scoped to the fix diff. The ticket stays
   **Ready** throughout.
 - **After the fix round:** main rules on each finding still open. Wrong or contestable: park it
   with the reason in the Linear comment. Real: one line in the follow-up ticket. A critical finding
   still open goes to Andres as one line with a choice.
-- **Minor and structural findings** start no fix round. Each is one line in the follow-up ticket
-  (`SKILL.md` close step 6.2).
+- **Minor and structural findings** start no fix round. Each one left is a line in the follow-up
+  ticket (`SKILL.md` close step 6.2).
 
 **Done when:** the verifier replied VERIFIED, or every finding is fixed, parked or lined into the
 follow-up ticket, and the work-session page shows the outcome.

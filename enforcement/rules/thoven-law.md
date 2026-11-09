@@ -47,7 +47,7 @@ a rebase ate a day of the onboarding prototype.)
   changes in separate PRs, since a code diff takes the docs-only PR off its fast path. (Andres,
   2026-11-08: one session opened 15 PRs, 4 of them needed.)
 - Open a PR into `main` and push to it while the session still has known work for that ticket; arm
-  auto-merge with `gh pr merge --auto` once its last known unit is committed. No PR waits for a go
+  auto-merge with `gh pr merge --auto` once its PR review passes. No PR waits for a go
   from Andres, UI included: he reviews screens on staging (Andres, 2026-11-05). `main` runs GitHub's
   merge queue (THV-1707): a push to the PR runs cheap affected tests (frontend unit tests, backend
   path-mapped specs), auto-merge queues the PR once that `CI` is green, and the queue's own `CI`
@@ -79,8 +79,8 @@ a rebase ate a day of the onboarding prototype.)
   docs-only sync PR a day, and gets a PR of its own only when the change alters a command agents
   run. Commit and merge only on a
   branch in a tree, never in a `main` checkout: `co.thoven.sync` fast-forwards the clean `main` checkouts every 30 minutes.
-- Unattended PR work: `/full-stop` proves, files and babysits; the auto-merge armed after the last
-  known unit lands it on green `CI`. `/full-send`, on Andres's "full send", also merges a PR whose required check
+- Unattended PR work: `/full-stop` proves, files and babysits; the auto-merge armed after the PR
+  review lands it on green `CI`. `/full-send`, on Andres's "full send", also merges a PR whose required check
   cannot run, in any repo. Its merge follows the method table and backend-first order above. Both call `/sol-loop`: with no GPT Sol
   route, run `dispatch-work/references/review.md` "Every PR" in its place and say so.
   `pr-wait` runs `--until green`, since Thoven has no Greptile or Macroscope. For a PR into `main`,
@@ -143,8 +143,8 @@ a `DATABASE_URL` that names the shared `thoven_development`, and creates `thoven
 branch adds a migration. Every backend command, `git commit` included, names the pane's own local
 database: export `DATABASE_URL` and `TEST_DATABASE_URL` in the same line.
 
-**Review order.** A builder's DONE is a claim. A fresh verifier pane reviews feature slices; a Sonnet
-subagent of main reviews cleanup and hardening work. Both open with spec parity. Main reruns the
+**Review order.** A builder's DONE is a claim. A fresh verifier pane reviews feature slices; an Opus
+(high) subagent of main reviews cleanup and hardening work. Both open with spec parity. Main reruns the
 touched files and merges backend before the frontend that reads it. Backend-first holds only for a
 backward-compatible change: a newly required request field stays optional until the frontend that
 sends it is on staging. (Backend #278 made `source_timezone` required hours before the frontend

@@ -22,8 +22,8 @@ You may commit, push, rebase, fix conflicts, and use `--force-with-lease` on
 this task's branch. Never run a manual merge, push to the default branch,
 bypass branch protection, or delegate those actions.
 
-Thoven law arms auto-merge (`gh pr merge --auto`) once the ticket's last known
-unit is committed, and `main`'s merge queue lands the PR on green `CI`. Keep that
+Thoven law arms auto-merge (`gh pr merge --auto`) once the PR review on the final
+diff passes, and `main`'s merge queue lands the PR on green `CI`. Keep that
 auto-merge; never disable it or pull the PR from the queue. Wait with
 `~/thoven/agent-skills/enforcement/bin/pr-queue-wait <owner/repo> <n>` until the
 PR merges or leaves the queue, and on a bounce read the failed `merge_group` run,

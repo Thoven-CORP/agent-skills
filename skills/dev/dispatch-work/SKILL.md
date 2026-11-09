@@ -45,8 +45,8 @@ corrections, alerts and tokens.
 | Sends corrections and fix rounds | Posts one REPORT entry and messages main its status line |
 | Verifies in a fresh pane, then closes | Waits for main's answer; after DONE it takes no new work |
 
-Linear writes, pushes and product calls stay with main. Code stays with the pane: every fix goes
-back to a pane.
+Linear writes, pushes and product calls stay with main. Code stays with the panes, except an easy
+fix main makes on the spot.
 
 Main moves status with `node ~/.agents/skills/workspace/tools/set-status.js "<State>" THV-x`, which
 prints the state it read back. Each dispatch event applies its row in the workspace fixed-writes
@@ -173,7 +173,7 @@ A peer message from a pane carries a status line and its entry path:
 | -- | -- |
 | `DONE THV-x` with its test lines | Move the ticket to **Ready**. Go to step 5. |
 | `DONE THV-x` without test lines | Not done. Reply `Paste each command you ran and its pass line.` The ticket stays In Progress. |
-| `DONE_WITH_CONCERNS THV-x` | Read the concerns. Correctness or scope concerns get a fix round first. Observations go to step 5. |
+| `DONE_WITH_CONCERNS THV-x` | As `DONE`; its concerns join the review findings (review.md, "Handling findings"). |
 | `NEEDS_CONTEXT THV-x` | Answer from Linear and this conversation, by peer message plus an ANSWER entry. A product call goes to Andres word for word; relay his answer and add it to the Linear parent. |
 | `BLOCKED THV-x` | Context gap: answer it. Too hard: fresh pane one tier up. Too big: split the ticket. Product call: ask Andres. |
 | `HANDOFF THV-x` | The pane reached its HANDOFF point. Spawn a fresh pane on the same brief plus the HANDOFF entry and the takeover line below. |
@@ -211,12 +211,12 @@ as `/takeover` in a brief: the pane loads it instead of poteto-mode.
 
 After main pushes and opens the ticket PR, arm one watcher for it with the Monitor tool
 (`timeout_ms: 3600000`): `~/.agents/skills/babysit-pr/scripts/pr-wait <n> --until green`. Run
-nothing else that polls the PR. Exit 1 on a red check is the fix round (a fresh pane), or a gate-repair
-line to Andres (review.md, "Handling findings"). On a PR into `main`, BEHIND needs nothing: the
-merge queue tests it on top of current `main`. Rebase only when it is DIRTY. On an integration
-branch, BEHIND or a base commit touching the PR's files means main brings it up to date first. Re-arm after every push. On a PR
-into `main`, green means queued: then arm `~/thoven/agent-skills/enforcement/bin/pr-queue-wait <owner/repo> <n>`,
-which exits 0 on the merge and 1 when the merge queue rejects the PR.
+nothing else that polls the PR. Exit 1 on a red check is a finding (review.md, "Handling findings").
+On a PR into `main`, BEHIND needs nothing: the merge queue tests it on top of current `main`. Rebase
+only when it is DIRTY. On an integration branch, BEHIND or a base commit touching the PR's files
+means main brings it up to date first. Re-arm after every push. Auto-merge is armed once the PR
+review passes (review.md, "Every PR"); on a PR into `main`, green means queued: arm
+`~/thoven/agent-skills/enforcement/bin/pr-queue-wait <owner/repo> <n>`, which exits 0 on the merge and 1 when the merge queue rejects the PR.
 
 Follow [references/review.md](references/review.md): main's pass, then a verifier pane for a
 feature slice or a review subagent for cleanup and hardening.
