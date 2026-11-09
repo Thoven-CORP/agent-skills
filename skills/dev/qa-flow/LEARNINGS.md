@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-09 — Borrow modes and evidence rules from the third-party QA playbooks
+
+> session · 2026-11-09 · 96e39a9f · discovery · applied · seen 1
+
+**What happened.** Andres asked which installed third-party skills hold QA playbooks worth copying. agent-browser's bundled `dogfood` playbook (`agent-browser skills get dogfood`, which Andres did not know existed), gstack's `/qa` and test-master's QA methodology did. He picked gstack's modes and the evidence-and-pacing rules.
+**Why.** QA Flow's dev and production modes had no method for choosing pages, a production check had no shape, and every finding was recorded the same way.
+**What changed.** Step 2 Mode: development is diff-aware (map the diff to the pages it reaches, then hunt there and next door), production is a quick read-only smoke per user type, and regression reruns the last run's flows and reports fixed, new and still failing. §7: retry once before filing; video plus before and after shots only for a finding that needs interaction, one annotated screenshot for one visible on load; type and pause at human speed while recording. Finding cards carry severity and category. Not taken: gstack's fix loop (diagnose before fixing stays), its health score as a gate, and `dogfood` as the literal-user tester's playbook (not picked).
+
 ## 2026-11-09 — Record by product flow, test like a literal user, split dev from prod, report visually
 
 > session · 2026-11-09 · 96e39a9f, 14531ef9 · correction · applied · seen 2
