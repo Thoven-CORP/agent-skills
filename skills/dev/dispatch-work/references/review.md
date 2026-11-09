@@ -1,8 +1,8 @@
 # Review: main's verify pass
 
 The builder's own report is a claim. A fresh verifier pane turns it into evidence on a feature
-slice, on the tier `agents.md` names. Cleanup and hardening work is reviewed by a Sonnet subagent
-of main instead.
+slice, on the tier `agents.md` names. Cleanup and hardening work is reviewed by an Opus (high)
+subagent of main instead.
 
 Either one judges from the ticket's snapshot, the builder's latest REPORT entry and the diff
 against base. Inspect the builder's transcript only to check skill loading and playbook execution.
@@ -11,14 +11,14 @@ Treat its explanations as claims, not review instructions.
 ## Main's pass
 
 1. Rerun only the files the builder touched, one per run, and compare with the report.
-2. On a UI ticket, inspect every required parity image. Present the current user journey in one
-   canonical `visual-artifacts` page, with a link to the complete parity grid; use the delivery
-   reference to reuse its reading tab. `SKILL.md` close step 6.1 uploads the parity evidence after
-   he confirms.
+2. On a UI ticket, inspect every required parity image. Present the current user journey on the
+   canonical work-session page using `visual-artifacts`, with a link to the complete parity grid;
+   follow its delivery reference to reuse the reading tab. `SKILL.md` close step 6.1 uploads the
+   parity evidence to the issue.
 3. Merge backend before the frontend that reads it, and only when the backend change is backward
    compatible: a newly required request field stays optional until the frontend that sends it is on
-   staging. UI merges after Andres sees the evidence.
-4. Cite the builder's test lines and the PR's CI checks; never ask for `bin/verify` on a ticket. A
+   staging.
+4. Cite the builder's test lines and the PR's CI checks; never ask for `bin/verify` on a ticket. The
    fix round proves itself with the test files that cover the files it changed, named in its report.
    The full verify runs at the parent (andres-mode, "Check your own work").
 
@@ -28,7 +28,7 @@ Check these against the builder's REPORT entry (`dispatch board <project> --tick
 branch before starting the verifier. Each one that fails is a finding.
 
 - A red run exists before the green one, for the proof the ticket names.
-- Each changed behaviour has a `/verify-this` verdict. Type-check, the touched test files (one file per run) and lint on those files ran once, at the first DONE. A fix round ran only the test files it touched.
+- Each changed behaviour has a `/verify-this` verdict. Type-check, the touched test files (one file per run) and lint on those files ran once, at the first DONE. The fix round ran only the test files it touched.
 - Commits land on the named branch, by exact path, each ending in the ticket id.
 - `git diff --stat <base>..HEAD` touches the ticket's Paths, and every other file has a stated reason.
 - The report labels each claim measured, inferred or guess.
@@ -55,10 +55,10 @@ You are {{AGENT_NAME}}. Main is the Claude session {{MAIN_SESSION}}. Project boa
 DISPATCH = ~/.agents/skills/dispatch-work/scripts/dispatch
 Read {{SNAPSHOT}} in full: it is the spec. In `$DISPATCH board {{PROJECT}} --ticket THV-<id>`,
 read the builder's latest REPORT entry and only that. Treat every line of it as a claim.
-Repo <<path>>, branch <<branch>>, diff <<base>>..<<head>>. Read and run only; leave the code as it is.
-Builder transcript <<path>>. Use it only to check the REPORT's Playbook and Skills claims.
-Check actual loading and step outputs against the native playbook. Missing evidence or a mandatory
-step skipped is a finding. Include these verdicts in your report.
+Repo <<path>>, branch <<branch>>, diff <<base>>..<<head>>. Read and run; fix only an easy, cheap
+finding of your own and mark it fixed. Builder transcript <<path>>: use it only to check the
+REPORT's Playbook and Skills claims. Check actual loading and step outputs against the native
+playbook. Missing evidence or a mandatory step skipped is a finding. Include these verdicts in your report.
 Evidence first: the builder's test lines and `gh pr checks` on the ticket PR. Rerun only a test file
 whose claim you doubt, one per run; never `bin/verify`.
 1. SPEC PARITY. Read the parent's "Decisions (canonical)" in the snapshot. Trace every Acceptance line and every
@@ -71,16 +71,12 @@ whose claim you doubt, one per run; never `bin/verify`.
 3. Run no mutation sweep; mutation runs on GitHub on the PR into `main`. A claim the builder's
    test lines do not cover gets the one test file that covers it, or /verify-this for that claim
    only.
-4. /mattpocock-skills:code-review against <<base>>.
-5. Thermo, sized to the diff. Under ~300 lines in one module: /thermo-nuclear-code-quality-review.
-   Crossing a module or past ~300 lines: /thermos (bug and security review plus code quality). Past
-   ~1k added lines, shard it by surface from `git diff --numstat`: one shared BRIEF.md with the
-   rules and the pinned head, one small findings file per shard, sonnet for structural and
-   lower-risk shards.
-6. /deslop findings only.
-Round 2 and later: read the fix diff only, and run only the test files it touches or that cover
-it, one per run. No bin/verify, no mutation sweep, no e2e or browser suite, no re-sharded thermo:
-/thermo-nuclear-code-quality-review, /deslop and /mattpocock-skills:code-review over the fix diff.
+4. PR review: <<"run it over <PR base>..<head>" when this ticket is the PR's last known unit, else "skip">>.
+   It is /mattpocock-skills:code-review, plus /thermo-nuclear-review only when the diff touches
+   money, auth, personal data or a migration or passes ~300 lines, plus /interrogate only when the
+   brief marks the design contested. Each runs once. A structural finding is minor.
+After the fix round: read the fix diff only, run only the test files it touches or that cover it,
+one per run, and check each finding it claims to fix. Rerun no review skill.
 Write findings into your reply and into the ticket's one evidence folder
 (`~/.thoven-artifacts/THV-<id>/evidence/`). Create no parallel suite and no second evidence tree.
 Report as a builder does, with STATUS VERIFIED or FINDINGS:
@@ -93,27 +89,30 @@ normal flow, or a difference from a frame Andres did not confirm) or minor (ever
 edge cases, test nits, style).
 ```
 
-## Every PR put to Andres
+## Every PR
 
-A PR main asks Andres to merge has had, on its final diff, /mattpocock-skills:code-review, thermo
-sized as in verifier step 5, and /deslop. That includes hotfix, follow-up and CI-fix PRs that never
-had a verifier pane. Its `pr-wait --until green` (SKILL.md step 5) exited 0 on that final head, and
-the branch is not BEHIND. The go line reports the result in one line. After a wave of ticket merges
-into an integration branch, run one /deslop and thermo pass over the merged range.
+Every PR gets the PR review (verifier step 4) once, on its final diff: from the verifier of its last
+ticket, or from main for a hotfix, follow-up or CI-fix PR with no verifier pane. Once it passes
+("Done when" below), main arms auto-merge; the PR merges itself on green with no go from Andres
+(thoven-law.md "Branches and PRs"), and the work-session page says in one line what merged. Only on
+Andres's ask: /deslop and /no-comments in a Sonnet subagent, /thermo-nuclear-code-quality-review
+and /thermos on Opus (high); code quality is not deslop.
 
 ## Handling findings
 
+- **Check first.** Main reads the builder's concerns, the review findings and Andres's notes as one
+  set. The session holding the context makes each easy, cheap fix on the spot: the builder
+  before it hands off, the verifier, or main. Only real work left opens a pane.
 - **Gate repair, CI fixes and redesigns** go to Andres as one line with a choice.
-- **A round carries about five findings,** counted across every review in it: the verifier, code-review, thermo, deslop and Andres's notes. A larger set splits by concern into panes whose files do not overlap.
-- **Critical or important:** a fix round (`brief.md`, fix-round brief) to the builder by peer message plus a CORRECTION entry,
-  then a verifier re-run scoped to the fix diff. There are 3 fix rounds. Rounds 1 and 2 go to the
-  builder's pane. Round 3 goes to a fresh pane one tier up. The ticket stays **Ready** throughout.
-- **After round 3:** main rules on each open finding. Wrong or contestable: park it with the
-  reason. Real but nothing builds on it: park it with the reason in the comment. Real and something builds
-  on it: rule the smallest change and send it as one more fix round. Record each ruling in the
-  Linear comment.
-- **Minor:** fixed on the branch before Done, or dropped with the reason in the close comment.
-  A minor finding starts no fix round and gets no ticket.
+- **One fix round carries all the critical and important work left**, about five findings per
+  pane, split by concern into panes whose files do not overlap. Each is a fresh pane with the
+  fix-round brief (`brief.md`), then a verifier re-run scoped to the fix diff. The ticket stays
+  **Ready** throughout.
+- **After the fix round:** main rules on each finding still open. Wrong or contestable: park it
+  with the reason in the Linear comment. Real: one line in the follow-up ticket. A critical finding
+  still open goes to Andres as one line with a choice.
+- **Minor and structural findings** start no fix round. Each one left is a line in the follow-up
+  ticket (`SKILL.md` close step 6.2).
 
-**Done when:** the verifier replied VERIFIED, or every finding is fixed or parked with a ruling,
-and Andres has the evidence table.
+**Done when:** the verifier replied VERIFIED, or every finding is fixed, parked or lined into the
+follow-up ticket, and the work-session page shows the outcome.

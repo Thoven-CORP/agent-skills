@@ -207,7 +207,7 @@ the repo `CLAUDE.md`: one worktree per ticket from `thoven-worktree create`,
 stage exact paths, a PR into `main` that merges itself with
 `gh pr merge --auto` once the required `CI` check is green; `main`'s merge queue lands it. One PR per
 repo per audit session, every batch appended to it, and auto-merge armed once
-the session's last batch is committed; when both repos change, say which merges
+the last batch's PR review passes; when both repos change, say which merges
 first. A new audit session refreshes from current `main` and reruns read-only
 discovery.
 

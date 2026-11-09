@@ -37,7 +37,7 @@
         "frontend-handover": "A new endpoint or contract for the frontend",
         "future-improvements": "Defer an improvement rather than build it now",
         "doc-freshness": "Docs have drifted from the code",
-        "deslop": "Strip AI slop from a diff; Pre-commit",
+        "deslop": "Strip AI slop from a diff",
         "no-comments": "Remove comments that restate the code",
         "code-review": "Review a branch against standards and spec",
         "tdd": "Write the test first",

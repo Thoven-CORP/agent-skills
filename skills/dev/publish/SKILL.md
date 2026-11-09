@@ -17,9 +17,9 @@ description: Use when Andres asks to publish, deploy, release, promote or hotfix
 ## Pitfalls
 
 - Describe production as "thoven.co runs `main` at <sha>, tagged prod/<date>-<n>; this merge reaches it at the next publish". A tag name alone reads as a branch. (LEARNINGS 2026-10-22)
-- Open a hotfix PR as soon as the targeted tests are green; `bin/verify` and the reviews run beside PR CI, and gate repairs go on their own branch. (LEARNINGS 2026-10-22)
+- Open a hotfix PR as soon as the targeted tests are green; `bin/verify` and the PR review (dispatch-work `review.md`, "Every PR") run beside PR CI, and gate repairs go on their own branch. (LEARNINGS 2026-10-22)
 - Build the release plan's post-promote list from the range's merged tickets and a mem0 search, and run every backfill or rake task they owe as a numbered step before the production harness. (LEARNINGS 2026-10-22)
-- Start every production release with the changelog list (`references/production.md` step 1), built from the range's merged PRs and their Linear tickets; PRs no longer edit `CHANGELOG.md`. (LEARNINGS 2026-10-22, 2026-10-31, 2026-11-08)
+- Start every production release with the changelog list (`references/production.md` step 1), built from the range's merged PRs and their Linear tickets; no PR edits `CHANGELOG.md`. (LEARNINGS 2026-10-22, 2026-10-31, 2026-11-08)
 - Hold any prod change that stops or resumes a service (API, worker, Redis) for a quiet window and Andres's go naming that change, then redeploy the pinned SHA explicitly, because a Render resume builds the newest commit. (LEARNINGS 2026-11-05)
 
 ## Route

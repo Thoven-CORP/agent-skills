@@ -88,7 +88,7 @@ When two rows match equally, ask one question.
 | Idea to shipped feature | `/grill-with-docs` → `/architect` → `/feature-ledger` |
 | Bug report | `/investigate-thoven` → `/verify` |
 | Schema change | `/safe-migrate` → `/verify` |
-| Pre-commit | `/deslop` → `/no-comments` → `/mattpocock-skills:code-review` → `/verify` |
+| Before the PR merges | `/verify` → `/mattpocock-skills:code-review` once on the final diff |
 | Ship | `/verify` → `/publish` → `/babysit-pr` |
 
 ## Rules

@@ -16,10 +16,10 @@ when something is wrong. Main never polls.
 
 **Source:** `~/thoven/agent-skills/skills/dev/dispatch-work/`. Home copies are installs.
 `scripts/dispatch` runs every pane action and detects Rex or herdr from the pane it runs in. Its
-usage text is the syntax authority. First time on a machine: `scripts/dispatch fleet install`.
-For a deliberate full pane-dispatch setup only; this is not a prerequisite for remote checks or
-ordinary Rex/SSH coding. Every pane action also lands in an events log that `clean` keeps, and `scripts/dispatch stats` reads it
-per pane: reports, corrections, alerts and tokens.
+usage text is the syntax authority. First time on a machine, for full pane dispatch only (not
+remote checks or plain Rex/SSH coding): `scripts/dispatch fleet install`. Every pane action also
+lands in an events log that `clean` keeps, and `scripts/dispatch stats` reads it per pane: reports,
+corrections, alerts and tokens.
 
 ## Pitfalls
 
@@ -31,7 +31,7 @@ per pane: reports, corrections, alerts and tokens.
 - Settle a proto sizing or layout edge case during a build by the rule Andres already set, write it into the brief's DECIDED IN CHAT as "Andres ruled" and tell him in one line. Ask him only a product call no rule covers. (LEARNINGS 2026-09-27)
 - Give a minor fix, fix round or review pass a clean existing tree. Run at most two heavy builders across every main session on this Mac and stagger the rest. Before each spawn, count them from the live process list and re-read `df -h /`, `memory_pressure` and load; when Andres's answer settles one of two risks you raised together, the standing rule still binds the other. (LEARNINGS 2026-10-25)
 - List the ticket's Linear comments right before `gh pr merge`. A ruling newer than the last commit holds the merge until the diff applies it. (LEARNINGS 2026-10-03)
-- On a UI or copy ticket, show the changed behaviour at the builder's first DONE, so Andres's notes ride fix round 1 and the verifier runs once on the final diff. Retain required before/after evidence in the technical report; the finished-feature walkthrough shows current behaviour unless the comparison is needed for his decision. (LEARNINGS 2026-10-22)
+- On a UI or copy ticket, put the changed behaviour on the work-session page at the builder's first DONE, so Andres's notes ride the one fix round and review runs once on the final diff. Retain required before/after evidence in the technical report; the finished-feature walkthrough shows current behaviour unless the comparison is needed for his decision. (LEARNINGS 2026-10-22)
 - Run parity only on surfaces with a board frame. A copy or rename edit to an undesigned or legacy screen gets a before/after line, never a parity shot, and a "Where" list comes from the board frames, never a word grep. (LEARNINGS 2026-10-24)
 - After every `gh pr merge`, read back `gh pr view <n> --json state,mergeCommit`: a nonzero exit means unknown (`--delete-branch` fails after a good merge when a worktree holds the branch), and a PR already clean merges without `--auto`. (LEARNINGS 2026-10-22)
 
@@ -43,10 +43,10 @@ per pane: reports, corrections, alerts and tokens.
 | Owns Linear: every status move and comment | Commits by exact path on the branch it was given |
 | Answers questions from Linear and its own context; product calls go to Andres | Asks main by peer message when the spec does not decide, and keeps building the unaffected parts |
 | Sends corrections and fix rounds | Posts one REPORT entry and messages main its status line |
-| Verifies in a fresh pane, then closes | Waits for main's answer or a fix round |
+| Verifies in a fresh pane, then closes | Waits for main's answer; after DONE it takes no new work |
 
-Linear writes, pushes and product calls stay with main. Code stays with the pane: every fix goes
-back to a pane.
+Linear writes, pushes and product calls stay with main. Code stays with the panes, except an easy
+fix main makes on the spot.
 
 Main moves status with `node ~/.agents/skills/workspace/tools/set-status.js "<State>" THV-x`, which
 prints the state it read back. Each dispatch event applies its row in the workspace fixed-writes
@@ -88,11 +88,9 @@ checkpoint at each child ticket: it posts a REPORT for the child before it start
 planned handoff lands between tickets. Several small same-shape tickets go the same way.
 
 Before dispatching onto an integration branch, compare its `lefthook.yml` and `bin/verify` with
-`origin/main`. When they differ, offer Andres a catch-up merge of `main` (merge commit) as a go first:
-an old branch's pre-push hook runs checks `main` dropped, and panes end up pushing with `--no-verify`.
-Before that go, run `/modernize` on the branch for its verdict only and put the verdict in the go
-line. MODERNIZE is the catch-up merge. REWORK or CLOSE is a finding for Andres. The catch-up itself
-stays a merge commit: a shared integration branch is never rebased.
+`origin/main`. When they differ, run `/modernize` on the branch for its verdict only.
+MODERNIZE: make the catch-up merge of `main` (a merge commit; a shared integration branch is never
+rebased) and note it on the work-session page. REWORK or CLOSE is a finding for Andres.
 
 **Done when:** the blockers are merged and no pane holds the ticket, and you can state the CLI, the
 model, the tier, and one line on why this tier.
@@ -119,7 +117,7 @@ model, the tier, and one line on why this tier.
 Pick the ACCESS lines for this ticket from [references/skills.md](references/skills.md). When the
 ticket's own process hands the slice Linear moves, write in RULES that main makes them.
 
-**Done when:** every field is filled, every chat ruling cites a decision id read back from Linear, and DONE WHEN names the
+**Done when:** every field is filled, every chat ruling cites a decision id read back from Linear, and STOP WHEN names the
 seams and the red-first proof. A field you cannot fill means the ticket is not ready. Fix the ticket
 in Linear, then come back.
 
@@ -165,9 +163,9 @@ playbook's steps, and the ticket reads In Progress.
 Arm `scripts/dispatch watch <project>` once per session, with the Monitor tool. It prints one line
 per new ALERT entry, and per REPORT, QUESTION or HANDOFF entry from a Codex pane. Its cursor
 (`<project>/watch.cursor`) replays what landed while no watch ran, so a re-armed watch misses
-nothing. Peer messages from panes arrive on their own. Wait on those two wake-ups
-only. Keep doing main's own work meanwhile, and end every wake with one plain-English line to
-Andres saying what happened and what main did.
+nothing. Peer messages from panes arrive on their own. Wait on those two wake-ups only, doing
+main's own work meanwhile. A wake that changed something updates the work-session page
+(andres-mode, Replies) and ends with one line to Andres pointing at it.
 
 A peer message from a pane carries a status line and its entry path:
 
@@ -175,10 +173,10 @@ A peer message from a pane carries a status line and its entry path:
 | -- | -- |
 | `DONE THV-x` with its test lines | Move the ticket to **Ready**. Go to step 5. |
 | `DONE THV-x` without test lines | Not done. Reply `Paste each command you ran and its pass line.` The ticket stays In Progress. |
-| `DONE_WITH_CONCERNS THV-x` | Read the concerns. Correctness or scope concerns get a fix round first. Observations go to step 5. |
+| `DONE_WITH_CONCERNS THV-x` | As `DONE`; its concerns join the review findings (review.md, "Handling findings"). |
 | `NEEDS_CONTEXT THV-x` | Answer from Linear and this conversation, by peer message plus an ANSWER entry. A product call goes to Andres word for word; relay his answer and add it to the Linear parent. |
 | `BLOCKED THV-x` | Context gap: answer it. Too hard: fresh pane one tier up. Too big: split the ticket. Product call: ask Andres. |
-| `HANDOFF THV-x` | The pane hit its budget. Spawn a fresh pane on the same brief plus the HANDOFF entry and the takeover line below. |
+| `HANDOFF THV-x` | The pane reached its HANDOFF point. Spawn a fresh pane on the same brief plus the HANDOFF entry and the takeover line below. |
 
 An alert line names the pane and the cause:
 
@@ -195,11 +193,11 @@ An alert line names the pane and the cause:
 
 When a UI fix round reports, read the parity grid in its REPORT, then push the pane's commits.
 
-**Corrections and fix rounds go as a peer message plus a CORRECTION entry** (`dispatch post ...
---kind correction`). A message reaches a busy pane between its tool calls, so it never waits for the
-turn to end. Use `dispatch interrupt` only to stop work going the wrong way. A Codex pane gets its
-fix round with `dispatch send <pane> <file>` once it is idle. Hold the verifier until the pane has
-answered the last correction. The entries are the record Andres reads.
+**Corrections to a working pane go as a peer message plus a CORRECTION entry** (`dispatch post ...
+--kind correction`); a message reaches a busy pane between its tool calls. Use `dispatch interrupt`
+only to stop work going the wrong way. A Codex pane gets its correction with `dispatch send <pane>
+<file>` once it is idle. Hold the verifier until the pane has answered the last correction. The
+fix round goes to a fresh pane (`references/brief.md`, "Fix-round brief").
 
 **Takeover.** A replacement pane gets the same brief with its opening line changed to
 `/poteto-mode session-pickup THV-x "<title>"`, plus this line: `Pick up on <branch> from <last
@@ -213,12 +211,12 @@ as `/takeover` in a brief: the pane loads it instead of poteto-mode.
 
 After main pushes and opens the ticket PR, arm one watcher for it with the Monitor tool
 (`timeout_ms: 3600000`): `~/.agents/skills/babysit-pr/scripts/pr-wait <n> --until green`. Run
-nothing else that polls the PR. Exit 1 on a red check is a fix round to the pane, or a gate-repair
-line to Andres (review.md, "Handling findings"). On a PR into `main`, BEHIND needs nothing: the
-merge queue tests it on top of current `main`. Rebase only when it is DIRTY. On an integration
-branch, BEHIND or a base commit touching the PR's files means main brings it up to date first. Re-arm after every push. On a PR
-into `main`, green means queued: then arm `~/thoven/agent-skills/enforcement/bin/pr-queue-wait <owner/repo> <n>`,
-which exits 0 on the merge and 1 when the merge queue rejects the PR.
+nothing else that polls the PR. Exit 1 on a red check is a finding (review.md, "Handling findings").
+On a PR into `main`, BEHIND needs nothing: the merge queue tests it on top of current `main`. Rebase
+only when it is DIRTY. On an integration branch, BEHIND or a base commit touching the PR's files
+means main brings it up to date first. Re-arm after every push. Auto-merge is armed once the PR
+review passes (review.md, "Every PR"); on a PR into `main`, green means queued: arm
+`~/thoven/agent-skills/enforcement/bin/pr-queue-wait <owner/repo> <n>`, which exits 0 on the merge and 1 when the merge queue rejects the PR.
 
 Follow [references/review.md](references/review.md): main's pass, then a verifier pane for a
 feature slice or a review subagent for cleanup and hardening.
@@ -228,20 +226,20 @@ feature slice or a review subagent for cleanup and hardening.
 
 ### 6. Close
 
-After the verifier passes, show Andres the canonical walkthrough and link its evidence table and complete parity grid on a UI ticket, as review.md describes. On his confirmation:
+After the verifier passes and the PR merges on green, put the outcome on the canonical work-session page, with the current walkthrough and links to its evidence table and complete parity grid on a UI ticket, as review.md describes. Then, with no go to wait for:
 
-1. Move the ticket to **Done** with one comment: the evidence table, the test lines and
-   the merged SHA. Done means the job is finished and merged into its target, the Project's
-   integration branch or `main`. The comment and the report say where it lives: "Done on
-   `<branch>`, reaches staging when the branch lands", or "Done on `main`, on staging". On a UI ticket, upload the parity
-   images to the issue and place them on the board beside their frames.
-2. Minor findings are fixed on the branch before Done, or dropped with the reason in that comment.
-   Each `Noticed` line of the report, a problem outside the ticket's code, goes as one line into an
-   existing grouped Linear issue, or a new issue only when none fits.
+1. Move the ticket to **Done** with one comment: the page's human-readable part for this ticket
+   and the merged SHA. Done means merged into its target, the Project's integration branch or
+   `main`, and the comment says where it lives: "Done on `<branch>`, reaches staging when the
+   branch lands", or "Done on `main`, on staging". On a UI ticket, upload the parity images to the
+   issue and place them on the board beside their frames.
+2. Each minor or structural finding, and each `Noticed` line of the report (a problem outside the
+   ticket's code), goes as one line into the follow-up ticket: an existing grouped Linear issue, or
+   a new issue only when none fits.
 3. `scripts/dispatch close <pane>` for every pane this dispatch opened. Remove the ticket's own tree
    with `thoven-worktree remove`, never a live integration tree. It drops the tree's databases and
    deletes every local branch whose PR merged; GitHub deletes the branch on origin at merge.
-4. Before cleanup, main ensures the canonical artifact embeds its media or owns durable copies of every referenced capture. After Andres has looked at the evidence, `scripts/dispatch clean <project> --ticket THV-x` and
+4. Once Linear and the page carry the evidence, ensure the page embeds its media or owns durable copies of every referenced capture. Then `scripts/dispatch clean <project> --ticket THV-x` and
    delete `~/.thoven-artifacts/THV-<id>/evidence/`. When the Project closes, `dispatch clean <project>`.
 
 **Done when:** `dispatch board <project> --ticket THV-x` prints nothing, `git worktree list` no

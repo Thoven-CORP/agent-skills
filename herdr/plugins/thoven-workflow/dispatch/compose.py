@@ -111,7 +111,7 @@ def project_for(main, workspace):
 
 
 def standing_ask_report(ticket, fields):
-    """STANDING to the end of brief.md's block (ASK, BUDGET, REPORT), filled like `dispatch spawn` fills it."""
+    """STANDING to the end of brief.md's block (ASK, HANDOFF, REPORT), filled as `dispatch spawn` fills it."""
     try:
         block = brief_block()
     except OSError:
