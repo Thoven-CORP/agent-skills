@@ -45,9 +45,11 @@ together.
 - Parity, on a UI ticket with a named design source, before DONE, is yours to capture. Run
   `scripts/verify/parity-run.mjs` behind `thoven-load-gate` as frontend `TESTING.md` shows (Mini
   parity pilot), with `--out` set to the parity folder above. Cover every surface the ticket names,
-  sibling rows included, at each frame's width and 390. A named surface that `parity-surfaces.json`
-  does not map gets a 390 capture at the commit before your change, beside the after. Put the grid
-  in your REPORT with a short video of the flow and the list of differences from the board.
+  sibling rows included, at each Paper frame's width, desktop and phone, and 390. A named surface
+  that `parity-surfaces.json` does not map gets a 390 capture at the commit before your change,
+  beside the after. Put the grid in your REPORT with a short video of the flow and the
+  Discrepancies table (brief, REPORT, Parity). A capture is evidence of what you built, never of a
+  match: the verifier writes the MATCH or NO.
 - Database (backend ticket): export the pane's own `DATABASE_URL` and `TEST_DATABASE_URL` in the
   same line as every backend command, `git commit` included.
 - Debt, bugs, smells and easy concerns in code this ticket or feature owns are fixed on this branch

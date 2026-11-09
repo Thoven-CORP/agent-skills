@@ -28,11 +28,11 @@ corrections, alerts and tokens.
 - Compare the ticket's flow wording with the board frames it names before you dispatch. The frame wins on what it shows, so fix the ruling and the ticket in Linear to match it first. (LEARNINGS 2026-10-09)
 - Scope every size or gate rule in a brief to the code the pane writes, and exempt generated artifacts, manifests, routes.rb and files already over the limit. (LEARNINGS 2026-10-09)
 - Let `dispatch spawn` fill `{{MAIN_SESSION}}` from the live session. A name carried over from a summary goes stale. (LEARNINGS 2026-10-10)
-- Settle a proto sizing or layout edge case during a build by the rule Andres already set, write it into the brief's DECIDED IN CHAT as "Andres ruled" and tell him in one line. Ask him only a product call no rule covers. (LEARNINGS 2026-09-27)
+- Settle a sizing or layout edge case a Paper frame decides by the frame's values. Where no frame decides it, ask Andres before the build; a ruling he already gave goes into the brief's DECIDED IN CHAT as "Andres ruled <date>". Tell him in one line. (LEARNINGS 2026-09-27; root LEARNINGS 2026-11-08)
 - Give a minor fix, fix round or review pass a clean existing tree. Run at most two heavy builders across every main session on this Mac and stagger the rest. Before each spawn, count them from the live process list and re-read `df -h /`, `memory_pressure` and load; when Andres's answer settles one of two risks you raised together, the standing rule still binds the other. (LEARNINGS 2026-10-25)
 - List the ticket's Linear comments right before `gh pr merge`. A ruling newer than the last commit holds the merge until the diff applies it. (LEARNINGS 2026-10-03)
 - On a UI or copy ticket, put the changed behaviour on the work-session page at the builder's first DONE, so Andres's notes ride the one fix round and review runs once on the final diff. Retain required before/after evidence in the technical report; the finished-feature walkthrough shows current behaviour unless the comparison is needed for his decision. (LEARNINGS 2026-10-22)
-- Run parity only on surfaces with a board frame. A copy or rename edit to an undesigned or legacy screen gets a before/after line, never a parity shot, and a "Where" list comes from the board frames, never a word grep. (LEARNINGS 2026-10-24)
+- Run parity only on surfaces with a board frame. A copy or rename edit to an undesigned or legacy screen gets a before/after line, never a parity shot, and a "Where" list comes from the board frames, never a word grep. A state of a designed surface with no Paper frame is not an undesigned screen: get its frame from Andres before the build. (LEARNINGS 2026-10-24)
 - After every `gh pr merge`, read back `gh pr view <n> --json state,mergeCommit`: a nonzero exit means unknown (`--delete-branch` fails after a good merge when a worktree holds the branch), and a PR already clean merges without `--auto`. (LEARNINGS 2026-10-22)
 
 ## Roles
@@ -104,7 +104,7 @@ model, the tier, and one line on why this tier.
    is insufficient. When the receiver has Linear access, re-read there; otherwise carry the actual
    relevant content and disclose missing or stale context.
 2. Copy [references/brief.md](references/brief.md) to the board's `briefs/THV-x.md` and fill it.
-   Before DESIGN names a control or a design value, run thoven-designer and name the shared primitive with one live call site.
+   Before DESIGN names a control, read its Paper frame with `get_jsx` and `get_computed_styles`, then run thoven-designer to find the shared primitive that can render it. Name that primitive with one live call site, and each frame value it cannot yet express. DESIGN takes values from the frame, never from thoven-designer (andres-mode, Parity).
    Carry what the ticket cannot know. Find earlier rulings with one mem0 search (`search_memories`,
    query: the ticket id, its title and the Project). Write a ruling the ticket lacks with
    `update THV-n grill`, then re-run the snapshot. A confirmed product brief uses `update THV-n brief`.
