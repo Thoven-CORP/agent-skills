@@ -53,15 +53,16 @@ a rebase ate a day of the onboarding prototype.)
   path-mapped specs), auto-merge queues the PR once that `CI` is green, and the queue's own `CI`
   run, on the commit that will land, runs the broad tests and merges it with a merge commit. Green
   PR checks are not a merge: a queue failure takes the PR out of the queue unmerged, and `main` does
-  not move. A PR into an integration branch has no queue; its `CI` runs the affected tests and broad
-  coverage when a dependency is unknown, and a ticket PR there merges on that `CI`, its test lines
-  and the verifier's pass. A nightly or manual full run audits what selection skips.
+  not move. A PR into an integration branch has no queue and runs no `CI`: a ticket PR there merges
+  on its targeted test lines and the verifier's pass (Andres, 2026-11-08). `CI` runs once, when the
+  integration branch lands in `main`, through that PR's merge queue. A nightly or manual full run
+  audits what selection skips.
   The method follows the PR's role:
 
   | PR | Merge |
   |---|---|
   | A ticket into `main` | `gh pr merge --auto`; the queue lands it as a merge commit |
-  | A ticket into an integration branch | `gh pr merge --squash` on green targeted CI and the verifier's pass |
+  | A ticket into an integration branch | `gh pr merge --squash` on its targeted test lines and the verifier's pass; no CI run |
   | Docs only (no code, config or tests) | squash in the same pass, like an agent-skills PR |
   | A catch-up of `main` into an integration branch | `--merge`, so `main` stays an ancestor |
   | An integration branch landing in `main` | `gh pr merge --auto`; the queue's merge commit keeps each ticket's commit and THV id for later conflict resolution |
@@ -127,9 +128,10 @@ only to fix an issue it found at another viewport, in motion or in performance. 
 names that issue beside the change.
 
 **Targeted tests.** The verify cadence lives in `skills/andres-mode/SKILL.md`, "Check your own work":
-targeted checks while editing and at DONE, CI on every PR, the full `bin/verify --base
-<integration branch>` only when Andres asks or once at the parent before the integration PR into
-`main`, nothing reruns on push. Heavy work (e2e, builds, stacks, perf) runs on the host whose
+targeted checks while editing and at DONE, no CI on a ticket PR into an integration branch, and the
+full `bin/verify --base <integration branch>` (remote-verify from the laptop) once per integration
+branch, before it lands in `main`, or when Andres asks. CI runs when that branch lands. Nothing
+reruns on push. Heavy work (e2e, builds, stacks, perf) runs on the host whose
 `~/.config/thoven/host.json` says `mini`, through
 `~/thoven/agent-skills/enforcement/bin/thoven-load-gate -- <cmd>`. There, `bin/verify` takes a gate
 slot itself, so run it as is. On a `laptop` host the Bash guard denies verify, builds, e2e and whole

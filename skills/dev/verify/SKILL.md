@@ -41,7 +41,7 @@ Apply before baseline/treatment captures, temporary checkouts, dependency instal
 
 ## Before merge
 
-8. CI runs the affected tests on a PR into an integration branch and the full suite on a PR into `main`. Nothing reruns on push or after a fix round: a fix round runs the test files covering what it changed.
+8. A PR into an integration branch runs no CI. CI runs when the integration branch lands in `main`: the affected tests on that PR, then the merge queue's broad run. Nothing reruns on push or after a fix round: a fix round runs the test files covering what it changed. (Andres, 2026-11-08)
 
 ## Keep it honest, once a sprint
 
