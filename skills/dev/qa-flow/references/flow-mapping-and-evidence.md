@@ -51,7 +51,7 @@ visible strings, and any gate. It is also the thing that makes a second run chea
 
 ## 2. Log as you go, to a machine-readable file
 
-**Do not write the artifacts at the end.** That is the single most consequential gap:
+**Write each record the moment you observe it.** End-of-run writing is the single most consequential gap:
 findings live in the conversation, and a compaction or a crash takes them with it.
 
 Append **one record per step, at the moment you observe it**, to `steps.jsonl`:
@@ -147,7 +147,9 @@ Record `slowest_ms` and `slowest_call` on the step. Flag anything over 800ms.
 
 ---
 
-## 6. Build the artifact
+## 6. Build the artifacts
+
+Two artifacts with two readers: the technical map for checking your own coverage, and the reader page Andres reads.
 
 `build-map.cjs` in this directory turns `steps.jsonl` into a self-contained `ui-map.html`: left rail
 of flows with per-flow failure counts, a summary box at the top linking to every failure,
@@ -163,6 +165,14 @@ It skips images that are missing rather than rendering broken ones, and lists th
 Markdown reports are for reading. The HTML map is for **checking your own work** — scanning 77
 steps at once makes it obvious which surface you never touched.
 
+**The reader page.** One `visual-artifacts` page per run, organised by product flow:
+
+- each flow's continuous video, embedded with chapter marks at its findings;
+- each finding as a short card: severity (critical, high, medium, low), category (functional, visual, UX, content, performance, console, accessibility), verdict, evidence and fix;
+- performance drawn with `dataviz` as what matters for this change (slowest calls, POSTs per user action, failed calls across the run).
+
+Every result lives on a card or in a chart, and the step list stays in the technical map, linked from the page.
+
 **Put it somewhere durable.** Not a scratch or temp directory — those are session-scoped and get
 wiped. Commit it beside the findings, and decide deliberately whether the screenshots go with it
 (they are usually gitignored, and the map's images break without them).
@@ -175,7 +185,7 @@ Use this capture contract from QA, dispatch briefs and reader artifacts. A reade
 
 **Host.** Heavy browser capture, recordings, encodes and capture verification run on the Mac mini, never the laptop. Before starting, record the execution host, source revision, environment, persona and viewport. Use existing remote-check and mini load-gate procedures for supported commands; an unavailable mini means the capture is deferred, not run locally. Read the verification disk-budget rule before starting.
 
-**Journey.** Prioritise mobile. Record one continuous take per product flow or distinct persona, not one per check. Weave the reversible real-user moves (`framing.md`, "Real-user take") into it: back and forward, clicking out and back in, a refresh, a cancel or unselect. Start another take when a different persona, destructive action or isolated prerequisite requires it. Retain meaningful transitions; trim only idle setup and disclose cuts. Keep real phone UI readable and preserve native playback controls in the reader artifact.
+**Journey.** Prioritise mobile. Record one continuous take per product flow or distinct persona. Weave the reversible real-user moves (`framing.md`, "Real-user take") into it: back and forward, clicking out and back in, a refresh, a cancel or unselect. Start another take when a different persona, destructive action or isolated prerequisite requires it. Retain meaningful transitions; trim only idle setup and disclose cuts. Keep real phone UI readable and preserve native playback controls in the reader artifact.
 
 **Evidence by kind.** Before filing a finding, retry it once; one that does not repeat is an `info` note, not a defect. A finding that needs interaction to appear gets its flow video's timestamp plus a before and an after screenshot. A finding visible on load (a typo, clipped text, misalignment, a console error on load) gets one `agent-browser screenshot --annotate` and no video. File each finding the moment it repeats, then keep exploring.
 

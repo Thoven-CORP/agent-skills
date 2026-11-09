@@ -11,6 +11,16 @@ SKILL.md Step 1 decides when to ask. On a dispatched or release run, answer thes
 - **Where did it come from?** "A parent reported X" → real prod data reproduces the exact state and is worth pulling. "New idea, nothing shipped yet" → no prod signal, seed instead.
 - **What's the one thing that must be true?** The symptom that must be dead (bug fix) or the happy paths that must all work (feature). This becomes Criterion #1.
 
+## Modes
+
+**In development** (a branch, local, or staging before promote): diff-aware and wide. Map the diff to the pages it reaches (a route or controller to its paths, a component to the pages that render it, a model, service, job or mailer to the pages and emails that show its result), then hunt there and on the neighbouring pages: happy paths, the real-user take, the literal-user take, the dependency checks, and UI polish filed as `design`. A backend-only diff gets the browser on the pages that show its result.
+
+**Production** (after a promote, or a live report): a quick read-only smoke per user type. Their home, the top navigation targets and the changed pages, each checked for console errors, failed calls and broken links. Reads only, on accounts publish's gates leave alone.
+
+**Regression** (after a fix): rerun the same flows and compare with the last run's `steps.jsonl`: fixed, new, still failing.
+
+**Release pass.** For a release's larger feature (a money, upload, job or email, migration or new-surface change), a tester pane separate from the builder runs the development hunt on staging, on the mini, with writes and Stripe test cards, before publish shows `plan`. After the promote, the production smoke runs per user type. The pass delivers videos and the reader page, and its verdict link goes on the feature's changelog bullet (`~/.agents/skills/publish/references/production.md` step 1).
+
 ## Data strategy — prod snapshot vs. seed
 
 | Situation | Strategy | Why |
@@ -43,9 +53,9 @@ Decide which layers the change **touches in the product**, which is not the same
 - **ID mismatch** — a newer request exists for the same slot; the stale notification must be non-actionable even though *a* pending request exists.
 - **Fetch failure** — the refetch throws (500/network); must land in an error state, never silently fall back to the raw payload.
 
-**Feature:** happy path through each part, plus the cross-part journeys (state that carries across logins). Then the two passes below, at the depth SKILL.md Step 2 sets.
+**Feature:** happy path through each part, plus the cross-part journeys (state that carries across logins). Then the takes and checks below. Depth follows what the change can break: a money, upload, job or email, migration or new-surface change gets all of them on staging; a UI or copy change or a hotfix gets one targeted take.
 
-**Real-user take.** Act like a person, not a script. Group by product flow: each flow is one recorded take, and the reversible moves below happen inside it, the way people actually navigate, rather than as separate recordings. Start a new take only for a destructive action or a different persona. After each move, check what persisted:
+**Real-user take.** Act like a person. Each product flow is one recorded take, and the reversible moves below happen inside it, the way people navigate; a destructive action or a different persona starts the next take. After each move, check what persisted:
 
 - back and forward, and refresh mid-flow;
 - leave the page and come back; open the same flow in a second tab (`agent-browser tab new`);
@@ -56,7 +66,7 @@ Decide which layers the change **touches in the product**, which is not the same
 
 The impatient user, the confused one who clicks what the UI signals against, and the breaker who pastes junk are examples of the mindset, not a script. Record these steps as `ru-` flows in `steps.jsonl`.
 
-**Literal-user take.** An agent that has read the code already knows the length rules and the right input, so it tests like a perfect user. Some runs must not. Give a separate tester only the URL, the persona and the goal in a user's words, with no diff, code or schema. It works from what the screen shows (`agent-browser screenshot` and `snapshot`, never selectors or source) and takes every label, hint and button literally: it does the obvious thing, types the shortest answer that seems to fit (two words in a text box), skips anything marked optional, and taps what a label says even when the code means something else. Each place the literal reading fails is a finding: a hidden minimum the screen never states, an "optional" field that blocks, a button that does something other than its label, an error that does not say how to fix it. Record these as `lu-` flows.
+**Literal-user take.** A tester who has read the code knows the length rules and the right input, and tests like a perfect user. This take gets a separate tester holding only the URL, the persona and the goal in a user's words. It works from what the screen shows (`agent-browser screenshot` and `snapshot`) and takes every label, hint and button literally: it does the obvious thing, types the shortest answer that seems to fit (two words in a text box), skips anything marked optional, and taps what a label says even when the code means something else. Each place the literal reading fails is a finding: a hidden minimum the screen never states, an "optional" field that blocks, a button that does something other than its label, an error that does not say how to fix it. Record these as `lu-` flows.
 
 **Dependency checks.** List each off-screen effect the diff adds and check each one on staging after the take, quoting counts or ids: the Solid Queue job ran without a failed execution, the `email_deliveries` row exists, the Stripe object exists once, the Mixpanel event arrived (Mixpanel MCP), the migration or backfill ran. Read rows with `~/.agents/skills/publish/references/staging.md` "Run code on staging", using the same queries as `~/.agents/skills/publish/scripts/prod-db-check.sh`. For a large feature, first list where its tests stub a real service; that list is the plan. QA writes nothing to production.
 

@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-09 — writing-for-agents pass over the day's edits
+
+> session · 2026-11-09 · 96e39a9f · discovery · applied · seen 1
+
+**What happened.** Andres asked for today's qa-flow and publish edits to go through `writing-for-agents`.
+**Why.** The description named one branch five ways; the release pass sat at the top though only release runs need it; "not a menu of modes" contradicted the new Mode row; the depth rule lived in two rows; Step 4 carried the report spec and had no completion criterion; several lines steered by negation.
+**What changed.** The description names four branches. Modes and the release pass live in framing.md "Modes", and the depth rule in its "What to test", with one-line pointers from Step 2. The reader-page spec moved to flow-mapping §6, and Step 4 ends on "Done when every criterion has a verdict with its evidence, both REQUIRED rows are filled, and Andres has the reader page." Negations became positive targets. publish step 1 builds bullets from PR bodies and its Done-when asks for the four-part bullet.
+
 ## 2026-11-09 — Borrow modes and evidence rules from the third-party QA playbooks
 
 > session · 2026-11-09 · 96e39a9f · discovery · applied · seen 1
