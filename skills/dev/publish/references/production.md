@@ -99,7 +99,7 @@ SKIPS
 
    It checks both services and thoven.co run the pinned SHAs, refuses unless Daily's production webhook is ACTIVE, then pushes `prod/YYYY-MM-DD-N` to both repos and closes the release. Done when it prints `tagged prod/<date>-<n>; release <id> closed`. A rollback can only return to a SHA with a `prod/*` tag, so an untagged release is not a rollback target.
 
-11. **Report.** Prepend the changelog list from step 1 to each repo's `CHANGELOG.md` under the new `prod/` tag, in one docs-only PR per repo. Then report the changelog list, then per repo: the SHA, the `promote.sh` line that proved it, and the tag, then the Checks table (SKILL.md, "Rules on every path"), with the tick list's items ticked. Say "production runs `<sha>`" only for a repo whose step printed its done line. Done when Andres has the report.
+11. **Report.** Publish the changelog list from step 1 as a GitHub Release on the new tag in each repo: `gh release create prod/<date>-<n> --repo Thoven-CORP/<backend-remote|frontend-remote> --title prod/<date>-<n> --notes "<that repo's part of the list>"`. A repo that did not move gets a one-line release saying so and naming the other repo's release. No PR is opened for release notes. Then report the changelog list, then per repo: the SHA, the `promote.sh` line that proved it, and the tag, then the Checks table (SKILL.md, "Rules on every path"), with the tick list's items ticked. Say "production runs `<sha>`" only for a repo whose step printed its done line. Done when Andres has the report.
 
 ## Roll back
 
@@ -125,7 +125,7 @@ The fix goes into `main` as a PR and reaches production through a normal promote
 
 ## Changelog
 
-Production stamps no version. No PR edits `CHANGELOG.md`: every PR into `main` edited the same `[Unreleased]` block, and that file was in 25 of 43 merge conflicts from 2026-10-08 to 2026-11-08, 17 of them on nothing else. Step 1 synthesises the release's list from the merged PRs and their Linear tickets, and only `/publish` writes `CHANGELOG.md`, one section per `prod/` tag.
+Production stamps no version. Release notes live on GitHub Releases, one per `prod/` tag in each repo, written by step 11 with `gh release create`. Step 1 synthesises the list from the merged PRs and their Linear tickets. Neither repo keeps a `CHANGELOG.md`: when every PR edited its `[Unreleased]` block it was in 25 of 43 merge conflicts from 2026-10-08 to 2026-11-08, and once only `/publish` wrote it, each release still cost a docs-only PR and a merge-queue run (Andres, 2026-11-09). The retired files point at Releases; their history stays in git.
 
 ## Straight through
 
