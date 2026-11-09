@@ -12,7 +12,7 @@ stay there rather than being repeated in ACCESS.
 
 | Moment in this ticket | Skill |
 | -- | -- |
-| The first edit to a component or a design value | `/thoven-designer` |
+| After reading the frame's values in Paper, before the first edit to a component or a design value | `/thoven-designer`, to find the shared component and its call sites; its tokens are reference and the frame sets the value |
 | Building a component the system does not have, or changing one | `/building-components` |
 | Before the first React or Next.js implementation edit | `/vercel-react-best-practices` |
 | Before building an animation | `/animate`; add `/interface-craft` when it sequences stages or needs live tuning |
@@ -20,12 +20,12 @@ stay there rather than being repeated in ACCESS.
 | Before implementing keyboard, focus, forms or interactive controls | `/better-accessibility` |
 | Before writing customer-facing copy | `/thoven-branding` |
 | Placing a sticker, stamp, instrument, icon or hand-drawn mark | `/thoven-art` |
-| Building a screen from a board frame or Figma frame | `/build-design`; its Design / Built / Status table rides in the REPORT beside the parity grid |
+| Building a screen from a Paper, board or Figma frame | `/build-design`; its differences go in the REPORT's Discrepancies table beside the parity grid |
 | A component with four or more reachable states, before the first DONE | `/state-machine`; the switcher URL rides in the REPORT so Andres can flip every state. The route stays uncommitted and is deleted once he has looked |
 | Before the first edit, when the ticket adds or changes a flow that passes the gate in state-brief's When to run and the Linear parent holds no machine for it | `/state-brief`; the transition table and invariants ride in the first REPORT |
 | Before the first DONE, when the ticket ran `/state-brief` or its diff adds or changes a status write, a reducer, or two or more flags for one flow | `/state-audit` over the diff; its rating and every Low finding ride in the REPORT |
 | A screen is built, before the parity capture | `/better-ui` |
-| A screen a phone reaches, before the 390 capture | `/mobile-native` |
+| A screen a phone reaches, after reading its Paper phone frame and before the 390 capture | `/mobile-native`, for what the frame does not show; each difference from the phone frame is a Discrepancies row |
 | Motion is built, before reporting it complete | `/review-animations`, asked to review the changed motion files |
 | Before changing shared behaviour, an interface or a contract | `/blast-radius` |
 | Before designing a new API contract or redesigning one the ticket names | `/api-designer` |

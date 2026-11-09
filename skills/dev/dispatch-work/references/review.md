@@ -38,10 +38,11 @@ branch before starting the verifier. Each one that fails is a finding.
 - The REPORT's Playbook row lists every native step, with evidence of its work. Check the routed
   skill calls or reads and their outputs against the transcript. A printed list alone is not
   execution. A skip cites a native allowance; a mandatory step skipped is a finding.
-- A UI ticket's REPORT carries the builder's parity grid: every surface the ticket names, sibling
-  rows included, at its frame's width and 390 beside its board frame, and no blank image. A named
-  surface the parity map does not cover has a 390 capture from the commit before the change. A state with no board frame is not a parity row:
-  name it as off-design in the report instead.
+- A UI ticket's REPORT carries the builder's parity grid and Discrepancies table (brief.md, REPORT,
+  Parity): every surface the ticket names, sibling rows included, at each Paper frame's width,
+  desktop and phone, and 390, with each state's node id and no blank image. A named surface the
+  parity map does not cover has a 390 capture from the commit before the change. A state of a named
+  surface with no Paper frame is a question to main; one built without a ruling is a finding.
 
 ## Verifier brief
 
@@ -64,10 +65,14 @@ whose claim you doubt, one per run; never `bin/verify`.
 1. SPEC PARITY. Read the parent's "Decisions (canonical)" in the snapshot. Trace every Acceptance line and every
    behaviour in the diff to a decision id. Name invented scope, a decision the diff missed or
    changed, and lexicon slips.
-2. DESIGN PARITY, on a UI ticket. Open the parity grid in the builder's REPORT
-   first, then the board frames each decision cites. Compare every state yourself and recapture only a state that looks wrong. Run
-   /better-ui and /thoven-designer over the built screens. A difference from a frame that Andres
-   did not confirm is an important finding.
+2. DESIGN PARITY, on a UI ticket. You did not build the screen, so your verdict is the parity
+   verdict (andres-mode, Parity). For every state at each Paper frame width, desktop and phone,
+   put the frame (Paper get_screenshot, and get_computed_styles for heights, gaps and type) beside
+   the builder's capture and write MATCH, or NO with its differences. A state you did not open is
+   NO. Recapture a state the grid lacks at a frame's width. /better-ui and /thoven-designer over
+   the built screens are reference; a finding from them never overrules a frame. A difference
+   missing from the builder's Discrepancies table, or a layout, height, spacing, veil or colour
+   difference built without a ruling, is an important finding.
 3. Run no mutation sweep; mutation runs on GitHub on the PR into `main`. A claim the builder's
    test lines do not cover gets the one test file that covers it, or /verify-this for that claim
    only.
@@ -83,9 +88,10 @@ Report as a builder does, with STATUS VERIFIED or FINDINGS:
   $DISPATCH post {{PROJECT}} --ticket THV-<id> --kind report --status STATUS --from {{AGENT_NAME}} < REPORT_FILE
   then SendMessage to {{MAIN_SESSION}}: "STATUS THV-<id>. Entry: ENTRY_PATH".
 The body is a SPEC PARITY table (decision id, verdict, evidence), a DESIGN PARITY table (state,
-frame, verdict, image) on a UI ticket, and a table: Acceptance line or claim, verdict, evidence. Findings carry file:line and a
+Paper node id and width, MATCH or NO, what differs, image) on a UI ticket, and a table: Acceptance line or claim, verdict, evidence. Findings carry file:line and a
 severity: critical (data loss, security, a broken core flow), important (a user hits it in the
-normal flow, or a difference from a frame Andres did not confirm) or minor (everything else: rare
+normal flow, or a difference from a frame missing from the Discrepancies table or built without a
+ruling) or minor (everything else: rare
 edge cases, test nits, style).
 ```
 

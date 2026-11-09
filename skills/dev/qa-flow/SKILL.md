@@ -52,7 +52,7 @@ Any run of this size is 3+ steps — track it.
 
 If the control surface or Feature Map required an avoidable recovery, leave one concrete maintenance follow-up. A verification loop stays useful only when its controls and map match the live product.
 
-**The verdict table has a REQUIRED Design row and a REQUIRED Performance row.** Not optional sections, not a separate pass — you are already on the page. Design: design-system primitives vs hand-rolled controls, empty states that contradict loaded content, pluralisation, the same value formatted two ways. Performance: duplicate requests, poll cadence, cold refetches, fetches the parent already had — measured with the Resource Timing API. An empty row means you did not look. What to check: **[flow-mapping-and-evidence.md §4–5](references/flow-mapping-and-evidence.md)**.
+**The verdict table has a REQUIRED Design row and a REQUIRED Performance row.** Not optional sections, not a separate pass — you are already on the page. Design: first the Paper frame at the width under test, desktop and phone, with MATCH or NO per region from looking at both and each difference listed (`andres-mode`, Parity); then design-system primitives vs hand-rolled controls, empty states that contradict loaded content, pluralisation, the same value formatted two ways. Performance: duplicate requests, poll cadence, cold refetches, fetches the parent already had — measured with the Resource Timing API. An empty row means you did not look. What to check: **[flow-mapping-and-evidence.md §4–5](references/flow-mapping-and-evidence.md)**.
 
 Verdicts are `pass` / `fail` / `design` / `partial` / `blocked` / `info`. `design` keeps the fail count meaning "broken"; `partial` is what stops an environment limitation being filed as a defect.
 

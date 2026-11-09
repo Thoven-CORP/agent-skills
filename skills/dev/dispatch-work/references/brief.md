@@ -60,16 +60,28 @@ DECIDED IN CHAT
            Build to "Andres ruled" lines. Treat the others as defaults you may overturn with a
            reason in your report.
 RULES      <<binding rules for the files this pane writes, with exemptions>>
-DESIGN     <<no UI; "UI, no design source: before/after line only"; or the board path, the frames above, and every screen and state they show, async included>>
-           Bring each frame to life as the decisions describe it, at visual parity and full
-           fidelity: layout, spacing, type, every state, and motion where the frame shows it. Values come from design-system tokens; use the shared component
-           where one exists, and build a missing one with /building-components. Loading, empty,
-           error and pressed states take their treatment from `docs/design/async-states.md` and
-           `design/buttons.md`. A frame is one static sample at one width: it binds which
-           elements show, their states, order, hierarchy and tokens. Sizing behaviour (fill or
-           hug, stretch, reflow at other widths) follows component best practice; match the
-           frame at its own width and give the reason in one line. A difference from a frame
-           that Andres confirmed cites its ruling; any other difference is a defect you fix.
+DESIGN     <<no UI; "UI, no design source: before/after line only"; or, per screen and state, async included, the Paper file, the desktop frame's node id and width, and the phone frame's node id and width or "no phone frame: ask main">>
+           Paper is the build source (Andres 2026-11-08). Build each frame from its own values
+           (Paper get_jsx and get_computed_styles at that width, desktop and phone frames both):
+           layout, height, alignment, vertical and horizontal spacing and rhythm, lines, type,
+           colour, depth, and motion where the frame shows it. The design system and
+           thoven-designer are reference, not constraint: use a token where it equals the frame's
+           value and the frame's value where none does; use the shared component and change it,
+           or the global component, when the frame needs it; build a missing one with
+           /building-components. A design scan that refuses a Paper value gets one allowlist entry
+           naming the Paper node and the reason; leave every count and ratchet baseline as it is.
+           Make it production: widths between the frames reflow by component best practice, and
+           loading, empty, error and pressed states the frame does not draw
+           take `docs/design/async-states.md` and `design/buttons.md`. While you build, at each
+           frame width, put the Paper screenshot beside your capture and read get_computed_styles
+           for height, gaps, padding and type; a screenshot alone is an estimate. A state with no
+           phone frame on a surface a phone reaches is a question: ask main for the frame before
+           you build its phone layout. Every difference left goes in the REPORT's Discrepancies
+           table (Parity row), and a fix to an unpolished frame such as a wrong icon or chevron is
+           corrected and listed there. Name every change to a shared or global component, and how
+           widths between frames reflow, in Rulings. A layout, spacing, height,
+           veil or colour difference is a question: ask main before you build it. A difference
+           with no row is a defect.
 WHERE      Repo <<path>>, branch <<branch>>, base <<sha>>. <<parallel panes and their Paths, or none>>
 KNOWN      <<interfaces, rulings and commits from earlier tickets this one builds on>>
 ACCESS     <<the skill lines from skills.md this ticket reaches, each with its moment>>
@@ -85,7 +97,8 @@ STOP WHEN  <<the ticket's Done when, by pointer>>, then REPORT and stop. Choose 
            routes to, one verdict each.
            Run the check list in `~/.agents/skills/verify/SKILL.md` once, at your first DONE: lint
            and types, the touched test files one per run, the design scan suite on any component
-           or token diff, `__tests__/mail-link-routes.test.ts` on a diff that adds or moves a
+           or token diff (a scan that refuses a Paper value: DESIGN above),
+           `__tests__/mail-link-routes.test.ts` on a diff that adds or moves a
            route, and the direct importers' test files by path.
            On a `laptop` host run the scan suite, an e2e or browser spec and any build through
            `/remote-check` on the mini, as standing.md says; on the mini, through the load gate.
@@ -123,8 +136,12 @@ STATUS is DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT or BLOCKED. The body is the AS
   Commits      SHAs and git diff --stat against base
   Checks       each command you ran and its pass line
   Parity       UI tickets: the grid from your local parity run (standing.md, Parity) for every
-               surface the ticket names, and each difference from a frame: fixed, or confirmed
-               with its ruling
+               surface the ticket names, at each Paper frame's width, desktop and phone, with each
+               state's node id. Then the Discrepancies table, one row per difference left: frame
+               (node id, width), what Paper shows, what you built, and why (not built yet, a spec
+               rule, a production need, a fix to an unpolished frame, or asked and ruled, citing
+               the ruling). The grid shows what you built; the verifier, who did not build it,
+               writes the MATCH or NO.
   Playbook     each native step verbatim: done with evidence, or "skip: <reason>" where allowed
   Skills       poteto-mode loading evidence, each routed or ACCESS skill loaded and when,
                and the work it produced; a skipped ACCESS line names why
@@ -151,8 +168,8 @@ FIX ROUND THV-<id>, the only one. Branch <<branch>>, base for this round <<sha>>
 <<each open finding, verbatim, with file:line>>
 Fix these only; commit only. Re-run the tests covering each fix, one file per run, typecheck
 and lint on the touched files, and /verify-this on each claim the fix changed. A UI fix runs only
-the browser test or parity state it touches and recaptures each touched state at its frame's width
-and 390 (standing.md, Parity). No bin/verify, mutation sweep, or full e2e or browser suite. Copy
+the browser test or parity state it touches and recaptures each touched state at each Paper frame's
+width, desktop and phone, and 390 (standing.md, Parity). No bin/verify, mutation sweep, or full e2e or browser suite. Copy
 follows design/lexicon/LEXICON.md; focus and accessibility fixes use the existing Thoven
 components. A change beyond the fixed element is a defect.
 STOP WHEN each finding above is fixed and its covering test is green. Post a REPORT entry, message

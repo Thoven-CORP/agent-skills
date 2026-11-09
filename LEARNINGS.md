@@ -17,6 +17,15 @@ the corpus.
 
 ---
 
+## 2026-11-08 — Paper is the build source; the design system is reference
+
+**What happened.** The Music Passport build invented layouts: builders took values from the nearest token, squeezed shared components into old slots, skipped phone frames, and reported "N/N captured" as parity. The production audit (`~/.thoven-artifacts/dev/music-passport-build-audit/production-audit/skills.md`, 36 rows) traced it to skill text. Andres: "Thoven Designer in our design system is a source of reference not a hard code ... you have to turn it into a production component"; "If global components need to change, they need to change"; "It wasn't 'change tokens and untokenify it.'"
+**Why.** andres-mode, thoven-designer, dispatch-work, verify and qa-flow each ranked tokens over the frame, let a difference be fixed toward the token, and counted a capture as a match. Main's rewrite of brief.md DESIGN and andres-mode had no other skill behind it.
+**What changed.** andres-mode Parity is the rule's one home: Paper is the build source, the design system is reference, production holds between frames, every difference is listed or asked, phone frames are build targets, parity is a looked-at verdict. brief.md carries the builder's DESIGN and the REPORT's Discrepancies table; review.md carries the judge's MATCH or NO; thoven-designer, skills.md, standing.md, verify and qa-flow point at them. A scan that refuses a Paper value gets one allowlist entry naming the node, never a raised count or baseline.
+**Still open.** build-design and building-components are installed from outside this repo (audit rows 7, 8, 32-35); the parity scripts (rows 20, 28, 29) and frontend `TESTING.md` (row 27) belong to a frontend builder pane.
+
+---
+
 ## 2026-08-29 — pane ownership needed a value, not more routing prose
 
 **What happened.** Pane sessions independently reconstructed Project state from Linear, global
