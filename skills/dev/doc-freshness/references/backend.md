@@ -113,7 +113,6 @@ Default to **standard** unless user specifies otherwise.
 ## After /publish or /ship
 
 When this skill runs post-release, also:
-- Update CHANGELOG.md version references if they mention doc sections
 - Check if CLAUDE.md Quick Reference numbers are still accurate (table counts, route counts, job counts)
 - Verify the session startup hook mappings still cover all critical docs
 

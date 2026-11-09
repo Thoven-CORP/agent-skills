@@ -618,6 +618,6 @@ skill from spawn to close.
   superseded; keep a *rejected alternative* inside the drawing.
 - **Read a merge before trusting it.** `.claude/launch.json` merges cleanly and wrong across
   worktrees, taking the other checkout's port.
-- **Staging and publish are not on the board.** They live in the CHANGELOG.
+- **Staging and publish are not on the board.** They live in the GitHub Releases on `prod/` tags.
 - **OpenCode's session title is not the pane.** `herdr pane list` / `herdr tab list` are. A dashboard
   pane showing `OC | THV-178…` is a stale inner title, not proof that Business is in that tab.

@@ -139,7 +139,7 @@ The `- **What:** …` bullets have no checkbox, so the workspace Map regenerator
 ## After Implementation
 
 When an improvement is implemented:
-1. Add an entry to `CHANGELOG.md` describing what shipped (the rich brief stays — do not delete it).
+1. No CHANGELOG entry: release notes come from the merged PR at `/publish` (the rich brief stays — do not delete it).
 2. Close its workspace tracker so the `resume` Map drops it:
 
    Use the workspace `close-item` verb (flips to `[x]` / `status:done`):

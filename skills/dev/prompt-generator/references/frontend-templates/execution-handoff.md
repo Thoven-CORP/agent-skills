@@ -30,8 +30,7 @@ code, confirm pass, commit — using patterns from {PATTERN_FILE_1}
 accessibility annotations, and animations are in {DESIGN_SPEC_PATH}, and the backend API
 contract with response shapes and type constraints is in {API_CONTRACT_PATH}. In addition
 to the implementation subagent per task, dispatch a parallel documentation subagent after
-each completed task that updates `TODO.md` (mark completed items, note progress),
-`CHANGELOG.md` (add entries under Unreleased), and the implementation plan's acceptance
+each completed task that updates `TODO.md` (mark completed items, note progress) and the implementation plan's acceptance
 criteria checkboxes — this keeps all project docs in sync as work progresses per our
 feature protocol. The documentation subagent should also update `CLAUDE.md` if the task
 changes any documented surface (feature flags, API modules, component structure, etc.).

@@ -94,12 +94,6 @@ These are loaded into Claude context regularly. Staleness here directly degrades
 - **Content verification**: Cross-reference pending items against recent commits. Check if done items are marked.
 - **Update strategy**: Mark completed items. Remove stale items with user approval.
 
-### CHANGELOG.md
-- **Path**: `CHANGELOG.md`
-- **Watches**: N/A (updated by /publish)
-- **Content verification**: Check version numbers match. Verify unreleased section state.
-- **Update strategy**: Voice polish only. NEVER delete, replace, or regenerate entries. Use Edit, not Write.
-
 ### Work-State Global Store (`~/thoven/.workspace/`)
 
 These files live outside the FE repo. Check them when `standard` or `full` scope is requested.

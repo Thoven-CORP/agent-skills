@@ -48,11 +48,11 @@ Get the specific recipient(s):
 
 **Product-update email** (to Thoven teachers or families): write from what changed, not from what Thoven does.
 1. Find the last update email in Gmail and its send date.
-2. Read both repos' CHANGELOGs (`~/thoven/frontend/CHANGELOG.md`, `~/thoven/backend/CHANGELOG.md`) since that date.
+2. Read both repos' GitHub Releases since that date (`gh release list --repo Thoven-CORP/frontend-remote` and `--repo Thoven-CORP/backend-remote`, then `gh release view <tag>`).
 3. Lead with the biggest user-visible change, and describe each feature by what the user can now do.
 4. Illustrate with screenshots of the current shipped UI.
 
-Done when every feature in the draft traces to a CHANGELOG line since the last update.
+Done when every feature in the draft traces to a release-note line since the last update.
 
 ### Step 4: Draft Email
 

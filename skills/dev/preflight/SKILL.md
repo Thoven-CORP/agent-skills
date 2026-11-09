@@ -7,7 +7,7 @@ description: Pre-publish verification suite — compile a deterministic Playwrig
 
 Proves two things in a real browser BEFORE Publish: **the triggering bug is dead** and **the spec's intent is satisfied** — plus design judgment on the rendered UI, a responsive sweep, and a cross-role regression ring. Design doc: `docs/superpowers/specs/2026-07-16-preflight-suite-design.md`.
 
-**Position in the pipeline:** pre-publish gate for feature ships. `/qa` stays the multi-bug fix-loop tool; `manual-qa` Release mode stays the post-publish prod-config smoke. Preflight is neither — it is the "this feature is provably done" gate.
+**Position in the pipeline:** pre-publish gate for feature ships. `/qa` stays the multi-bug fix-loop tool; `qa-flow` stays the product-level evidence run. Preflight is neither — it is the "this feature is provably done" gate.
 
 ## Invocation
 
@@ -58,6 +58,6 @@ The spine + manifest + seed are **checked in** — every shipped feature accrete
 
 ## Known limits
 
-- Local-only: prod-config drift (env vars, CDN, Vercel and Render for 2.0, Replit for 1.0) stays uncovered. That is `manual-qa` Release mode's job post-publish.
+- Local-only: prod-config drift (env vars, CDN, Vercel and Render for 2.0, Replit for 1.0) stays uncovered. That is `qa-flow`'s job post-publish.
 - Judgment cost scales with the gallery (~15–25 screenshots/feature); keep checkpoints purposeful.
 - Design verdicts are model judgment anchored on the anti-pattern list; pilot ground truth: the pass rediscovered known findings unprompted (2026-07-16).
