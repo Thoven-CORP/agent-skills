@@ -27,8 +27,18 @@ One row per signal, as a JSON object:
 | `scheduling friction` | booking, moving, missing or cancelling a lesson took texting the product should have handled |
 | `teacher workaround` | a teacher did by text what the product should do (explaining a decline, tracking credits by hand) |
 | `feature ask` | someone asked for something the product does not offer |
-| `churn` | a family paused, stopped, or said why they might |
+| `churn` | the family says they are stopping, switching teachers, or not coming back, or the teacher says the family has stopped practicing or will not continue. A vacation, an illness or one missed week is not churn |
+| `rude` | an insult, a threat, or abuse aimed at the teacher or at Thoven. Impatience, a short reply and a complaint are not rude |
+| `quality` | a complaint about the teaching, the lesson, a no-show, or the teacher not replying. Praise stays `positive feedback` |
+| `product frustration` | the person is blocked or annoyed by the product: they cannot book, pay, approve or see what they bought |
 | `positive feedback` | praise for the teacher, the lesson or the product |
+
+One message can emit two signals when it is both a tone (`rude`, `churn`, `quality`,
+`product frustration`) and a defect (`bug report`). The tone signal is the person's reaction.
+The bug signal is the claimed defect, and only the bug goes to a tracer.
+
+A thread with no `rude`, `churn`, `quality` or `product frustration` signal still reports those
+four as empty. Silence is a result, not a skipped check.
 
 An automated Thoven text is a signal only when a person reacts to it, or when it is wrong on its
 face (a wrong time, a dead link, the same text twice).

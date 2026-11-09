@@ -1,6 +1,6 @@
 ---
 name: text-product-analysis
-description: Text product analysis — mine the teacher↔parent text threads in Twilio for product feedback, bug reports and hiccups, trace each bug, and hand Andres a themed page and his calls. Use for "analyse the texts", "what are families texting about", or a feedback sweep of the last few weeks.
+description: Text product analysis — mine the teacher↔parent text threads in Twilio for product feedback, bug reports, rude parents, families leaving, teaching-quality complaints and product frustrations, trace each bug, and hand Andres a themed page and his calls. Use for "analyse the texts", "what are families texting about", or a feedback sweep of the last two weeks.
 ---
 
 # Text product analysis
@@ -18,8 +18,9 @@ Open a task list with one entry per step.
 
 ## 1. Scope
 
-Default window: the 21 days ending today. Names Andres gives narrow it to those families or
-teachers. Scratch folder: `/tmp/text-product-analysis/<YYYY-MM-DD>/`.
+Default window: the 14 days ending today. A fix ships inside three weeks, so a third week
+reopens a bug production already closed (Andres, 2026-11-08). Names Andres gives narrow it to
+those families or teachers. Scratch folder: `/tmp/text-product-analysis/<YYYY-MM-DD>/`.
 
 Done when your first message states the window, the scope and the scratch folder.
 
@@ -38,7 +39,9 @@ writes each value verbatim to its file. Then run
 DB-only ids, the subagent runs query 3, and you run the build again.
 
 Done when the build prints no "without a body" line and no "no db_people row" line, and you
-have listed the test and internal threads it excluded, by teacher and parent.
+have listed the threads it excluded, by teacher and parent. An internal teacher with a real
+parent stays in the read. `keri@thoven.co` is a real teacher (`Profile::INTERNAL_EMAILS`), not
+a test account.
 
 ## 3. Read
 
@@ -48,16 +51,21 @@ threads. Brief each reader with [references/signals.md](references/signals.md), 
 names, the `threads.json` path and the window. Readers return signals and their read counts;
 they do not diagnose.
 
-Done when every reader's read counts match its threads' `counts` and you hold the merged
-signal list.
+Done when every reader's read counts match its threads' `counts`, you hold the merged signal
+list, and each of `rude`, `churn`, `quality` and `product frustration` is present or explicitly
+empty.
 
 ## 4. Segment
 
 Group the signals into themes, and cluster each `bug report` with the anomalies from
 `anomalies.json` that share its cause. A theme about a timing or policy rule (how long a request
 stays open, how fast teachers answer) gets its production number from one read-only subagent.
+Every run also runs the two queries under "Every run" in
+[references/db-lookups.md](references/db-lookups.md): families with a recent lesson and nothing
+booked ahead, and parent texts still unread after 48 hours. Those numbers back `churn` and
+`quality` whether or not anyone texted about them.
 
-Done when every signal sits in exactly one theme or bug cluster.
+Done when every signal sits in exactly one theme or bug cluster, and both numbers are in hand.
 
 ## 5. Trace
 
@@ -77,8 +85,9 @@ Done when `finish.mjs` reports every diagram rendered and the page is open in th
 
 ## 7. Brief
 
-Reply in chat, finding first: one line per bug with its verdict, one line per theme, the page
-path. Then ask Andres his calls through the ask tool, at most four, each with your pick first:
+Reply in chat, finding first: one line per bug with its verdict, one line each for rude, churn,
+quality and product frustration (a zero is a finding), one line per other theme, the page path.
+Then ask Andres his calls through the ask tool, at most four, each with your pick first:
 which fixes to dispatch, which product rules to change, and where the tickets go. Write to Linear
 only after his answers, through the `workspace` skill: a delivery problem becomes a line in the
 existing messaging-reliability issue, a new ticket only when no open issue fits, and nothing goes

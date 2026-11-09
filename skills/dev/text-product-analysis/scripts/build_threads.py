@@ -110,8 +110,12 @@ def main():
                 need_bodies.append(r["id"])
             msgs.append({"at": r["created_at"], "role": "automation" if r.get("source_kind") == "automation"
                          else (r.get("sender_type") or "unknown"), "body": body or "", "media": [], "in_db": True,
-                         "db_status": r.get("status"), "twilio_sid": None, "never_reached_twilio": True})
-            anomalies.append({"kind": "written but never reached Twilio", "thread": csid, "at": r["created_at"],
+                         "db_status": r.get("status"), "twilio_sid": None,
+                         "in_app_only": r.get("source_kind") == "automation" and r.get("dispatch_intent") is False})
+            if r.get("source_kind") == "automation" and r.get("dispatch_intent") is False:
+                continue
+            kind = f"not sent ({r['failure_code']})" if r.get("failure_code") else "written but never reached Twilio"
+            anomalies.append({"kind": kind, "thread": csid, "at": r["created_at"],
                               "status": r.get("status"), "failure_code": r.get("failure_code"),
                               "db_message_id": r["id"], "body": (body or "")[:200]})
 

@@ -9,20 +9,25 @@ messages. Each heading is a claim, and each theme section quotes its signals ver
 
 ## Sections, in order
 
-1. **At a glance**: the window, threads and messages read, test accounts excluded, and the three
-   findings that matter most.
-2. **Bugs**: one row per bug: what the person saw, the verdict, the record, the evidence.
-   A sequence diagram for any bug whose cause crosses the frontend and backend.
-3. **One section per theme** with two or more signals, or one signal backed by a production
+1. **At a glance**: the window, threads and messages read, test accounts excluded, the three
+   findings that matter most, and the two numbers from "Every run" (families with nothing
+   booked, parent texts unread after 48 hours).
+2. **People**: four rows, always, including a zero. Rude, churn, quality, product frustration.
+   Each row is the quote, or "none in this window", plus the production number behind churn
+   and quality.
+3. **Bugs**: one row per bug: what the person saw, the verdict, the record, the evidence.
+   A sequence diagram for any bug whose cause crosses the frontend and backend. A `FIXED` row
+   names the `prod/*` tag and stays short.
+4. **One section per theme** with two or more signals, or one signal backed by a production
    number (such as expiry rates or answer times). Quotes first, then the number, then the
    proposal for that theme.
-4. **Delivery**: the anomalies from `anomalies.json`, counted by kind, each kind with one example
-   record.
-5. **Going well**: positive feedback, quoted.
-6. **Proposal**: the improvements, ordered by what to ship first, each tied to its theme's
+5. **Delivery**: the anomalies from `anomalies.json`, counted by kind, each kind with one example
+   record. An in-app notice is not a delivery row.
+6. **Going well**: positive feedback, quoted.
+7. **Proposal**: the improvements, ordered by what to ship first, each tied to its theme's
    evidence. When a proposal changes how a system works, run `/architect` on it and show the
    chosen shape here.
-7. **Full conversations**: `threads_fragment.html` from `render_threads.py`, then a table of
+8. **Full conversations**: `threads_fragment.html` from `render_threads.py`, then a table of
    the notification-only threads (teacher, parent, count, anything wrong with them).
 
 ## Privacy
