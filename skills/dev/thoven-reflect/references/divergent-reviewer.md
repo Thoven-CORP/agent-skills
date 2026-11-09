@@ -3,6 +3,6 @@
 Scan for:
 - Claims of done that Andres later contradicted ("you said you built these").
 - Verification that was skipped, self-reported, or aimed at the wrong artifact.
-- A broken rule. Ask why its wording or placement failed.
+- A broken rule. Diagnose whether retrieval, guidance, capability or execution failed.
 - A skill that loaded too late, or never loaded when it would have helped.
 - Overbuilding: process, scripts or ceremony Andres pushed back on.

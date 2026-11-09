@@ -36,7 +36,7 @@ Show the merged table grouped by target, with the `conflict` rows first. Ask wit
 For each approved row:
 
 1. Add a `LEARNINGS.md` entry to the target skill, using the entry shape in `SKILL.md`. In the header, use `memory:<file stem>` as the session id and the memory's date.
-2. Add the Pitfall line if the memory changes a decision the skill makes. Follow the `pitfall:` row in `SKILL.md`, cap included: when a skill draws more rows than its Pitfalls block can hold, the most decision-changing get lines and the rest become `step:` edits in their sections. When the skill's body already performs the rule, skip the Pitfall line.
+2. Add the Pitfall line if the memory changes a decision the skill makes. Follow the `pitfall:` row in `SKILL.md`, cap included: when the cap is full, consolidate related guidance or retain the rest in history; a singleton does not become a step merely due to capacity. When the skill's body already performs the rule, skip the Pitfall line.
 3. Delete the memory file and its line in `~/.claude/projects/<project>/memory/MEMORY.md`, or in `~/.claude/projects/<project>/memory/INDEX_ARCHIVE.md` when the index was archived.
 
 Commit the skill edits as in step 5 of `SKILL.md`. Memory deletions are local and need no commit.

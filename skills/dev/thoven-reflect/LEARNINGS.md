@@ -5,6 +5,12 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-08 — diagnose skill gaps and focus a named skill
+
+**What happened.** Andres requested that Reflect improve skills from corrections, useful discoveries and summaries, including focused reviews of a named skill.
+**Why.** Rule presence and last-loaded attribution alone cannot establish a usable capability or its cause; correction-only mining can miss successful and untriggered cases.
+**What changed.** Added cause-first diagnosis, focused evidence and window handling, and preserved the recurrence ladder when Pitfalls are full. This is a direct requested revision, not a mined recurrence.
+
 ## 2026-10-31 — reviewers read the digest, not the chats
 
 > reflect · 2026-10-31 · d041edf0 · correction · applied · seen 1

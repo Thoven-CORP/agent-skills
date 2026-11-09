@@ -1,0 +1,32 @@
+{
+  "id": "thoven-designer",
+  "model": "jev-latest",
+  "questions": {
+    "fork": {
+      "type": "choice",
+      "instructions": "Choose the primary path for this Thoven design request.",
+      "criteria": {
+        "answer_here": "Look up a specific design-system value, lock, existing component, or implementation drift. Follow the lookup and compliance reference.",
+        "route_to_skill": "A specialist concern needs deeper work, such as accessibility, copy, art, or motion craft. Whole-surface design and typography or layout in context stay here; specialist skills can support them.",
+        "needs_andres": "A requested change would alter an enforced standard, introduce a hue or type role, or resize a neighbouring surface (feature-ledger rule 16). An exploratory unlocked choice can be proposed provisionally.",
+        "design_here": "Design, critique, or polish a Thoven surface as a composition, including typography and layout in context. Follow the design and critique workflow in SKILL.md."
+      }
+    },
+    "source": {
+      "type": "choice",
+      "instructions": "Which one file should be opened? A colour, type, icon, or token question opens that token file. Do not pick a derived docs/design/*.md file when a token module exists. An existence question (does this component already exist) is components_ui.",
+      "criteria": {
+        "colour_palette": "The question is which colour, hue, palette, or status colour to use. Open tools/build-palette.mjs (PALETTE) and __tests__/palette.test.ts.",
+        "type_ramp": "Type ramp, fonts, weights. Open app/globals.css type roles, __tests__/type-roles.test.ts and lib/cn-type-roles.test.ts; role selection in design/typography.md.",
+        "buttons": "Buttons, ledges, variants. Open thovenButtonTokens in lib/live-lesson-tokens.ts and components/ui/thoven-button.tsx.",
+        "icons": "Icons and the two tiers. Open lib/icon-tokens.ts and the icon tests.",
+        "motion": "Motion, springs, reduced motion. Open lib/motion-config.ts.",
+        "layout": "Layout, viewport, spacing. Open design/layout.md; consult the implementation reference for current Linear rulings.",
+        "lexicon": "What a thing is called. Open design/lexicon/LEXICON.md in the frontend repo.",
+        "components_ui": "Does a component already exist? Dialog, sheet, popover, primitive. Open components/ui/ (primitives only).",
+        "stack_md": "Could a user name it, build or take, Interior vs base-ui. Open design/STACK.md rule 7 in the frontend repo.",
+        "design_md": "A declared lock, a divergence row, or intent with no token module. Open DESIGN.md."
+      }
+    }
+  }
+}
