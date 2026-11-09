@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-09 — Frontend main froze for eight days behind one lint-baseline edit
+
+> session · 2026-11-09 · 96e39a9f · tooling · applied · seen 1
+
+**What happened.** `~/thoven/frontend` sat 359 commits behind GitHub from Nov 1 to Nov 9. thoven-sync logged "skipped, uncommitted changes" every 30 minutes and told nobody. Sessions started there read old code, skills and law; Andres had been fighting stale behaviour for days. The only tracked dirt was `oxlint-suppressions.json`, minus one entry for a file main had already deleted: the output of `oxlint --prune-suppressions` (frontend TESTING.md), most likely run by one of the 33 Codex sessions that worked in the main checkout on Nov 2. The backend also went dirty 311 times but recovered, because nothing there rewrites a tracked file and its main checkout was never moved off main.
+**Why.** The sync refused on any tracked edit, though git only refuses when an incoming change touches the edited file; the skip had no alert; nothing told a session it had started in a stale checkout.
+**What changed.** thoven-sync lets git decide and names the blocking files, alerts (macOS notification) after three stuck runs when a primary checkout is five or more behind, reports branches with commits on no remote, and logs a worktree line only when it changes. `bin/thoven-behind` computes the facts; `bin/thoven-statusline` shows a red "⚠ main ↓N behind GitHub · blocked by <file>" in Claude Code's status bar for a stale primary checkout; the `thoven-stale-checkout` SessionStart hook tells the session and blocks dispatch from it. Wired in `~/.claude/settings.json` (statusLine, SessionStart). Not done: an edit guard for the main checkouts, and a home for suppression pruning outside them.
+
 ## 2026-11-09 — agent-skills takes no PRs
 
 > session · 2026-11-09 · 96e39a9f · correction · applied · seen 1
