@@ -8,17 +8,14 @@
 # Check it against what the CLIs offer today:
 #   python3 ~/thoven/agent-skills/skills/dev/dispatch-work/scripts/agents.py check
 
-# Every tier runs Claude Code on Fable 5.2 (Andres, 2026-11-09: "We're not going to be using
-# [Opus] anymore because we only have Fable usage ... Orchestrate at medium and max high for super
-# complex tasks."). A dispatched pane orchestrates at medium; tier 1, the super complex ticket,
-# runs at high; nothing a tier launches runs above high. Codex, Devin, Cursor and Droid keep their
-# [cli] blocks as named opt-ins: launch one only when Andres asks for it by name.
+# Every tier runs Claude Code on Opus 5.5 (Andres, 2026-10-10). Codex, Devin, Cursor and Droid keep
+# their [cli] blocks as named opt-ins: launch one only when Andres asks for it by name.
 [tiers]
-1 = { cli = "claude", model = "claude-fable-5-2", effort = 3 }
-2 = { cli = "claude", model = "claude-fable-5-2", effort = 2 }
-3 = { cli = "claude", model = "claude-fable-5-2", effort = 2 }
-4 = { cli = "claude", model = "claude-fable-5-2", effort = 2 }
-5 = { cli = "claude", model = "claude-fable-5-2", effort = 2 }
+1 = { cli = "claude", model = "claude-opus-5-5", effort = 4 }
+2 = { cli = "claude", model = "claude-opus-5-5", effort = 3 }
+3 = { cli = "claude", model = "claude-opus-5-5", effort = 3 }
+4 = { cli = "claude", model = "claude-opus-5-5", effort = 2 }
+5 = { cli = "claude", model = "claude-opus-5-5", effort = 2 }
 
 # One block per CLI. herdr already knows how to run the CLI (`herdr agent start --kind`); a block
 # adds what herdr cannot know: the launch flags, the skill prefix and where the models come from.
@@ -37,7 +34,7 @@ label = "Claude"
 skill_prefix = "/"
 launch = "--model {model} --effort {effort} --permission-mode auto"
 efforts = ["low", "medium", "high", "xhigh", "max"]
-models = ["claude-fable-5-2", "claude-fable-5-1", "claude-opus-5-5", "claude-sonnet-5-5", "claude-sonnet-5", "claude-haiku-4-5-20251001"]
+models = ["claude-fable-5-1", "claude-opus-5-5", "claude-sonnet-5-5", "claude-sonnet-5", "claude-haiku-4-5-20251001"]
 
 [cli.codex]
 kind = "codex"
