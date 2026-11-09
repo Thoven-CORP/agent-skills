@@ -140,5 +140,5 @@ its pass line.
   styles, and the email then carries two documents. The scan refuses it; keep only the words and
   rebuild them from components.
 - The mailer's `from` and `reply_to` use `thovie@thoven.co`.
-- The skill's source is this file in `~/thoven/agent-skills`. After its PR merges, run
+- The skill's source is this file in `~/thoven/agent-skills`. After the push to `main`, run
   `enforcement/sync.sh --apply` until `sync.sh` reports every harness copy matches.

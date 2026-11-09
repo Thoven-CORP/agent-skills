@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-09 — agent-skills takes no PRs
+
+> session · 2026-11-09 · 96e39a9f · correction · applied · seen 1
+
+**What happened.** Andres: "agent skills should not have PRs that repo is internal idk why we would want PR our CI for skills". Eight agent-skills PRs (#164–#171) had opened in the days before, though the repo has no CI and the README already said "Do not open a PR".
+**Why.** The law, which every session loads, described agent-skills PRs as routine ("an agent-skills PR is not held. It merges in the same pass"; the docs-only table row "like an agent-skills PR"), and the README was read only by sessions that opened it.
+**What changed.** The law bullet now says agent-skills takes no PRs: commit the exact paths in a detached worktree at `origin/main` and push to `main`, then reinstall and sync. The two lines that treated its PRs as normal are gone. The README step and `thoven-email-system`'s "after its PR merges" match.
+
 ## 2026-11-08 — Undo rights need a file changed after the session started
 
 **What happened.** The pre-#153 tracker left 43 of 60 session edit logs polluted: 451,533 lines, of which 11,687 named files changed after their session began. `thoven-guard-bash` granted `git restore`, `checkout --` and `stash push --` on any logged path, so a session could undo another pane's dirty file.

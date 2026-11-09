@@ -208,7 +208,7 @@ Frontend/backend still keep **lockfile** copies of Neon / GSAP where the product
 
 1. Edit or add the folder under `skills/dev/` or `skills/exec/`.
 2. Frontmatter `name:` must match the folder name.
-3. Commit the exact paths and `git push origin main`. Do not open a PR. Do not run `/loop-on-ci`. This repo has no app CI that skill edits wait on. Everyone then re-runs the install command above.
+3. Commit the exact paths in `git worktree add --detach <tmp> origin/main` and `git push origin HEAD:main`, with no PR: this repo is internal and runs no CI. Everyone then re-runs the install command above.
 
 Do not add skills by copying them into `frontend/.claude/skills` or `backend/.claude/skills` anymore.
 
