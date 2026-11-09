@@ -2,6 +2,37 @@
 
 Copy a snippet into a `<section>` of `assets/shell.html`. Every class is defined in `assets/artifact.css`. Do not add a page-level `<style>` for chrome. Colour belongs only in diagrams, status chips and `.stage` contents.
 
+## Page rhythm
+
+Give the page a clear reading order before selecting components:
+
+```text
+Short title       the point, with a little character
+One-sentence lede who this helps and what happens
+
+Section heading   a concrete claim or useful question
+Main visual       the part the reader should look at
+Brief caption     what to notice, plus any local proof limit
+
+Source detail     quieter, beside its claim or at the end
+```
+
+- **Wording:** aim for headings that fit one line at the normal reading width. Name the subject and action; a useful phrase can be memorable without a slogan. Keep the meaning clear when a heading is read alone. Use sentence case and a consistent vocabulary.
+- **Density:** start with one sentence per caption or explanation; add a second only when it changes understanding. Move exact technical detail behind its source link. Bold the key phrase rather than whole paragraphs.
+- **Hierarchy:** use the shell's title, heading, body and caption roles consistently. Keep important qualifications readable; metadata can be quieter. Fit the visual to the available space while keeping its labels legible.
+- **Grouping:** use spacing and alignment to connect a heading, visual and caption. Reserve cards for genuinely separate choices or bounded interactions; let diagrams and charts sit directly in the document. Repeated borders, pills and panels add weight to every item.
+- **Reading width:** choose wide space for a diagram and comfortable measure for prose. Stack phone screens or peer visuals when they stop being readable side by side. Reflow the content rather than shrinking the whole layout.
+
+### Small Thoven examples
+
+These are wording patterns, not claims about a new build:
+
+- **Feature title:** “Feedback first. Sharing next.” Lede: “Parents leave feedback, then choose whether to share their teacher's profile.”
+- **Journey heading:** “Follow the parent's taps.” Caption: name the actions the linked recording actually shows, then its environment and any unobserved outcome.
+- **Mechanism heading:** “What happens after Send?” Show the handoff with a sequence, then label the external effects that still need separate proof.
+
+Choose the smallest set of components that serves this reading order; component availability is not a reason to fill the page.
+
 ## Section with eyebrow and h2
 Use for: every top-level block. Its `id` is the target of a `.bar` link.
 ```html
@@ -37,7 +68,7 @@ Use for: any page with more than three sections. Put it right after the title `<
 ```
 
 ## Card panels: `.grid2`, `.grid3` (`.grid4`)
-Use for: parallel things of equal weight. Use `.k` for a kicker, `.num` for a big figure, `.outline` for a secondary card, `.strong` for the one inverted card.
+Use for: parallel choices or bounded groups that need separate treatment. Use whitespace for ordinary repeated explanation. Use `.k` for a kicker, `.num` for a big figure, `.outline` for a secondary card, `.strong` for the one inverted card.
 ```html
 <div class="grid3">
   <div class="panel"><p class="k">Backend</p><h3>Room visits</h3><p>One row per join, written by the webhook.</p></div>
@@ -55,7 +86,7 @@ Use for: one thing the reader must not miss. A decision's first paragraph is the
 ```
 
 ## Comparison table
-Use for: options or recipes compared on the same columns. `td.yes` / `td.no` mark a cell, `tr.grp` heads a group, and `.pick` shades the chosen column.
+Use for: exact records or factual attributes compared on the same columns. A flow belongs in a diagram; narrative belongs in prose. `td.yes` / `td.no` mark a cell, `tr.grp` heads a group, and `.pick` shades the chosen column.
 ```html
 <div class="tablewrap">
   <table>
@@ -69,7 +100,7 @@ Use for: options or recipes compared on the same columns. `td.yes` / `td.no` mar
 ```
 
 ## Before / after pair
-Use for: a change in copy, behaviour or shape.
+Use for: an explicitly needed comparison of a change in copy, behaviour or shape. A current-feature walkthrough shows the current state; retain historical captures in the technical evidence record.
 ```html
 <div class="ba">
   <div class="before"><span class="label">Before</span>“Book a teacher near you”</div>
@@ -108,7 +139,7 @@ Use for: state. These are the only coloured chips. `.dot` adds a leading dot, a 
 ```
 
 ## Stage (product UI)
-Use for: depicting a real screen or email. The contents keep product colours in both themes. `s-card`, `s-row`, `s-btn`, `s-ghost`, `s-muted`, `s-eyebrow` and `s-owed` are the helpers; inline styles are fine inside a stage.
+Use for: an illustration or prototype of a screen or email. Use actual captures when claiming runtime appearance; a constructed stage is not runtime evidence. The contents keep product colours in both themes. `s-card`, `s-row`, `s-btn`, `s-ghost`, `s-muted`, `s-eyebrow` and `s-owed` are the helpers; inline styles are fine inside a stage.
 ```html
 <div class="stage-wrap">
   <div class="stage">
@@ -118,12 +149,12 @@ Use for: depicting a real screen or email. The contents keep product colours in 
       <div class="s-row"><span class="s-muted" style="flex:1">2 of 3 done</span><span class="s-btn">Mark done</span></div>
     </div>
   </div>
-  <p class="cap">Student practice card, as shipped.</p>
+  <p class="cap">Illustration of a student practice card; not a runtime capture.</p>
 </div>
 ```
 
 ## Diagram
-Use for: flows, sequences, state, ER, gantt and charts. Write Mermaid in a `<pre class="mermaid">`; `finish.mjs` turns it into `<figure class="diagram" data-mermaid="…">SVG</figure>`. To change a finished diagram, edit `data-mermaid` and rerun. Colour nodes with the themed classes `ok risk blocked info accent strong dim`, never with a `classDef` hex:
+Use for: precise structural or ordered relationships supported by the bundled renderer. For human journeys and layout sketches, use the hand-drawn form below; for quantitative charts, read [data-visualisation.md](data-visualisation.md). Write Mermaid in a `<pre class="mermaid">`; `finish.mjs` turns it into `<figure class="diagram" data-mermaid="…">SVG</figure>`. To change a finished diagram, edit `data-mermaid` and rerun. Colour nodes with the themed classes `ok risk blocked info accent strong dim`, never with a `classDef` hex:
 ```html
 <pre class="mermaid">
 flowchart LR
@@ -134,6 +165,29 @@ flowchart LR
 <div class="legend"><span style="--c:var(--accent)">the gate</span><span style="--c:var(--ok)">done</span></div>
 <p class="cap">One line saying what to look at.</p>
 ```
+
+## Hand-drawn layout or journey
+
+Use for: spatial arrangements, a user's path, and simple explanations in the Excalidraw visual style. Use Excalidraw when an editable canvas is part of the handoff; rough.js is a suitable way to produce that style as inline SVG in a self-contained page. This is a choice of medium, not proof of product behaviour.
+
+Keep labels crisp and connectors unambiguous. Use a fixed nonzero rough.js seed for stable revisions. Embed the resulting SVG; the finisher does not generate rough.js drawings. Size the SVG for the page's reading width. Keep arrows and labels inside the viewBox and give the figure a text explanation. For real measurements, keep axes and marks precise.
+
+## Real phone screens and recorded flow
+
+Use for: showing the actual mobile product. Place real captures inside a drawn phone frame, with enough width to read the UI and a short caption identifying environment and revision. Fit the capture proportionally; cropping must not conceal controls or outcomes. On narrow layouts, stack the phones in reading order.
+
+Place the playable journey beside or immediately after its phone sequence. Capture follows [QA capture](../../dev/qa-flow/references/flow-mapping-and-evidence.md#7-capture-screenshots-and-recorded-flows). Keep technical state coverage in the linked QA record.
+
+```html
+<figure class="stage-wrap">
+  <video controls playsinline preload="metadata" aria-label="Parent mobile feedback and sharing journey">
+    <source src="<durable-recording-path>" type="video/mp4">
+  </video>
+  <figcaption class="cap">Parent · mobile browser · &lt;environment, revision, capture date&gt;. Shows feedback → share → cancel → return. Native share-sheet behaviour not observed in this capture.</figcaption>
+</figure>
+```
+
+The snippet's paths and caption are placeholders: replace them with the actual capture and its observed limits. Enable native controls; preserve human-paced transitions. Retain durable media or embed it before temporary capture folders are removed.
 
 ## Code block
 Use for: commands, payloads and snippets. Escape `<` as `&lt;`. Wrap comments in `.c` and keywords in `.k` if they help.

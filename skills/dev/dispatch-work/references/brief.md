@@ -49,6 +49,9 @@ CONTEXT    <<relevant Linear brief/documents: source ids/URLs, read time, govern
            alone does not establish reading. Re-read live records when accessible; report missing
            required context rather than substituting old local docs.
 EXECUTION  <<mode and host; source host; browser/automation/app hosts and verified access>>
+           For capture, carry the plan from qa-flow/references/flow-mapping-and-evidence.md §7:
+           execution host, journey/personas, reversible branches, required criterion/parity evidence,
+           and which prior evidence remains valid; use standing.md's linked capture contract.
 PAIRED     <<paired repo absolute worktree, branch and base HEAD, or none with reason>>
 SPEC       {{SNAPSHOT}}. Read it in full first. It holds the ticket, its comments and the parent's
            decisions as main read them. Build it as written. When the snapshot and the code

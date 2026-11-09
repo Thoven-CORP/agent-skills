@@ -40,6 +40,9 @@ together.
   uploads to the Linear issue and the board and then deletes. Point at a board frame or screenshot
   that already exists instead of saving a second copy. Your only test or verification files are
   the ticket's own red and green proof.
+- Capture: read [QA capture](../../qa-flow/references/flow-mapping-and-evidence.md#7-capture-screenshots-and-recorded-flows)
+  before starting a recording or capture run. Carry its host, continuous-journey and evidence rules
+  into the brief; main presents the result through the canonical visual artifact.
 - Parity, on a UI ticket with a named design source, before DONE: CI does not shoot parity, so you
   capture it. Run `scripts/verify/parity-run.mjs` behind `thoven-load-gate` as frontend `TESTING.md`
   shows (Mini parity pilot), with `--out` set to the parity folder above. Cover every surface the

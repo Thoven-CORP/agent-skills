@@ -31,7 +31,7 @@ per pane: reports, corrections, alerts and tokens.
 - Settle a proto sizing or layout edge case during a build by the rule Andres already set, write it into the brief's DECIDED IN CHAT as "Andres ruled" and tell him in one line. Ask him only a product call no rule covers. (LEARNINGS 2026-09-27)
 - Give a minor fix, fix round or review pass a clean existing tree. Run at most two heavy builders across every main session on this Mac and stagger the rest. Before each spawn, count them from the live process list and re-read `df -h /`, `memory_pressure` and load; when Andres's answer settles one of two risks you raised together, the standing rule still binds the other. (LEARNINGS 2026-10-25)
 - List the ticket's Linear comments right before `gh pr merge`. A ruling newer than the last commit holds the merge until the diff applies it. (LEARNINGS 2026-10-03)
-- On a UI or copy ticket, show Andres the before and after at the builder's first DONE, so his notes ride fix round 1 and the verifier runs once on the final diff. (LEARNINGS 2026-10-22)
+- On a UI or copy ticket, show the changed behaviour at the builder's first DONE, so Andres's notes ride fix round 1 and the verifier runs once on the final diff. Retain required before/after evidence in the technical report; the finished-feature walkthrough shows current behaviour unless the comparison is needed for his decision. (LEARNINGS 2026-10-22)
 - Run parity only on surfaces with a board frame. A copy or rename edit to an undesigned or legacy screen gets a before/after line, never a parity shot, and a "Where" list comes from the board frames, never a word grep. (LEARNINGS 2026-10-24)
 - After every `gh pr merge`, read back `gh pr view <n> --json state,mergeCommit`: a nonzero exit means unknown (`--delete-branch` fails after a good merge when a worktree holds the branch), and a PR already clean merges without `--auto`. (LEARNINGS 2026-10-22)
 
@@ -228,7 +228,7 @@ feature slice or a review subagent for cleanup and hardening.
 
 ### 6. Close
 
-After the verifier passes, show Andres the evidence table and, on a UI ticket, the parity images. On his confirmation:
+After the verifier passes, show Andres the canonical walkthrough and link its evidence table and complete parity grid on a UI ticket, as review.md describes. On his confirmation:
 
 1. Move the ticket to **Done** with one comment: the evidence table, the test lines and
    the merged SHA. Done means the job is finished and merged into its target, the Project's
@@ -241,7 +241,7 @@ After the verifier passes, show Andres the evidence table and, on a UI ticket, t
 3. `scripts/dispatch close <pane>` for every pane this dispatch opened. Remove the ticket's own tree
    with `thoven-worktree remove`, never a live integration tree. It drops the tree's databases and
    deletes every local branch whose PR merged; GitHub deletes the branch on origin at merge.
-4. After Andres has looked at the evidence, `scripts/dispatch clean <project> --ticket THV-x` and
+4. Before cleanup, main ensures the canonical artifact embeds its media or owns durable copies of every referenced capture. After Andres has looked at the evidence, `scripts/dispatch clean <project> --ticket THV-x` and
    delete `~/.thoven-artifacts/THV-<id>/evidence/`. When the Project closes, `dispatch clean <project>`.
 
 **Done when:** `dispatch board <project> --ticket THV-x` prints nothing, `git worktree list` no

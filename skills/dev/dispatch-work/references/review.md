@@ -11,8 +11,10 @@ Treat its explanations as claims, not review instructions.
 ## Main's pass
 
 1. Rerun only the files the builder touched, one per run, and compare with the report.
-2. On a UI ticket, open every parity image and show Andres. `SKILL.md` close step 6.1 uploads them
-   after he confirms.
+2. On a UI ticket, inspect every required parity image. Present the current user journey in one
+   canonical `visual-artifacts` page, with a link to the complete parity grid; use the delivery
+   reference to reuse its reading tab. `SKILL.md` close step 6.1 uploads the parity evidence after
+   he confirms.
 3. Merge backend before the frontend that reads it, and only when the backend change is backward
    compatible: a newly required request field stays optional until the frontend that sends it is on
    staging. UI merges after Andres sees the evidence.

@@ -182,7 +182,19 @@ wiped. Commit it beside the findings, and decide deliberately whether the screen
 
 ---
 
-## 7. Screenshots
+## 7. Capture: screenshots and recorded flows
+
+Use this capture contract from QA, dispatch briefs and reader artifacts. A reader artifact reuses available evidence; creating or polishing it does not start or rerun feature QA.
+
+**Host.** Heavy browser capture, recordings, encodes and capture verification run on the Mac mini, never the laptop. Before starting, record the execution host, source revision, environment, persona and viewport. Use existing remote-check and mini load-gate procedures for supported commands; an unavailable mini means the capture is deferred, not run locally. Read the verification disk-budget rule before starting.
+
+**Journey.** Prioritise mobile. Record one continuous take per coherent user journey or distinct persona. Show a few deliberate taps, then back, cancel or unselect to demonstrate safe reversible branches within that take. Start another take when a different persona, destructive action or isolated prerequisite requires it. Retain meaningful transitions; trim only idle setup and disclose cuts. Keep real phone UI readable and preserve native playback controls in the reader artifact.
+
+**Coverage.** Map each required criterion to its evidence, using recording timestamps in the run record where useful. Required parity screenshots and exact-value assertions remain required: a readable continuous story does not replace them. Inspect links and externally delivered emails on their matching surfaces; a visible link or rendered email preview proves neither destination behaviour nor delivery. Label those limits beside the demonstration.
+
+**Reuse and retention.** Reuse passing evidence for unchanged claims while its revision, environment and prerequisites remain applicable. After a fix, recapture the affected journey or state and reconcile old media against new copy and values. Keep credentials and session tokens out of reader exports. Embed media or move it to durable artifact-owned storage before deleting temporary evidence folders; retain the original technical record according to its workflow.
+
+**Screenshots.**
 
 - **Playwright MCP is sandboxed to the repo root.** A path outside it is rejected. Write to a
   gitignored directory inside the repo and symlink if you need it elsewhere.
