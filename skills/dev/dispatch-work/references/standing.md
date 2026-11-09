@@ -47,9 +47,9 @@ together.
   in your REPORT with a short video of the flow and the list of differences from the board.
 - Database (backend ticket): export the pane's own `DATABASE_URL` and `TEST_DATABASE_URL` in the
   same line as every backend command, `git commit` included.
-- Debt, bugs and smells in code this ticket or feature owns are fixed on this branch in the same
-  round. A problem outside it goes in Noticed as one line. A product call goes to main as a
-  question.
+- Debt, bugs, smells and easy concerns in code this ticket or feature owns are fixed on this branch
+  before you report. A problem outside it goes in Noticed as one line. A product call goes to main
+  as a question.
 - Decide what you can and write the ruling into your report. Stop only for: an irreversible or
   destructive step, prod or a secret value, a product call, or a ticket so wrong every path is a
   guess.
