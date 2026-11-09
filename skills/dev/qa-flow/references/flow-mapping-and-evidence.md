@@ -3,17 +3,6 @@
 Companion to `execute-and-evaluate.md`. That doc covers *how to assert*. This one covers what to
 do **before** the first assertion and what to leave **behind** after the last one.
 
-Derived from the v3.0.0 post-production run (2026-08-08, 77 steps, 23 findings). Two baseline
-agents planned that same kind of run using only this skill; what they consistently omitted is
-what this document adds. What they already did well is deliberately **not** repeated here.
-
-## What you are already good at — don't re-read this section, just don't lose it
-
-Baselines reliably produced: a release-deployment baseline before testing (bundle greps, route
-probes, `schema_migrations` reads), criteria derived from real code rather than the diff,
-role-twin discovery, a two-track split that keeps money writes off production, and per-criterion
-exact-value verdicts. Keep all of that. The gaps below are the other half.
-
 ---
 
 ## 1. Map the product flow, not just the deployment
@@ -62,7 +51,7 @@ visible strings, and any gate. It is also the thing that makes a second run chea
 
 ## 2. Log as you go, to a machine-readable file
 
-**Both baselines produced all artifacts at the end.** That is the single most consequential gap:
+**Do not write the artifacts at the end.** That is the single most consequential gap:
 findings live in the conversation, and a compaction or a crash takes them with it.
 
 Append **one record per step, at the moment you observe it**, to `steps.jsonl`:
@@ -112,8 +101,6 @@ that was the honest call.
 
 ## 4. REQUIRED: a design row in every verdict table
 
-Baselines were inconsistent here — one assessed design tokens, one never mentioned design at all.
-
 Every run's verdict table carries a **Design** row. Not a separate pass, not an optional section.
 Fill it while you are already on the page:
 
@@ -130,9 +117,9 @@ If nothing is wrong, the row says so. An empty row means you did not look.
 
 ---
 
-## 5. REQUIRED: a performance row in every verdict table
+## 5. REQUIRED: a network and performance row in every verdict table
 
-**Neither baseline assessed performance at all.** You are already in the page with the network tab
+**Network first.** Every failed request, 4xx or 5xx, and console error from the flow's agent-browser log (`execute-and-evaluate.md`, "Evidence, not vibes") is explained or filed, and each write shows one POST per user intent. Then performance. You are already in the page with the network tab
 open; the marginal cost is close to zero and it catches things static analysis cannot.
 
 Use the Resource Timing API rather than eyeballing a waterfall:

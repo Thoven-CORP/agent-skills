@@ -1,13 +1,15 @@
 ---
 name: qa-flow
-description: Use after a feature or bug fix, or to reproduce a production report, when product-level evidence is needed. Drive the realistic user path, verify exact criteria, and leave a durable evidence record. Triggers on "verify a bug fix", "reproduce a production bug", "thorough QA", "edge-case testing", "prod snapshot reproduction", or "QA this before publish".
+description: Use after a feature or bug fix, or to reproduce a production report, when product-level evidence is needed. Drive the realistic user path, verify exact criteria, and leave a durable evidence record. Also runs a release's larger features on staging before promote. Triggers on "verify a bug fix", "reproduce a production bug", "thorough QA", "edge-case testing", "break it", "stress test", "act like a real user", "prod snapshot reproduction", or "QA this before publish".
 ---
 
 # /qa-flow — Product verification loop
 
 **Invocation intent:** *"I finished a feature or bug fix — run the most real, thorough QA, reproducing from production settings."*
 
-This is ONE workflow you reason through, not a menu of modes. You clarify what you're testing, pick a data + scope + tooling strategy (opinionated defaults below), then execute in four tracked phases and return an evidence-based verdict. The goal is QA against **realistic state** — a prod snapshot when the bug came from real users, driven through the **real UI** with **exact expected values** — so the fix is proven dead where it actually lived.
+**Release pass.** For a release's larger feature (a money, upload, job or email, migration or new-surface change), a tester pane separate from the builder runs the full take on staging, on the mini, with writes and Stripe test cards, before publish shows `plan`. After the promote, a read-only check per user type runs on production. The pass delivers videos and an evaluation page, and its verdict link goes on the feature's changelog bullet (`~/.agents/skills/publish/references/production.md` step 1).
+
+This is ONE workflow you reason through, not a menu of modes. You clarify what you're testing, pick a data + scope + tooling strategy (opinionated defaults below), then execute in five tracked phases and return an evidence-based verdict. The goal is QA against **realistic state** — a prod snapshot when the bug came from real users, driven through the **real UI** with **exact expected values** — so the fix is proven dead where it actually lived.
 
 `qa-flow` is Thoven's product-testing counterpart to Pstack's verification skill. It defines the customer-visible criteria and evidence loop; a project verification skill or control CLI drives the app. Reuse the smallest reliable control surface already present (`/control-app`, a QA harness, or the native browser tool). Do not create a throwaway driver when a maintained control surface can perform the check.
 
@@ -15,6 +17,8 @@ This is ONE workflow you reason through, not a menu of modes. You clarify what y
 
 - Assert a toast that precedes a redirect with an `addInitScript` MutationObserver that records each toast to `sessionStorage`, and read it after the redirect settles; driver-side polling races the navigation. (LEARNINGS 2026-08-06)
 - Run `diagnosing-bugs` on a QA bug list, a red test and a confirmed cause with file:line per bug, before proposing or applying any fix. (LEARNINGS 2026-10-11)
+- Treat a Neon branch of production as a prod-PII copy under safety gate 1: it carries production's role password, so reset the branch role's password before any agent sees its connection string. (LEARNINGS 2026-11-09)
+- Run cases that lock, drain or spend an account on staging or a seeded throwaway account, never on the dogfood accounts that publish's smoke and harness log in with. (LEARNINGS 2026-11-09)
 
 ## Step 1 — Ground, then clarify only what changes the run
 
@@ -27,16 +31,16 @@ First read the current change, issue/report, and relevant flow. Restate the cust
 
 Full question set + how to phrase them: **[references/framing.md](references/framing.md)**.
 
-## Step 2 — Reason about the approach (skill-guided, you decide, then confirm)
+## Step 2 — Reason about the approach (skill-guided, you decide)
 
-Four decisions. Lead with the default, state your pick, confirm with the user.
+Four decisions. Lead with the default and state your pick. On a run Andres is watching, confirm it; on a dispatched or release run, proceed, and ask only about a production write, an ambiguous real person or an outside blocker.
 
 | Decision | Default heuristic |
 |---|---|
 | **Data** | **Bug fix → prod snapshot** (real rows reproduce the exact broken state, and sidestep fighting backend validations to fabricate an edge state — e.g. a `pending` reschedule past its `expires_at`, which a check constraint won't let you hand-craft). **Net-new feature with no prod signal → seed.** |
 | **Scope** | Decide which layers the change actually *touches* — don't mechanically follow the diff. A pure data/logic bug can be **BE-only** (rails/specs against the snapshot). A UI or contract bug is **BE+FE** (full harness). A diff can be one-sided in code yet span both sides in the product — a parent-side fix may have a teacher-side twin the diff never names. Make the human scope call and flag gaps. |
-| **What to test** | **Bug fix →** reproduce the bug condition, confirm it's dead, then edge cases (boundary / expiry / race / id-mismatch / fetch-failure). **Multi-part →** happy paths across each part. Derive exact criteria from the diff + evidence (see Phase 2). |
-| **Browser tool** | **Detect what's available and optimize.** Primary target = the Claude in-app Chrome (`mcp__claude-in-chrome__*` / `mcp__Claude_Browser__*`: navigate, read_page, computer, form_input, find). Terminal-only run → Playwright may fit. On ghost or staging, drive with `agent-browser`; for video or screenshot capture, read [the capture contract](references/flow-mapping-and-evidence.md#7-capture-screenshots-and-recorded-flows) before starting. Log in through the UI or by token injection, whichever is faster, and let an agent drive the whole walkthrough. |
+| **What to test** | **Bug fix →** reproduce the bug condition, confirm it's dead, then edge cases (boundary / expiry / race and duplicate intent / id-mismatch / fetch-failure). **Feature →** happy paths across each part, then the **real-user take** and the **dependency checks**. Depth follows what the change can break: a money, upload, job or email, migration or new-surface change gets the full take on staging; a UI or copy change or a hotfix gets one targeted take. Derive exact criteria from the diff + evidence (see Phase 2). Lists: **[references/framing.md](references/framing.md)** "What to test". |
+| **Browser tool** | **Detect what's available and optimize.** On ghost, staging and production, drive with `agent-browser` on the mini: its `network` and `console` commands are the standard evidence for the Network row (`references/execute-and-evaluate.md`). The Claude in-app Chrome (`mcp__claude-in-chrome__*`) is for a local run Andres is watching. Terminal-only scripted run → Playwright may fit. For video or screenshot capture, read [the capture contract](references/flow-mapping-and-evidence.md#7-capture-screenshots-and-recorded-flows) before starting. Log in through the UI or by token injection, whichever is faster, and let an agent drive the whole walkthrough. |
 
 Detail + the reschedule worked example: **[references/execute-and-evaluate.md](references/execute-and-evaluate.md)**.
 
@@ -52,7 +56,7 @@ Any run of this size is 3+ steps — track it.
 
 If the control surface or Feature Map required an avoidable recovery, leave one concrete maintenance follow-up. A verification loop stays useful only when its controls and map match the live product.
 
-**The verdict table has a REQUIRED Design row and a REQUIRED Performance row.** Not optional sections, not a separate pass — you are already on the page. Design: first the Paper frame at the width under test, desktop and phone, with MATCH or NO per region from looking at both and each difference listed (`andres-mode`, Parity); then design-system primitives vs hand-rolled controls, empty states that contradict loaded content, pluralisation, the same value formatted two ways. Performance: duplicate requests, poll cadence, cold refetches, fetches the parent already had — measured with the Resource Timing API. An empty row means you did not look. What to check: **[flow-mapping-and-evidence.md §4–5](references/flow-mapping-and-evidence.md)**.
+**The verdict table has a REQUIRED Design row and a REQUIRED Network and performance row.** Not optional sections, not a separate pass — you are already on the page. Design: first the Paper frame at the width under test, desktop and phone, with MATCH or NO per region from looking at both and each difference listed (`andres-mode`, Parity); then design-system primitives vs hand-rolled controls, empty states that contradict loaded content, pluralisation, the same value formatted two ways. Network and performance: every failed request, 4xx or 5xx, and console error, each explained or filed; the POST count per write; duplicate requests, poll cadence, cold refetches, fetches the parent already had — read from agent-browser's network log or the Resource Timing API. An empty row means you did not look. What to check: **[flow-mapping-and-evidence.md §4–5](references/flow-mapping-and-evidence.md)**.
 
 Verdicts are `pass` / `fail` / `design` / `partial` / `blocked` / `info`. `design` keeps the fail count meaning "broken"; `partial` is what stops an environment limitation being filed as a defect.
 

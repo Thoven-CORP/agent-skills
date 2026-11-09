@@ -5,6 +5,22 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-09 — Each changelog bullet carries its risk and its proof
+
+> reflect · 2026-11-09 · d7e67eac, 489a6eae · skill-gap · applied · seen 2
+
+**What happened.** Release prod/2026-11-09-1 shipped the purchase-expiry emails and browser-upload class materials on dogfood, `deploy:smoke` and the ghost harness, none of which exercised either feature. The bullets came from PR titles, and #445's two tables and three held migrations surfaced only when staging's controlled migrate refused them. Andres: "improve on the changelog and the actual smoke test, especially for larger features, and try to actually run more severe tests". On 2026-11-08 he had asked why publish could not run "its own smoke checks" and why he "did not see a list of the changelog changes".
+**Why.** Step 1 asked for the user-noticed bullet only, and step 4 counted as a gap only "a gate that did not run", so a feature no gate touched could never be a gap.
+**What changed.** Step 1: each bullet, built from the PR body and tickets, carries what users notice, its dogfood bucket, its migrations and its proof (PR tests, a qa-flow verdict link, or "staging gates only"). Step 4: a risky bullet with "staging gates only" is a named gap with an offered qa-flow release pass. No new Stop; straight through lists them in the report only.
+
+## 2026-11-09 — Laptop mode is named, and its skipped probe is a Checks row
+
+> reflect · 2026-11-09 · 0ce8fb7e, d7e67eac · broken-rule · applied · seen 2
+
+**What happened.** The 2026-11-08 and 2026-11-09 releases ran with `STAGING_CONTROL=local` because the mini's Render key returned 401 for about 45 hours (THV-1682). "No job probe ran" went to stderr only, and the 11-09 Checks table said pass. Andres said publish had already been fixed to run on the Render and Vercel CLIs.
+**Why.** staging.md said an unreachable mini blocks release work and never named the laptop path, so the "not run and why" rule in SKILL.md had nothing to attach to.
+**What changed.** staging.md "Availability hold" names the laptop path and its Checks row "staging job probe: not run, local control", or a "Run code on staging" job result when the range touches jobs or mail.
+
 ## 2026-11-09 — release notes move to GitHub Releases; CHANGELOG.md is retired
 
 **What happened.** After `prod/2026-11-09-1`, step 11 opened a docs-only PR to write the release's section into `CHANGELOG.md`. Andres asked why release notes still cost a PR.

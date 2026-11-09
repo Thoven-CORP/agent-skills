@@ -5,6 +5,78 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-09 — A real-user take: act like a person, then check what persisted
+
+> reflect · 2026-11-09 · 14531ef9, 39a12a43, d7e67eac · skill-gap · applied · seen 3
+
+**What happened.** Andres typed the personas by hand on 2026-10-29 ("The impatient one… The tech illiterate user… The breaker… simulate more human behavior rather than perfect e2e testing"), asked on 2026-10-30 for "a 'let's break the application' type of QA", and on 2026-11-09 for QA "acting like a real user… If they upload multiple times do they refresh and then upload a file again? Does it get saved?". The 10-29 take found Back leaving the recording viewer, a stale-tab Send and a misclick that created an empty Session.
+**Why.** framing.md's edge cases were a bug fix's data predicates; a feature got only happy paths, so every behaviour pass was rebuilt from the brief.
+**What changed.** framing.md "What to test" holds the real-user take (back/forward, refresh mid-flow, leave and return, second tab, double-submit, re-upload after refresh, offline or one aborted call, two actors on one resource on the mini) with the agent-browser command for each; Step 2's "What to test" row scales depth to what the change can break.
+
+## 2026-11-09 — One user intent makes one write, and money is counted at Stripe
+
+> reflect · 2026-11-09 · 7c3d7896, 2133d8f0, 39a12a43, d7e67eac · skill-gap · applied · seen 4
+
+**What happened.** A card-save retry returned 500 after the save had committed, found by a state audit, not QA (2026-10-24). The THV-1650 pane invented its own double-tap and replay count, and Andres accepted it (2026-11-05). The 10-30 break plan skipped double-submit as "covered by specs" in the same run that proved those specs stub Stripe. On 2026-11-09 Andres asked to "check that payments don't double".
+**Why.** "Race" covered stale state, not a duplicated intent, and nothing said a stubbed spec proves nothing about the provider.
+**What changed.** framing.md "Race and duplicate intent": under a double-click, a same-key replay and a retry, assert one POST, one row, one wallet credit, and one PaymentIntent with one capture via the Stripe plugin; a spec that stubs Stripe never excuses it on a money path.
+
+## 2026-11-09 — Check the off-screen effects against the real service
+
+> reflect · 2026-11-09 · 39a12a43, d7e67eac · skill-gap · applied · seen 2
+
+**What happened.** The 2026-10-30 break run found PaymentStatusSync crashing against real Stripe on every webhook while the suite stubbed that call. Release prod/2026-11-09-1 shipped the purchase-expiry emails with no staging check that one was rendered or sent.
+**Why.** framing.md sent backend-only scope to "rails/specs", the stubbed layer.
+**What changed.** framing.md "Dependency checks" and an execute-and-evaluate.md line: list each off-screen effect the diff adds (job, `email_deliveries` row, Stripe object, Mixpanel event, migration or backfill) and check it on staging through publish's "Run code on staging" and the `prod-db-check.sh` queries. No new script, no production writes.
+
+## 2026-11-09 — agent-browser's network and console log is standard evidence
+
+> reflect · 2026-11-09 · 14531ef9, d7e67eac · conflicting-guidance · applied · seen 2
+
+**What happened.** Andres asked on 2026-10-29 to "monitor failures, networks and other items especially when encountering errors", and on 2026-11-09 that QA "use an agent browser because that allows it to monitor all the network calls".
+**Why.** Capture was advice in "Evidence, not vibes", and Step 2 called the in-app Chrome "Primary", which runs on the laptop against §7's rule that heavy capture runs on the mini.
+**What changed.** agent-browser on the mini is the default on ghost, staging and production; the in-app Chrome is for a local run Andres watches. The REQUIRED Performance row became "Network and performance", filled from `network requests --status 400-599`, `--method POST`, `console`, `errors` and a HAR per flow.
+
+## 2026-11-09 — Keep the release pass that worked
+
+> reflect · 2026-11-09 · 2133d8f0, 39a12a43, 14531ef9 · success · applied · seen 3
+
+**What happened.** On 2026-11-04 Andres dispatched THV-1648 (prod QA per user type) and THV-1650 (the renewal pipeline end to end on staging with Stripe test cards) by hand, and accepted both: "close THV-1648 and THV-1650 as done. Post the evaluation and videos to both first." Prod QA ran before the staging run. On 10-29 he asked that "the implemented and tester should be separated".
+**Why.** No text described the pass, so it was dispatched from scratch and in the wrong order.
+**What changed.** SKILL.md "Release pass": a tester pane on the mini runs a larger feature's full take on staging before publish shows `plan`, a read-only check per user type follows on production, and the verdict link goes on the changelog bullet.
+
+## 2026-11-09 — A dispatched or release run states its picks and proceeds
+
+> reflect · 2026-11-09 · 2133d8f0 · conflicting-guidance · applied · seen 1
+
+**What happened.** The THV-1648 and THV-1650 panes asked nothing at the start and raised only real blockers (prod seeding, Stripe's hCaptcha); Andres accepted the result.
+**Why.** Step 1 said to ask only what changes the run, but Step 2 said "confirm with the user" and framing.md said "If the answers are thin, keep asking", which stalls an unattended run.
+**What changed.** Step 2 confirms only on a run Andres watches; framing.md answers the questions from the changelog bullet, PR and ticket on a dispatched run. Also: "four tracked phases" fixed to five, flow-mapping's baseline history cut, and the token and console lines in framing.md's Thoven-native list dropped, since the Design and Network rows own them.
+
+## 2026-11-09 — Fire on release QA and "break it"
+
+> reflect · 2026-11-09 · d7e67eac, 39a12a43 · skill-gap · applied · seen 2
+
+**What happened.** qa-flow never loaded during release prod/2026-11-09-1, and on 2026-10-30 "break the application" left the agent to build its plan with three research agents.
+**Why.** The description named bug fixes and "QA this before publish" only.
+**What changed.** The description adds a release's larger features on staging before promote, "break it", "stress test" and "act like a real user".
+
+## 2026-11-09 — A Neon branch of production carries production's password
+
+> reflect · 2026-11-09 · 39a12a43 · discovery · applied · seen 1
+
+**What happened.** On 2026-10-30 a break-run agent made a Neon branch of production with `neonctl` and printed its connection string, which carried the production owner password. The lesson lived only in frontend project memory.
+**Why.** A branch inherits its parent's role passwords; prod-snapshot.md describes only the human `pg_dump` route.
+**What changed.** Pitfalls line: a Neon branch of production is a prod-PII copy under safety gate 1; reset the branch role's password before any agent sees its connection string.
+
+## 2026-11-09 — Destructive cases stay off the gate accounts
+
+> reflect · 2026-11-09 · 2133d8f0 · skill-gap · applied · seen 1
+
+**What happened.** The THV-1648 prod pane tested lockout on the dogfood teacher ("GHOST_TEACHER… is now locked", attempts 5 and 6 returned 423) and moved the household wallet. Publish's production smoke logs in with that teacher.
+**Why.** Nothing separated the accounts publish's gates use from accounts QA may spend.
+**What changed.** Pitfalls line: cases that lock, drain or spend an account run on staging or a seeded throwaway account.
+
 ## 2026-10-11 — Diagnose a QA bug list before fixing it
 
 > reflect · 2026-10-11 · memory:feedback_diagnose_qa_findings_before_fixing · correction · applied · seen 1
