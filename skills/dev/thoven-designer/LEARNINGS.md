@@ -5,6 +5,12 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-08 — design the composition in context
+
+**What happened.** Andres said the skill finds components well, but its token and colour checking does not sufficiently address visual language, typography, layout and polish. Those checks are useful at different times.
+
+**What changed.** The main design and critique path now evaluates the rendered composition and typography in context, explains observations through their effect and a concrete change, and inspects the result. System lookup and implementation compliance remain a separate, pointed path. This is a user-directed revision; its design outcomes have not yet been independently evaluated.
+
 ## 2026-11-05 — a first-time screen gets a Paper round before code
 
 > reflect · 2026-11-05 · e55ecd26 · aa149f6a · skill-gap · applied · seen 2

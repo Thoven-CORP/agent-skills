@@ -1,6 +1,6 @@
 # Designer sources (fallback)
 
-Read this file only when `classify` on `evals/schemas/thoven-designer.json` returns `undecided` or a non-binding answer. Binding answers already name the one file to open.
+For lookup and compliance, read this file when `classify` returns `undecided` or a non-binding answer. Binding lookup answers name the source to open. Design and critique stay in [SKILL.md](../SKILL.md#design-and-critique).
 
 ## Where the system lives
 
@@ -31,7 +31,7 @@ reference only for intent and rationale.
 | Icons, the two tiers, K2 | `lib/icon-tokens.ts`; `__tests__/icon-tier-scan.test.ts`, `__tests__/icon-tokens.test.ts`, `__tests__/openmoji-icon-map.test.ts` | `docs/design/icons.md` |
 | Motion, springs, reduced motion | `lib/motion-config.ts` | `docs/design/motion.md` |
 | Async loading, unavailable, degraded, action, field-error, and empty states | `lib/loading-tokens.ts`; `components/ui/shimmer-text.tsx`; `components/shared/RowSkeleton.tsx`; `components/ui/thoven-button.tsx`; the owning feature component listed below | `docs/design/async-states.md` |
-| Layout, viewport, spacing | *(no token module)* | `docs/design/layout.md` |
+| Layout, viewport, spacing | *(no token module)* | `design/layout.md` |
 | What a thing is **called** | *(no token module)* | frontend `design/lexicon/LEXICON.md` - LIVING, not frozen |
 | Does a component exist? | `components/ui/` (primitives only) | [Does it already exist](#does-it-already-exist) |
 
@@ -75,8 +75,7 @@ but it must not invent retry, reload, dismissal, or empty-state semantics.
    "Tier 2 prose, no test" are different levels of confidence and the asker needs to know which.
 4. **If Tier 0 and Tier 2 disagree, the doc is the bug** - report it as a defect, don't silently
    pick one.
-5. **If nothing binds it, say so.** An unlocked value is a decision that needs Andres and a
-   decision log, not a confident answer. Do not invent the ruling.
+5. **If nothing binds it, say so.** An exploratory choice may be proposed as provisional; a binding decision needs Andres and a decision log. Do not invent a lock.
 6. **A ruling made this session is not in a file yet.** Check what this session already ruled,
    then hand it to `workspace` `capture`.
 
@@ -137,9 +136,9 @@ Route to the narrow skill, not the broad one.
 
 | Doing | Use |
 |---|---|
-| Type ramp, font choice, spacing | `better-typography` |
+| Deeper typography craft, when needed | `better-typography` |
 | Colour, contrast, palette | `better-colors` |
-| Layout | `better-layout` |
+| Deeper layout craft, when needed | `better-layout` |
 | Accessibility | `better-accessibility` |
 | Interface patterns | `better-interface` |
 | Copy a person reads: UX copy, a page, an email | `thoven-branding`, which runs `better-writing` with `BRANDING.md` |
@@ -149,7 +148,7 @@ Route to the narrow skill, not the broad one.
 | **Building a new surface end to end** | **`building-components`** |
 | Building a prototype | `prototype` |
 | Motion: naming / finding / building / checking | `animation-vocabulary` · `find-animation-opportunities` · `improve-animations` · `review-animations` |
-| Critiquing a **whole surface** | `impeccable` - surface level only, never a single concern |
+| Whole-surface design and critique | [Thoven Designer](../SKILL.md#design-and-critique); use specialist skills to support a concern |
 
 ## Common mistakes
 
@@ -160,7 +159,7 @@ Route to the narrow skill, not the broad one.
 | Treating a grep miss as "nothing exists" | Declared locks are not greppable. Open `DESIGN.md` |
 | "No component exists" after grepping the pattern | Grep the *import* too - the real one is outnumbered |
 | Asserting a `className` in a test | Assert the compiled CSS / computed style |
-| Ruling on an unlocked value yourself | That is Andres's call plus a decision log |
+| Presenting an unlocked value as a ruling | Mark an exploratory choice provisional; a binding decision needs Andres and a decision log |
 | Restating a value into a spec | Point at the source. Restatement is how the 21 contradictions happened |
 | Ignoring a ruling made minutes ago because it is in no file | It binds now. Answer with it, then hand it to `workspace` `capture` |
 | Writing a token test for a value still in Design | The proto holds it until Build |

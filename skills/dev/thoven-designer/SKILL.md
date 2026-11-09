@@ -1,173 +1,25 @@
 ---
 name: thoven-designer
-description: Use when a question is about what Thoven's design system already says - which colour, type size, icon, radius, spacing or motion value is correct, whether a component already exists, whether a value is locked, or whether shipped code drifts from the system. Also use before hand-rolling any component, before quoting any design value in a spec, plan or review, and when drawing, critiquing or presenting a proto, board frame, Paper screen or design variant, so it is checked against the shipped component before Andres sees it.
+description: Design, critique, or polish a Thoven surface as a whole; find existing components and design-system decisions; or check implementation against those decisions.
 ---
 
 # Thoven Designer
 
-**This skill states no design values. It is the index to the files that do.**
+Design for the person's task and the whole rendered composition. Thoven's frontend `DESIGN.md` governs the house system; this skill points to its sources rather than restating design values. Token modules and tests prevail where documentation and implementation disagree. Check rulings made in this session too, and hand them to `workspace` `capture`.
 
-Any number in here would become a sixth contradicting document. The frontend already survived
-that: five design docs in a citation cycle, **21 contradictions**, all five teaching the
-*rejected* button hover. So this file carries **pointers and procedures only** - never a value.
+The named surface is the scope. Fit a component into its slot; resizing the shell, grid, or neighbouring cards needs Andres (`feature-ledger` rule 16). Before a variant of a shipped surface or attached mockup, a ticket on one, a system audit, or a proposed token or shared component, open the live route and global component, inspect shipped code, and list what already shipped. State what stays and what changes; propose the gap.
 
-- **`DESIGN.md` governs. This skill does not.**
-- **When a doc and a token module disagree, the doc is the bug.**
+For a screen that has never existed, design in Paper first and give it a polish round before lab or code, unless the task chooses a medium. Storyboard only the moving part. During design, “build” means Paper unless the turn names code.
 
-The surface you were named is the only one in scope. Fitting a component into its slot is the work.
-Resizing the shell, the grid, or the neighbouring cards is a new decision that needs Andres.
-`feature-ledger` **rule 16**.
+## Design and critique
 
-Before drawing a variant of a shipped surface or an attached mockup, fixing a ticket on one, auditing the design system, or proposing a token or shared component, open the live route and the global component, start from their shipped code, and list what already shipped. State in two lines what stays and what changes, and propose only the gap.
+1. Establish the task, audience, context, scope, and what must remain from shipped or approved work. Inspect the actual rendered surface or supplied artifact in context, including relevant states and responsive behavior. If it cannot be inspected, say what is missing and qualify the review. For house atmosphere read frontend `DESIGN.md` “Brand atmosphere” and `BRANDING.md`; for typography read `design/typography.md` and its named code owners. Use the current surface and its surrounding product as context.
+2. Judge the composition before individual tokens: what draws the eye first, whether that weight matches the task, and whether grouping, reading order, density, alignment and affordances make relationships and next actions clear. Assess visual balance and Thoven's warmth and clarity in context. Compare typography across its layout: headings against content, labels against values, and text against available space. Examine measure, wrapping, alignment, weight and proportion together; a valid type role can still read poorly in its setting. Consider long content and available widths where relevant.
+3. Explain each consequential observation as what is visible → what in the composition causes it → how it affects the person's task → a concrete change and tradeoff. Separate observation from inferred feeling. For example, if a secondary card title visually competes with the section heading, inspect their relative weight and surrounding space, then adjust their hierarchy using existing roles and check the result in the whole layout. A dense data view may benefit from separators; a selectable unit may need containment. Choose by the relationship the treatment communicates.
+4. Propose or make a coherent, scoped change, preserving what works. Inspect the result at the relevant size and states, including text growth and interaction where applicable. Report what changed, why it improves the task, what remains provisional, and what was actually inspected. A visual finding is not proven merely by a token match. Use specialist skills when a specific concern needs deeper work, while keeping ownership of the whole composition here.
 
-Design a screen that has never existed in Paper first, with one polish round there before any lab or code. Give only the moving part a storyboard proto. While designing, "build" means Paper unless the turn names code.
+When existing components cannot express the needed relationship, explain the gap and propose the missing composition or primitive through its purpose, visual role and states. Check what already exists before hand-rolling it. Use established roles, components and interaction states when resolving the design; consult [lookup and implementation compliance](references/implementation.md) for their sources and checks. An exploratory choice without a settled source may be proposed as provisional; do not present it as a lock. Changes to enforced standards, new hues or type roles, and scope outside the named surface need Andres's decision. When a proto and shipped work differ, distinguish enforced standards from emerging primitives; bring the conflict to Andres rather than treating every emerging choice as fixed.
 
-## Pitfalls
+## Lookup and compliance
 
-- Use the assigned colour step as is, without converting, re-measuring or comparing it to stock Tailwind; a suspected palette inconsistency goes to its own ticket. (LEARNINGS 2026-08-17)
-- In a visual pass take layout, copy and flow from the proto, every state from `docs/design/async-states.md` and the shipped primitives (a save or send action copies the Send notes button, see Standing checks), and every value from the nearest token; ask before adding a ramp role or hue, and keep every value visible to the scans. (LEARNINGS 2026-10-09, 2026-10-22)
-- When a decision and a proto or shipped component disagree, name the tier first; an enforced standard (the typefaces, anything with a token module and test) is a code defect, an emergent primitive means amend the decision, and Andres rules either way. (LEARNINGS 2026-08-28)
-- Give the ledge only to list rows that need action; every other row is flat, and each row shows the verb or the state pill, not both. A row's open action is a neutral 3D button, and the row highlight alone marks what is currently showing. (LEARNINGS 2026-08-11, 2026-10-22)
-- Render every stateful icon as a duo glyph through `components/ui/icon.tsx` with a hue, sitting straight on its row or panel with no tile behind it, and count two paths in the rendered SVG before calling the UI done. (LEARNINGS 2026-09-30, 2026-10-22)
-- Check every vertical gap, line height, wrap, truncation and punctuation mark against THV-1389, and every popup footer and overflow edge against THV-1353, before calling a surface done; metadata goes in labelled rows or separate lines, with no middle dots joining facts. (LEARNINGS 2026-09-25, 2026-10-22)
-- Check every motion finding against `design/buttons.md` and `lib/press-tokens.ts` before relaying it, say who decided what, and give each verifier brief's MOTION section the same read. (LEARNINGS 2026-10-09)
-- Write one-screen acceptance as "fits without scrolling at every desktop viewport" and shrink the content until it does; phones may scroll the page. (LEARNINGS 2026-09-28)
-- When adding to a version Andres liked, give the new element one of that version's existing text styles and its spacing, at a peer's weight rather than a hero's. (LEARNINGS 2026-10-10)
-- Show an option the user cannot take as unselectable, like other unavailable options; a race the UI cannot prevent reads as an ordinary "just taken" and the options reload. (LEARNINGS 2026-10-14)
-
-## Classify, then open one file
-
-Before reading the design system, run:
-
-```bash
-classify ~/thoven/agent-skills/evals/schemas/thoven-designer.json
-```
-
-stdin is the question. Done when a JSON record is in context.
-
-If `status` is `answered`, follow each binding answer. Do not open `DESIGN.md` or
-`docs/design/*.md` first.
-
-- `source` is binding → open the file `source` names (table below). That file is the answer.
-- `fork` = `route_to_skill` and binding → read [Route out](references/sources.md#route-out) and invoke that skill.
-- `fork` = `needs_andres` and binding → stop and ask. Do not invent a lock.
-
-If `fork` is `answer_here` and `source` is not binding, read [references/sources.md](references/sources.md) for the source only.
-
-If `status` is `undecided` or no answer binds, read [references/sources.md](references/sources.md)
-and decide from those tables.
-
-| `source` | Open |
-|---|---|
-| `colour_palette` | `tools/build-palette.mjs` and `__tests__/palette.test.ts` |
-| `type_ramp` | `app/globals.css` type roles; `__tests__/type-roles.test.ts` and `lib/cn-type-roles.test.ts`; role selection in `design/typography.md` |
-| `buttons` | `lib/live-lesson-tokens.ts` (`thovenButtonTokens`) and `components/ui/thoven-button.tsx` |
-| `icons` | `lib/icon-tokens.ts` |
-| `motion` | `lib/motion-config.ts` |
-| `layout` | `design/layout.md`; vertical rhythm and type rules: [Rulings held in Linear](#rulings-held-in-linear) |
-| `lexicon` | frontend `design/lexicon/LEXICON.md` |
-| `components_ui` | `components/ui/` then [Does it already exist](references/sources.md#does-it-already-exist) |
-| `stack_md` | frontend `design/STACK.md` rule 7 |
-| `design_md` | `DESIGN.md` |
-
-**A ruling made this session is not in a file yet.** Check what this session already ruled
-before answering from files, then hand it to `workspace` `capture`.
-
-## Text and neutral colour decisions
-
-For a content title or supporting text, read `design/typography.md` and its named CSS/test owners.
-A title's semantic heading level does not choose its display face. Use the existing content-title
-role and its family; do not introduce a new type framework or a one-off size. Pair supporting
-labels and values with `text-supporting` and an existing size role. Check the compiled result
-through `cn()` before changing a shared role. Essential names, dates, and instructions use readable
-supporting text; muted and disabled treatments require a state-specific reason.
-
-For neutral colours, follow `tools/build-palette.mjs`, `app/globals.css`, and `design/color.md`.
-Check contrast independently of hue. Neutral ledges and focus paint must follow their shared tokens.
-The named stage solid requires an approved consumer; adding it does not authorize replacing overlays.
-Keep page backgrounds separate from header styling. A bounded adoption lists its consumers and checks
-other affected pages without turning into a platform-wide migration.
-
-## Rulings held in Linear
-
-These rulings are settled but not yet in a token module or doc. Until the file in the last column
-carries them, the Linear issue is the source: open it and point at it, never restate it.
-
-| Concern | Source now | Lands in |
-|---|---|---|
-| Vertical rhythm and type rules: the rhythm rule for every gap and line height; wrapping, tracking, measure, punctuation, truncation | Linear THV-1389 | `design/layout.md` "Vertical rhythm" section and the type tests |
-| Popup footers and overflow edges: footer placement, phone layout, button height, the lone-button and two-3D-button cases, overflow fades instead of hairlines | Linear THV-1353 | `lib/dialog-tokens.ts` and `hooks/useScrollFadeMask.ts` |
-
-When drawing, critiquing or building a surface, measure every vertical gap and line height against
-THV-1389's rhythm rule, and every text block against its wrapping, tracking, measure, punctuation
-and truncation rules. Done when each gap is on the rhythm or listed as a finding with `file:line`.
-
-Every spacing or size value reaches code through `rem()` in `lib/density-tokens.ts`, so the 90%
-desktop scale (THV-1333) applies. A raw px vertical value is a defect.
-
-When the named file gains the ruling, repoint the row's source at that file and delete the row.
-
-After the file is open: say which lock tier the answer came from (token module plus test = enforced;
-`DESIGN.md` prose = declared). If the token module and a doc disagree, the doc is the bug.
-
-## After `components_ui` binds
-
-Ask `STACK.md` rule 7. Could a user name it? Point-and-name it and **build**. Cannot name it, would
-only notice when it is wrong, and **take**. Brand-meaningful and a hard state machine: machine from
-the library, face from us.
-
-## Auditing a component
-
-Given a file:
-
-1. Read the file first.
-2. For each concern actually present, open the binding source from the classify table above. Not the derived doc.
-3. Classify every finding. Hard violation (enforced lock). Drift (declared lock). Unruled (needs a decision, not a score).
-4. Run [Silent failures](#silent-failures).
-5. Give `file:line` and the source that makes it a finding.
-
-## Silent failures
-
-Verify the computed value, not the class list. `toHaveClass` passes while the colours fight.
-
-**A hue that is not a generated ramp paints stock Tailwind.** Check it is in `PALETTE` in
-`tools/build-palette.mjs` before using it.
-
-```bash
-grep -c "^\s*--color-<hue>-" app/globals.css
-```
-
-Zero means it is not ours.
-
-**Conclude "no CSS" only after a cold start with `.next` removed.** A long-running dev server
-serves a stale sheet. Next's webpack cache keys the Tailwind compile on the content of
-`app/globals.css`, so classes in a newly created file stay missing through a restart and a `touch`.
-Compare the stylesheet's byte length across edits.
-`document.styleSheets` gives false negatives. Fetch the href and search the escaped text.
-
-A deleted colour token makes `bg-x` a silent no-op. Pair any deletion with a repo-wide scan that
-has a floor on the file count.
-
-Comma-separated arbitrary values emit CSS. Tailwind rewrites every colour slot in a multi-layer
-`shadow-[…]` to `var(--tw-shadow-color, …)`, so one `shadow-<colour>` utility repaints every layer.
-
-## Reviewing in a browser
-
-The browser is Andres's, not a scratch surface.
-
-- Review at his viewport. Ask the size.
-- If you resize, zoom, or navigate, restore it before handing control back.
-- Name the route and the viewport when you hand over a URL.
-- Check the surface while the window changes size.
-
-## Standing checks
-
-- `components/ui/` holds primitives only.
-- Raw `<button>` only inside `components/ui/`.
-- No raw colours. `bg-blue-600`, hand-rolled shadows and hex literals route through tokens.
-- Focus rings are `:focus-visible` only.
-- The 44px tap minimum comes from the transparent hit-area pseudo-element in `design/buttons.md` (Hit target row). Never enlarge a component's visible size to meet it.
-- Every component covers loading, empty, error and disabled before it is called done.
-- An action that saves or sends runs ThovenButton's full state machine: `loading` with `loadingLabel`, `success` with `successLabel`, and its error as a `role="alert"` footer line. Copy `components/teacher/private-lessons/session/SendNotesButton.tsx` with `components/teacher/private-lessons/session/useSendNotes.ts`, `components/teacher/private-lessons/session/sendErrorCopy.ts` and the send footer in `components/teacher/private-lessons/session/SessionBody.tsx` (on the private-lessons-rework integration branch until it merges to `main`). A hand-drawn spinner, chip or error style is a defect.
-- Icons sit straight on their row or panel; a duo glyph needs no tile behind it. A row's open action is a neutral 3D button (`variant="neutral"`), never "Open ›" text with a chevron, and the row highlight alone marks what is currently showing.
-- Values found by feel go through `dialkit` and land as a token module with a test at **Build**, not during Design. While a surface is still being designed the value lives in the proto.
+For a component existence question, a specific design value or lock, a system audit, or implementation verification, follow [lookup and implementation compliance](references/implementation.md). It contains the classifier, source map, lock tiers, implementation pitfalls, and standing checks. Consult it as needed during design; a full token audit is a separate task from assessing the composition.
