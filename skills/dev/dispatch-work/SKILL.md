@@ -135,6 +135,8 @@ in Linear, then come back.
    Record the base SHA there (`git -C <path> rev-parse HEAD`). Review diffs start there. Never let
    herdr or Rex create the worktree.
 2. `scripts/dispatch spawn <project> THV-x --kind <K> --title "<title>" --cwd <path> --tier <n> --base <sha>`.
+   It re-applies the skill patches first (`enforcement/hooks/reapply-skill-patches.py`), so a pane never reads a
+   third-party skill a reinstall reverted, and says on stderr when that run is missing, failed or STALE.
    It fills the `{{…}}` fields and `THV-<id>`, and refuses a brief with a `{{…}}` or `<<…>>` slot
    left, or one that reads `{{SNAPSHOT}}` before the snapshot exists. When the agent fails to start,
    the pane stays registered, so STARTUP or GONE reports it. A ticket that spans both repos gets one pane: spawn in the frontend tree and add `--add-dir <backend tree>`. The pane opens

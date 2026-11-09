@@ -1,6 +1,7 @@
 import io
 import json
 import os
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -228,6 +229,9 @@ class Spawn(Harness):
             "claude", Launch("claude", name, ("claude", "-n", name, "--model", m or "opus"), prompt))).start()
         self.tree = tempfile.mkdtemp()
         self.addCleanup(lambda: os.rmdir(self.tree))
+        self.patches = os.path.join(self.home, "reapply-skill-patches.py")
+        open(self.patches, "w").close()
+        patch.object(cli, "SKILL_PATCH_SCRIPTS", (self.patches,)).start()
 
     def brief(self, text, name="THV-5.md"):
         os.makedirs(store.sub("proj", "briefs"), exist_ok=True)
@@ -297,6 +301,40 @@ class Spawn(Harness):
         self.assertIn("herdr agent start failed in block:new1: timed out", self.err.getvalue())
         self.assertIn("block:new1 stays registered as build-thv-5-2, so the tick raises STARTUP or GONE for it",
                       self.err.getvalue())
+
+    def test_spawn_reapplies_the_skill_patches_before_the_pane_opens(self):
+        self.snapshot()
+        self.brief("/poteto-mode feature THV-5 \"Cart\"\nbuild it\n")
+        self.assertEqual(self.spawn(), 0)
+        self.assertIn([sys.executable, self.patches], self.app.run.calls)
+        self.assertEqual(len(self.mux.spawned), 1)
+        self.assertEqual(self.err.getvalue(), "")
+
+    def test_a_refused_spawn_runs_no_patches(self):
+        self.brief("/poteto-mode feature THV-5\nRepo <<path>>\n")
+        self.assertEqual(self.spawn(), 3)
+        self.assertNotIn([sys.executable, self.patches], self.app.run.calls)
+
+    def test_a_missing_patch_script_is_said_and_the_pane_still_opens(self):
+        os.remove(self.patches)
+        self.snapshot()
+        self.brief("/poteto-mode feature THV-5 \"Cart\"\nbuild it\n")
+        self.assertEqual(self.spawn(), 0)
+        self.assertIn("no reapply-skill-patches.py found", self.err.getvalue())
+        self.assertEqual(len(self.mux.spawned), 1)
+
+    def test_a_failed_or_stale_patch_run_is_said(self):
+        self.snapshot()
+        self.brief("/poteto-mode feature THV-5 \"Cart\"\nbuild it\n")
+        self.app.run = FakeRunner({(sys.executable, self.patches): Result(1, "", "Traceback\nKeyError: x")})
+        self.assertEqual(self.spawn(), 0)
+        self.assertIn(f"{self.patches} exited 1", self.err.getvalue())
+        self.assertIn("KeyError: x", self.err.getvalue())
+        self.err.seek(0), self.err.truncate()
+        self.app.run = FakeRunner({(sys.executable, self.patches): Result(
+            0, "  STALE      .agents/skills: build-design/SKILL.md: | A raw value ...\n", "")})
+        self.assertEqual(self.spawn(), 0)
+        self.assertIn("skill patches: STALE      .agents/skills: build-design", self.err.getvalue())
 
     def test_legitimate_angle_brackets_pass_and_fields_fill(self):
         self.snapshot()

@@ -27,6 +27,10 @@ PLACEHOLDER_RE = re.compile(r"\{\{[^{}]*\}\}|<<[^<>\n]+>>")
 TICKET_SLOT = "THV-<id>"
 KEY_RE = re.compile(r"^[A-Za-z0-9+_-]{1,20}$")
 OPENER_RE = re.compile(r"^[/$][A-Za-z][\w:.-]*(\s|$)")
+# The script that puts Thoven's fixes back on third-party skills (enforcement/hooks). Claude runs it at SessionStart;
+# a Codex pane never does, so spawn runs it too and a reinstall mid-session cannot hand a pane unpatched skills.
+SKILL_PATCH_SCRIPTS = ("~/.claude/hooks/reapply-skill-patches.py",
+                       "~/thoven/agent-skills/enforcement/hooks/reapply-skill-patches.py")
 
 
 # ---------------------------------------------------------------- helpers with no I/O beyond their args
@@ -131,6 +135,23 @@ class App:
             print(f"dispatch: telemetry: {what}: {e!r}", file=self.err, flush=True)
             return default
 
+    def reapply_skill_patches(self) -> None:
+        """Re-apply the skill patches before a pane starts. Never blocks the spawn; every miss is said on stderr."""
+        script = next((p for p in map(os.path.expanduser, SKILL_PATCH_SCRIPTS) if os.path.isfile(p)), None)
+        if not script:
+            print("dispatch: skill patches: no reapply-skill-patches.py found (" + ", ".join(SKILL_PATCH_SCRIPTS)
+                  + "); the pane may read unpatched third-party skills", file=self.err, flush=True)
+            return
+        r = self.run([sys.executable, script], timeout=120)
+        if not r.ok:
+            tail = (r.err or r.out).strip().splitlines()[-3:]
+            print(f"dispatch: skill patches: {script} exited {r.rc}; the pane may read unpatched third-party skills"
+                  + "".join(f"\n  {line}" for line in tail), file=self.err, flush=True)
+            return
+        for line in r.out.splitlines():
+            if "STALE" in line:
+                print(f"dispatch: skill patches: {line.strip()}", file=self.err, flush=True)
+
     def mux(self, backend: str):
         return BACKENDS[backend](self.run)
 
@@ -212,6 +233,7 @@ class App:
         prompt = f"Invoke {skill} to start.\n\n" + text.split(skill, 1)[1].lstrip("\n")
         # The brief, snapshot and board sit outside the tree; without this a Claude pane asks to read its own brief.
         add_dirs = [d for d in (a.add_dir, store.project_dir(project)) if d]
+        self.reapply_skill_patches()
         cli, launch = build_launch(a.tier, a.cli, a.model, name, prompt, add_dirs)
         base = a.base or (lambda r: r.out.strip() if r.ok else "")(self.run(["git", "-C", cwd, "rev-parse", "HEAD"]))
         regs: list[Registration] = []
