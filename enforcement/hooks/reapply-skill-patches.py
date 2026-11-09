@@ -175,6 +175,74 @@ PATCHES = [
         "A mermaid diagram fits a flow or structure where the labels carry the meaning.",
         "A mermaid diagram fits a flow or structure where the labels carry the meaning. Mermaid does not render in the terminal, so put the series in one HTML page built with the **visual-artifacts** skill.",
     ),
+    # Paper is the build source (Andres, 2026-11-08): the design's own values win over the
+    # project's tokens, a shared component changes to fit the frame, and every difference
+    # left is a reported row or a question. The rule's home is andres-mode, Parity.
+    (
+        "build-design",
+        "description: Builds UI from a Figma file or a design image so it matches the design, using the project's existing tokens and components.",
+        "description: Builds UI from a Paper or Figma file or a design image so it matches the design, building each frame from its own values and changing the project's components where a frame needs it.",
+    ),
+    (
+        "build-design",
+        "A Figma link means the Figma MCP.",
+        "A Paper file or frame means the Paper MCP: `get_jsx` and `get_computed_styles` for each frame at each width, desktop and phone frames both, with `get_screenshot` beside them. Those values are exact. In Thoven, Paper is the build source and the design system is reference (`andres-mode`, Parity). A Figma link means the Figma MCP.",
+    ),
+    (
+        "build-design",
+        "| A raw value with no token | The nearest existing token, listed in the report as rounded |",
+        "| A raw value with no token | The design's own value, listed in the report |",
+    ),
+    (
+        "build-design",
+        "| A component instance | The project's component of that name, with the variant the design shows |",
+        "| A component instance | The project's component of that name, with the variant the design shows, changed (or its global component changed) where the frame needs it |",
+    ),
+    (
+        "build-design",
+        "| A component instance with no project equivalent | Plain markup in place, listed as a deviation, and ask whether a component should exist |",
+        "| A component instance with no project equivalent | A new component built with `building-components` when it repeats, plain markup when it does not, listed in the report |",
+    ),
+    (
+        "build-design",
+        "Never add a token, a component variant or an arbitrary value to hit a number. Stop and ask which way to go when rounding would visibly change the design. That means more than 2px on spacing or size, or a color landing on a different step.",
+        "Hit the design's number. Use a token where it equals the value and the design's value where none does; change the shared component when the frame needs it. A project scan or test that refuses a design value gets one allowlist entry naming the design node and the reason. A layout, spacing, height or colour difference you would leave is a question for the user before you build it.",
+    ),
+    (
+        "build-design",
+        "A state the file does not draw is not yours to design. Leave it to the existing component's default and list it as missing.",
+        "A state the file does not draw (loading, empty, error) takes the project's existing pattern for it, and is listed as built from the system. Widths between the frames reflow by component best practice; say how.",
+    ),
+    (
+        "build-design",
+        "This step is done when every remaining difference is a rounding or a question.",
+        "This step is done when every remaining difference is a row in the report with its reason, or a question.",
+    ),
+    (
+        "build-design",
+        "| Title size | 15px | `text-sm`, 14px | Rounded to token |",
+        "| Title size | 15px | `text-[15px]` | Design value, no 15px token |",
+    ),
+    (
+        "build-design",
+        "Then list, one line each, and omit a list with nothing in it:",
+        "Each row that is not Matches says why: not built yet, a spec rule, a production need, or a fix to an unpolished frame (a wrong icon or chevron). A visual verdict of MATCH or NO per state comes from someone who did not build it.\n\nThen list, one line each, and omit a list with nothing in it:",
+    ),
+    (
+        "build-design",
+        "| An arbitrary utility such as `w-[343px]` or a raw hex in the diff | Map it to a token, or ask if rounding shows |",
+        "| A value rounded to a token the design does not use | Build the design's value; use a token only where it equals it |",
+    ),
+    (
+        "build-design",
+        "| A loading or error branch the design never drew | Remove it, keep the default and list it as missing |",
+        "| A loading or error branch the design never drew, styled your own way | Build it from the project's existing pattern and list it |",
+    ),
+    (
+        "building-components",
+        "- Setting up design tokens and theming systems\n",
+        "- Setting up design tokens and theming systems\n- Changing a shared component because a Paper or Figma frame needs a value it cannot express: change the component to the frame's values, never bend the frame to the component, and keep its other callers working\n",
+    ),
 ]
 
 # Routers whose named skills must stay model-invocable. Each entry is a skill
