@@ -12,6 +12,13 @@ New entries on top. Each one: what happened, why, what changed.
 **What happened.** Andres corrected the same things across many days: full verify and CI on each ticket PR ("why are these small changes running full CI"), remote-verify per ticket, a reran PR in another session ("thats ours, just a different session"), a script where the Render or Neon CLI or plugin was the tool, a placeholder screen where a Paper frame existed, and a status line in place of an answer ("who's going to get this review?").
 **Why.** Each rule was already written, but it sat in the middle of the file or in a section agents read only for their own task. The CI rule also conflicted across `thoven-law.md`, `verify/SKILL.md` and this file.
 **What changed.** A Hard rules section opens the file. The cadence bullet, the verify skill's item 8 and the law's merge table say no CI on a ticket PR into an integration branch; CI and remote-verify run when the integration branch lands in `main`. Dispatch no longer waits for a load check (Andres, 2026-11-09). Replies and Delegation gained the answer-first, evidence, vendor-CLI and other-session rules.
+## 2026-11-09 — an integration branch tries one case the ticket did not name
+
+> session · 2026-11-09 · verification transcripts · ruling · applied · seen 1
+
+**What happened.** Andres asked for a check that tries the product, not a review of the diff. On integration branches the standing bar was the file's own test, typecheck, lint, and a reading of the spec.
+**Why.** That bar stays green when the product mishandles a case the ticket never named.
+**What changed.** Check your own work. On an integration branch, try one case the ticket did not name, on the real route or the running API. Name the case and what happened. If the run did not happen, say so. `qa-flow` is the procedure when the case needs the whole path.
 
 ---
 
@@ -85,7 +92,7 @@ New entries on top. Each one: what happened, why, what changed.
 
 **What happened.** A Codex session installed a third-party skill with `-a codex`, so it was missing from Claude Code (01a1a3ed).
 **Why.** The session used its own agent flag and not the install form the README already gives.
-**What changed.** Logged. Install with `npx skills add <repo> -g -y -a claude-code -a cursor`. Promote at seen 2.
+**What changed.** Promoted 2026-11-09 into Delegation. Install with `npx skills add <repo> -g -y -a claude-code -a cursor`.
 
 ## 2026-11-05 — after rotating a shared credential, check every consumer you named
 
@@ -93,7 +100,7 @@ New entries on top. Each one: what happened, why, what changed.
 
 **What happened.** After rotating the Vercel token the agent did not check the lazyops collector, a consumer it had named itself (96659353).
 **Why.** The rotation was treated as done once the new token was saved.
-**What changed.** Logged. After rotating a shared credential, verify every consumer you named. Promote at seen 2.
+**What changed.** Promoted 2026-11-09 into Check your own work. After rotating a shared credential, check every consumer you named.
 
 ## 2026-11-05 — a status line says what was built, and end-to-end means the real flow
 
@@ -101,7 +108,7 @@ New entries on top. Each one: what happened, why, what changed.
 
 **What happened.** A demo harness on mock data, in a route other than the spec-settled popup, was reported as an end-to-end run (489a6eae).
 **Why.** The status line named the result and not what produced it.
-**What changed.** Logged. A status line says what was built (real route, prototype on fake data, Paper design), and "end-to-end" means the real product in the spec-settled flow. Promote at seen 2.
+**What changed.** Promoted 2026-11-09 into Replies. A status line names what was built. Say whether it is the real route, a prototype on fake data, or a Paper design. End-to-end means the real product in the flow the spec settled.
 
 ## 2026-11-05 — finished work opens itself, hard-reloaded
 
@@ -197,7 +204,7 @@ New entries on top. Each one: what happened, why, what changed.
 
 **What happened.** Andres: "When I mean by journey I mean the actual product flow" and asked for columns as sections and rows as states.
 **Why.** No board layout was written down.
-**What changed.** Logged. Promote to the Records board line at seen 2: columns are the journey's steps, rows are the states, and every frame name says the screen and the state.
+**What changed.** Promoted 2026-11-09 into Records. Columns are the journey's steps. Rows are the states. Every frame name says the screen and the state.
 
 ## 2026-10-31 — push a work-holding branch the same turn
 
@@ -293,7 +300,7 @@ In migration session 01a17981, Andres corrected the proposed transfer ceremony: 
 
 **What happened.** The ask tool came back unanswered twice. Andres: "Ask me the questions again", and "Ask queask qution again its just my comptuer is slow".
 **Why.** A blank answer read as a decision to skip, not as a dropped prompt on a slow machine.
-**What changed.** Logged only: re-ask a blank or dismissed ask-tool result at once, in plain text with the same options.
+**What changed.** Promoted 2026-11-09 into Replies. A blank or dismissed ask-tool result is asked again at once, in plain text, with the same options.
 
 ## 2026-10-23 — product grills lose altitude and hide their assumptions
 
