@@ -25,18 +25,21 @@ classify ~/.agents/skills/thoven-designer/evals/classifier.json
 
 stdin is the question. Done when a JSON record is in context.
 
-If `status` is `answered`, follow each binding answer. Do not open `DESIGN.md` or
-`docs/design/*.md` first.
+Resolve the task path before using the source suggestion. If `status` is `answered`
+and `fork` is binding:
 
-- `source` is binding → open the file `source` names (table below). That file is the answer.
 - `fork` = `design_here` and binding → return to [Design and critique](../SKILL.md#design-and-critique).
 - `fork` = `route_to_skill` and binding → read [Route out](sources.md#route-out) and invoke that skill.
 - `fork` = `needs_andres` and binding → stop and ask. Do not invent a lock.
+- `fork` = `answer_here` and binding → use `source`: open its mapped owner when binding,
+  otherwise read [sources.md](sources.md) to locate the owner. For a lookup, read the owning
+  code and tests before derived prose.
 
-If `fork` is `answer_here` and `source` is not binding, read [sources.md](sources.md) for the source only.
+The classifier's `source` answer applies only to the lookup path. Design and critique choose
+their references through the main workflow, including visual parity when an approved design applies.
 
-If `status` is `undecided` or no answer binds, read [sources.md](sources.md)
-and decide from those tables.
+If `status` is `undecided` or `fork` is non-binding, resolve the task from the request and
+the main workflow; use [sources.md](sources.md) for lookup owners and specialist routing.
 
 | `source` | Open |
 |---|---|

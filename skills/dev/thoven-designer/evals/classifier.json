@@ -6,15 +6,15 @@
       "type": "choice",
       "instructions": "Choose the primary path for this Thoven design request.",
       "criteria": {
-        "answer_here": "Look up a specific design-system value, lock, existing component, or implementation drift. Follow the lookup and compliance reference.",
+        "answer_here": "Look up a specific design-system value, lock, existing component, or code-level implementation compliance. Follow the lookup and compliance reference. Visual comparison with a Paper or approved design reference belongs to design_here.",
         "route_to_skill": "A specialist concern needs deeper work, such as accessibility, copy, art, or motion craft. Whole-surface design and typography or layout in context stay here; specialist skills can support them.",
         "needs_andres": "A requested change would alter an enforced standard, introduce a hue or type role, or resize a neighbouring surface (feature-ledger rule 16). An exploratory unlocked choice can be proposed provisionally.",
-        "design_here": "Design, critique, or polish a Thoven surface as a composition, including typography and layout in context. Follow the design and critique workflow in SKILL.md."
+        "design_here": "Design, critique, or polish a Thoven surface as a composition, including typography and layout in context, or compare the rendered implementation visually with a Paper or approved design reference. Follow the design and critique workflow in SKILL.md."
       }
     },
     "source": {
       "type": "choice",
-      "instructions": "Which one file should be opened? A colour, type, icon, or token question opens that token file. Do not pick a derived docs/design/*.md file when a token module exists. An existence question (does this component already exist) is components_ui.",
+      "instructions": "For a design-system lookup, which source should be opened? A colour, type, icon, or token question opens its owning code and tests before derived prose. An existence question (does this component already exist) is components_ui. This source suggestion is used only when fork is answer_here; the other paths choose their own references.",
       "criteria": {
         "colour_palette": "The question is which colour, hue, palette, or status colour to use. Open tools/build-palette.mjs (PALETTE) and __tests__/palette.test.ts.",
         "type_ramp": "Type ramp, fonts, weights. Open app/globals.css type roles, __tests__/type-roles.test.ts and lib/cn-type-roles.test.ts; role selection in design/typography.md.",

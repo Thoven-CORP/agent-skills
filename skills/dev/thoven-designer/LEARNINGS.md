@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-08 — compare Paper with the rendered implementation and explain the result
+
+**What happened.** Andres approved clearer task routing, composition criteria and output, then asked for a connection between a Paper reference and visual parity on the implemented surface. He wants discrepancies in visual language and composition explained alongside design-system compliance.
+
+**Why.** The critique path had no explicit Paper comparison procedure or concise output contract. A live classifier probe also selected both `design_here` and a binding typography source, while the lookup reference told the agent to follow both answers.
+
+**What changed.** Task routing now precedes source selection, with source suggestions used only for lookups. The main critique path states the intended reading order, points to visual references, and specifies an outcome-focused answer. A conditional visual-parity reference compares the approved frame with the real route, separates fidelity from design quality, and explains approved changes, drift, responsive proposals and system conflicts. This is a user-directed revision; instruction and classifier checks do not establish visual quality or live Paper-to-product parity.
+
 ## 2026-11-08 — design the composition in context
 
 **What happened.** Andres said the skill finds components well, but its token and colour checking does not sufficiently address visual language, typography, layout and polish. Those checks are useful at different times.
