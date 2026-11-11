@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Blocks vitest --exclude, git clean/reset --hard, stash/checkout/restore that could discard other sessions' work,
 # and a forced worktree remove or branch -D of work that is not on origin.
+# Also blocks an agent starting or rerunning CI (gh workflow run, gh run rerun, the matching gh api calls).
 # One guard for every harness. Claude and Codex send tool_input.command and read the default
 # output. Cursor's beforeShellExecution sends a top-level command and reads {"permission":"deny"}.
 # Devin sends no cwd (it sets DEVIN_PROJECT_DIR and runs the hook in the project) and blocks only
@@ -537,6 +538,22 @@ for entry in "${subcommands[@]}"; do
   # A leading ( opens a subshell: `(cd repo && git branch -D x)`.
   if [ "${w0#(}" = "cd" ] && [ -n "$w1" ]; then
     work_cwd="$(resolve_in "$work_cwd" "$w1")"
+  fi
+
+  # CI runs only in the merge queue and the nightly, and only Andres starts a run by hand (THV-1751:
+  # manual runs cost 4,016 minutes and reruns 1,022 in the eight days to Nov 11).
+  if [ "${w0#(}" = "gh" ]; then
+    ci_msg="CI runs only in the merge queue and the nightly, so an agent never starts or reruns a run. Read the failed run with gh run view <id> --log-failed, fix it and push. Ask Andres if a manual run is needed."
+    case "$w1 ${words[2]:-}" in
+      "workflow run"|"run rerun") deny "$ci_msg" ;;
+    esac
+    if [ "$w1" = "api" ]; then
+      for aw in "${words[@]:2}"; do
+        case "$aw" in
+          */dispatches|*/rerun|*/rerun-failed-jobs) deny "$ci_msg" ;;
+        esac
+      done
+    fi
   fi
 
   # Matched at command position, so a doc or script that merely names these stays allowed.

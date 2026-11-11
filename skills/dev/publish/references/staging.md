@@ -27,17 +27,15 @@ Run each step in the repo it names. Steps 1 to 4 check each repo that changed. S
 
    Done when both commands exit 0 and you hold one full SHA per repo.
 
-2. **CI is green on that SHA.** A push to `main` runs no CI, so a merge commit has none until you dispatch it. In each repo that changed, check for a run, and dispatch one on `main` when there is none; the dispatched run tests `main`'s tip, which is step 1's SHA:
+2. **CI is green on that SHA.** The merge queue's `CI` run tests the exact commit that lands on `main`, so a merge point carries its run on a `gh-readonly-queue/main/...` branch (queue run 42998627687 tested `4516c526e`, the commit #518 put on `main`). Read it in each repo that changed:
 
    ```bash
-   gh run list --workflow CI --branch main --commit <sha> --json status,conclusion,url
-   gh workflow run ci.yml --ref main    # only when the list above is empty
-   gh run list --workflow CI --branch main --commit <sha> --json status,conclusion,url
+   gh run list --workflow CI --commit <sha> --json event,status,conclusion,url
    ```
 
-   Done when a run shows `completed` and `success`. An empty list right after the dispatch means the run has not registered yet: wait 30 seconds and re-run the list, for up to 15 minutes. An empty list is never a failure and never green. `in_progress` means wait and re-run the command. `failure` stops the path.
+   Done when a `merge_group` run shows `completed` and `success`. `in_progress` means wait and re-run the command. `failure` stops the path.
 
-   **Stop: CI never started.** Only when the list is still empty 15 minutes after the dispatch, for example when `main` moved past the SHA before the dispatch ran. Tell Andres. The SHA is not staging-green without CI.
+   **Stop: no run on the SHA.** A commit that landed without a queue run has no CI. An agent never dispatches or reruns CI, and the Bash guard refuses it. Tell Andres the SHA and that it has no run. The SHA is not staging-green without CI.
 
 3. **Backend: Render runs the SHA.** Service IDs: the Render runbook's services table.
 

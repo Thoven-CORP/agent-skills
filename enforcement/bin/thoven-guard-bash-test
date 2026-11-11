@@ -328,5 +328,20 @@ for profile in mini missing unparseable; do
 done
 rm -f "$PROFILE"
 
+
+# CI runs only in the merge queue and the nightly (THV-1751). An agent never starts or reruns it.
+for c in "gh workflow run ci.yml -R Thoven-CORP/frontend-remote" "gh workflow run ci.yml" "gh run rerun 123 --failed" \
+  "gh run rerun" "cd ../backend && gh workflow run nightly.yml --ref main" \
+  "gh api repos/Thoven-CORP/backend-remote/actions/workflows/ci.yml/dispatches -X POST -f ref=main" \
+  "gh api -X POST repos/Thoven-CORP/frontend-remote/actions/runs/123/rerun-failed-jobs" \
+  "gh api --method POST /repos/Thoven-CORP/frontend-remote/actions/runs/123/rerun" \
+  "bash -c 'gh run rerun 9'"; do
+  expect "ci: $c is denied" "$(decision claude "$c" "$WT")" "deny"
+done
+for c in "gh run list -L 5" "gh run view 123 --log-failed" "gh run watch 123" "gh workflow list" \
+  "gh api repos/Thoven-CORP/frontend-remote/actions/runs/123" "echo gh workflow run ci.yml" "gh pr checks 654"; do
+  expect "ci: $c is allowed" "$(decision claude "$c" "$WT")" "allow"
+done
+
 [ "$failed" -eq 0 ] || exit 1
 echo "all passed"
