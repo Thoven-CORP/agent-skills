@@ -129,7 +129,7 @@ speculative inventory. Hunt for the [junk patterns](#junk-patterns).
 
 ## Retention bar
 
-Where a kept test runs is a separate question from whether it is kept. Each repo's `TESTING.md`, "What CI runs", holds the policy (Andres, 2026-11-11, THV-1751): admin screens, `/dev` and lab routes, design scans and token locks stay out of CI by path, and an admin route keeps only its `*.access.test.tsx` there. Do not delete a good test to get it out of CI; its path decides the lane.
+Where a kept test runs is a separate question from whether it is kept. Each repo's `TESTING.md`, "What CI runs", holds the policy (Andres, 2026-11-11, THV-1751): admin screens, `/dev` and lab routes, design scans and token locks stay out of CI by path, and admin keeps only its `*.access.test.*` (a non-admin is refused) and `*.write.test.*` (an admin write that moves money or consent) files there. Do not delete a good test to get it out of CI; its path decides the lane.
 
 Keep a test when it independently enforces a public API, the FE↔BE contract
 (`contract/`, OpenAPI, a feature's `decisions/api.md`), config, migration,
