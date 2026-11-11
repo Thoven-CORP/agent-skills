@@ -49,11 +49,12 @@ a rebase ate a day of the onboarding prototype.)
 - Open a PR into `main` and push to it while the session still has known work for that ticket; arm
   auto-merge with `gh pr merge --auto` once its PR review passes. No PR waits for a go
   from Andres, UI included: he reviews screens on staging (Andres, 2026-11-05). `main` runs GitHub's
-  merge queue (THV-1707): a push to the PR runs cheap affected tests (frontend unit tests, backend
-  path-mapped specs), auto-merge queues the PR once that `CI` is green, and the queue's own `CI`
-  run, on the commit that will land, runs the broad tests and merges it with a merge commit. Green
-  PR checks are not a merge: a queue failure takes the PR out of the queue unmerged, and `main` does
-  not move. A PR into an integration branch has no queue and runs no `CI`: a ticket PR there merges
+  merge queue (THV-1707): a push to the PR runs lint, types and the contract checks, plus on the
+  backend the specs its changed files map to by path, and no other test (THV-1751), auto-merge
+  queues the PR once that `CI` is green, and the queue's own `CI` run, on the commit that will
+  land, runs the broad tests and merges it with a merge commit. Green PR checks are not a merge: a
+  queue failure takes the PR out of the queue unmerged, and `main` does not move. A PR into an
+  integration branch has no queue and starts no `CI` run: a ticket PR there merges
   on its targeted test lines and the verifier's pass (Andres, 2026-11-08). `CI` runs once, when the
   integration branch lands in `main`, through that PR's merge queue. A nightly or manual full run
   audits what selection skips.
