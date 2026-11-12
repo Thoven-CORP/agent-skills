@@ -1,15 +1,8 @@
 # Handoff across sessions or machines
 
-Before handing off, read the current Linear issue and comments, parent decisions, Project brief,
-relevant linked documents and latest Project Update. Carry their governing content into the brief:
-source title and URL/id, retrieval time, relevant decision ids and their actual meaning, unresolved
-questions, and any required source that could not be read. A URL or fetched issue list alone is not
-proof of reading. Keep the packet relevant to the assigned task; do not copy the whole workspace.
+Before handing off, read the current issue and its comments, the Project brief, the Spec and Architecture sections the task touches, and the latest Project Update. In the packet, name each source with its link and the time you read it, and name any required source you could not read. The receiver reads the sources themselves: the packet carries links, not summaries.
 
-The receiver reads that content and states the governing decisions before editing. Re-read live
-sources when available; if a required source is unavailable and absent from the packet, report
-`NEEDS_CONTEXT`. Do not substitute an old local document silently. A packet records what was read
-at its retrieval time; it cannot prove that later rulings do not exist.
+The receiver re-reads live sources before editing. A required source that is unavailable and absent from the packet is `NEEDS_CONTEXT`; an old local document never stands in for it.
 
 Include the execution details:
 

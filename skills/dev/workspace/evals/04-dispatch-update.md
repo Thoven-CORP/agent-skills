@@ -8,7 +8,7 @@
 
 Fixtures: THV-1038 reads In Progress. THV-1004 already reads In Progress. THV-1045's report is the
 newest REPORT entry on the `lessons` board: `dispatch board lessons --ticket THV-1045` prints
-`== … THV-1045 REPORT DONE_WITH_CONCERNS from build-thv-1045` and a body with seven Acceptance rows.
+`== … THV-1045 REPORT DONE_WITH_CONCERNS from build-thv-1045` and a body with seven Exit criteria rows.
 
 ## MUST
 
@@ -17,7 +17,7 @@ newest REPORT entry on the `lessons` board: `dispatch board lessons --ticket THV
       #138 may close without moving them.
 - [ ] THV-1004: skips the move and says it already reads In Progress.
 - [ ] THV-1045: reads the REPORT entry with `dispatch board`, then posts one comment holding the
-      status line and the Acceptance rows only, with no state move.
+      status line and the Exit criteria rows only, with no state move.
 - [ ] Replies with one read-back line per issue, then stops.
 
 ## Automatic fail

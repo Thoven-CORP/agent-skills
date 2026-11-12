@@ -59,4 +59,4 @@ description: Use when Andres asks to publish, deploy, release, promote or hotfix
 - An unreachable Andres gives no go. Keep the report current and wait.
 - Every check and every stop has one item, with the same name, in Andres's tick list: `docs/Platform/projects/platform-upgrade-and-hosting/PUBLISH_CHECKLIST.md` in the frontend repo. From the backend repo, read it with `git -C ~/thoven/frontend show origin/main:docs/Platform/projects/platform-upgrade-and-hosting/PUBLISH_CHECKLIST.md`. Tick each item in your report as it passes.
 
-Branch and worktree rules: `~/thoven/agent-skills/enforcement/rules/thoven-law.md`.
+Branch and worktree rules: `~/thoven/agent-skills/enforcement/rules/branches-and-prs.md`.

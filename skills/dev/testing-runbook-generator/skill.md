@@ -17,7 +17,7 @@ Generate comprehensive testing documentation for new features by reading the PRD
 - Moving from implementation → testing phase
 
 ❌ **Don't use when:**
-- Spec doesn't exist yet (use `/technical-spec-generator` first)
+- The Project's Spec doesn't exist yet (use `/grill-with-docs` first)
 - Simple bug fix (doesn't need full testing workflow)
 - Feature already has testing docs
 
@@ -194,7 +194,7 @@ Update page properties:
 ## Integration with Other Skills
 
 **Workflow:**
-1. `/technical-spec-generator` → Creates feature spec
+1. `/grill-with-docs` and `/architect` → Write the Project's Spec and Architecture
 2. [Implementation happens]
 3. `/testing-runbook-generator` → Creates testing docs ← YOU ARE HERE
 4. QA executes using generated docs

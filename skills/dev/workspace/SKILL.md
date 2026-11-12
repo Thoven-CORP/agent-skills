@@ -13,8 +13,8 @@ description: >-
 
 `$workspace` is a pure reader until the user approves a disclosed write set. A dispatch event, a
 confirmed grill ruling, or a confirmed product brief approves its row under Fixed writes. It owns Project
-orientation, Linear lifecycle, capture, close, and the derived Map. A log entry is a Project Update
-or an issue comment. It does not perform semantic feature reconciliation.
+orientation, Linear lifecycle, capture, close, and the derived Map. Its Activity is Project Updates
+and issue comments. It does not perform semantic feature reconciliation.
 
 ## Pitfalls
 
@@ -40,17 +40,49 @@ to post the first Update, use a known resolved lead or report the gap; do not in
 Local receipts retain their distinct evidence role; `$feature-ledger` keeps artifact and semantic
 reconciliation ownership.
 
+## Writing to Linear
+
+Each kind of writing has one home. Write it there; everywhere else links to it.
+
+| Kind | Home | Read by |
+|---|---|---|
+| Current truth: the goal and why, what each screen shows and does, its rules and design source | The Project's Spec document, from the Spec template | Builders, reviewers, Andres |
+| How it is built: shape, units, data, payload fields, modules by path, the seam between the repos | The Project's Architecture document, from the Architecture template | Builders, reviewers |
+| History: the question asked, his answer verbatim, options turned down and why, the chat it came from | The Project's Log document, from the Log template | Main and grills, before asking or ruling |
+| One unit of work | The issue, from the Build ticket template (Work item for other work). It is the builder's brief | The builder |
+| Purpose, scope, approach, sources of truth | The Project description, through `$linear-project` | Everyone |
+| Progress, risk, handoff, next step | A Project Update with health | Andres |
+| A status event | An issue comment | |
+| Design exploration | tldraw or Paper. The accepted choice becomes a Spec edit | |
+
+The connector cannot apply a template. To make a Spec, Architecture or Log, read its template with `get_template`, save the content as the new document's first text, and fill every bracketed line. A template edit never changes a document already made.
+
+### How to write a Project document
+
+- **One page, one job.** The Spec states what is true now. The Architecture states where it lives in the code. The Log explains why, in his words. A ticket says what to build and when it is done. A sentence of another kind moves to its own page.
+- **One decision, one line, one home.** Every other page links to that line.
+- **Every rule carries its reason** after "because". A reason several rules share is written once, on the area's "Why" line.
+- **Write what looking cannot tell.** The frame carries copy, layout, colour and motion. The code carries what it already does.
+- **Plain sentences.** Present tense. One thought per sentence. Say who does what. Write the real screen, file or field name, and keep one name per thing.
+
+| Page | Limit |
+|---|---|
+| Spec | 3,000 words |
+| Architecture | 3,000 words |
+| Log | 120 words an entry |
+| Build ticket | 400 words, 3 to 10 exit lines |
+
+- **At the limit, consolidate, then add.** Merge the lines that state one decision. Cut what a frame or the code shows. Move reasoning to the Log. Then write the new line, and say in one line what you merged. A page that still cannot fit is two Projects or two milestones, and that is a question for Andres.
+- The size counter reports each page's count after a save.
+
 ## Ruling
 
-When Andres rules in the session, or a grill or spec session ends, write that ruling before the next task. The home and the entry shape are [WORKFLOW.md](references/WORKFLOW.md) §5.
+When Andres rules, or a grill or spec session ends, write the ruling before the next task. This pass does not wait for capture, close, or log.
 
-1. Amend the governing decision document. One entry per choice. A ruling that supersedes an earlier entry amends that entry.
-2. Say the id back in one line.
-3. Read the entry back. The id in the reply is the id in the document.
-
-This pass does not wait for capture, close, or log.
-
-Write only what Andres ruled. An agent's proposal becomes a ruling when he answers it as its own question, with its cost or design change stated. A bundle "yes" or "run it" approves the write set as disclosed; it does not rule on a cost the proposal left unstated or on a change to a surface the spec already decided. Ask each of those as its own question before writing or building it.
+1. Edit the Spec or Architecture line the ruling changes, in place, so it states the new current truth. Delete the sentences it replaces; Linear's version history keeps the old text. A rule that came from chat uses his words and links its Log entry. His name sits only on his quoted words, as the law's "Records and sources" has it.
+2. Add one Log entry in the Log template's shape: Asked, Andres (verbatim), Changed, Turned down, Reading only when needed, and Chat, which says where the exchange is. An entry you write on your own says Asked "unprompted" and has no Andres line.
+3. Write no more than his words cover. A part of the question his answer skipped stays open: it goes under the page's Open questions with its default, and the next question asks it.
+4. Read back the edited line and the Log entry, with the size counter's line for each page when the counter prints one. Say the edited heading in one line.
 
 ## Recipe
 
@@ -62,86 +94,9 @@ Write only what Andres ruled. An agent's proposal becomes a ruling when he answe
    when none of those files exists. Use `$linear-project` for genuinely missing or changed Project
    setup, not to manufacture local prerequisites. An inaccessible required Linear source is
    `UNKNOWN`; name that source and continue only work that does not depend on it.
-3. Fetch the Project's issues yourself, through the **Linear MCP connector**, then feed them to
-   `map.js`. `map.js` never reaches for a Linear API key on its own.
-
-   - Discover the available authorized Linear connector and verify it with a read. Use its
-     `list_issues` and, when needed, `list_projects` tools; prefixes vary by client. A working
-     read establishes the connector to use, rather than a historical tool-name allowlist.
-   - Write the response to a file in the shape below, then:
-
-   ```bash
-   node ~/.agents/skills/workspace/tools/map.js \
-     --project '<Linear Project name>' \
-     --linear-json /tmp/linear-<project>.json
-   ```
-
-   `--stdin` takes the same JSON on standard input. Add `--project-dir` only for an existing,
-   relevant local archive. With no Linear input, the snapshot renders git and any optional local
-   context with `ADVISORY linear-input`; its completion claim is `UNKNOWN`. The snapshot judges
-   mechanical fields, not whether you read the brief or linked document bodies. `--linear-api` is an
-   opt-in path that reads with `LINEAR_API_KEY` or `~/.linear-api-key`. The key works (checked
-   2026-10-03), and `tools/set-status.js` uses it. `--feature` and `--family` remain supported
-   for the legacy tree views.
-
-   **The `--linear-json` shape.** One object with `issues` and optional `projects`. The
-   `mcp__claude_ai_Linear__list_issues` response drops in unchanged — save its `issues` array as-is.
-   The raw GraphQL envelope (`{"data": {"issues": {"nodes": [...]}}}`) is also accepted. Ask the
-   connector for these `fields` so nothing the snapshot needs is missing:
-
-   ```
-   ["title", "description", "status", "statusType", "project", "projectMilestone", "assignee", "updatedAt"]
-   ```
-
-   The canonical record, showing every field the snapshot reads:
-
-   ```json
-   {
-     "issues": [
-       {
-         "identifier": "THV-318",
-         "title": "Bind homework success to requested identity",
-         "description": "Why this exists.\nWrites to: this ticket",
-         "updatedAt": "2026-08-30T18:04:11.000Z",
-         "state": { "type": "started", "name": "In Progress" },
-         "project": { "name": "Shared: Identity & Access" },
-         "projectMilestone": { "name": "Build" },
-         "assignee": { "name": "Andres Martinez" }
-       }
-     ],
-     "projects": [{ "name": "Shared: Identity & Access", "status": { "name": "In Progress" } }]
-   }
-   ```
-
-   Every field takes three spellings — GraphQL, MCP, or flat — so you never have to remap:
-
-   | Snapshot field | GraphQL node | MCP record | Flat |
-   |---|---|---|---|
-   | identifier | `identifier` | `id` | `identifier` |
-   | state name | `state.name` | `status` | `state` |
-   | state type | `state.type` | `statusType` | `stateType` |
-   | project | `project.name` | `project` | `project` |
-   | milestone | `projectMilestone.name` | `projectMilestone.name` | `milestone` |
-   | assignee | `assignee.name` | `assignee` | `assignee` |
-
-   Rules the parser enforces:
-
-   - `project` must equal `--project` (case-insensitive, exact string) or the issue is not in the
-     ledger.
-   - The state type is the lifecycle glyph and sort key: `triage` · `backlog` · `unstarted` ·
-     `started` · `completed` · `canceled`. Omit it and the issue still lists, sorted last, with a
-     `·` glyph.
-   - The state *name* is what the session gate reads; it must be the Linear state name
-     (`In Progress`, `Ready`, …), not the type.
-   - `Writes to: <path>` is parsed out of `description` — first match, own line, verbatim. Linear
-     descriptions usually wrap the path in backticks, and the parsed value keeps them; strip before
-     using the string as a path.
-   - For `session-preflight.js`, `Writes to: this ticket` resolves to the supplied issue. For a
-     Linear issue/document URL, set `writesToAccessible: true` only after reading that record;
-     `writesToExists` is reserved for required local paths. A URL alone is not confirmed access.
-   - Milestone and assignee are both read by the session gate; missing either is `BLOCKED`.
-   - Status-only moves go through `node tools/set-status.js "<state name>" THV-1 [THV-2 ...]`,
-     which prints one line per issue. The Linear MCP `save_issue` echoes the full issue body.
+3. Fetch the Project's issues through the Linear MCP connector that answers a read, save the
+   response, and run `map.js` on it. The command, the input shape and the parser rules are in
+   [`references/map-input.md`](references/map-input.md); read it before the first run in a session.
 4. Account for every `BLOCKED`, `CONTRADICTED`, and `UNKNOWN` finding. Linear data that was never
    supplied is `ADVISORY linear-input` — fetch it through the MCP connector and re-run. A Linear
    fetch that was attempted and failed is `UNKNOWN`. Neither is ever inferred from local prose.
@@ -150,10 +105,10 @@ Write only what Andres ruled. An agent's proposal becomes a ruling when he answe
    issue or skill invocation. Then run one mem0 search (`search_memories`, query: the Project name
    and the next issue id). Print what comes back under **Recalled**, after the snapshot. It is
    recall, not record: it never changes the fingerprint or a finding. A recalled ruling with no
-   matching decision entry is missing. Step 6 puts it in the write set.
+   Log entry is missing. Step 6 puts it in the write set.
 6. For capture, close, or log, mine first, then show one exact Project-scoped write set. List every
    ruling and status change in this session, including a recalled ruling from step 5. Mark each one
-   written, amended, missing, or contradicted against the home in WORKFLOW.md §5. Each missing one
+   written, amended, missing, or contradicted against the Spec and the Log. Each missing one
    is a write-set entry. A ruling already written by the Ruling section stays marked written. Apply
    only after approval, serially. Re-run the snapshot and report its new fingerprint and the
    before/after open-issue count per Project.
@@ -166,12 +121,12 @@ Write only what Andres ruled. An agent's proposal becomes a ruling when he answe
 |---|---|
 | `started` | `node tools/set-status.js "In Progress" THV-n`, plus its parent when the parent reads Todo or Backlog. Fires for main-session work with Andres too, not only a dispatched pane |
 | `pr <number>` | `set-status.js "Ready" THV-n`, then one comment: `PR #<number> opened` |
-| `report <STATUS>` | One comment: the report's status line and its Acceptance rows, nothing else. Take them from the newest REPORT entry that `~/.agents/skills/dispatch-work/scripts/dispatch board <project> --ticket THV-n` prints |
+| `report <STATUS>` | One comment: the report's status line and its Exit criteria rows, nothing else. Take them from the newest REPORT entry that `~/.agents/skills/dispatch-work/scripts/dispatch board <project> --ticket THV-n` prints |
 | `merged <number>` | `set-status.js "Done" THV-n`, then one comment: `Merged #<number>`. List the open tickets the merge may close; moving them needs the Recipe |
-| `grill` | Amend the governing decision document (Ruling, steps 1–3). Comment on THV-n with the decision ids. |
-| `brief` | One decision entry per settled choice. A Project Update links those ids. The slot map stays on the design board the entry points at. |
+| `grill` | Ruling, steps 1–4. Comment on THV-n with links to the edited headings. |
+| `brief` | Ruling, steps 1–4, for each settled choice. A Project Update links the edited headings. The slot map stays on the design board the Spec section links. |
 
-A `started`, `pr`, `report`, or `merged` row that also changes a ruling amends the decision entry and posts a Project Update in the WORKFLOW.md §5 shape. Each surface links the decision id.
+A `started`, `pr`, `report`, or `merged` row that also carries a ruling runs Ruling steps 1–4 and posts a Project Update that links the edited headings.
 
 When the issue is already at or past the target state, report that state and leave it. Reply with one line per issue, the state `set-status.js` read back, and stop.
 
@@ -180,8 +135,7 @@ When the issue is already at or past the target state, report that state and lea
 The main session has read the snapshot fingerprint and can account for every mechanical blocker
 and unknown. A write operation is complete only when the approved writes are applied and the
 post-write snapshot has been read. A dispatch update is complete when every issue in it has its
-read-back line. A content write is complete when a read-back of each written surface shows each
-mined ruling in place. End the reply with one line naming the surfaces touched and the surfaces
+read-back line. A content write is complete when a read-back shows each mined ruling stated in its Spec or Architecture section and its Log entry holding his words. End the reply with one line naming the surfaces touched and the surfaces
 checked and left unchanged. A new snapshot fingerprint does not prove the text of a document, a
 description, a comment, or a Project Update.
 

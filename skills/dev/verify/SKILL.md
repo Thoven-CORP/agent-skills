@@ -1,11 +1,11 @@
 ---
 name: verify
-description: Use while building and before claiming done. Verify the change you made, when you made it, with the smallest check that can fail it. Selects checks by what the diff touches; runs other people's tests once, not per hunk.
+description: Use while building and before claiming done. The builder's checks are each exit line's proof, run once, plus lint and type-check on the files it touched; wider suites run when the branch lands.
 ---
 
 # Verify
 
-Shape of the check follows the shape of the change. Lint on the changed files and a cached typecheck are seconds; other people's tests are not. The design scans are the check most often missed, so they run on any component diff.
+Done is every exit line on the ticket shown true on the build (workspace `WORKFLOW.md`, "Exit criteria"). The builder shows it with each exit line's proof, run once, plus lint and type-check on the files it touched. Wider suites run when the branch lands, or when Andres dispatches them. This file is the one home of that cadence; every other file that names it points here.
 
 ## Pitfalls
 
@@ -23,30 +23,22 @@ Apply before baseline/treatment captures, temporary checkouts, dependency instal
 - Retain revisions, commands, verdicts, relevant failure and success logs, and selected screenshots or recordings. Reuse captures. Save full traces, heap dumps and other large diagnostics only for a named unresolved claim, accounting for their size in the budget. Keep useful evidence until the user has seen it.
 - On success, failure or cancellation, stop your own processes and remove owned temporary checkouts, dependencies and build caches, including ordinary `.next/cache`. Inspect dirty and untracked paths, preserve needed probes and evidence, then use normal `git worktree remove` for temporary worktrees. Never force removal or delete shared, unpushed or unowned work. After interruption, the resuming parent completes cleanup before allocating again. Report retained evidence size and any leftover scratch with its owner and reason. Scratch cleanup does not wait for feature merge or evidence review.
 
-## While editing
+## The builder's checks
 
-1. `pnpm run type-check` and oxlint on your changed files (whole-repo lint is CI's). Backend: `bin/rubocop -- <changed files>`.
-2. The file's own test, red before the change and green after, on the behaviour the ticket names. Backend: the mapped spec file, plus the request spec of any controller touched.
-3. A component, token module or `globals.css` touched: `pnpm exec vitest run __tests__/*-scan.test.ts __tests__/*-tokens.test.ts __tests__/ledge-sweep.test.ts __tests__/type-roles.test.ts __tests__/palette.test.ts` (9 s). A scan that refuses a value the Paper frame shows gets one allowlist entry naming the Paper node and the reason; the value, the count and any ratchet baseline stay as they are (`andres-mode`, Parity: Paper is the build source).
+1. Lint and type-check on the files you touched: `pnpm run type-check` and oxlint on the changed files (whole-repo lint is CI's). Backend: `bin/rubocop -- <changed files>`.
+2. Each exit line's proof, once: the check the line names after `Proof:`. A test proof is red before the change and green after.
+3. Where a proof is the design capture, make it once, as frontend `TESTING.md` "Mini parity pilot" runs it, since CI has none (frontend #575). What it covers and how it is judged: the law's Design parity.
+4. Paste each proof and check in the one report: the command, its host and its pass line. A failure is fixed or raised to the user by name, never described away.
 
-## Before DONE
+A commit that stages a component, route, stylesheet, token module or scan baseline runs the design scans itself (frontend `lefthook.yml`, `design-rules`). A scan that refuses a value the Paper frame shows is handled as the law's Design parity says ("The design system is reference, not hard code").
 
-4. Callers: `pnpm run type-check` green, and the direct importers' test files once, by path (`pnpm exec vitest run <files>`). Never `vitest related` on a source file: it follows every import, and a shared component pulls most of the suite. Backend: the mapped specs plus the request spec of any controller touched. When the diff changes copy a user reads, `rg` the old sentence across `spec/` and `__tests__/` in both repos and run every file it hits; a reworded email broke three specs the mapping did not select (2026-11-05).
-5. A UI ticket on a surface with a Paper or board frame: run the parity capture yourself before DONE, since CI has had no Parity check since frontend #575. Follow frontend `TESTING.md`, "Verification gates", **Mini parity pilot**: `parity-run.mjs --print-prefixes --base <PR base>` lists the touched prefixes, then the capture runs behind `thoven-load-gate`. Cover every surface the ticket names, sibling rows included, and add a named prefix the diff did not touch. The runner shoots each state at its frame's width and at 390. Open `grid.html` beside each state's Paper frame, desktop and phone. Fix a small difference you caused and list it; a layout, height, spacing, veil or colour difference is asked before it is built. Put the grid and the Discrepancies table (`dispatch-work` brief.md, REPORT, Parity) in the DONE report. The grid shows what was built: the MATCH or NO per state and width comes from a judge who did not build the screen, the verifier pane or a fresh subagent given the frames and the grid. Each state in `scripts/verify/parity-surfaces.json` names its board frame `file` and that frame's desktop `width`; a state with no frame or no width is refused. 390 is shot for every state. Where Paper has a phone frame, that frame is the phone target; a surface a phone reaches with none gets its phone frame asked of main before the phone layout is built, and its 390 shot is only a compatibility check. An unmapped surface gets a 390 capture of the commit before your change, kept beside the after capture; then add the spec and its frames with their widths before DONE, or say SKIPPED and why. `bin/verify --full` runs the same capture, only when the user asks.
-6. Paste each command you ran and its pass line in the DONE report. That is the evidence. A failure is fixed or raised to the user by name, never described away. Builds, the whole suite, e2e suites and repeat sweeps belong in CI; the explicit local exceptions above and below must also satisfy the verification disk budget.
+## Wider runs: when the branch lands, or when Andres dispatches them
 
-## Full verify: on request or at the parent
-
+5. Callers: the direct importers' test files once, by path (`pnpm exec vitest run <files>`). Never `vitest related` on a source file: it follows every import, and a shared component pulls most of the suite. Backend: the mapped specs plus the request spec of any controller touched. When the diff changes copy a user reads, `rg` the old sentence across `spec/` and `__tests__/` in both repos and run every file it hits; a reworded email broke three specs the mapping did not select (2026-11-05).
+6. **On an integration branch, try one case the ticket did not name.** Run it on the route a user reaches, or against the running API. Pick an empty state, a wrong id, an expired record, the other audience, or a refused action. The file's own test, typecheck, lint, a design scan, and a reading of the diff do not count. Use `qa-flow` when the case needs the whole path. The report names the case and what happened. If the run did not happen, the report says the behaviour check did not run.
 7. `bin/verify --base <integration branch>` runs only when the user asks for it, or once at the parent, before the integration branch's PR into `main`. Mutation runs on GitHub, on PRs into `main` that change logic; locally `--mutation` runs only when the user asks for it. On the mini, `bin/verify` takes its own load-gate slot from `~/.config/thoven/host.json`, so run it as is and do not wrap it in `thoven-load-gate` yourself. From the MacBook, `remote-verify --base <integration branch>` (in `enforcement/bin`) is the only way to run `bin/verify`: it runs the same verify on the mini for HEAD plus your uncommitted and untracked files, and needs HEAD pushed. The Bash guard denies a local `bin/verify` on a host whose profile says `laptop`; when the mini is unreachable, report verify blocked. Paste its `THOVEN_VERIFY` block verbatim, `THOVEN_VERIFY_BEGIN` through `THOVEN_VERIFY_END`. `concurrency: 1` in the block means the machine was busy. A FAIL row is fixed or raised to the user by name.
-
-## Before merge
-
-8. A PR into an integration branch runs no CI. CI runs when the integration branch lands in `main`: lint, types and contract checks on each push to that PR (plus, on the backend, the specs its files map to by path), then the merge queue's broad run. Nothing reruns on push or after a fix round: a fix round runs the test files covering what it changed. (Andres, 2026-11-08)
+8. Nothing reruns on push or after a fix round: a fix round runs the proofs of the findings it fixes. What CI runs, and when: `TESTING.md`, "What CI runs".
 
 ## Keep it honest, once a sprint
 
-Run `/maintain-verification-skill` against this file: time each check on this machine, list the defect classes that slipped since the last pass (review findings, Andres's corrections), and move checks between the while-editing and before-DONE tiers by those numbers. Under 10 s moves into editing; a check that caught nothing in a sprint moves out of before-DONE. Last measured 2026-10-20 (`audits/2026-10-18-skill-retro/before-after.html`).
-
-## Shared with andres-mode ("Check your own work")
-
-Spec line per behaviour, real route at the frame's width and 390 beside the frame, shared components and tokens, show before asking. That list is the reviewer's first two sections too.
+Run `/maintain-verification-skill` against this file: time each check on this machine, list the defect classes that slipped since the last pass (review findings, Andres's corrections), and move checks between the builder's checks and the wider runs by those numbers. Under 10 s moves into the builder's checks; a check that caught nothing in a sprint moves out to the wider runs. Last measured 2026-10-20 (`audits/2026-10-18-skill-retro/before-after.html`).

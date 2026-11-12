@@ -134,7 +134,7 @@ Shipped means Linear Done and the named paths exist at the watermark SHAs. Ready
 1. Read the ping. Open the cited ledger rows yourself.
 2. Recap in chat: the surface, the floor, what he is ruling. Tag the pane with
    its Linear milestone (`PRD + Architecture` · `Design` · `Build` · `Review`).
-3. **Requirements pass** when a pane claims done: ticket `Done when:` vs named
+3. **Requirements pass** when a pane claims done: ticket `Exit criteria` vs named
    files vs quoted ledger rows. Report misses from this desk.
 4. Propose workspace (`log` / Now) and feature-ledger writes as a block,
    including a red session gate if one is red. Apply after go.

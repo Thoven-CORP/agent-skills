@@ -14,7 +14,7 @@ Local project files are optional context, never a startup prerequisite.
 1. **Executed evidence:** git objects, working-tree state, production imports and mounts, test or QA
    receipts tied to the current fingerprint, and live Linear fields.
 2. **Binding authority:** locked token modules and tests, current components for their own surface,
-   current accepted design artifacts, explicit human rulings, and Project decision rows.
+   current accepted design artifacts, his quoted rulings, and the Project's Spec and Architecture documents.
 3. **Planning records:** PRD, plans, Project `STATE.md`, `CONTINUE_HERE.md`, issue descriptions, and
    related-session receipts.
 4. **Compatibility and advisory context:** audience-level state, old handoffs, prose estimates, and
@@ -22,7 +22,7 @@ Local project files are optional context, never a startup prerequisite.
 
 Within execution claims, prefer direct current evidence over historical descriptions. Within
 requirements, use the current accepted Linear ruling and its named design source. A disagreement
-is `CONTRADICTED`, not silently reconciled. Record supersession in the governing Linear decision.
+is `CONTRADICTED`, not silently reconciled. A ruling edits the Spec or Architecture section in place (`$workspace`, Ruling).
 A mechanical snapshot's `VERIFIED` is limited to its checked fields; it does not establish that
 documents were read, acceptance criteria passed, or the feature is complete.
 

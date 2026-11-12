@@ -32,7 +32,8 @@
 kind = "claude"
 label = "Claude"
 skill_prefix = "/"
-launch = "--model {model} --effort {effort} --permission-mode auto"
+# Builder profile: what a pane starts without (main's memory, hooks, plugins, connectors, agents).
+launch = "--model {model} --effort {effort} --permission-mode auto --settings ~/thoven/agent-skills/enforcement/config/builder-settings.json"
 efforts = ["low", "medium", "high", "xhigh", "max"]
 models = ["claude-fable-5-1", "claude-opus-5-5", "claude-sonnet-5-5", "claude-sonnet-5", "claude-haiku-4-5-20251001"]
 

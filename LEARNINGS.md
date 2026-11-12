@@ -17,6 +17,15 @@ the corpus.
 
 ---
 
+## 2026-11-12 — The instructions rewrite: three documents, the ticket as the brief, one review
+
+**What happened.** The credential close-out and the Music Passport both missed the product with green checks. A Passport-sized project wrote about 131,800 words of documents, a sent brief ran about 2,250 words, and 43 of 46 builders loaded main's working-style skill.
+**Why.** The skills told agents to write history into the final answer, restate the source at every hand-over, and run the same check in several rounds.
+**What changed.** Linear has Spec, Architecture and Log document templates and a Build ticket template. workspace, andres-mode, dispatch-work, verify, the law and the rule files were rewritten to match. Full record: `releases/2026-11-12-instructions-rewrite.md`.
+**Still open.** Nothing was proven before landing, by Andres's choice. The release file lists what is untried and what was left open.
+
+---
+
 ## 2026-11-08 — Paper is the build source; the design system is reference
 
 **What happened.** The Music Passport build invented layouts: builders took values from the nearest token, squeezed shared components into old slots, skipped phone frames, and reported "N/N captured" as parity. The production audit (`~/.thoven-artifacts/dev/music-passport-build-audit/production-audit/skills.md`, 36 rows) traced it to skill text. Andres: "Thoven Designer in our design system is a source of reference not a hard code ... you have to turn it into a production component"; "If global components need to change, they need to change"; "It wasn't 'change tokens and untokenify it.'"

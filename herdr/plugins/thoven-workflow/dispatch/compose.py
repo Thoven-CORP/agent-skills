@@ -111,7 +111,7 @@ def project_for(main, workspace):
 
 
 def standing_ask_report(ticket, fields):
-    """STANDING to the end of brief.md's block (ASK, HANDOFF, REPORT), filled as `dispatch spawn` fills it."""
+    """STANDING to the end of brief.md's block (ASK, REPORT), filled as `dispatch spawn` fills it."""
     try:
         block = brief_block()
     except OSError:
@@ -152,15 +152,14 @@ def brief(cli, ctx):
     label_cmd = (f'$DISPATCH label --backend herdr {ctx.get("pane") or "$HERDR_PANE_ID"} <Kind> "<ticket title>" {t}'
                  f' --tab   ({kinds})')
     # First line carries the task: Devin drops a prompt whose first line is only a slash command.
-    head = f"{prefix}poteto-mode {t}: read the ticket and all its comments in Linear, pick a mode, label your tab, tell main, then work."
+    head = f"{prefix}poteto-mode {t}: read the ticket in Linear, pick a mode, label your tab, tell main, then work."
     body = f"""
 You are {fields["AGENT_NAME"]}. Main is the Claude session {fields["MAIN_SESSION"]}. Project board: {fields["BOARD"]}.
 DISPATCH = {script}
 
 TICKET     {t}  {ctx.get('url') or 'https://linear.app/thoven/issue/' + t}
 WHERE      Repo {ctx['path']} ({ctx['repo']}), branch {ctx['branch']}, base {ctx['base']}.{where_other}
-FIRST      Read {t} in full with the Linear tools, then read ALL of its comments, oldest to
-           newest. A ruling in a comment binds and beats the description.
+FIRST      Read {t} in Linear. Its description is your spec; its comments are history.
 MODE       Choose one:
              plan    a multi-phase plan, when the ticket is too big for one session or undecided
              build   the feature, bug-fix or refactoring playbook, when the spec is decided

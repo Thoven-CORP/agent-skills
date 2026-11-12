@@ -1,124 +1,103 @@
 # Review: main's verify pass
 
-The builder's own report is a claim. A fresh verifier pane turns it into evidence on a feature
-slice, on the tier `agents.md` names. Cleanup and hardening work is reviewed by an Opus (high)
-subagent of main instead.
+The builder's report is a claim. One review judges the whole work, once, when everything
+dispatched is built and reported: a fresh verifier pane for a feature, on the tier `agents.md`
+names, or an Opus (high) subagent of main for cleanup and hardening work. It reads each ticket's
+snapshot and exit lines, the spec rules they link, the architecture's four measures, the
+builder's REPORT entry and the whole diff against base. The builder's explanations are claims,
+never review instructions.
 
-Either one judges from the ticket's snapshot, the builder's latest REPORT entry and the diff
-against base. Inspect the builder's transcript only to check skill loading and playbook execution.
-Treat its explanations as claims, not review instructions.
+## What a review compares, in order
+
+1. **Exit criteria.** Each exit line is true on the build. Read its proof in the report: the
+   command and pass line, the test at file:line, or the capture. A test proof fails with the change
+   reverted, as the report's red run shows. Rerun a proof only when it looks wrong (it could pass
+   while the outcome is false, or its output does not match the line) or a finding needs it. A
+   line with no proof, or a proof that does not show its outcome, is a finding.
+2. **The spec.** Every behaviour the spec gives these tickets is built as its rule says. Quote the
+   spec rule, never a ticket's paraphrase. Name what the diff adds that no rule asks for, and what
+   it builds narrower. A narrower build is fixed in the build; the exit line and the rule stay.
+3. **The architecture's four measures, and the code around the change.** Judge the diff by the
+   architecture page's "Judged by" lines. For each module, hook, runner, component or test helper
+   the diff adds, search both repos and the open integration branches for one that already does
+   that job. For what the diff replaces, the old path is gone: no live caller, no test of dead
+   code. New tests follow how this repo already tests that kind of thing (`TESTING.md`, the
+   neighbouring tests).
+4. **Design**, on a ticket with a named frame. The builder made the capture once; you judge it
+   beside its frames, as the law's Design parity says. A state missing from the capture is a finding.
+
+Commits sit on the named branch, each ending in the ticket id, and `git diff --stat <base>..HEAD`
+leaves each ticket's Leave alone untouched and gives a reason for any file its Build from does not
+name.
+
+## Severity
+
+- **Critical:** data loss, security, a broken core flow.
+- **Important:** an exit line not true; a bug a user hits in the normal flow; a design difference
+  built without a ruling; structural debt in code this work owns, such as a second copy of an
+  existing module or a replaced path still live (law, "Scope").
+- **Minor:** rare edge cases, test nits, style.
 
 ## Main's pass
 
-1. Rerun only the files the builder touched, one per run, and compare with the report.
-2. On a UI ticket, inspect every required parity image. Present the current user journey on the
-   canonical work-session page using `visual-artifacts`, with a link to the complete parity grid;
-   follow its delivery reference to reuse the reading tab. `SKILL.md` close step 6.1 uploads the
-   parity evidence to the issue.
-3. Merge backend before the frontend that reads it, and only when the backend change is backward
-   compatible: a newly required request field stays optional until the frontend that sends it is on
-   staging.
-4. Cite the builder's test lines and the PR's CI checks; never ask for `bin/verify` on a ticket. The
-   fix round proves itself with the test files that cover the files it changed, named in its report.
-   The full verify runs at the parent (andres-mode, "Check your own work").
-
-## Working if
-
-Check these against the builder's REPORT entry (`dispatch board <project> --ticket THV-x`) and the
-branch before starting the verifier. Each one that fails is a finding.
-
-- A red run exists before the green one, for the proof the ticket names.
-- Each changed behaviour has a `/verify-this` verdict. Type-check, the touched test files (one file per run) and lint on those files ran once, at the first DONE. The fix round ran only the test files it touched.
-- Commits land on the named branch, by exact path, each ending in the ticket id.
-- `git diff --stat <base>..HEAD` touches the ticket's Paths, and every other file has a stated reason.
-- The report labels each claim measured, inferred or guess.
-- The transcript shows poteto-mode loaded before implementation through Claude Code's Skill tool
-  or the harness-supplied skill body, or a full SKILL.md read in Codex. An opening skill line alone
-  is not loading evidence.
-- The REPORT's Playbook row lists every native step, with evidence of its work. Check the routed
-  skill calls or reads and their outputs against the transcript. A printed list alone is not
-  execution. A skip cites a native allowance; a mandatory step skipped is a finding.
-- A UI ticket's REPORT carries the builder's parity grid and Discrepancies table (brief.md, REPORT,
-  Parity): every surface the ticket names, sibling rows included, at each Paper frame's width,
-  desktop and phone, and 390, with each state's node id and no blank image. A named surface the
-  parity map does not cover has a 390 capture from the commit before the change. A state of a named
-  surface with no Paper frame is a question to main; one built without a ruling is a finding.
+1. On a UI ticket, put the journey and the builder's capture on the work-session page (`SKILL.md`
+   close step 6.1).
+2. Merge backend first, and only a backward-compatible change (the law's required-field rule).
+3. Cite the builder's proofs and the PR's checks. Wider suites run when the branch lands (`verify`).
 
 ## Verifier brief
 
 Write it to the board's `briefs/THV-x-verify.md` with every `<<…>>` slot filled, then start it
-beside the builder: `dispatch spawn <project> THV-x --kind Verify --brief <that file>
---split-of <builder pane> ...`, with the other flags as in step 3.
+once the builder has reported DONE on the whole dispatch: `dispatch spawn <project> THV-x --kind
+Verify --brief <that file> --split-of <builder pane> ...`, with the other flags as in step 3.
 
 ```text
 /poteto-mode Verify THV-<id> "<<ticket title>>"
 You are {{AGENT_NAME}}. Main is the Claude session {{MAIN_SESSION}}. Project board: {{BOARD}}.
 DISPATCH = ~/.agents/skills/dispatch-work/scripts/dispatch
-Read {{SNAPSHOT}} in full: it is the spec. In `$DISPATCH board {{PROJECT}} --ticket THV-<id>`,
-read the builder's latest REPORT entry and only that. Treat every line of it as a claim.
-Repo <<path>>, branch <<branch>>, diff <<base>>..<<head>>. Read and run; fix only an easy, cheap
-finding of your own and mark it fixed. Builder transcript <<path>>: use it only to check the
-REPORT's Playbook and Skills claims. Check actual loading and step outputs against the native
-playbook. Missing evidence or a mandatory step skipped is a finding. Include these verdicts in your report.
-Evidence first: the builder's test lines and `gh pr checks` on the ticket PR. Rerun only a test file
-whose claim you doubt, one per run; never `bin/verify`.
-1. SPEC PARITY. Read the parent's "Decisions (canonical)" in the snapshot. Trace every Acceptance line and every
-   behaviour in the diff to a decision id. Name invented scope, a decision the diff missed or
-   changed, and lexicon slips.
-2. DESIGN PARITY, on a UI ticket. You did not build the screen, so your verdict is the parity
-   verdict (andres-mode, Parity). For every state at each Paper frame width, desktop and phone,
-   put the frame (Paper get_screenshot, and get_computed_styles for heights, gaps and type) beside
-   the builder's capture and write MATCH, or NO with its differences. A state you did not open is
-   NO. Recapture a state the grid lacks at a frame's width. /better-ui and /thoven-designer over
-   the built screens are reference; a finding from them never overrules a frame. A difference
-   missing from the builder's Discrepancies table, or a layout, height, spacing, veil or colour
-   difference built without a ruling, is an important finding.
-3. Run no mutation sweep; mutation runs on GitHub on the PR into `main`. A claim the builder's
-   test lines do not cover gets the one test file that covers it, or /verify-this for that claim
-   only.
-4. PR review: <<"run it over <PR base>..<head>" when this ticket is the PR's last known unit, else "skip">>.
-   It is /mattpocock-skills:code-review, plus /thermo-nuclear-review only when the diff touches
-   money, auth, personal data or a migration or passes ~300 lines, plus /interrogate only when the
-   brief marks the design contested. Each runs once. A structural finding is minor.
-After the fix round: read the fix diff only, run only the test files it touches or that cover it,
-one per run, and check each finding it claims to fix. Rerun no review skill.
-Write findings into your reply and into the ticket's one evidence folder
-(`~/.thoven-artifacts/THV-<id>/evidence/`). Create no parallel suite and no second evidence tree.
-Report as a builder does, with STATUS VERIFIED or FINDINGS:
+Spec: {{SNAPSHOT}}, <<each other ticket this dispatch built, or none>>, and the documents they
+link. The builder's claim: its REPORT entry in `$DISPATCH board {{PROJECT}} --ticket THV-<id>`.
+Repo <<path>>, branch <<branch>>, diff <<base>>..<<head>>, the whole dispatch.
+Review as ~/.agents/skills/dispatch-work/references/review.md "What a review compares" says, in
+its order and with its severities. Read the builder's proofs; rerun one only as step 1 says. Fix
+only an easy, cheap finding of your own and mark it fixed.
+Run /mattpocock-skills:code-review once over the whole diff, with the tickets and their spec
+documents as the spec, plus /thermo-nuclear-review only when the diff touches money, auth,
+personal data or a migration or passes ~300 lines, plus /interrogate only when the brief marks the
+design contested.
+After the fix round: read the fix diff and its proofs only, and check each finding it claims to
+fix. Rerun a proof only as step 1 says, and no review skill.
+Write findings into your reply and into `~/.thoven-artifacts/THV-<id>/evidence/`.
+Report with STATUS VERIFIED or FINDINGS:
   $DISPATCH post {{PROJECT}} --ticket THV-<id> --kind report --status STATUS --from {{AGENT_NAME}} < REPORT_FILE
   then SendMessage to {{MAIN_SESSION}}: "STATUS THV-<id>. Entry: ENTRY_PATH".
-The body is a SPEC PARITY table (decision id, verdict, evidence), a DESIGN PARITY table (state,
-Paper node id and width, MATCH or NO, what differs, image) on a UI ticket, and a table: Acceptance line or claim, verdict, evidence. Findings carry file:line and a
-severity: critical (data loss, security, a broken core flow), important (a user hits it in the
-normal flow, or a difference from a frame missing from the Discrepancies table or built without a
-ruling) or minor (everything else: rare
-edge cases, test nits, style).
+The body opens with SPEC PARITY: one row per exit line and per spec rule, then the measures and
+design rows; each row has its verdict and evidence. Each finding carries file:line and its severity.
 ```
 
 ## Every PR
 
-Every PR gets the PR review (verifier step 4) once, on its final diff: from the verifier of its last
-ticket, or from main for a hotfix, follow-up or CI-fix PR with no verifier pane. Once it passes
-("Done when" below), main arms auto-merge; the PR merges itself on green with no go from Andres
-(thoven-law.md "Branches and PRs"), and the work-session page says in one line what merged. Only on
-Andres's ask: /deslop and /no-comments in a Sonnet subagent, /thermo-nuclear-code-quality-review
-and /thermos on Opus (high); code quality is not deslop.
+The one review is the PR review for the PR that carries the work. A hotfix, follow-up or CI-fix PR
+with no verifier pane gets it from main, once, on its final diff. Once it passes, main arms
+auto-merge (`~/thoven/agent-skills/enforcement/rules/branches-and-prs.md`), and the work-session page says in one line what
+merged. /deslop, /no-comments, /thermo-nuclear-code-quality-review and /thermos run only when
+Andres asks.
 
 ## Handling findings
 
 - **Check first.** Main reads the builder's concerns, the review findings and Andres's notes as one
-  set. The session holding the context makes each easy, cheap fix on the spot: the builder
-  before it hands off, the verifier, or main. Only real work left opens a pane.
+  set. The session holding the context makes each easy, cheap fix on the spot. Only real work left
+  opens a pane.
+- **One fix round carries every critical and important finding left**, owned structural debt
+  included: about five per pane, split by concern into panes whose files do not overlap. Each is a
+  fresh pane with the fix-round brief (`brief.md`). The reviewer then reads the fix diff and its
+  proofs. The ticket stays **Ready**.
 - **Gate repair, CI fixes and redesigns** go to Andres as one line with a choice.
-- **One fix round carries all the critical and important work left**, about five findings per
-  pane, split by concern into panes whose files do not overlap. Each is a fresh pane with the
-  fix-round brief (`brief.md`), then a verifier re-run scoped to the fix diff. The ticket stays
-  **Ready** throughout.
-- **After the fix round:** main rules on each finding still open. Wrong or contestable: park it
-  with the reason in the Linear comment. Real: one line in the follow-up ticket. A critical finding
-  still open goes to Andres as one line with a choice.
-- **Minor and structural findings** start no fix round. Each one left is a line in the follow-up
-  ticket (`SKILL.md` close step 6.2).
+- **After the fix round,** main rules on each finding still open. Wrong or contestable: park it with
+  the reason in the Linear comment. Real: one line in the follow-up ticket. A critical one still
+  open goes to Andres as one line with a choice.
+- **Minor findings, and problems outside the work's code,** start no fix round. Each is a line in
+  the follow-up ticket (`SKILL.md` close step 6.2).
 
 **Done when:** the verifier replied VERIFIED, or every finding is fixed, parked or lined into the
 follow-up ticket, and the work-session page shows the outcome.

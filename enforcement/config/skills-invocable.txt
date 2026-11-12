@@ -69,7 +69,6 @@ sol-loop
 state-machine
 takeover
 test-master
-to-spec
 to-tickets
 triage
 typescript-best-practices

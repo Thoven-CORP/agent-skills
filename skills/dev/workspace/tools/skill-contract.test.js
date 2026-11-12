@@ -27,9 +27,11 @@ test("a confirmed grill or product brief is a fixed write in the same turn", () 
   assert.match(skill, /Apply it in the same turn/);
 });
 
-test("one owner per fact, and the write tools include documents and Project Updates", () => {
-  assert.match(workflow, /\| Decision \| The Project's governing decision document/);
-  assert.match(workflow, /\| Handoff, progress, and risk \| The latest Project Update/);
+test("one home per kind of writing, and the write tools include documents and Project Updates", () => {
+  assert.match(skill, /\| Current truth: .*\| The Project's Spec document/);
+  assert.match(skill, /\| History: .*\| The Project's Log document/);
+  assert.match(skill, /\| Progress, risk, handoff, next step \| A Project Update/);
+  assert.doesNotMatch(workflow, /### Decision entry/);
   assert.doesNotMatch(workflow, /decisions\/architecture\.md/);
   assert.match(workflow, /save_document/);
   assert.match(workflow, /save_status_update/);

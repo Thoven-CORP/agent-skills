@@ -1,0 +1,305 @@
+{
+ "captured_at": "2026-11-12",
+ "source": "Linear GraphQL, read before any write by l-linear",
+ "templates": [
+  {
+   "id": "b885e2bd-68a2-4ea8-b666-44eb6757c5bf",
+   "name": "Thoven project",
+   "type": "project",
+   "description": null,
+   "icon": null,
+   "color": null,
+   "templateData": "{\"description\":\"Lightweight project framing, chosen phases, and authoritative context.\",\"descriptionData\":{\"type\":\"doc\",\"content\":[{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"759b46c1-53fa-43ff-8706-c5049087ad0f\"},\"content\":[{\"type\":\"text\",\"text\":\"Goal\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Describe the overall purpose and intended outcome. Keep detailed product requirements in the authoritative spec.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"31cd91ab-9247-48d1-8a8e-824b4d2bbbff\"},\"content\":[{\"type\":\"text\",\"text\":\"Scope and non-goals\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Describe the initial boundary and explicit exclusions.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"10771822-8b8b-4948-9d3f-fb57e90f40ca\"},\"content\":[{\"type\":\"text\",\"text\":\"Project approach\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Choose the phases this project needs, including a prototype only if useful. Note real dependencies and timing constraints; keep dates in native project and milestone fields. Define milestones during setup rather than assuming a fixed ladder.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"c66c0379-7580-48bd-bf1e-975293ffe2c9\"},\"content\":[{\"type\":\"text\",\"text\":\"Key decisions and open questions\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Record settled organizational decisions and unanswered setup questions. Link detailed PRD, design, and architecture decisions to their authoritative artifacts.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"090ce75b-e635-4c22-90f5-4a400d40dbe3\"},\"content\":[{\"type\":\"text\",\"text\":\"Sources of truth\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Link the current authoritative specs, designs, and other project artifacts. Identify what each source owns; avoid duplicate copies.]\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"marks\":[{\"type\":\"link\",\"attrs\":{\"href\":\"https://linear.app/thoven/document/project-setup-standard-62e01c7c4f53\",\"noEmbed\":null}}],\"text\":\"Project setup standard\"},{\"type\":\"text\",\"text\":\" — shared setup and maintenance guidance.\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"marks\":[{\"type\":\"link\",\"attrs\":{\"href\":\"https://linear.app/thoven/document/project-setup-learnings-20bdc862b43a\",\"noEmbed\":null}}],\"text\":\"Project setup learnings\"},{\"type\":\"text\",\"text\":\" — Evidence-backed lessons to consult during setup.\"}]}]},\"title\":\"\",\"statusId\":\"d30943c6-ff96-495a-a57d-04e9fa7ab0be\",\"priority\":0,\"initiativeIds\":[],\"memberIds\":[],\"teamIds\":[\"395f12be-bf42-41e2-ae81-a93c55930803\"],\"leadTeamId\":\"395f12be-bf42-41e2-ae81-a93c55930803\",\"projectMilestones\":[],\"initialIssues\":[],\"labelIds\":[]}",
+   "sortOrder": 0.26,
+   "content": "## Goal\n\n\\[Describe the overall purpose and intended outcome. Keep detailed product requirements in the authoritative spec.\\]\n\n## Scope and non-goals\n\n\\[Describe the initial boundary and explicit exclusions.\\]\n\n## Project approach\n\n\\[Choose the phases this project needs, including a prototype only if useful. Note real dependencies and timing constraints; keep dates in native project and milestone fields. Define milestones during setup rather than assuming a fixed ladder.\\]\n\n## Key decisions and open questions\n\n\\[Record settled organizational decisions and unanswered setup questions. Link detailed PRD, design, and architecture decisions to their authoritative artifacts.\\]\n\n## Sources of truth\n\n\\[Link the current authoritative specs, designs, and other project artifacts. Identify what each source owns; avoid duplicate copies.\\]\n\n[Project setup standard](<https://linear.app/thoven/document/project-setup-standard-62e01c7c4f53>) — shared setup and maintenance guidance.\n\n[Project setup learnings](<https://linear.app/thoven/document/project-setup-learnings-20bdc862b43a>) — Evidence-backed lessons to consult during setup.",
+   "hasFormFields": false,
+   "archivedAt": null,
+   "createdAt": "2026-09-30T19:18:24.103Z",
+   "updatedAt": "2026-09-30T20:10:18.652Z",
+   "lastAppliedAt": "2026-11-12T01:20:19.639Z",
+   "team": {
+    "id": "395f12be-bf42-41e2-ae81-a93c55930803",
+    "key": "THV",
+    "name": "Thoven"
+   },
+   "inheritedFrom": null
+  },
+  {
+   "id": "5d11af0a-f367-4708-a3f8-37aeb236794d",
+   "name": "Work item",
+   "type": "issue",
+   "description": "Use Research, Design, Build or another agreed work type; parent/subissue is represented by Linear relations.",
+   "icon": null,
+   "color": null,
+   "templateData": "{\"title\":\"[Type]: [clear work title]\",\"descriptionData\":{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Standalone: one independently completable outcome. Parent: shared outcome and scope across related subissues. Subissue: bounded contribution; link to the parent instead of repeating its specification.\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"102d271e-3e80-42f9-bd61-db65257b51c2\"},\"content\":[{\"type\":\"text\",\"text\":\"Outcome\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[What this work delivers and why.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"45577602-4043-479a-b3e6-c1a2634cf9c7\"},\"content\":[{\"type\":\"text\",\"text\":\"Context\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Links to authoritative documents or the parent.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"abade896-1750-4602-8a59-6ee6d45c9bb0\"},\"content\":[{\"type\":\"text\",\"text\":\"Check (optional)\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[An observable completion check, only when useful.]\"}]}]},\"priority\":0,\"stateId\":\"51d15c50-7bc5-4eb2-a02c-de6ba5483c4e\",\"teamId\":\"395f12be-bf42-41e2-ae81-a93c55930803\"}",
+   "sortOrder": -2171.89,
+   "content": "Standalone: one independently completable outcome. Parent: shared outcome and scope across related subissues. Subissue: bounded contribution; link to the parent instead of repeating its specification.\n\n## Outcome\n\n\\[What this work delivers and why.\\]\n\n## Context\n\n\\[Links to authoritative documents or the parent.\\]\n\n## Check (optional)\n\n\\[An observable completion check, only when useful.\\]",
+   "hasFormFields": false,
+   "archivedAt": null,
+   "createdAt": "2026-09-30T21:19:22.383Z",
+   "updatedAt": "2026-09-30T21:19:22.383Z",
+   "lastAppliedAt": "2026-10-27T21:51:05.540Z",
+   "team": {
+    "id": "395f12be-bf42-41e2-ae81-a93c55930803",
+    "key": "THV",
+    "name": "Thoven"
+   },
+   "inheritedFrom": null
+  },
+  {
+   "id": "c617a408-97f0-4463-bc36-c813a2dee7e7",
+   "name": "Work item",
+   "type": "issue",
+   "description": "Use Research, Design, Build or another agreed work type; parent/subissue is represented by Linear relations.",
+   "icon": null,
+   "color": null,
+   "templateData": "{\"title\":\"[Type]: [clear work title]\",\"descriptionData\":{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Standalone: one independently completable outcome. Parent: shared outcome and scope across related subissues. Subissue: bounded contribution; link to the parent instead of repeating its specification.\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"102d271e-3e80-42f9-bd61-db65257b51c2\"},\"content\":[{\"type\":\"text\",\"text\":\"Outcome\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[What this work delivers and why.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"45577602-4043-479a-b3e6-c1a2634cf9c7\"},\"content\":[{\"type\":\"text\",\"text\":\"Context\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Links to authoritative documents or the parent.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"abade896-1750-4602-8a59-6ee6d45c9bb0\"},\"content\":[{\"type\":\"text\",\"text\":\"Check (optional)\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[An observable completion check, only when useful.]\"}]}]},\"priority\":0,\"stateId\":\"51d15c50-7bc5-4eb2-a02c-de6ba5483c4e\",\"teamId\":\"395f12be-bf42-41e2-ae81-a93c55930803\"}",
+   "sortOrder": -2171.89,
+   "content": "Standalone: one independently completable outcome. Parent: shared outcome and scope across related subissues. Subissue: bounded contribution; link to the parent instead of repeating its specification.\n\n## Outcome\n\n\\[What this work delivers and why.\\]\n\n## Context\n\n\\[Links to authoritative documents or the parent.\\]\n\n## Check (optional)\n\n\\[An observable completion check, only when useful.\\]",
+   "hasFormFields": false,
+   "archivedAt": null,
+   "createdAt": "2026-09-30T21:19:22.383Z",
+   "updatedAt": "2026-09-30T21:19:22.383Z",
+   "lastAppliedAt": "2026-10-27T21:51:05.540Z",
+   "team": {
+    "id": "dcd04abf-75b3-4517-8290-54a6c0be3c28",
+    "key": "DEP",
+    "name": "Deployment & DevOps"
+   },
+   "inheritedFrom": {
+    "id": "5d11af0a-f367-4708-a3f8-37aeb236794d",
+    "name": "Work item"
+   }
+  },
+  {
+   "id": "add73220-5b98-4d98-9788-2e4976276d5a",
+   "name": "Bug",
+   "type": "issue",
+   "description": null,
+   "icon": null,
+   "color": null,
+   "templateData": "{\"title\":\"Bug: [unexpected behavior] when [trigger]\",\"descriptionData\":{\"type\":\"doc\",\"content\":[{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"7723ce54-b1fb-44e9-8cd1-24a812657e30\"},\"content\":[{\"type\":\"text\",\"text\":\"What happens\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Observed behavior and impact.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"f3abf20c-75c7-4c03-9cb5-851cd95c54b5\"},\"content\":[{\"type\":\"text\",\"text\":\"Expected\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[What should happen.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"10bd9192-ec5b-44db-b9de-3483405e3c8b\"},\"content\":[{\"type\":\"text\",\"text\":\"Reproduce or evidence\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Steps and starting conditions, or evidence and environment. Add an observable completion check only when useful.]\"}]}]},\"priority\":0,\"stateId\":\"66b7b24a-8e5f-4418-b08c-d9657d70eb71\",\"teamId\":\"395f12be-bf42-41e2-ae81-a93c55930803\"}",
+   "sortOrder": -3229.09,
+   "content": "## What happens\n\n\\[Observed behavior and impact.\\]\n\n## Expected\n\n\\[What should happen.\\]\n\n## Reproduce or evidence\n\n\\[Steps and starting conditions, or evidence and environment. Add an observable completion check only when useful.\\]",
+   "hasFormFields": false,
+   "archivedAt": null,
+   "createdAt": "2026-09-30T21:20:11.888Z",
+   "updatedAt": "2026-09-30T21:20:11.888Z",
+   "lastAppliedAt": "2026-10-06T17:17:51.693Z",
+   "team": {
+    "id": "dcd04abf-75b3-4517-8290-54a6c0be3c28",
+    "key": "DEP",
+    "name": "Deployment & DevOps"
+   },
+   "inheritedFrom": {
+    "id": "d02be5cf-9948-452c-aa50-be486e94b91f",
+    "name": "Bug"
+   }
+  },
+  {
+   "id": "dbc5ef88-247a-4b87-aedd-d672f9249c70",
+   "name": "Thoven project",
+   "type": "project",
+   "description": null,
+   "icon": null,
+   "color": null,
+   "templateData": "{\"description\":\"Lightweight project framing, chosen phases, and authoritative context.\",\"descriptionData\":{\"type\":\"doc\",\"content\":[{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"759b46c1-53fa-43ff-8706-c5049087ad0f\"},\"content\":[{\"type\":\"text\",\"text\":\"Goal\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Describe the overall purpose and intended outcome. Keep detailed product requirements in the authoritative spec.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"31cd91ab-9247-48d1-8a8e-824b4d2bbbff\"},\"content\":[{\"type\":\"text\",\"text\":\"Scope and non-goals\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Describe the initial boundary and explicit exclusions.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"10771822-8b8b-4948-9d3f-fb57e90f40ca\"},\"content\":[{\"type\":\"text\",\"text\":\"Project approach\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Choose the phases this project needs, including a prototype only if useful. Note real dependencies and timing constraints; keep dates in native project and milestone fields. Define milestones during setup rather than assuming a fixed ladder.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"c66c0379-7580-48bd-bf1e-975293ffe2c9\"},\"content\":[{\"type\":\"text\",\"text\":\"Key decisions and open questions\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Record settled organizational decisions and unanswered setup questions. Link detailed PRD, design, and architecture decisions to their authoritative artifacts.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"090ce75b-e635-4c22-90f5-4a400d40dbe3\"},\"content\":[{\"type\":\"text\",\"text\":\"Sources of truth\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Link the current authoritative specs, designs, and other project artifacts. Identify what each source owns; avoid duplicate copies.]\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"marks\":[{\"type\":\"link\",\"attrs\":{\"href\":\"https://linear.app/thoven/document/project-setup-standard-62e01c7c4f53\",\"noEmbed\":null}}],\"text\":\"Project setup standard\"},{\"type\":\"text\",\"text\":\" — shared setup and maintenance guidance.\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"marks\":[{\"type\":\"link\",\"attrs\":{\"href\":\"https://linear.app/thoven/document/project-setup-learnings-20bdc862b43a\",\"noEmbed\":null}}],\"text\":\"Project setup learnings\"},{\"type\":\"text\",\"text\":\" — Evidence-backed lessons to consult during setup.\"}]}]},\"title\":\"\",\"statusId\":\"d30943c6-ff96-495a-a57d-04e9fa7ab0be\",\"priority\":0,\"initiativeIds\":[],\"memberIds\":[],\"teamIds\":[\"395f12be-bf42-41e2-ae81-a93c55930803\"],\"leadTeamId\":\"395f12be-bf42-41e2-ae81-a93c55930803\",\"projectMilestones\":[],\"initialIssues\":[],\"labelIds\":[]}",
+   "sortOrder": 0.26,
+   "content": "## Goal\n\n\\[Describe the overall purpose and intended outcome. Keep detailed product requirements in the authoritative spec.\\]\n\n## Scope and non-goals\n\n\\[Describe the initial boundary and explicit exclusions.\\]\n\n## Project approach\n\n\\[Choose the phases this project needs, including a prototype only if useful. Note real dependencies and timing constraints; keep dates in native project and milestone fields. Define milestones during setup rather than assuming a fixed ladder.\\]\n\n## Key decisions and open questions\n\n\\[Record settled organizational decisions and unanswered setup questions. Link detailed PRD, design, and architecture decisions to their authoritative artifacts.\\]\n\n## Sources of truth\n\n\\[Link the current authoritative specs, designs, and other project artifacts. Identify what each source owns; avoid duplicate copies.\\]\n\n[Project setup standard](<https://linear.app/thoven/document/project-setup-standard-62e01c7c4f53>) — shared setup and maintenance guidance.\n\n[Project setup learnings](<https://linear.app/thoven/document/project-setup-learnings-20bdc862b43a>) — Evidence-backed lessons to consult during setup.",
+   "hasFormFields": false,
+   "archivedAt": null,
+   "createdAt": "2026-09-30T19:18:24.103Z",
+   "updatedAt": "2026-09-30T20:10:18.652Z",
+   "lastAppliedAt": "2026-11-12T01:20:19.639Z",
+   "team": {
+    "id": "dcd04abf-75b3-4517-8290-54a6c0be3c28",
+    "key": "DEP",
+    "name": "Deployment & DevOps"
+   },
+   "inheritedFrom": {
+    "id": "b885e2bd-68a2-4ea8-b666-44eb6757c5bf",
+    "name": "Thoven project"
+   }
+  },
+  {
+   "id": "dfa61f87-9419-42b5-ac07-742c377c5d7f",
+   "name": "Brainstorm",
+   "type": "issue",
+   "description": null,
+   "icon": null,
+   "color": null,
+   "templateData": "{\"title\":\"Brainstorm: [feature] product direction\",\"descriptionData\":{\"type\":\"doc\",\"content\":[{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"05c46126-8254-4dc5-89bd-45661347f1c3\"},\"content\":[{\"type\":\"text\",\"text\":\"Context\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Why this is being considered and relevant starting context.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"87ac4f40-8466-449c-86fc-c2c1eadf2eb9\"},\"content\":[{\"type\":\"text\",\"text\":\"Starting points\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Links to the project or previous work; optional questions to explore later.]\"}]}]},\"priority\":0,\"stateId\":\"51d15c50-7bc5-4eb2-a02c-de6ba5483c4e\",\"teamId\":\"395f12be-bf42-41e2-ae81-a93c55930803\"}",
+   "sortOrder": -1081.87,
+   "content": "## Context\n\n\\[Why this is being considered and relevant starting context.\\]\n\n## Starting points\n\n\\[Links to the project or previous work; optional questions to explore later.\\]",
+   "hasFormFields": false,
+   "archivedAt": null,
+   "createdAt": "2026-09-30T21:18:30.227Z",
+   "updatedAt": "2026-09-30T21:18:30.227Z",
+   "lastAppliedAt": "2026-11-11T03:59:29.053Z",
+   "team": {
+    "id": "dcd04abf-75b3-4517-8290-54a6c0be3c28",
+    "key": "DEP",
+    "name": "Deployment & DevOps"
+   },
+   "inheritedFrom": {
+    "id": "5e109c98-33a8-4916-829b-e41d7de8d5cf",
+    "name": "Brainstorm"
+   }
+  },
+  {
+   "id": "d02be5cf-9948-452c-aa50-be486e94b91f",
+   "name": "Bug",
+   "type": "issue",
+   "description": null,
+   "icon": null,
+   "color": null,
+   "templateData": "{\"title\":\"Bug: [unexpected behavior] when [trigger]\",\"descriptionData\":{\"type\":\"doc\",\"content\":[{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"7723ce54-b1fb-44e9-8cd1-24a812657e30\"},\"content\":[{\"type\":\"text\",\"text\":\"What happens\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Observed behavior and impact.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"f3abf20c-75c7-4c03-9cb5-851cd95c54b5\"},\"content\":[{\"type\":\"text\",\"text\":\"Expected\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[What should happen.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"10bd9192-ec5b-44db-b9de-3483405e3c8b\"},\"content\":[{\"type\":\"text\",\"text\":\"Reproduce or evidence\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Steps and starting conditions, or evidence and environment. Add an observable completion check only when useful.]\"}]}]},\"priority\":0,\"stateId\":\"66b7b24a-8e5f-4418-b08c-d9657d70eb71\",\"teamId\":\"395f12be-bf42-41e2-ae81-a93c55930803\"}",
+   "sortOrder": -3229.09,
+   "content": "## What happens\n\n\\[Observed behavior and impact.\\]\n\n## Expected\n\n\\[What should happen.\\]\n\n## Reproduce or evidence\n\n\\[Steps and starting conditions, or evidence and environment. Add an observable completion check only when useful.\\]",
+   "hasFormFields": false,
+   "archivedAt": null,
+   "createdAt": "2026-09-30T21:20:11.888Z",
+   "updatedAt": "2026-09-30T21:20:11.888Z",
+   "lastAppliedAt": "2026-10-06T17:17:51.693Z",
+   "team": {
+    "id": "395f12be-bf42-41e2-ae81-a93c55930803",
+    "key": "THV",
+    "name": "Thoven"
+   },
+   "inheritedFrom": null
+  },
+  {
+   "id": "5e109c98-33a8-4916-829b-e41d7de8d5cf",
+   "name": "Brainstorm",
+   "type": "issue",
+   "description": null,
+   "icon": null,
+   "color": null,
+   "templateData": "{\"title\":\"Brainstorm: [feature] product direction\",\"descriptionData\":{\"type\":\"doc\",\"content\":[{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"05c46126-8254-4dc5-89bd-45661347f1c3\"},\"content\":[{\"type\":\"text\",\"text\":\"Context\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Why this is being considered and relevant starting context.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"87ac4f40-8466-449c-86fc-c2c1eadf2eb9\"},\"content\":[{\"type\":\"text\",\"text\":\"Starting points\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Links to the project or previous work; optional questions to explore later.]\"}]}]},\"priority\":0,\"stateId\":\"51d15c50-7bc5-4eb2-a02c-de6ba5483c4e\",\"teamId\":\"395f12be-bf42-41e2-ae81-a93c55930803\"}",
+   "sortOrder": -1081.87,
+   "content": "## Context\n\n\\[Why this is being considered and relevant starting context.\\]\n\n## Starting points\n\n\\[Links to the project or previous work; optional questions to explore later.\\]",
+   "hasFormFields": false,
+   "archivedAt": null,
+   "createdAt": "2026-09-30T21:18:30.227Z",
+   "updatedAt": "2026-09-30T21:18:30.227Z",
+   "lastAppliedAt": "2026-11-11T03:59:29.053Z",
+   "team": {
+    "id": "395f12be-bf42-41e2-ae81-a93c55930803",
+    "key": "THV",
+    "name": "Thoven"
+   },
+   "inheritedFrom": null
+  }
+ ],
+ "team_defaults": [
+  {
+   "id": "dcd04abf-75b3-4517-8290-54a6c0be3c28",
+   "key": "DEP",
+   "name": "Deployment & DevOps",
+   "defaultTemplateForMembers": null,
+   "defaultTemplateForNonMembers": null,
+   "defaultProjectTemplate": null
+  },
+  {
+   "id": "8b875cbb-81fa-4977-a232-7fda954438d1",
+   "key": "LAB",
+   "name": "Thoven Labs",
+   "defaultTemplateForMembers": null,
+   "defaultTemplateForNonMembers": null,
+   "defaultProjectTemplate": null
+  },
+  {
+   "id": "395f12be-bf42-41e2-ae81-a93c55930803",
+   "key": "THV",
+   "name": "Thoven",
+   "defaultTemplateForMembers": {
+    "id": "5d11af0a-f367-4708-a3f8-37aeb236794d",
+    "name": "Work item"
+   },
+   "defaultTemplateForNonMembers": null,
+   "defaultProjectTemplate": {
+    "id": "b885e2bd-68a2-4ea8-b666-44eb6757c5bf",
+    "name": "Thoven project"
+   }
+  }
+ ],
+ "documents": [
+  {
+   "id": "78f5580b-265e-4db9-81b0-d28dd4ffbdf1",
+   "title": "Project setup learnings",
+   "slugId": "20bdc862b43a",
+   "url": "https://linear.app/thoven/document/project-setup-learnings-20bdc862b43a",
+   "updatedAt": "2026-09-30T19:46:57.200Z",
+   "createdAt": "2026-09-30T19:37:56.634Z",
+   "content": "Evidence-backed lessons from Thoven's project work and the September 30, 2026 setup audit. This is the shared learning record, not a second project specification or status board.\n\nCurrent rules live in the [Project setup standard](<https://linear.app/thoven/document/project-setup-standard-62e01c7c4f53>). Read relevant lessons before planning a new project or changing its structure. A new lesson does not silently override an approved decision.\n\n## How to record a learning\n\nAdd a short dated entry when completed work or a repeated failure provides useful evidence:\n\n* What happened, with the source.\n* What to repeat or change, including when it applies.\n* Fix type: template or workflow, test, script, or harness rule.\n* Where the correction belongs and whether it is proposed, applied or verified.\n\nKeep project-specific evidence with that project and link it here. Do not turn every incident into a universal requirement. When a proposed correction needs a decision or code change, name that next step instead of treating it as complete.\n\n## Native features before custom scaffolding\n\n**Observed September 30:** Linear already separates the project summary, rich description, Resources, milestones, issues and dated Updates. Earlier proposals blurred these into one overview and emphasized skill structure before native templates.\n\n**Use next time:** configure the native project template and fields first. The organizer helps choose and fill them; workspace maintains live work. Additional documents earn their own space rather than duplicating the overview.\n\n**Fix type:** template or workflow. **Applied:** the Thoven project template and shared setup standard; template saved and preview verified without creating a test project.\n\nSources: [Project overview](<https://linear.app/docs/project-overview>), [Project templates](<https://linear.app/docs/project-templates>), [Project Updates](<https://linear.app/docs/initiative-and-project-updates>).\n\n## One current authority for each artifact\n\n**Observed:** Materials v3's research document explicitly defers to [THV-857](https://linear.app/thoven/issue/THV-857/materials-v3-v1-the-thoven-library-spec-ledgers-and-slices), while older statements in both surfaces still describe superseded scope and progress. Library planning also recorded duplicated local and Linear plan state.\n\n**Use next time:** name what each source governs, link the current authority from the project, and mark older research as history. Do not copy a large live specification into a second maintained document. Keep ticket state in issues and changing project progress in Updates.\n\n**Fix type:** template or workflow. **Applied to the new standard; historical projects have not been rewritten.**\n\nSources: [Materials v3](<https://linear.app/thoven/project/teacher-20-materials-v3-496b4e686450>), [THV-857](<https://linear.app/thoven/issue/THV-857>), [Library planning-to-build record](<https://linear.app/thoven/document/iteration-1-planning-to-build-flow-teacher-20-v1-c8beda7b9ed3>).\n\n## Choose phases for the work\n\n**Observed:** Materials used product/design/build/review work that sometimes overlapped; Library and Classroom reused existing work without separate design sessions; hosting used readiness, rehearsal, cutover, observation and retirement. [THV-580](https://linear.app/thoven/issue/THV-580/workspace-skill-carries-the-linear-workflow-claudemd-points-at-it) explicitly removed a fixed milestone lifecycle.\n\n**Use next time:** agree on useful project-specific phases and what completes each. A prototype is a decision, not a mandatory phase. Detailed execution steps may be subissues rather than extra project milestones.\n\n**Fix type:** template or workflow. **Applied:** no fixed milestones are seeded by the new project template.\n\nSources: [THV-580](<https://linear.app/thoven/issue/THV-580>), [Library and Classroom planning](<https://linear.app/thoven/document/iteration-1-planning-to-build-flow-teacher-20-v1-c8beda7b9ed3>), [Hosting launch](<https://linear.app/thoven/project/launch-teacher-20-hosting-06fe53ea4672>), [CI phases](<https://linear.app/thoven/issue/THV-457>).\n\n## Do not create the build backlog before the discussion\n\n**Observed:** Previous Teacher 2.0 work required corrections for too many to-dos before existing behavior was synthesized. Library planning found missed cross-track blockers and unowned shared work despite a detailed initial plan.\n\n**Use next time:** inspect prior work, frame the project, then start only the next useful work. The first ticket can be a context-only product-direction brainstorm. Detailed PRD, design, architecture and slicing belong in their later workflows.\n\n**Fix type:** template or workflow. **Applied:** organizer scope stays at project framing; no build tree is automatically created.\n\nSources: [THV-502 seam mapping](<https://linear.app/thoven/issue/THV-502>), [Planning-to-build record](<https://linear.app/thoven/document/iteration-1-planning-to-build-flow-teacher-20-v1-c8beda7b9ed3>).\n\n## A closed issue list does not explain the project outcome\n\n**Observed September 30:** Materials and Launch still appeared In Progress while their issue lists were terminal. After-cutover appeared Backlog despite active work. Completed Closeout retained older prose about work not yet started. These are reconciliation signals, not proof that all external obligations are finished.\n\n**Use next time:** reconcile project state with the actual outcome and any accepted remaining work. Use a dated closeout or handoff Update, identify the successor work, and keep the description from narrating obsolete active tasks.\n\n**Fix type:** template or workflow. **Included in the new standard; historical cleanup remains separate and unperformed.**\n\nSources: [Materials](<https://linear.app/thoven/project/teacher-20-materials-v3-496b4e686450>), [Launch](<https://linear.app/thoven/project/launch-teacher-20-hosting-06fe53ea4672>), [After-cutover](<https://linear.app/thoven/project/after-cutover-cleanup-0f8d82c24330>), [Closeout](<https://linear.app/thoven/project/teacher-20-closeout-877c041caa85>).\n\n## Verify authority after restoring or installing skills\n\n**Observed:** the September 24 workflow restoration used a September 13 base that preceded [THV-580](https://linear.app/thoven/issue/THV-580/workspace-skill-carries-the-linear-workflow-claudemd-points-at-it)'s later decisions. A recent modification date did not prove that the restored lifecycle rules were newly approved.\n\n**Use next time:** check provenance and explicit decisions when sources conflict. Keep one canonical source and verify installed files against it. Do not infer approval from timestamps alone.\n\n**Fix type:** script or harness rule, supported by workflow guidance. **Verified for this organizer release:** exact source and installed file hashes matched; broader historical workflow repair was not performed.\n\nSources: [THV-580](<https://linear.app/thoven/issue/THV-580>), [September 24 restoration](<https://github.com/Thoven-CORP/agent-skills/commit/35142b8a3f5835dd2fc3dcc51af3bd39b3c23e1d>), [Audited organizer release](<https://github.com/Thoven-CORP/agent-skills/commit/925f5b4b1a723be1b4d6aabbf1de77ad7db25dc1>).\n\n## Test what an agent actually reads and proposes\n\n**Observed:** attaching a resource does not establish that an external Codex or Claude session read it. The organizer audit also found inherited template values and stale connector-name assumptions that needed explicit handling.\n\n**Use next time:** fetch the current brief and relevant authoritative sources, disclose template-inherited values, and discover authorized tools available in the session. Test realistic new-project, existing-project and missing-source scenarios without mutating live work.\n\n**Fix type:** test and harness rule. **Applied and verified:** independent read-only forward tests and installed-skill validation passed for the organizer release.\n\nSources: [Linear MCP](<https://linear.app/docs/mcp>), [Agent context](<https://linear.app/developers/agent-interaction>), [Organizer release](<https://github.com/Thoven-CORP/agent-skills/commit/925f5b4b1a723be1b4d6aabbf1de77ad7db25dc1>).",
+   "project": null,
+   "team": {
+    "key": "THV"
+   },
+   "initiative": null
+  },
+  {
+   "id": "28680f01-46bf-416e-a70b-2b47a1000ef8",
+   "title": "Project setup standard",
+   "slugId": "62e01c7c4f53",
+   "url": "https://linear.app/thoven/document/project-setup-standard-62e01c7c4f53",
+   "updatedAt": "2026-09-30T21:23:30.270Z",
+   "createdAt": "2026-09-30T19:17:57.210Z",
+   "content": "Approved with Andres on September 30, 2026.\n\n## Purpose\n\nMake a Thoven project understandable when Andres opens Linear: what it is for, its boundaries, how the work is organized, and where the authoritative context lives.\n\nUse Linear's native project template and fields. The project organizer frames the work; it does not run the detailed product, design, or architecture discussion. Workspace remains responsible for day-to-day orientation and updates.\n\n## Where information belongs\n\n* **Summary:** one sentence describing the project's intended outcome.\n* **Detailed description:** the five-section project brief below.\n* **Native project fields:** status, accountable lead, priority, dates and initiative when relevant. Do not repeat these as a second table in the description.\n* **Milestones:** selected phases or checkpoints, with a short description of what completes each. Choose them for the project; do not impose one lifecycle. A target date is a real timing goal, not a placeholder.\n* **Issues:** the actual work and its status. Do not maintain a duplicate ticket-status list in the description.\n* **Resources:** links to the actual authoritative specs, designs, decisions, runbooks or other artifacts needed by this project.\n* **Project Updates:** dated progress, changes, risks, next steps and decisions needed. Keep older updates as history.\n\n## Project description structure\n\n### Goal\n\nState the overall purpose, who benefits and the intended outcome. Keep this at project-framing level rather than writing a full PRD.\n\n### Scope and non-goals\n\nDescribe the initial boundary and explicit exclusions. Keep undecided scope visibly undecided.\n\n### Project approach\n\nExplain the chosen phases and why they fit: for example, whether the work needs a prototype, discovery, build, review, rehearsal or an observation period. Identify real dependencies and timing constraints. Detailed requirements, design and architecture decisions belong in their later work.\n\n### Key decisions and open questions\n\nKeep settled organizational decisions and the questions needed to finish setup. Link deeper product or technical decisions to their authoritative artifact instead of duplicating them.\n\n### Sources of truth\n\nLink each current authoritative artifact and say what it governs. Mark superseded research as historical. If an artifact does not exist yet, identify the needed artifact or decision without inventing its content.\n\n## How templates and documents are used\n\nThe **Thoven project** native project template provides the starting description structure. Select it when creating a project, then replace its prompts with that project's context. Configure native milestones and other fields intentionally during setup. Do not assume a team default is automatically applied by an external API client; select the template explicitly when supported.\n\nA **project document** is the actual artifact that the team reads and maintains. A **document template**, if one is adopted later, only provides that document's initial shape. It is not another live specification. The initial setup added the project template. Three native issue templates were added with Andres's approval on September 30; separate document templates have not been created.\n\nLink this shared standard rather than copying it into each project. A small project can keep its brief in the detailed description. Create or link a separate document when substantive context needs its own space. Existing authoritative issues or files may remain authoritative; do not migrate or duplicate their content automatically.\n\nTemplate changes are for reuse. Do not assume they synchronize existing projects, create Resource documents automatically, or update existing documents. Treat any change to an existing project as an explicit, scoped update.\n\n## Native issue templates\n\nSelect a template when creating an issue; it supplies a starting title and body, not a completed plan.\n\n* [Brainstorm](<https://linear.app/thoven/settings/teams/THV/templates/issue/5e109c98-33a8-4916-829b-e41d7de8d5cf/edit>): context and starting points for a later product-direction discussion. Default status: Todo.\n* [Work item](<https://linear.app/thoven/settings/teams/THV/templates/issue/5d11af0a-f367-4708-a3f8-37aeb236794d/edit>): outcome, authoritative context and an optional completion check. Use a work-type prefix, such as Research, Design or Build, followed by a clear title. Default status: Todo.\n* [Bug](<https://linear.app/thoven/settings/teams/THV/templates/issue/d02be5cf-9948-452c-aa50-be486e94b91f/edit>): observed behavior, expected behavior and reproduction or evidence. Default status: Triage.\n\nRepresent standalone, parent and subissue relationships through Linear's native hierarchy. A parent describes the shared outcome and scope; a subissue describes its bounded contribution and links to the parent rather than repeating its specification. These templates do not create subissues or change closure automation.\n\nThe starting status can be overridden for the actual work. The templates do not set an assignee, project, milestone or schedule; personal composer defaults can still apply. Remove unused optional prompts. No historical tickets were renamed or changed as part of this addition.\n\n## Setup and daily use\n\n1. Read the relevant existing work, decisions and project context before proposing a structure.\n2. Discuss the overall goal, scope, useful phases, required authoritative artifacts, timing constraints and first useful work. Use previous projects as examples, not mandatory patterns.\n3. Confirm the proposed setup with Andres. Then use the native project template and fill the brief. Add only the milestones and native field values that are actually decided.\n4. Defer detailed PRD, design and architecture work to the relevant workflow. The initial work may be only a product-direction brainstorm; do not manufacture a full build backlog.\n5. For external agents, explicitly retrieve the current project brief, relevant linked sources, milestones, current issues and latest project Update before work. Attaching a document alone does not establish that the agent read it.\n6. Workspace maintains the live records within the task's authorization. Update the description when purpose, scope, approach or authority changes; use native fields and issues for their current values; use Project Updates for meaningful progress, risks, next steps and handoffs.\n7. On closure or transfer, make the outcome and successor work clear. Preserve historical context without leaving old prose appearing to govern current work.\n\n## Local context and existing projects\n\nBorrow useful purpose, decisions, cautions and next-action context from PRD, STATE and CONTINUE_HERE. Keep operational receipts, detailed verification and session scratch local when they serve a distinct purpose, with links where useful. Do not introduce another independent status board or maintain the same narrative in two places.\n\nThe organizer handles project setup. Workspace handles ongoing work. Feature-ledger continues to handle its existing artifact and reconciliation responsibilities; this standard does not silently migrate them.\n\nWhen working on an existing project, first propose the changes and preserve existing ticket IDs, history and authoritative links. This setup does not authorize bulk cleanup, changing existing tickets, or rewriting unrelated skills.\n\n## Learnings\n\nRead [Project setup learnings](<https://linear.app/thoven/document/project-setup-learnings-20bdc862b43a>) for relevant evidence before choosing or changing a project structure. After completed work reveals a reusable lesson, record the observation, source, recommended correction, fix type (template or workflow, test, script, or harness rule), and whether it is proposed or verified. Keep detailed evidence with its project and link it rather than duplicating it.\n\nUse the learning record to inform proposals; it does not silently override an approved project decision. Update this standard only when the actual rule changes. Workspace captures useful lessons as part of authorized closeout or retrospective work; the organizer consults relevant lessons at setup.\n\n## References\n\n* [Project overview](<https://linear.app/docs/project-overview>)\n* [Project templates](<https://linear.app/docs/project-templates>)\n* [Documents and document templates](<https://linear.app/docs/documents>)\n* [Project milestones](<https://linear.app/docs/project-milestones>)\n* [Project updates](<https://linear.app/docs/initiative-and-project-updates>)",
+   "project": null,
+   "team": {
+    "key": "THV"
+   },
+   "initiative": null
+  }
+ ],
+ "thoven_project_templates": [
+  {
+   "id": "b885e2bd-68a2-4ea8-b666-44eb6757c5bf",
+   "name": "Thoven project",
+   "type": "project",
+   "description": null,
+   "icon": null,
+   "color": null,
+   "templateData": "{\"description\":\"Lightweight project framing, chosen phases, and authoritative context.\",\"descriptionData\":{\"type\":\"doc\",\"content\":[{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"759b46c1-53fa-43ff-8706-c5049087ad0f\"},\"content\":[{\"type\":\"text\",\"text\":\"Goal\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Describe the overall purpose and intended outcome. Keep detailed product requirements in the authoritative spec.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"31cd91ab-9247-48d1-8a8e-824b4d2bbbff\"},\"content\":[{\"type\":\"text\",\"text\":\"Scope and non-goals\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Describe the initial boundary and explicit exclusions.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"10771822-8b8b-4948-9d3f-fb57e90f40ca\"},\"content\":[{\"type\":\"text\",\"text\":\"Project approach\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Choose the phases this project needs, including a prototype only if useful. Note real dependencies and timing constraints; keep dates in native project and milestone fields. Define milestones during setup rather than assuming a fixed ladder.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"c66c0379-7580-48bd-bf1e-975293ffe2c9\"},\"content\":[{\"type\":\"text\",\"text\":\"Key decisions and open questions\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Record settled organizational decisions and unanswered setup questions. Link detailed PRD, design, and architecture decisions to their authoritative artifacts.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"090ce75b-e635-4c22-90f5-4a400d40dbe3\"},\"content\":[{\"type\":\"text\",\"text\":\"Sources of truth\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Link the current authoritative specs, designs, and other project artifacts. Identify what each source owns; avoid duplicate copies.]\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"marks\":[{\"type\":\"link\",\"attrs\":{\"href\":\"https://linear.app/thoven/document/project-setup-standard-62e01c7c4f53\",\"noEmbed\":null}}],\"text\":\"Project setup standard\"},{\"type\":\"text\",\"text\":\" — shared setup and maintenance guidance.\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"marks\":[{\"type\":\"link\",\"attrs\":{\"href\":\"https://linear.app/thoven/document/project-setup-learnings-20bdc862b43a\",\"noEmbed\":null}}],\"text\":\"Project setup learnings\"},{\"type\":\"text\",\"text\":\" — Evidence-backed lessons to consult during setup.\"}]}]},\"title\":\"\",\"statusId\":\"d30943c6-ff96-495a-a57d-04e9fa7ab0be\",\"priority\":0,\"initiativeIds\":[],\"memberIds\":[],\"teamIds\":[\"395f12be-bf42-41e2-ae81-a93c55930803\"],\"leadTeamId\":\"395f12be-bf42-41e2-ae81-a93c55930803\",\"projectMilestones\":[],\"initialIssues\":[],\"labelIds\":[]}",
+   "sortOrder": 0.26,
+   "content": "## Goal\n\n\\[Describe the overall purpose and intended outcome. Keep detailed product requirements in the authoritative spec.\\]\n\n## Scope and non-goals\n\n\\[Describe the initial boundary and explicit exclusions.\\]\n\n## Project approach\n\n\\[Choose the phases this project needs, including a prototype only if useful. Note real dependencies and timing constraints; keep dates in native project and milestone fields. Define milestones during setup rather than assuming a fixed ladder.\\]\n\n## Key decisions and open questions\n\n\\[Record settled organizational decisions and unanswered setup questions. Link detailed PRD, design, and architecture decisions to their authoritative artifacts.\\]\n\n## Sources of truth\n\n\\[Link the current authoritative specs, designs, and other project artifacts. Identify what each source owns; avoid duplicate copies.\\]\n\n[Project setup standard](<https://linear.app/thoven/document/project-setup-standard-62e01c7c4f53>) — shared setup and maintenance guidance.\n\n[Project setup learnings](<https://linear.app/thoven/document/project-setup-learnings-20bdc862b43a>) — Evidence-backed lessons to consult during setup.",
+   "hasFormFields": false,
+   "archivedAt": null,
+   "createdAt": "2026-09-30T19:18:24.103Z",
+   "updatedAt": "2026-09-30T20:10:18.652Z",
+   "lastAppliedAt": "2026-11-12T01:20:19.639Z",
+   "team": {
+    "id": "395f12be-bf42-41e2-ae81-a93c55930803",
+    "key": "THV",
+    "name": "Thoven"
+   },
+   "inheritedFrom": null
+  },
+  {
+   "id": "dbc5ef88-247a-4b87-aedd-d672f9249c70",
+   "name": "Thoven project",
+   "type": "project",
+   "description": null,
+   "icon": null,
+   "color": null,
+   "templateData": "{\"description\":\"Lightweight project framing, chosen phases, and authoritative context.\",\"descriptionData\":{\"type\":\"doc\",\"content\":[{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"759b46c1-53fa-43ff-8706-c5049087ad0f\"},\"content\":[{\"type\":\"text\",\"text\":\"Goal\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Describe the overall purpose and intended outcome. Keep detailed product requirements in the authoritative spec.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"31cd91ab-9247-48d1-8a8e-824b4d2bbbff\"},\"content\":[{\"type\":\"text\",\"text\":\"Scope and non-goals\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Describe the initial boundary and explicit exclusions.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"10771822-8b8b-4948-9d3f-fb57e90f40ca\"},\"content\":[{\"type\":\"text\",\"text\":\"Project approach\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Choose the phases this project needs, including a prototype only if useful. Note real dependencies and timing constraints; keep dates in native project and milestone fields. Define milestones during setup rather than assuming a fixed ladder.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"c66c0379-7580-48bd-bf1e-975293ffe2c9\"},\"content\":[{\"type\":\"text\",\"text\":\"Key decisions and open questions\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Record settled organizational decisions and unanswered setup questions. Link detailed PRD, design, and architecture decisions to their authoritative artifacts.]\"}]},{\"type\":\"heading\",\"attrs\":{\"level\":2,\"id\":\"090ce75b-e635-4c22-90f5-4a400d40dbe3\"},\"content\":[{\"type\":\"text\",\"text\":\"Sources of truth\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"[Link the current authoritative specs, designs, and other project artifacts. Identify what each source owns; avoid duplicate copies.]\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"marks\":[{\"type\":\"link\",\"attrs\":{\"href\":\"https://linear.app/thoven/document/project-setup-standard-62e01c7c4f53\",\"noEmbed\":null}}],\"text\":\"Project setup standard\"},{\"type\":\"text\",\"text\":\" — shared setup and maintenance guidance.\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"marks\":[{\"type\":\"link\",\"attrs\":{\"href\":\"https://linear.app/thoven/document/project-setup-learnings-20bdc862b43a\",\"noEmbed\":null}}],\"text\":\"Project setup learnings\"},{\"type\":\"text\",\"text\":\" — Evidence-backed lessons to consult during setup.\"}]}]},\"title\":\"\",\"statusId\":\"d30943c6-ff96-495a-a57d-04e9fa7ab0be\",\"priority\":0,\"initiativeIds\":[],\"memberIds\":[],\"teamIds\":[\"395f12be-bf42-41e2-ae81-a93c55930803\"],\"leadTeamId\":\"395f12be-bf42-41e2-ae81-a93c55930803\",\"projectMilestones\":[],\"initialIssues\":[],\"labelIds\":[]}",
+   "sortOrder": 0.26,
+   "content": "## Goal\n\n\\[Describe the overall purpose and intended outcome. Keep detailed product requirements in the authoritative spec.\\]\n\n## Scope and non-goals\n\n\\[Describe the initial boundary and explicit exclusions.\\]\n\n## Project approach\n\n\\[Choose the phases this project needs, including a prototype only if useful. Note real dependencies and timing constraints; keep dates in native project and milestone fields. Define milestones during setup rather than assuming a fixed ladder.\\]\n\n## Key decisions and open questions\n\n\\[Record settled organizational decisions and unanswered setup questions. Link detailed PRD, design, and architecture decisions to their authoritative artifacts.\\]\n\n## Sources of truth\n\n\\[Link the current authoritative specs, designs, and other project artifacts. Identify what each source owns; avoid duplicate copies.\\]\n\n[Project setup standard](<https://linear.app/thoven/document/project-setup-standard-62e01c7c4f53>) — shared setup and maintenance guidance.\n\n[Project setup learnings](<https://linear.app/thoven/document/project-setup-learnings-20bdc862b43a>) — Evidence-backed lessons to consult during setup.",
+   "hasFormFields": false,
+   "archivedAt": null,
+   "createdAt": "2026-09-30T19:18:24.103Z",
+   "updatedAt": "2026-09-30T20:10:18.652Z",
+   "lastAppliedAt": "2026-11-12T01:20:19.639Z",
+   "team": {
+    "id": "dcd04abf-75b3-4517-8290-54a6c0be3c28",
+    "key": "DEP",
+    "name": "Deployment & DevOps"
+   },
+   "inheritedFrom": {
+    "id": "b885e2bd-68a2-4ea8-b666-44eb6757c5bf",
+    "name": "Thoven project"
+   }
+  }
+ ]
+}

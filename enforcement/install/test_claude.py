@@ -70,6 +70,12 @@ try:
         found = [h["command"] for e in data()["hooks"][event] for h in e["hooks"] if "thoven-session-procs" in h["command"]]
         assert len(found) == 1 and found[0].endswith(suffix), (event, found)
 
+    # The document size counter lands before and after each Linear whole-body save, and nowhere else.
+    for event in ("PreToolUse", "PostToolUse"):
+        found = [e.get("matcher") for e in data()["hooks"][event] for h in e["hooks"] if h["command"].endswith("/thoven-doc-size")]
+        assert found == ["mcp__plugin_linear_linear__save_document|mcp__plugin_linear_linear__save_issue"], (event, found)
+    assert (tmp / ".claude" / "hooks" / "thoven-doc-size").stat().st_mode & 0o111, "thoven-doc-size is not executable"
+
     # A retired hook already installed is stripped; a live hook in the same block and on the same event stays.
     hooks_dir = tmp / ".claude" / "hooks"
     write({"hooks": {"Stop": [{"hooks": [{"type": "command", "command": f"{hooks_dir}/thoven-uncommitted", "timeout": 10}]},

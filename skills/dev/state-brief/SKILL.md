@@ -9,7 +9,7 @@ The brief names the machine before the code: its states, events, transition tabl
 
 ## When to run
 
-Run it once per flow, at design time. On a Project that is the spec stage, after `/architect`, and the result goes in the Linear parent so every slice cites it. A builder runs it only when its ticket adds a flow the parent has no machine for.
+Run it once per flow, at design time. On a Project that is the spec stage, after `/architect`, and the result goes in the Project's Architecture document so every slice links it. A builder runs it only when its ticket adds a flow the Architecture document has no machine for.
 
 A flow passes the gate when any one of these holds:
 
@@ -23,7 +23,7 @@ Everything else gets no brief. That includes a single read shown through React Q
 
 ## 1. Find what exists
 
-- Read the decisions in the Linear parent and the design source the issue names. Read the source's REJECTED block too. A state the design draws is a state, and a state it rejected stays out.
+- Read the Project's Spec and Architecture documents and the design source the issue names. Read the source's REJECTED block too. A state the design draws is a state, and a state it rejected stays out.
 - Read the code the feature touches. In the backend, find the model's `enum :status` and every write to that column (`rg -n 'update(_column|_columns|!)?\(.*\b(status|state):' app`). In the frontend, find the hooks and components that hold the flow. Use `graphify-out/` for callers that a text search misses.
 
 Done when: each existing status value and each place that writes it is listed with `file:line`.
@@ -60,7 +60,7 @@ Each machine has one owner, and every write goes through it.
 
 Adding a state library is a dependency decision for Andres. Propose one only when the machine needs spawned actors or timers across parallel regions that a reducer would have to build by hand.
 
-A status value the frontend shows is a payload field. It belongs in the parent's API decision rows, because both repos' suites stay green when it drifts.
+A status value the frontend shows is a payload field. It belongs in the Architecture document's Data and contract section, because both repos' suites stay green when it drifts.
 
 When the machine spans a request and a job or webhook, also write down:
 
@@ -70,7 +70,7 @@ When the machine spans a request and a job or webhook, also write down:
 - **Isolation.** Heavy work such as a backfill or a fan-out runs in a batched job, never in the request.
 - **Reversibility.** Adding an enum value is reversible. Renaming or removing one needs a migration plan from the `safe-migrate` skill.
 
-Done when: every machine has one owner, every effect in the table names the owner that runs it, and every status field the frontend shows has an API row.
+Done when: every machine has one owner, every effect in the table names the owner that runs it, and every status field the frontend shows is in Data and contract.
 
 ## 5. Write the invariants and the tests
 
@@ -91,9 +91,9 @@ Done when: every invariant has a check or names the type that enforces it, and e
 ## 6. Draw it and record it
 
 - **Diagram.** When statechart ran, its `chart.mmd` is the diagram, because it was checked rather than drawn. Otherwise write a Mermaid `stateDiagram-v2` from the transition table, with compound states as nested blocks and parallel regions split by `--`. For a flow across services, add a `sequenceDiagram`. This terminal does not render Mermaid, so put the diagram on a page made with the `visual-artifacts` skill and open it.
-- **Record.** The binding text goes in the Linear parent as decision rows: the machine as an architecture row, status payload fields as API rows, and enum changes as database rows. Use the `workspace` skill, or write to the path the issue's `Writes to:` line names. The HTML page is only a view of it.
+- **Record.** The transitions, owner and invariants go in the Project's Architecture document, under State rules, numbered A1, A2 …, each with its reason; status payload fields and enum changes go under Data and contract. Use the `workspace` skill, or write to the path the issue's `Writes to:` line names. The HTML page is only a view of it.
 
-Done when: the page is open with its path in the reply, and the Linear rows are written and read back.
+Done when: the page is open with its path in the reply, and the Architecture sections are written and read back.
 
 ## Output
 

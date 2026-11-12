@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-12 — verify is the one home of the cadence
+
+> session · 2026-11-12 · meta-analysis instructions rewrite · broken-rule · applied · seen 2+
+
+**What happened.** The cadence was written in nine files and the parity method in seven, and they disagreed after each edit.
+**Why.** Each copy needed its own fix, so some stayed stale.
+**What changed.** The builder runs each exit line's proof once plus lint and type-check; callers, the extra case, full verify and CI policy are wider runs; parity is a pointer to the law. Details: `releases/2026-11-12-instructions-rewrite.md`.
+
 ## 2026-11-05 — the builder runs parity itself; CI has no Parity check
 
 > reflect · 2026-11-05 · e3582b3d · broken-rule · applied · seen 1

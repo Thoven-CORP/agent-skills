@@ -25,6 +25,9 @@ SETTINGS = CLAUDE_DIR / "settings.json"
 
 PLUGIN_DIRS_ENV = "CLAUDE_CODE_PLUGIN_DIRS"
 
+# The Linear connector's whole-body saves, which the Project document size counter reads.
+LINEAR_SAVES = "mcp__plugin_linear_linear__save_document|mcp__plugin_linear_linear__save_issue"
+
 # (script name, event, matcher, timeout, args); --pre stamps the start of each shell call
 HOOK_SPECS = [
     ("thoven-guard-bash", "PreToolUse", "Bash", 10, ""),
@@ -35,6 +38,8 @@ HOOK_SPECS = [
     ("thoven-session-procs", "SubagentStop", None, 30, " end --agent"),
     ("thoven-andres-mode", "SessionStart", "startup|clear|compact", 10, ""),
     ("thoven-ticket-recall", "UserPromptSubmit", None, 6, " --harness claude"),
+    ("thoven-doc-size", "PreToolUse", LINEAR_SAVES, 10, ""),
+    ("thoven-doc-size", "PostToolUse", LINEAR_SAVES, 10, ""),
 ]
 
 

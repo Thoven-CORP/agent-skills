@@ -13,9 +13,7 @@ the same mechanical snapshot that workspace uses. It does not mutate shared reco
    bodies, issues/milestones and latest Update. Keep useful local technical runbooks and historical
    documents as context. Missing `STATE.md`, `PRD.md`, `CONTINUE_HERE.md` or a local project folder
    does not mean the Project needs setup. Name inaccessible required sources as `UNKNOWN`.
-2. For `open`, use [linear-project](../linear-project/SKILL.md) for genuine Project setup. Reuse
-   existing Linear records. Local [templates](templates/README.md) are optional for an explicitly
-   requested technical artifact; do not scaffold a duplicate project record.
+2. For `open`, use [linear-project](../linear-project/SKILL.md): it creates the Project's Spec, Architecture and Log from their Linear templates.
 3. For bare invocation or `reconcile`, fetch the Project's issue data through an authorized Linear
    connector and supply it to the shared engine:
 
@@ -30,9 +28,7 @@ the same mechanical snapshot that workspace uses. It does not mutate shared reco
    production mounts and proof. Inspect the actual sources. Existing code proves implementation,
    not a superseding product choice. A file with no production mount is not built.
 5. Show contradictions and an exact proposed write set: Linear record/field or repository/path,
-   old claim, new claim and evidence. Amend an existing decision in place; preserve stable ids,
-   rejected alternatives and historical context. Do not impose additive-only updates on current
-   decisions or silently rewrite history.
+   old claim, new claim and evidence. Each write rewrites the Spec or Architecture section to say what is now true and adds one Log entry: Asked "unprompted", Changed names the edited line, Turned down holds the old claim with the evidence that retired it. Rejected options live in the Log.
 6. On approved `apply`, serialize shared writes, read back Linear changes and commit coherent repo
    edits by exact path. Re-run the snapshot. Publication and installation require their own
    authority. Preserve local evidence until Andres has seen it.

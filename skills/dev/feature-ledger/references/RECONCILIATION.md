@@ -24,10 +24,8 @@ Read the Project snapshot first. Then inspect each layer in this order:
 - Retirement is per surface. When a surface ships, repoint its row to `<component>@<commit>` and
   retire only the copied artifact that row names. Shared proto routes mount the real component until
   their final surface ships.
-- Amend the governing decision in place; preserve stable ids, rejected alternatives and the reason.
-  Preserve historical records and user-unseen artifacts; removing a stale current claim does not
-  authorize deleting its historical evidence.
-- Plans cover every user story and architecture decision and may not narrow a design in prose.
+- Rewrite the governing section in place; the old claim, the reason and the rejected options go to the Log. Historical evidence stays where it is.
+- Every Spec surface is linked from the ticket that builds it, and no ticket narrows a design in prose.
 - Resolve ambiguity with the human. Never turn a semantic fork into a mechanical default.
 
 ## Proposed write set

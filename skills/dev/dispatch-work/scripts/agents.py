@@ -133,7 +133,7 @@ def launch(cfg, cli, model, effort):
         with open(path, "w") as f:
             f.write(body + "\n")
         line = line.replace("{settings_file}", path)
-    return shlex.split(line)
+    return [os.path.expanduser(a) for a in shlex.split(line)]
 
 
 def add_cli(cfg, name, block_path):

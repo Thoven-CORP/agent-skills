@@ -5,6 +5,22 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-12 — Builders start lean; Project documents have a size counter
+
+> session · 2026-11-12 · meta-analysis · tooling · applied · seen 1
+
+**What changed.** A dispatched pane launches with `config/builder-settings.json` (`--settings`), and `thoven-andres-mode` and `thoven-ticket-recall` stay silent when `THOVEN_PANE_ROLE=builder`. New `thoven-doc-size` hook denies a Linear save over its page's limit.
+**Why.** Builders opened at about 101k tokens of main's toolbox, and the grill set hard page limits.
+Details: `releases/2026-11-12-instructions-rewrite.md`.
+
+## 2026-11-12 — The law keeps what a builder acts on
+
+> session · 2026-11-12 · meta-analysis · tooling · applied · seen 1
+
+**What changed.** Branch, PR and merge rules moved to `rules/branches-and-prs.md` (four hard rules stay). "Where records live" and "Spec parity" became "Records and sources". "Design parity" is andres-mode's Nov 8 bullets, unchanged. "Targeted tests" points at `verify`; "Review order" left.
+**Why.** Builders loaded PR law they never act on, and two meanings of the parity rule were both in force.
+Details: `releases/2026-11-12-instructions-rewrite.md`.
+
 ## 2026-11-09 — Frontend main froze for eight days behind one lint-baseline edit
 
 > session · 2026-11-09 · 96e39a9f · tooling · applied · seen 1

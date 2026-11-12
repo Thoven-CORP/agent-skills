@@ -2,32 +2,18 @@
 
 How work is tracked at Thoven. Linear holds current requirements, accepted decisions, state and handoffs. Technical and design sources remain linked context.
 
-**Project setup precedence (approved September 30, 2026).** For new Project setup or a scoped
-proposal to change an existing Project, use `$linear-project` and read the live
-[Project setup standard](https://linear.app/thoven/document/project-setup-standard-62e01c7c4f53).
-It supersedes this reference's fixed milestone lifecycle, `feature-ledger open` setup routing and
-repo-only document rule for those choices. Choose project-specific phases and link the actual
-authoritative artifacts, including native Linear documents when appropriate. Existing sources and
-tickets stay in place unless a scoped change is approved. Workspace owns ongoing native context
-and Project Updates; feature-ledger retains its artifact and reconciliation responsibilities.
+**A ticket links the Spec and Architecture headings it builds. Do not create a second current copy of a decision.**
 
-**A Linear issue links to its governing decision. Do not create a second current decision copy.**
-
-**Current records policy (2026-10-28, homes revised 2026-10-30).** §5 names one owner per fact.
+**Current records policy (2026-10-28, homes revised 2026-10-30).** `SKILL.md`, "Writing to Linear", names one home per kind of writing.
 No project file is a universal prerequisite. Retain existing technical and history material.
 Do not scaffold it to satisfy an example or require a bulk document sync.
 
-The numbered ledger rules that skills cite (rule 2 points at its source, rule 4 owners must exist,
-rule 9 prefer a script, rule 12 do not restate the prototype, rule 13 every surface has an authority)
-live in the **Feature Folders** section of `~/thoven/CLAUDE.md`.
+The rules on pointing at sources and on where a fact lives are in `~/thoven/agent-skills/enforcement/rules/thoven-law.md`, "Records and sources", and in `$feature-ledger`.
 
 ```
   Initiative      Thoven 2.0                  the release arc
   └ Project       Teacher 2.0: Dashboard      one feature, audience in the name
-    └ Milestone   PRD + Architecture          the lifecycle, in order
-                  Design
-                  Build
-                  Review
+    └ Milestone   chosen per Project          a checkpoint, from $linear-project
       └ Issue     wire notifications          one session · one Slice
         └ Sub     write the failing test      a step
 ```
@@ -51,8 +37,7 @@ booking. A label, never a container.
 **Feature.** A named body of work holding several shippable Issues. In Linear, a **Project**, named
 `<Audience>: <Feature>` — `Teacher 2.0: Dashboard`, `Student 2.0: Up Next`.
 
-**Milestone.** One stage of a Feature's lifecycle: `PRD + Architecture` · `Design` · `Build` ·
-`Review`. §3.
+**Milestone.** A checkpoint the Project chose at setup (`$linear-project`).
 
 **Issue.** One unit of work a single agent session can finish, and **one Slice**: the decision says
 it, the backend emits it, the contract pins it, the frontend renders it, a user reaches it on a
@@ -82,7 +67,7 @@ Claim is `In Progress`. A `Writes to:` line names the Linear record or deliberat
 **Born in Todo.** Create an issue with `state` left out; the THV team default is Todo (read from
 Linear 2026-11-05). Pass `In Progress` instead when this session starts the work in the same turn.
 A follow-up, a deferral, a spec that is not fully specced, a sub-issue of a parent nobody is
-working: all Todo. How ready it is lives in its `Done when` line and its cycle, never in the
+working: all Todo. How ready it is lives in its Exit criteria and its cycle, never in the
 status. Linear's Active view hides Backlog, so an issue there drops out of sight; 92 agent-created
 issues landed there before this rule.
 
@@ -99,13 +84,12 @@ the same write if the parent reads Todo or Backlog.
 
 | | |
 |---|---|
-| **PRD** | The problem and who has it. Attaches to a Feature. |
-| **Spec** | What gets built, before how. |
-| **Plan** | The task breakdown. Produces Issues. |
-| **Ledger** | The Project's current accepted decision rows in Linear, with pointers to relevant technical and design sources. §5. |
-| **Decision** | One resolved choice, carrying an id, **pointing at its source**. |
-| **Proto** | A runnable HTML or React drawing. The contract for look and behaviour. Never markdown. **It is deleted the day its component ships**, with the surface's row repointed at `<component>@<commit>` — `feature-ledger` rule 15. A surface with two live artifacts has no contract. |
-| **Log** | Issue comments and Project Updates in Linear: why, resolutions and where work stopped. |
+| **Spec** | Current truth: what each surface shows and does. A native Linear document. |
+| **Architecture** | How it is built: data, payload fields, modules by path. A native Linear document. |
+| **Log** | Why the Spec or Architecture changed: the question, his words, options turned down, the chat it came from. A native Linear document. |
+| **Plan** | The builder's scratch file for its own session. Never a Project document. |
+| **Proto** | A runnable HTML or React drawing. The contract for look and behaviour. Never markdown. **It is deleted the day its component ships**, with the surface's row repointed at `<component>@<commit>` (`feature-ledger` `references/RECONCILIATION.md`). A surface with two live artifacts has no contract. |
+| **Activity** | Issue comments and Project Updates: status events, progress, where work stopped. |
 | **Map** | The rendered view of the current Project snapshot. Derived per invocation, never hand-edited or synchronized between skills. |
 
 ### Reserved words
@@ -127,7 +111,7 @@ First yes wins.
 4  A release arc across features?           Yes →  INITIATIVE
 ```
 
-Milestones are not routed to. Every Project has the same lifecycle (§3).
+Milestones are not routed to. `$linear-project` chooses them (§3).
 
 **Every Build Issue is vertical through both repos** — schema → API → contract → UI → test — and
 demoable alone. Split an issue by repo and both suites can pass while the product is broken.
@@ -136,112 +120,11 @@ demoable alone. Split an issue by repo and both suites can pass while the produc
 
 ## 3. The lifecycle
 
-### Starting a Feature
+`$linear-project` chooses each Project's milestones; there is no fixed ladder. Issues are created one milestone ahead, because an issue's shape is not knowable until the milestone before it closes.
 
-`linear-project` proposes or updates the native Project brief, relevant documents and milestones.
-Local project folders and templates are optional. **Choosing which milestones this Project gets is the triage step**, and it is the only
-planning done up front: the milestone set says what this Feature needs, and its absence says what it
-does not.
+**The gate is native.** Linear counts issues, not points, toward milestone progress. An empty milestone reads 0% forever, and a canceled issue leaves the denominator (measured 2026-08-18). Trim a milestone by deleting it; drop scope by canceling the issue.
 
-Issues are created one milestone ahead. An issue's shape is not knowable until the milestone before
-it closes.
-
-### Which skills run which milestone
-
-| Milestone | Skills |
-|---|---|
-| **PRD + Architecture** | `/grill-with-docs` · `/architect` · `/to-spec` · `/writing-plans` |
-| **Design** | Proto at the path the fat card names. `thoven-designer` for a single component. |
-| **Build** | `/to-tickets` cut the plan into vertical issues · `/verify` before Ready · `/blast-radius` when a small diff might break the other repo |
-| **Review** | `/qa-flow` · the feature's `WALKTHROUGH_V*.md` |
-
-```
-┌─ 1 · PRD + ARCHITECTURE ──────────────────────── lane: In Progress ───┐
-│   Every issue carries "Writes to:". Both repos' requirements land here.│
-│     problem, who has it, stories → Project brief (§5)                  │
-│     a decision                   → governing document (§5)             │
-│     a technical artifact         → a repo path only when §5 selects it │
-│   GATE  accepted outputs meet their criteria                        │
-└────────────────────────────────────────────────────────────────────────┘
-                                  ▼
-┌─ 2 · DESIGN ──────────────────────────────────── lane: In Progress ───┐
-│     proto                        → the design source the issue names   │
-│     accepted choice              → governing document (§5)             │
-│     component                    → the component + its token test      │
-│   GATE  every DESIGN_<PROJECT>.md surface row resolves                 │
-└────────────────────────────────────────────────────────────────────────┘
-                                  ▼
-┌─ 3 · BUILD ───────────────────────────────────── lane: In Progress ────┐
-│   No "Writes to:". Each issue vertical through both repos.             │
-│   Lands in the worktree the moment it works. Incomplete is fine.       │
-│   GATE  mounted. A user reaches it.                                    │
-└────────────────────────────────────────────────────────────────────────┘
-                                  ▼
-┌─ 4 · REVIEW ──────────────────────────────────── lane: In Progress ────┐
-│     QA · walkthrough · merged                                          │
-│   GATE  all milestones 100% → the Project is done                      │
-└────────────────────────────────────────────────────────────────────────┘
-```
-
-**Trim any milestone that does not apply.** The absence is the decision: a Feature with no `Design`
-milestone is one where design was considered and found unnecessary.
-
-**The gate is native.** Linear computes milestone progress from its issues. Measured 2026-08-18:
-
-```
-progress counts ISSUES, not points     1 of 3 done = 33.33%, and the one
-                                       closed was the 8-pointer
-an EMPTY milestone reads 0%            never 100%
-a CANCELED issue leaves the denominator  1 done of 2 remaining = 50%
-```
-
-Three consequences:
-
-- **Trim means delete the milestone, never leave it empty.** An empty one reads 0% forever, so it is
-  a gate that cannot open and it drags the Project's progress down with it.
-- **Estimates do not move the bar, so do not estimate for the gate's sake.** What makes the bar
-  honest is issue granularity: one enormous issue beside one tiny one reads 50% when the tiny one
-  closes.
-- **Cancel is how you drop scope after the fact,** and the gate can still reach 100% afterwards.
-
-**A closed milestone stays closed.** When Design turns up a payload the contract missed, that is a
-new issue in the milestone you are standing in, carrying a link to the decision it changes. Reopening
-an earlier milestone makes its progress bar describe a past that did not happen.
-
-**Backend and frontend requirements both live in `PRD + Architecture`.** There is no `Backend`
-milestone; backend work is half of a vertical Build issue.
-
-### What it looks like in flight
-
-Milestones are created with the Project, so the whole feature is visible on day one. Issues are
-created one milestone ahead, because an issue's shape is not knowable until the milestone before it
-closes.
-
-```
-Teacher 2.0 ── the name prefix
-│
-├─ Shell ─────────────── Project
-│    PRD+Arch  ████████  100%     GATE OPEN
-│    Design    ████████  100%     GATE OPEN
-│    Build     ██░░░░░░   33%  ◄── THV-59  mount the shell        In Progress
-│    Review    ░░░░░░░░    0%
-│
-├─ Dashboard ─────────── Project
-│    PRD+Arch  ██████░░   75%  ◄── THV-61  payload contract    In Progress
-│    Design    ███░░░░░   40%
-│    Build     ░░░░░░░░    0%     no issues yet, and that is correct
-│    Review    ░░░░░░░░    0%
-│
-└─ Schedule · Business · Library · Onboarding · Settings
-     every milestone at 0%, no issues. Also correct.
-```
-
-A Project is done when every one of its milestones reads 100%. The product appears before that: each
-Build issue lands in the worktree the moment it works.
-
-When the Project is done, its integration branch goes. GitHub deletes it on origin when it lands in
-`main`. Remove each of its trees with `thoven-worktree remove`, which deletes the local branch once no
-tree holds it and no open PR targets it.
+**A closed milestone stays closed.** When later work turns up a payload the contract missed, that is a new issue in the current milestone, linking the Spec or Architecture heading it changes.
 
 ---
 
@@ -263,24 +146,13 @@ tree holds it and no open PR targets it.
   Done           the job is finished. Merge is git. It does not move Linear.
 ```
 
-```
-  The milestone says WHICH STAGE.  The status says WHERE IT IS NOW.
-
-  Triage ──► Backlog ──► Todo ──► In Progress ──► Ready ──► Done
-
-  M1 PRD+Arch  issues carry "Writes to:"  ──►  In Progress
-  M2 Design    issues carry "Writes to:"  ──►  In Progress
-  M3 Build     issues do not              ──►  In Progress
-  M4 Review    issues do not              ──►  In Progress
-```
-
 **A merged PR does not move Linear.** `Done` is finished work. `Ready` is come-look.
 `THV-42` in a commit is a git reference. Do not write `Fixes`. That word auto-closes Linear.
 
 ### Branching across both repos
 
 Each issue gets one worktree per repo it touches, made by `thoven-worktree create`. How it names
-and bases them is the law: `~/thoven/agent-skills/enforcement/rules/thoven-law.md`.
+and bases them is `~/thoven/agent-skills/enforcement/rules/branches-and-prs.md`.
 
 A vertical issue touches both repos, so it gets **the same branch name in each**:
 
@@ -295,70 +167,103 @@ One magic word per issue, or Linear closes it on whichever repo merges first whi
 still unmerged. Merge the backend first so the frontend never ships against a contract that is not
 live yet.
 
-### Done when
+### The ticket
 
-Every issue carries one, and it names something a person can check. An issue moves to Done only
-when every `Done when` line has an artifact. Until then its branch and worktree stay, and an
-unproven line is finished on that branch, never split into a new issue or PR. (2026-11-08: the
-merge-queue ticket closed with its rejection proof still open, and the leftovers became new trees,
-two sync PRs and a probe PR.)
+The ticket is the builder's brief. A build ticket is written from the Build ticket template; research, design, plan, review and spec work from the Work item template. In order:
+
+- `Writes to:` on its own line, first. A build ticket names `[frontend, backend or both] on [branch]`. Other work names the Linear document and heading it fills, or `this ticket`. The session gate reads this line.
+- **Outcome.** One or two sentences: what a person can do when this ships, and why it matters to them. It links the Spec's "Done for the product" line it serves.
+- **What to build.** The pieces, one line each, each linked to its row in the Architecture's Units table. The builder plans its own steps.
+- **Build from.** Links only, each to its exact heading: the Spec rules, the screens, the Architecture units, and the existing modules to extend, by path.
+- **Exit criteria.** Three to ten exit lines on a build ticket, one to five on other work.
+- **Leave alone.** Optional. Neighbouring screens or code the builder must leave as they are.
+
+The whole ticket is 400 words at most. More than ten exit lines means two tickets. Project, milestone, assignee and blocking are native fields and relations; the body leaves them out. A subissue links its parent and holds only its own part.
+
+A Linear destination resolves with Linear access, not filesystem existence; a URL alone does not prove access. A technical artifact may name an existing repository path, and a required local path that does not resolve is an error. A new top-level folder is Andres's call. Do not rewrite an existing task's destination merely to orient a session.
+
+### Exit criteria
+
+Every ticket carries `## Exit criteria`: three to ten exit lines on a build ticket, one to five on
+other work, the one target for the builder and the reviewer. An exit line is one outcome a person can see or a caller can observe,
+then `Proof:` and the one check that cannot pass while the outcome is false. The outcome comes
+first, so a green check alone never counts as done.
+
+- **Write the outcome from the user's side:** who does what, where, and what happens. For a
+  component or a button: what each action does, which states it shows, and what happens on a phone.
+- **Pick the proof at the highest point a person or caller reaches:** the unit's "Smallest proof"
+  in the architecture, a response body, a search that finds nothing, or the design capture beside
+  its frame. "A named spec is green" with no outcome before it proves nothing.
+- **Every behaviour the spec gives this ticket has a line,** linking its spec rule or frame. The
+  behaviour with no line is the one that ships missing: the stamp pack shipped silent because no
+  line said it plays the lab's sounds.
+- **Main and Andres edit exit lines,** when the Spec line a line serves changes. The builder never
+  edits them; a builder who thinks one is wrong asks main. A narrower build is fixed in the build,
+  never in the line.
+- **Done is every line shown true.** The builder runs each proof once and attaches it to its one
+  report. An issue moves to Done only when every line has its proof. Until then its branch and
+  worktree stay, and an unproven line is finished there, never split into a new issue or PR.
+  (2026-11-08: the merge-queue ticket closed with its rejection proof still open, and the
+  leftovers became new trees, two sync PRs and a probe PR.)
+
+A screen with a design (ids are illustrative):
 
 ```
-Done when: a teacher on /teacher/dashboard sees notification rows grouped by
-section; the payload returns read state per thread; `grep -r thoven-sidebar
-components app --include=*.tsx` returns a call site outside app/dev/.
+## Exit criteria
+- A parent on the passport page taps Edit on the goal, the genres, the stage name or the logo,
+  saves, and sees the new value on the passport and after a reload (S12). Proof: a Playwright
+  test that edits, reloads and reads each field.
+- The child redoes the logo from their own passport the same way (S14). Proof: the same test,
+  signed in as the child.
+- With the network off, Save shows the load-error card and keeps what was typed. Proof: a
+  component test with Save failing.
+- At each frame's width, desktop and phone, the passport shows what frames F3 and F3-phone show:
+  the same elements, states and order. Proof: the design capture beside both frames.
 ```
 
-A spec issue's is shorter, because `Writes to:` already names the artifact:
+An API change with no screen:
 
 ```
-Writes to: https://linear.app/thoven/document/<document-id>
-Done when: that document names every field this Feature reads, and each row says
-whether the backend emits it today.
+## Exit criteria
+- POST /admin/credentials/:id/decide with outcome `rejected` and no note returns 422 naming
+  `note`. Proof: a request spec on the 422 body.
+- With a note, it saves both, and the credential GET returns `outcome` and `note` as keys (S7).
+  Proof: a request spec that finds both keys in the GET body.
+- A client still sending the old body gets 200 until the frontend that sends `note` is on
+  staging. Proof: a request spec that posts the old body.
+```
+
+A refactor:
+
+```
+## Exit criteria
+- Retry after an upload whose reply was lost reads the class list first, through one module that
+  MaterialsWorkspace and the live-lesson stage both call. Proof: a unit test of that module that
+  loses the reply and sees the list read first.
+- No other copy of that rule is left in product code. Proof: `rg` for the old inline check finds
+  nothing.
+- Both screens behave and look as before. Proof: both screens' existing tests pass unchanged, and
+  each screen's design capture matches its own baseline.
 ```
 
 **Claim only from Todo.** Anything past it is owned by another session. `In Progress` + assignee
 is the mutex across Cursor, Claude and Codex.
 
-**An assignee must resolve to a real user.** So must a `blocked-by` link and a `DESIGN_<PROJECT>.md`
-owning gate. An owner that cannot be linked does not exist.
+**An assignee must resolve to a real user.** So must a `blocked-by` link. An owner that cannot be linked does not exist.
 
 ---
 
 ## 5. Where things live
 
-**Linear holds the current project record.** Read the current Project brief, parent decisions,
-relevant linked document bodies, native issues/milestones and latest Project Update. Links alone
-are not read evidence. Use the live Project setup standard through `linear-project` when changing
-setup. Missing local files do not imply that setup is missing.
+The homes, and how current truth reads, are in `SKILL.md`, "Writing to Linear". Before work, read the Project brief, the Spec and Architecture bodies, native issues and milestones, and the latest Project Update; a link alone is not a read.
 
-| Fact | Owner | Other records |
-|---|---|---|
-| Decision | The Project's governing decision document. One entry per choice. | The parent and the issue link the id. |
-| Status | The issue state and the Project status field. | A Project Update names the state. |
-| Brief and scope | The Project description. | |
-| Handoff, progress, and risk | The latest Project Update, with a health value. | An issue comment links that Update. |
-| Design and brainstorming | tldraw or Paper. | The accepted choice is a decision entry. |
-| Technical detail, plans, and code | The owning repository, when a decision entry selects that path. | |
-| Existing PRDs, `STATE.md`, `CONTINUE_HERE.md`, archives | Optional history. | No required copy. |
+A Project's Spec, Architecture and Log are native Linear documents in that Project, created from their templates. A Project whose work fits one ticket keeps its spec in the ticket (`Writes to: this ticket`) and needs none of the three. Technical detail that lives in code, such as a schema or a contract file, stays at the repo path the Architecture names.
 
-### Decision entry
-
-One entry per choice, in the governing document.
-
-- id
-- ruling, one sentence
-- reason
-- rejected alternatives
-- the source it points at
-- what it supersedes
-- status, from the vocabulary in `~/thoven/CLAUDE.md`
-
-Amend that entry when the user rules. Preserve historical records and rejected alternatives. An accepted design source binds the surface it shows. A code component establishes current implementation, not a superseding product requirement. A missing required design or document is a named context gap, not permission to invent it.
+An accepted design source binds the surface it shows. A shipped component is the current implementation, not a newer requirement. A design or document that does not exist yet is an open question in the Spec, never invented content.
 
 ### Project Update
 
-One Update carries health (`onTrack`, `atRisk`, or `offTrack`), what changed, the decision ids, the risks, and what is next. It links each decision id. It does not restate the ruling.
+One Update carries health (`onTrack`, `atRisk`, or `offTrack`), what changed, the Spec headings it changed, the risks, and what is next. It links each heading and does not restate the change.
 
 Keep the existing Git branches and PR route across hosts. Use a dedicated disposable test mirror
 for remote checks and separate worktrees for remote coding. See
@@ -369,36 +274,18 @@ for remote checks and separate worktrees for remote coding. See
 `workspace` and `feature-ledger` independently read the same disclosed Project snapshot protocol.
 Neither invokes the other, synchronizes hidden state, or relies on a previous invocation. `workspace`
 owns mechanical orientation, lifecycle, capture, close, Map, and log. `feature-ledger` adds semantic
-reconciliation across PRD, design, architecture, API/database, implementation, mounts, and proof.
+reconciliation across the Spec, design, Architecture, API/database, implementation, mounts, and proof.
 
 The main session owns synthesis. It personally reads the snapshot fingerprint, every blocker and
 unknown, semantic forks, bounded-agent receipts, and the exact proposed write set. Subagents inspect
 bounded evidence only; they do not mutate shared Project state or Linear.
-
-### The issue names where it sits, then the output path
-
-The body stamp is §8 Location stamp (`Sits in:` · `Ledger:` · `Room:` · `Writes to:` · `Done when:`). This section is only the `Writes to:` routing rule.
-
-An issue whose output is a document names its destination explicitly:
-
-```text
-Writes to: this ticket
-Writes to: https://linear.app/thoven/document/<document-id>
-```
-
-A deliberately selected technical artifact may instead name an existing repository path. Resolve
-Linear destinations with Linear access, not filesystem existence. A URL alone does not prove access.
-A genuinely required local path that is invalid remains an error. The output must satisfy its
-acceptance criteria; an empty file or document is not completion. New top-level folders remain
-Andres's call. Do not rewrite an existing task's destination merely to orient a session.
 
 ### Plans
 
 **Plan checkboxes are scratch.** How far this session got.
 **Linear issue status is truth.** What is claimed, and what is done.
 
-One agent, one session: the plan stays a file and Linear sees one Issue. Multiple sessions:
-`/to-tickets` breaks it up and the plan keeps only the reasoning.
+A plan is the builder's scratch file for its own session, never a Project document. Work that spans sessions is tickets, each with its own exit criteria.
 
 ### Continuation
 
@@ -420,14 +307,14 @@ worktree, paired-repo and proof provenance.
 when its kind is known. Checked against Linear 2026-10-08.
 
 **The gate is a Status, not a label.** `Triage` means not yet agreed; `Todo` means an agent may
-claim it. When `/to-spec`, `/to-tickets` or `triage` speak of `needs-triage` or `ready-for-agent`,
+claim it. When `/to-tickets` or `triage` speak of `needs-triage` or `ready-for-agent`,
 set that Status and leave the label off.
 
 ⚠ **Casing is exact.** Linear rejects case-variant duplicates and cannot rename, so `bug` would
 create a second, unmergeable label. A new label is Andres's call, asked for before it is created.
 
-The repo is not a label either. It belongs in the issue's *Done when*, where a
-cross-repo issue names both.
+The repo is not a label either. It belongs in the build ticket's `Writes to:` line, where a
+cross-repo ticket names both.
 
 **Blocking is a native relation, not a label.**
 
@@ -464,16 +351,16 @@ CLAIMING
   One issue = one agent session.
 - Claim is always In Progress. A "Writes to:" line names the Linear record or deliberately selected technical artifact.
 - To claim: set In Progress, take the issue, comment which tool you are.
-- Start once the issue has a "Done when" line. If it has none, ask Andres in
+- Start once the issue has Exit criteria. If it has none, ask Andres in
   a comment.
 
 DOCUMENTS
 - Grill with /grill-with-docs, then /architect. Protos and app/dev/ routes are in scope.
   Shipped product code waits for a Build issue.
-- Write to the record or technical path "Writes to:" names. Done when its acceptance criteria pass, not merely when it exists. Then set Ready.
-- If the grill produces build work, run /to-tickets after Andres asks. /writing-plans still exists for a session plan.
+- Write to the record or technical path "Writes to:" names. Done when its exit criteria pass, not merely when it exists. Then set Ready.
+- If the grill produces build work, run /to-tickets after Andres asks.
 - New top-level docs/ folders are Andres's call. Ask in a comment.
-- Decisions live in the governing document named in §5. The parent issue links that document by id.
+- Current truth lives in the Project's Spec and Architecture; why it changed lives in the Log. A ticket links the headings it builds.
 
 BUILDING
 - Every issue is vertical through both repos, and demoable alone.
@@ -481,9 +368,9 @@ BUILDING
 - Built means mounted. A file with no call sites is not done.
 
 BRANCHES AND PULL REQUESTS
-- Branch, PR and worktree rules: `~/thoven/agent-skills/enforcement/rules/thoven-law.md`.
+- Branch, PR and worktree rules: `~/thoven/agent-skills/enforcement/rules/branches-and-prs.md`.
   `thoven-worktree create <fe|be> <area> <id>` gives `<area>/thv-<id>`, the same name in both repos.
-- Open a PR into `main`, append the ticket's remaining known work to it, and arm auto-merge once its PR review passes; GitHub merges it on green `CI`, backend first, with no go from Andres, UI included (2026-11-05). The method follows the PR's role (thoven-law.md "Branches and PRs"): a PR into `main` queues with `gh pr merge --auto` and `main`'s merge queue lands it as a merge commit (THV-1707); a ticket into an integration branch squashes (`--squash` on green targeted CI and the verifier's pass); a docs-only PR merges in the same pass; a catch-up of `main` into an integration branch merges with `--merge`. Name source, target and method in the report line.
+- Open a PR into `main`, append the ticket's remaining known work to it, and arm auto-merge once its PR review passes; GitHub merges it on green `CI`, backend first, with no go from Andres, UI included (2026-11-05). The method follows the PR's role (`~/thoven/agent-skills/enforcement/rules/branches-and-prs.md`): a PR into `main` queues with `gh pr merge --auto` and `main`'s merge queue lands it as a merge commit (THV-1707); a ticket into an integration branch squashes (`--squash` on green targeted CI and the verifier's pass); a docs-only PR merges in the same pass; a catch-up of `main` into an integration branch merges with `--merge`. Name source, target and method in the report line.
 - Put `THV-<id>` in the commit message with no magic word. `Fixes` auto-closes Linear. Merge does not own Done.
 - A ticket that takes more than one PR: an id in the branch name or PR title links that PR as closing, so its first merge moves the ticket to Done. Keep the id out of both and write `Part of THV-<id>` in the PR body, which links without closing. (2026-10-25: the test-cadence ticket closed on its first of five PRs.)
 - Write Ready if a surface still needs his eyes. Write Done when the job is finished, and only after
@@ -545,20 +432,6 @@ Do not collapse these. They answer different questions.
 
 A Dashboard issue in `Build` can sit under an L3 wireframe bar. That is consistent: this slice is being coded while another track is still drawing.
 
-### Location stamp (on every issue)
-
-The issue **points**. It does not retell the spec. One block at the top of the body, always:
-
-```
-Sits in: <Initiative> · <Audience>: <Feature> · <Milestone>
-Ledger: <decision id in the §5 document>
-Room: ~<Project session or space> / <tab>
-Writes to: this ticket, or a Linear document URL. Omit on Build/Review.
-Done when: <checkable outcome>
-```
-
-`Sits in:` is how the workflow shows up **on the ticket**. Workspace writes this at create and at claim. Meta's pane label is milestone + job, then the id.
-
 **Trust the multiplexer, not OpenCode chrome.** The pane label and the tab label are the room. OpenCode's session title (`OC | THV-178 Business Shell…`) is a leftover from whichever chat was last `/rename`d inside that process. If it disagrees with the pane, it is wrong. Fix it with `/rename` in that chat to the **same sentence as the pane label**. Route work by the pane label.
 
 ### Meta vs Work panes — the scoping rule
@@ -614,8 +487,7 @@ skill from spawn to close.
   child normally has cycle null). Adding a Backlog issue to the active cycle also moves it to Todo
   silently, so the same check applies there.
 - **Confirm the live write tool with a read, then use it.** Issue text is `save_issue`. A comment is `save_comment`. A native document is `save_document`. The Project description is `save_project`. A Project Update is `save_status_update`, and it includes a health value (`onTrack`, `atRisk`, or `offTrack`). These names were read from the Linear connector on 2026-10-30. A client whose tool list differs uses the name that read returns. An unknown tool name reports as "failed to connect," not "unknown tool." If reads work and a write cannot connect, check the tool name before retrying.
-- **Cancel an issue to close it,** so the id keeps resolving. Delete a *decision* row once it is
-  superseded; keep a *rejected alternative* inside the drawing.
+- **Cancel an issue to close it,** so the id keeps resolving. Edit a Spec section in place when it changes; the option it replaced goes in the Log.
 - **Read a merge before trusting it.** `.claude/launch.json` merges cleanly and wrong across
   worktrees, taking the other checkout's port.
 - **Staging and publish are not on the board.** They live in the GitHub Releases on `prod/` tags.

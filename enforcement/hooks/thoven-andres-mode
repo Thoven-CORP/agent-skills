@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# SessionStart: put the andres-mode skill in context for a session in ~/thoven or ~.
+# SessionStart: put the andres-mode skill in context for a main session in ~/thoven or ~.
+# A dispatched pane (THOVEN_PANE_ROLE=builder, set by config/builder-settings.json) gets its rules
+# from its brief and standing.md.
 # Three main sessions on 2026-10-21/22 never loaded it, so its rules went unread; the description
 # alone did not fire reliably (THV-1361). Silent elsewhere and when the skill is not installed.
 # It prints a read directive and the Pitfalls, not the whole skill: Claude Code keeps only a 2 KB
@@ -8,6 +10,7 @@
 payload="$(cat)"
 cwd="$(printf '%s' "$payload" | jq -r '.cwd // empty' 2>/dev/null)"
 [ -n "$cwd" ] || cwd="$PWD"
+[ "${THOVEN_PANE_ROLE-}" = builder ] && exit 0
 case "$cwd" in
   "$HOME" | "$HOME/thoven" | "$HOME"/thoven/*) ;;
   *) exit 0 ;;

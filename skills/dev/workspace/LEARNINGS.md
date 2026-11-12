@@ -5,6 +5,13 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-11-12 — a spec became a history list
+
+**What changed.** "Writing to Linear" gives each kind of writing one home: Spec, Architecture, Log, ticket. A ruling edits the Spec in place and adds a Log entry. Project documents get size limits. WORKFLOW teaches the ticket and its exit criteria and drops the milestone ladder. Handoffs pass links, not summaries. map.js input moved to `references/map-input.md`.
+**Why.** The decision entry was history-shaped, so specs grew to 183 headings.
+**More.** `releases/2026-11-12-instructions-rewrite.md`
+
+
 ## 2026-11-05 — a bundle yes is not a ruling on an unstated cost
 
 > reflect · 2026-11-05 · 489a6eae · edbbc3cf · correction · applied · seen 2

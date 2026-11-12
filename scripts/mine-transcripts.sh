@@ -239,7 +239,7 @@ mine_codex() {
 # so is a herdr relay. A message re-sent word for word counts once. BRIEF's last two phrases are the
 # dispatch-work v2 brief's opening lines, which survive filling its {{fields}}.
 CORRECTION='(i told you|i said|i already|we already|already (told|said|decided|did)|as i (said|mentioned)|again|remember|forgot|we (talked|discussed|decided|agreed)|last time|how many times|you keep|keep (doing|asking)|stop (doing|asking)|not what i|wrong|why did you|i never said|settled|stale|re-?ask|same (mistake|thing)|confused|lost|instead of)'
-BRIEF='(DONE WHEN|REPORT TO|Writes to:|## Brief|herdr pane|Main is the Claude session|Read it in full first\. It holds the ticket)'
+BRIEF='(DONE WHEN|REPORT TO|Writes to:|EXIT CRITERIA|Exit criteria|## Brief|herdr pane|Main is the Claude session|Read it in full first\. It holds the ticket)'
 # herdr relays: main's prompt inside a pane session, or a pane's report typed into main. Each opens
 # with a sender label ("Main:", "THV-1303 from main:", "F3 restore:", "Lock released:", "PR 319 run").
 RELAY='^(MAIN|Main|main|THV-[0-9]+[^:]{0,30}|F[0-9]+[^:]{0,24}|Lock released|PR [0-9]+ run[^:]{0,30}):'

@@ -1,0 +1,67 @@
+{
+  "env": { "THOVEN_PANE_ROLE": "builder" },
+  "autoMemoryEnabled": false,
+  "disableClaudeAiConnectors": true,
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": false,
+    "superpowers@superpowers-marketplace": false,
+    "mem0@mem0-plugins": false,
+    "stripe@claude-plugins-official": false,
+    "sentry@claude-plugins-official": false,
+    "sentry-cli@anthropic-plugin-directory": false,
+    "render@anthropic-plugin-directory": false,
+    "neon@anthropic-plugin-directory": false,
+    "mobbin@anthropic-plugin-directory": false,
+    "chrome-devtools-mcp@claude-plugins-official": false,
+    "github@claude-plugins-official": false,
+    "feature-dev@claude-plugins-official": false,
+    "greptile@claude-plugins-official": false,
+    "sdd@context-engineering-kit": false,
+    "i-have-adhd@i-have-adhd": false,
+    "next-steps@claude-community": false,
+    "typesafe@typesafe-ai": false
+  },
+  "deniedMcpServers": [
+    { "serverName": "Neon" },
+    { "serverName": "trunk" },
+    { "serverName": "seoskill" },
+    { "serverName": "mixpanel" },
+    { "serverName": "gws" },
+    { "serverName": "notion" }
+  ],
+  "skillOverrides": {
+    "workspace": "name-only", "dispatch-work": "name-only", "publish": "name-only",
+    "start-staging": "name-only", "recall": "name-only", "ketchup": "name-only",
+    "to-spec": "name-only", "to-tickets": "name-only", "grill-with-docs": "name-only",
+    "product-fundamentals": "name-only", "visual-artifacts": "name-only", "andres-mode": "name-only",
+    "orchestrate": "name-only", "prompt-generator": "name-only", "doc-freshness": "name-only",
+    "in-your-own-words": "name-only", "babysit-pr": "name-only", "modernize": "name-only",
+    "full-send": "name-only", "dataviz": "name-only", "update-config": "name-only",
+    "claude-in-chrome": "name-only", "schedule": "name-only", "loop": "name-only",
+    "plugin-authoring": "name-only", "workflow-authoring": "name-only",
+    "keybindings-help": "name-only", "fewer-permission-prompts": "name-only", "claude-api": "name-only"
+  },
+  "permissions": {
+    "deny": [
+      "Agent(accessibility-tester)", "Agent(ai-engineer)", "Agent(api-designer)",
+      "Agent(api-documenter)", "Agent(architecture-reviewer)", "Agent(Behavioral Nudge Engine)",
+      "Agent(bug-hunter)", "Agent(business-analyst)", "Agent(cfo-weekly-analyst)",
+      "Agent(claude-code-guide)", "Agent(code-reviewer)", "Agent(competitive-analyst)",
+      "Agent(compliance-auditor)", "Agent(consumer-product-advisor)", "Agent(content-marketer)",
+      "Agent(context-consultant:context-architect)", "Agent(context-consultant:eval-engineer)",
+      "Agent(data-researcher)", "Agent(debug-specialist)", "Agent(dependency-manager)",
+      "Agent(design-researcher)", "Agent(Executive Summary Generator)", "Agent(frontend-developer)",
+      "Agent(geo-ai-visibility)", "Agent(geo-content)", "Agent(geo-platform-analysis)",
+      "Agent(geo-schema)", "Agent(geo-technical)", "Agent(learning-science-advisor)",
+      "Agent(Legal Compliance Checker)", "Agent(legal-advisor)", "Agent(llm-architect)",
+      "Agent(market-researcher)", "Agent(master-backend-ai-rails)", "Agent(MCP Builder)",
+      "Agent(next-js-developer)", "Agent(performance-analyzer)", "Agent(postgres-pro)",
+      "Agent(Product Manager)", "Agent(product-manager)", "Agent(prompt-engineer)",
+      "Agent(react-specialist)", "Agent(refactoring-specialist)", "Agent(research-analyst)",
+      "Agent(security-engineer)", "Agent(seo-specialist)", "Agent(statusline-setup)",
+      "Agent(technical-writer)", "Agent(tldraw-offline)", "Agent(typescript-pro)",
+      "Agent(ui-designer)", "Agent(ux-researcher)", "Agent(websocket-engineer)",
+      "Agent(Workflow Architect)"
+    ]
+  }
+}

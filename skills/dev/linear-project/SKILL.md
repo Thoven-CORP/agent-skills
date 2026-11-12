@@ -56,15 +56,17 @@ applies to an API client. If template selection is unavailable, disclose the lim
 an equivalent brief from the verified standard, without claiming the template was applied.
 
 Fill the template's five sections: **Goal**, **Scope and non-goals**, **Project approach**,
-**Key decisions and open questions**, **Sources of truth**. Keep summary to one outcome sentence.
+**Open setup questions**, **Sources of truth**. Keep summary to one outcome sentence.
 Use native fields for lead, status, priority, dates and initiative where decided; native milestones
 for chosen checkpoints with completion descriptions; issues for actual work. Keep native values
 out of duplicate field tables or ticket-status lists.
 
 Link actual specs, designs and decisions as Resources. A small project may need only the brief.
-A project document is an actual longer artifact; a document template only seeds its shape. Keep
-existing authoritative issues or files where they are. Do not clone or migrate them automatically,
-or assume template edits sync projects or create documents. Do not create issue or document templates.
+A Project that builds across several tickets gets three native documents at setup, each created
+from its template: the Spec, the Architecture and the Log (`$workspace`, "Writing to Linear",
+says what each holds and how to make one from its template). The first grill then fills their
+sections instead of a blank page. Keep existing authoritative issues or files where they are; do
+not clone or migrate them automatically. Template edits do not change documents that already exist.
 
 ## Integration branch
 

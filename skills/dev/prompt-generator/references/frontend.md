@@ -144,7 +144,7 @@ After classification, identify which existing skills the generated prompt should
 | Research | `/research-orchestration` (if multi-topic) | — |
 | Debugging/Bugfix | `/investigate-thoven` | `/verify`, `/qa-flow` |
 | Audit | `/accessibility-check` (if a11y), `/mobile-audit` (if responsive) | — |
-| PRD/Spec | `/technical-spec-generator`, `/product-strategy-brainstorming` | — |
+| PRD/Spec | `/grill-with-docs`, `/product-strategy-brainstorming` | — |
 | Testing | `superpowers:test-driven-development` | `/verify` (quick mode) |
 | Creative/Brainstorming | `/grill-with-docs` | — |
 | Cross-Codebase Handoff | — | — |
@@ -168,7 +168,7 @@ After classification, identify which existing skills the generated prompt should
 
 ```
 Bug workflow:     /investigate-thoven → [fix prompt] → /verify → /qa-flow → /publish
-Feature workflow: /grill-with-docs → /architect → /to-spec → /superpowers:writing-plans → [implement prompt] → /verify
+Feature workflow: /grill-with-docs → /architect → /to-tickets → [implement prompt] → /verify
 Audit workflow:   /[audit skill] → [fix prompt from findings] → /verify
 Design workflow:  /thoven-designer → [implement prompt] → /accessibility-check → /mobile-audit → /verify
 ```

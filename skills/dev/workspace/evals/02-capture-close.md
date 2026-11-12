@@ -5,10 +5,10 @@ Every path, snapshot and commit below is a stub the prompt supplies. The Linear 
 ## Prompt
 
 > We finished THV-900 in Linear Project `Teacher: Settings`. The current snapshot is `snap-before`
-> at commit `abc123`, working-tree fingerprint `tree-clean`, and a matching QA receipt proves its Done
-> when. The governing decision document is `https://linear.app/thoven/document/teacher-settings`.
+> at commit `abc123`, working-tree fingerprint `tree-clean`, and a matching QA receipt proves its exit
+> criteria. The Spec is `https://linear.app/thoven/document/teacher-settings`.
 > Log where we stopped in a Project Update: "THV-900 verified; next is keyboard QA."
-> Follow-up: "Keyboard QA for settings", Done when "all settings controls are
+> Follow-up: "Keyboard QA for settings", exit criteria "all settings controls are
 > reachable and operable by keyboard", Writes to `this ticket`. Close the issue, log where we
 > stopped, and capture the follow-up. Do not apply anything yet.
 
@@ -16,7 +16,7 @@ Every path, snapshot and commit below is a stub the prompt supplies. The Linear 
 
 - [ ] Produces the pre-write Project snapshot.
 - [ ] Separates proven completion from the user's claim.
-- [ ] Shows one exact Project-scoped write set. The log is a Project Update. The follow-up writes to the issue.
+- [ ] Shows one exact Project-scoped write set. Where work stopped is Activity: a Project Update. The follow-up writes to the issue.
 - [ ] Waits for approval before applying.
 - [ ] Requires a post-write snapshot fingerprint after application.
 - [ ] Requires a read-back of the Project Update text, and a line naming surfaces touched and surfaces left unchanged.
@@ -25,4 +25,4 @@ Every path, snapshot and commit below is a stub the prompt supplies. The Linear 
 
 - Applies any write before approval.
 - Creates a second tracker or delegates to session-memory.
-- Writes the log to a local `STATE.md`.
+- Writes where work stopped to a local `STATE.md`.

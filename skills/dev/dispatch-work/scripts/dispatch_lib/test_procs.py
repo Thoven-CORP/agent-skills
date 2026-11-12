@@ -37,15 +37,27 @@ class LiveWork(unittest.TestCase):
 
 
 class Snapshot(unittest.TestCase):
-    def test_render_orders_comments_oldest_first_and_includes_the_parent(self):
+    def test_render_keeps_the_description_and_names_the_parent_and_comments_without_their_bodies(self):
+        # A response that still carries bodies (an older query, a cached payload) must not leak them.
         issue = {"identifier": "THV-5", "title": "Cart", "url": "https://linear.app/t/THV-5", "description": "Build it.",
-                 "state": {"name": "Todo"}, "parent": {"identifier": "THV-1", "title": "Shop", "description": "D4"},
-                 "comments": {"nodes": [{"body": "second", "createdAt": "2026-10-02", "user": {"name": "Andres"}},
-                                        {"body": "first", "createdAt": "2026-10-01", "user": {"name": "Main"}}]}}
+                 "state": {"name": "Todo"}, "parent": {"identifier": "THV-1", "title": "Shop", "description": "PARENT-BODY"},
+                 "comments": {"nodes": [{"body": "COMMENT-SECOND", "createdAt": "2026-10-02", "user": {"name": "Andres"}},
+                                        {"body": "COMMENT-FIRST", "createdAt": "2026-10-01", "user": {"name": "Main"}}]}}
         text = linear.render(issue)
         self.assertEqual(text, "# THV-5: Cart\n\nState: Todo  \nURL: https://linear.app/t/THV-5\n\n## Description\n\n"
-                               "Build it.\n\n## Parent THV-1: Shop\n\nD4\n\n## Comments (2, newest last)\n\n"
-                               "### 2026-10-01 Main\n\nfirst\n\n### 2026-10-02 Andres\n\nsecond\n")
+                               "Build it.\n\nParent: THV-1 Shop\n2 comments in Linear: the history, not the spec\n")
+        for body in ("PARENT-BODY", "COMMENT-FIRST", "COMMENT-SECOND"):
+            self.assertNotIn(body, text)
+
+    def test_render_with_no_parent_and_no_comments_still_says_the_count(self):
+        issue = {"identifier": "THV-6", "title": "Bag", "description": "", "state": {"name": "Todo"}}
+        text = linear.render(issue)
+        self.assertNotIn("Parent:", text)
+        self.assertTrue(text.endswith("## Description\n\n(none)\n\n0 comments in Linear: the history, not the spec\n"), text)
+
+    def test_query_asks_for_no_parent_body_and_no_comment_bodies(self):
+        self.assertIn("parent { identifier title }", linear.QUERY)
+        self.assertNotIn("body", linear.QUERY)
 
     def test_fetch_sends_the_identifier_and_reports_graphql_errors(self):
         sent = {}

@@ -1,0 +1,194 @@
+#!/usr/bin/env python3
+"""PreToolUse and PostToolUse on the Linear connector's save_document and save_issue: the size limits
+for Project documents (Andres, 2026-11-12 grill; the rules live in the workspace skill, "How to
+write a Project document").
+
+The page kind comes from the title prefix:
+  "Spec · "          3,000 words
+  "Architecture · "  3,000 words
+  "Log · "           120 words in each "## " entry
+  "Build: "          400 words, and 3 to 10 lines under "## Exit criteria"
+
+PreToolUse: a save that sends the whole body (content or description) with a known title is
+counted, and an over-limit save is denied with the count, the limit and the consolidate step.
+PostToolUse: when the tool result carries the saved title and body, one line with the count goes
+to the agent, so a partial edit (patch) that pushed a page over is caught one step later.
+
+Anything else passes in silence: another tool, an unknown title, a patch with no full body, a
+payload it cannot read. It must never break a Linear save it does not understand. Empty stdin
+exits 1, which Claude Code treats as a non-blocking error.
+
+    thoven-doc-size   < hook payload JSON
+"""
+import json
+import re
+import sys
+
+CONSOLIDATE = ("Consolidate, then add: merge the lines that state one decision, cut what a frame or "
+               "the code shows, move reasoning to the Log.")
+DOCUMENT_LIMIT = 3000
+LOG_ENTRY_LIMIT = 120
+TICKET_LIMIT = 400
+EXIT_LINES = (3, 10)
+WORD = re.compile(r"\S+")
+HEADING = re.compile(r"^#{1,6}\s")
+EXIT_HEADING = re.compile(r"^##\s+Exit criteria\s*$", re.I)
+ENTRY_HEADING = re.compile(r"^##\s")
+LIST_ITEM = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+\S")
+
+
+def words(text):
+    """Tokens with a letter or a digit, so table pipes, bullets and heading marks do not count."""
+    return sum(1 for w in WORD.findall(text) if re.search(r"\w", w))
+
+
+def n(x):
+    return f"{x:,}"
+
+
+def kind_of(title):
+    for prefix, kind in (("Spec · ", "spec"), ("Architecture · ", "architecture"), ("Log · ", "log"),
+                         ("Build: ", "build")):
+        if title.startswith(prefix):
+            return kind
+    return None
+
+
+def log_entries(body):
+    """(heading, words under it) for each "## " entry; text above the first entry is the page's preamble."""
+    entries, heading, lines = [], None, []
+    for line in body.splitlines():
+        if ENTRY_HEADING.match(line):
+            if heading is not None:
+                entries.append((heading, words("\n".join(lines))))
+            heading, lines = line[3:].strip(), []
+        elif heading is not None:
+            lines.append(line)
+    if heading is not None:
+        entries.append((heading, words("\n".join(lines))))
+    return entries
+
+
+def exit_lines(body):
+    count, inside = 0, False
+    for line in body.splitlines():
+        if HEADING.match(line):
+            inside = bool(EXIT_HEADING.match(line))
+        elif inside and LIST_ITEM.match(line):
+            count += 1
+    return count
+
+
+def measure(title, body):
+    """(status line, problem or None) for a known title, else None."""
+    kind = kind_of(title)
+    if kind in ("spec", "architecture"):
+        count = words(body)
+        line = f"{title}: {n(count)} of {n(DOCUMENT_LIMIT)} words"
+        if count > DOCUMENT_LIMIT:
+            return line, f"{title} is {n(count)} words; the limit is {n(DOCUMENT_LIMIT)}. {CONSOLIDATE}"
+        return line, None
+    if kind == "log":
+        entries = log_entries(body)
+        longest = max((c for _, c in entries), default=0)
+        line = f"{title}: {len(entries)} entries, the longest {n(longest)} of {LOG_ENTRY_LIMIT} words"
+        over = [(h, c) for h, c in entries if c > LOG_ENTRY_LIMIT]
+        if over:
+            named = "; ".join(f"\"{h}\" is {n(c)} words" for h, c in over)
+            return line, (f"{title}: {named}; the limit is {LOG_ENTRY_LIMIT} words an entry. {CONSOLIDATE} "
+                          "A later answer is a new entry.")
+        return line, None
+    if kind == "build":
+        count, lines = words(body), exit_lines(body)
+        low, high = EXIT_LINES
+        line = f"{title}: {n(count)} of {n(TICKET_LIMIT)} words, {lines} exit lines ({low} to {high})"
+        problems = []
+        if count > TICKET_LIMIT:
+            problems.append(f"{n(count)} words; the limit is {n(TICKET_LIMIT)}. {CONSOLIDATE}")
+        if lines > high:
+            problems.append(f"{lines} lines under Exit criteria; the limit is {high}. More means two tickets.")
+        elif lines < low:
+            problems.append(f"{lines} lines under Exit criteria; a Build ticket has {low} to {high}, each an "
+                            "outcome, then \"Proof:\" and its one check.")
+        return line, (f"{title}: " + " ".join(problems)) if problems else None
+    return None
+
+
+def is_linear_save(tool):
+    return isinstance(tool, str) and "linear" in tool.lower() and tool.endswith(("__save_document", "__save_issue"))
+
+
+def body_of(fields):
+    for key in ("content", "description"):
+        if isinstance(fields.get(key), str):
+            return fields[key]
+    return None
+
+
+def saved_page(response):
+    """The first object in the tool result that carries a title and a body, wherever it sits."""
+    if isinstance(response, str):
+        try:
+            response = json.loads(response)
+        except ValueError:
+            return None
+    if isinstance(response, dict):
+        if isinstance(response.get("title"), str) and body_of(response) is not None:
+            return response["title"], body_of(response)
+        children = list(response.values())
+    elif isinstance(response, list):
+        children = response
+    else:
+        return None
+    for child in children:
+        if isinstance(child, dict) and child.get("type") == "text" and isinstance(child.get("text"), str):
+            child = child["text"]
+        found = saved_page(child) if isinstance(child, (dict, list, str)) else None
+        if found:
+            return found
+    return None
+
+
+def decide(payload):
+    """The hook's JSON output, or None for silence."""
+    if not isinstance(payload, dict) or not is_linear_save(payload.get("tool_name")):
+        return None
+    event = payload.get("hook_event_name")
+    if event == "PreToolUse":
+        fields = payload.get("tool_input") or {}
+        title, body = fields.get("title"), body_of(fields)
+        if not isinstance(title, str) or body is None:
+            return None
+        result = measure(title, body)
+        if not result or not result[1]:
+            return None
+        return {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny",
+                                       "permissionDecisionReason": result[1]}}
+    if event == "PostToolUse":
+        page = saved_page(payload.get("tool_response"))
+        result = measure(*page) if page else None
+        if not result:
+            return None
+        line, problem = result
+        if problem:
+            return {"decision": "block", "reason": f"Saved, and over the limit. {problem}"}
+        return {"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": line}}
+    return None
+
+
+def main():
+    raw = sys.stdin.read()
+    if not raw.strip():
+        print("thoven-doc-size: empty hook payload", file=sys.stderr)
+        return 1
+    try:
+        output = decide(json.loads(raw))
+    except Exception:
+        return 0
+    if output:
+        print(json.dumps(output))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

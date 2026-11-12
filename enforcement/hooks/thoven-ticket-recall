@@ -36,6 +36,9 @@ def version_key(path):
 
 
 def recall(harness, payload):
+    # A dispatched pane builds from its brief and the Linear record; recalled history stays with main.
+    if os.environ.get("THOVEN_PANE_ROLE") == "builder":
+        return None
     prompt = payload.get("prompt") or ""
     if RELAYED.search(prompt):
         return None

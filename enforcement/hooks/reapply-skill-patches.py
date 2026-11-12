@@ -243,6 +243,46 @@ PATCHES = [
         "- Setting up design tokens and theming systems\n",
         "- Setting up design tokens and theming systems\n- Changing a shared component because a Paper or Figma frame needs a value it cannot express: change the component to the frame's values, never bend the frame to the component, and keep its other callers working\n",
     ),
+    # Project documents (Andres, 2026-11-12 grill): the arena judges a design by the Architecture
+    # document's four fixed measures, and its choice lands in that document. THV-1701's arena ranked
+    # "parallel build" first and dropped a module move, so the old wizard model shipped as dead code.
+    (
+        "architect",
+        "Run the **arena** skill with the design-sketch task and the Phase A grounding artifacts. Pass `references/runner-prompt.md` as each runner's prompt.",
+        "Run the **arena** skill with the design-sketch task and the Phase A grounding artifacts. Pass `references/runner-prompt.md` as each runner's prompt.\n\n"
+        "In a Thoven Project, the Project's Architecture document is a Phase A input: what it already decides binds, and the arena designs what it leaves open. "
+        "The arena rubric is the Architecture's four fixed measures, in this order: builds on what exists before adding; one job per module, behind a small interface; simple over clever; each unit provable on its own. "
+        "Under the first, each concern builds on the module that does that job today, named by path, or the candidate names what replaces that module and where its callers go. "
+        "Score on these four alone. Which units can be built at the same time is the Units table's Alongside column, filled after the shape is chosen, and never a measure. "
+        "In the synthesis note, every structural difference between candidates (a module added, moved, merged or deleted) is grafted or rejected by name with one line of why, "
+        "and a candidate that contradicts the Architecture document goes to main as a finding.",
+    ),
+    (
+        "architect",
+        "The rationale ships alongside, shaped per `references/rationale-template.md`, including the usage sketch and the synthesis decision.",
+        "The rationale ships alongside, shaped per `references/rationale-template.md`, including the usage sketch and the synthesis decision. "
+        "In a Thoven Project the chosen design goes into the Project's Architecture document: the Shape paragraph, one Units row per unit, and the Data and contract section. "
+        "A choice that breaks one of the four measures says so beside it, with its reason. The synthesis note and the candidate folders stay scratch.",
+    ),
+    # Tickets are cut from the Architecture's Units rows, and each exit line is an outcome with its
+    # one proof (Andres, 2026-11-12 grill). The bare "Criterion 1" list had no shape, so long
+    # requirement lists filled it.
+    (
+        "to-tickets",
+        "## Acceptance criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n",
+        "## Exit criteria\n\n- [Outcome a person can see or a caller can observe.] Proof: [the one check that cannot pass while the outcome is false].\n",
+    ),
+    (
+        "to-tickets",
+        "\n<issue-template>\n",
+        "\nIn a Thoven Project, cut tickets from the rows of the Architecture's Units table: one ticket per row, or per few rows that share a proof. "
+        "A row other rows build on is cut first, and its ticket blocks theirs. Use the Build issue template in Linear and fill its sections. "
+        "What to build links each row. Build from links the Spec rules, screens and existing modules. Outcome links the Spec's \"Done for the product\" line the ticket serves.\n\n"
+        "**Exit criteria** is the ticket's whole definition of done: three to ten exit lines, each one outcome a person can see or a caller can observe, "
+        "then \"Proof:\" and the one check that cannot pass while the outcome is false. Start from each row's Smallest proof. "
+        "(\"A failed save keeps the text and says Try again. Proof: a test that fails the save request and reads the field and the message.\")\n"
+        "\n<issue-template>\n",
+    ),
 ]
 
 # Routers whose named skills must stay model-invocable. Each entry is a skill

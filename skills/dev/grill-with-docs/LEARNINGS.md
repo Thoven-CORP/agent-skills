@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-12 — Close writes the Spec and a Log entry
+
+> instructions rewrite · 2026-11-12 · meta-analysis · ruling · applied · seen 1
+
+**What changed.** Close rewrites the Spec or Architecture section in place and logs his words, the question and the rejected options; `to-spec` left the chain.
+**Why.** Passport's spec reached 110,674 words with history inside every row.
+Pointer: `releases/2026-11-12-instructions-rewrite.md`.
+
 ## 2026-10-31 — a confirmed ruling is written before the next task
 
 > reflect · 2026-10-31 · d041edf0 · correction · applied · seen 1

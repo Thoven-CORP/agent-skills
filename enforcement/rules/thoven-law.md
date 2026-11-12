@@ -21,105 +21,42 @@ session edit. A stash whose message is not yours
 belongs to another session: leave it and name it in your hand-off. (2026-08-23: a stash before
 a rebase ate a day of the onboarding prototype.)
 
-**Branches and PRs.**
-- `main` is the only 2.0 branch.
-- The unit of work is the Linear Project's integration branch. Match the ticket's Project, Kind and
-  files to one row:
+**Branches, worktrees, PRs and merges.** Before you create a tree, push, open, review, merge or
+watch a PR, read `~/thoven/agent-skills/enforcement/rules/branches-and-prs.md` in full and follow
+it. Everywhere: `main` is the only 2.0 branch; one ticket gets one branch and one PR per repo, and
+every fix to it is appended there; production moves only through
+`~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh`; and a newly required request field
+stays optional until the frontend that sends it is on staging (backend #278 made staging refuse
+every reschedule for six hours).
 
-| # | Ticket | Where it runs |
-|---|---|---|
-| 1 | Review, Audit, Research, Verify | No tree. Read the Project's integration tree, or `git show`. |
-| 2 | Design or Plan, docs only | No tree. Write at the issue's `Writes to:` path. |
-| 3 | Build or Fix, Project has an integration tree | Work in that tree on the integration branch. Every commit ends with the ticket id. |
-| 4 | First Build ticket of a Project | Cut the Project's canonical tree and remote branch `<project-slug>/integration`. |
-| 5 | Build or Fix, no Project (hotfix, scratch) | Own tree on `<area>/thv-<n>` cut from `origin/main` with `--no-track`. |
+**Records and sources.** Linear holds the Project's record: decisions, status, evidence and
+handoffs. Read a document's body, not only its link. A Project's spec says what is true now, its
+architecture document says how it is built, and its log keeps the history: Andres's words in full
+and the options rejected, with their reasons. A builder works from the ticket, the spec and the
+architecture. Every fact has one home, and every other place points at it by id or path: a value a
+frame shows lives in the frame, a decision lives in its row, and a local file holds no copy of a
+Linear document. "Andres ruled" sits only on his quoted words and their date; any other line is
+labelled as its writer's reading. A ruling edits its home in place, deletes the line it replaces,
+and reaches each running build as a correction. Main and Andres edit a ticket's exit lines; a
+builder builds to them as written and asks main when one looks wrong. Leaving part of a designed
+surface out is a decision for Andres, never a sentence in a plan. Documents go at the path an
+issue's `Writes to:` line names, and a new top-level `docs/` folder waits for Andres. Project
+documents follow the workspace skill's "How to write a Project document": one page one job, a
+reason on every rule, and the size limits. A standing preference goes into the skill or law that
+governs it, never auto-memory, because memory is keyed per working directory. Missing local project
+folders do not block startup. The handoff procedure is `skills/dev/workspace/references/handoff.md`.
 
-- Create a tree with `~/thoven/agent-skills/enforcement/bin/thoven-worktree create <fe|be> <area> <n>
-  --project <slug> --kind <kind>`. The script refuses read-only kinds, reuses a Project's tree, and
-  copies the env file and installs dependencies. Add `--new "<reason>"` for a fresh tree when your
-  files overlap another live tree's dirty files, or the work is risky and long. From Claude,
-  `claude --worktree <area>-thv-<n>` runs the same script.
-- One ticket, one PR per repo, in any session: a Linear parent, a ticket worked directly, or a chain
-  of same-area follow-ups that day gets one branch and one PR per repo, and every fix, follow-up and
-  gap found in code it just changed is appended there. A new PR is for new work, never for the next
-  fix. Each code PR into `main` pays a full merge-queue run whatever its size, so code PRs batch
-  hardest; docs-only PRs cost attention, not CI minutes. Keep docs-only and code
-  changes in separate PRs, since a code diff takes the docs-only PR off its fast path. (Andres,
-  2026-11-08: one session opened 15 PRs, 4 of them needed.)
-- Open a PR into `main` and push to it while the session still has known work for that ticket; arm
-  auto-merge with `gh pr merge --auto` once its PR review passes. No PR waits for a go
-  from Andres, UI included: he reviews screens on staging (Andres, 2026-11-05). `main` runs GitHub's
-  merge queue (THV-1707): a push to the PR runs lint, types and the contract checks, plus on the
-  backend the specs its changed files map to by path, and no other test (THV-1751), auto-merge
-  queues the PR once that `CI` is green, and the queue's own `CI` run, on the commit that will
-  land, runs the broad tests and merges it with a merge commit. Green PR checks are not a merge: a
-  queue failure takes the PR out of the queue unmerged, and `main` does not move. A PR into an
-  integration branch has no queue and starts no `CI` run: a ticket PR there merges
-  on its targeted test lines and the verifier's pass (Andres, 2026-11-08). `CI` runs once, when the
-  integration branch lands in `main`, through that PR's merge queue. A nightly or manual full run
-  audits what selection skips.
-  The method follows the PR's role:
+**Design parity.** Apply visual parity when the task intentionally uses a named design source. Do not invent a board
+or a design gate for work without one. Accepted Linear decisions govern which design applies.
 
-  | PR | Merge |
-  |---|---|
-  | A ticket into `main` | `gh pr merge --auto`; the queue lands it as a merge commit |
-  | A ticket into an integration branch | `gh pr merge --squash` on its targeted test lines and the verifier's pass; no CI run |
-  | Docs only (no code, config or tests) | squash in the same pass |
-  | A catch-up of `main` into an integration branch | `--merge`, so `main` stays an ancestor |
-  | An integration branch landing in `main` | `gh pr merge --auto`; the queue's merge commit keeps each ticket's commit and THV id for later conflict resolution |
-
-  Every merge line names source, target and method: "scheduling/improvements → main, merge commit".
-  The queue has one method, and it is the merge commit, so an integration branch is never squashed.
-  (#256 and #318 squashed 282 and 403 commits into one each, and later Private Lessons conflicts
-  traced to a 470-file commit with no ticket id.)
-- When an integration branch lands in `main`, retire it: remove its `worktree-projects.tsv` row and
-  its tree, and point follow-up tickets at `origin/main`. A Project that continues cuts a fresh
-  `<project-slug>/integration` from `main`.
-- `~/thoven/agent-skills` takes no PRs: it is internal and runs no CI (Andres, 2026-11-09). Commit
-  the exact paths in `git worktree add --detach <tmp> origin/main` and `git push origin HEAD:main`,
-  then reinstall the touched skills (README) and run `enforcement/sync.sh --apply` until `sync.sh`
-  reports every harness copy matches. The law block in each product repo's `CLAUDE.md` does go
-  through a PR: it rides the next PR already going into that repo, or one docs-only sync PR a day,
-  and gets a PR of its own only when the change alters a command agents run. Commit and merge only
-  on a branch in a tree, never in a `main` checkout: `co.thoven.sync` fast-forwards the clean `main`
-  checkouts every 30 minutes.
-- Unattended PR work: `/full-stop` proves, files and babysits; the auto-merge armed after the PR
-  review lands it on green `CI`. `/full-send`, on Andres's "full send", also merges a PR whose required check
-  cannot run, in any repo. Its merge follows the method table and backend-first order above. Both call `/sol-loop`: with no GPT Sol
-  route, run `dispatch-work/references/review.md` "Every PR" in its place and say so.
-  `pr-wait` runs `--until green`, since Thoven has no Greptile or Macroscope. For a PR into `main`,
-  green means queued, not merged: then wait with `enforcement/bin/pr-queue-wait <owner/repo> <n>`,
-  which exits 0 when the PR merges and 1 when it leaves the queue unmerged. On 1, read the failed
-  `merge_group` run, fix it, push and arm auto-merge again. GitHub turns auto-merge off while a PR
-  waits in the queue, so auto-merge off alone is not a rejection.
-- Production moves only through `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh`.
-
-**Where records live.** Linear holds current Project briefs, accepted decisions, status, evidence
-pointers and handoffs. Read relevant document bodies, not only links. tldraw and Paper support
-design/brainstorming; accepted choices are recorded in Linear with their named design sources.
-Local technical runbooks, API/schema details and historical documents remain useful context.
-Missing local project folders, `STATE.md`, `PRD.md` or `CONTINUE_HERE.md` do not block startup.
-A standing preference goes into the skill or law that governs it, never auto-memory, because
-memory is keyed per working directory and sessions in another tree never load it.
-Preserve history and user-unseen evidence. Keep branches and PRs when moving hosts; remote checks
-use dedicated disposable mirrors, and coding uses separate worktrees. The shared handoff procedure
-is `skills/dev/workspace/references/handoff.md`.
-
-**Spec parity.** A brief, a plan section or a review traces its work to parent decision ids and
-any design sources the task names. Do not require a board for work without a design source.
-The verifier's report opens with SPEC PARITY.
-
-**Design parity.** A build that changes what a user sees captures every touched state
-and every sibling row the ticket names, at its board frame's width and 390 beside the frame, plus a
-short video. The builder runs the parity capture itself before DONE (frontend `TESTING.md`, "Mini
-parity pilot"; CI has no Parity check), an unmapped surface gets a 390 capture of the commit before
-the change, and the grid goes in the report. The images go to the Linear issue as a comment (the
-parent when the work has no issue) and onto the board beside their frames. A difference from a
-confirmed frame that Andres did not approve is a defect. A frame binds what shows (elements,
-states, order, hierarchy, tokens), not sizing behaviour (fill or hug, stretch, reflow), which
-follows component best practice and matches the frame at its own width. Parity means design-system tokens and
-shared components; a missing component is built with `/building-components`. Procedure:
-`~/thoven/agent-skills/skills/dev/dispatch-work/references/brief.md`.
+- **Spec parity by decision id.** Trace every acceptance line and every behaviour in the diff to a parent decision id. Quote the parent, never a sub-issue's paraphrase.
+- **Paper is the build source.** Each frame is built from its own values (Paper `get_jsx` and `get_computed_styles`) at each width, desktop and phone frames both: layout and height, alignment, vertical and horizontal spacing and rhythm, lines, type, colour and depth. The frame beats written prose, tokens, `thoven-designer` and THV-1389's rhythm rule on what it shows. The Paper frames are approved: read each frame's values and build to them (Andres 2026-11-08).
+- **The design system is reference, not hard code.** Build through the shared component and change it, or the global component, when a frame needs it; build a missing one with `building-components`. Use a token where it equals the frame's value and the frame's value where none does. A design scan or test that refuses a Paper value gets one allowlist entry naming the Paper node and the reason; a count or ratchet baseline stays where it is.
+- **Production holds between frames.** Widths between the frames reflow by component best practice, and the builder says how.
+- **Every difference is listed or asked.** Each difference left between the build and its frame is a row in the REPORT's Discrepancies table (brief.md, REPORT, Parity), with its why: not built yet, a spec rule, a production need, or a fix to an unpolished frame such as a wrong icon or chevron. A layout, spacing, height, veil or colour difference goes to main as a question before anyone builds it. A difference in neither place is a defect.
+- **Phone frames are build targets.** 390 is shot for every state. Where Paper has a phone frame, the phone layout is built from its values and judged against it. A state of a surface a phone reaches with no phone frame is a question to main before its phone layout is built; its 390 capture is then only a compatibility check.
+- **Visual parity on the real page.** Capture every state at each of its Paper frames' widths, desktop and phone, and 390, plus a short video, on the route a user reaches. The builder makes the captures itself with the local parity run (`scripts/verify/parity-run.mjs`, the Parity row in the frontend `TESTING.md`) for every surface the ticket names, sibling rows included, and attaches the grid. A surface with no parity map entry gets a 390 capture beside the commit before the change. A `/dev` or lab route, a component without its parent panel, or a re-render of the board is not parity.
+- **Parity is a looked-at verdict.** A judge who did not build the screen writes MATCH, or NO with its differences, for each state at each width against that state's own Paper frame, phone frames included. The grid proves what was built; "N/N captured" is not parity.
 
 **A named skill always loads.** The model picks on its own only the skills in
 `enforcement/config/skills-invocable.txt` and poteto-mode's routes, so their descriptions fit in
@@ -130,33 +67,29 @@ read `~/.agents/skills/<name>/SKILL.md` in full and follow it.
 only to fix an issue it found at another viewport, in motion or in performance. The commit or report
 names that issue beside the change.
 
-**Targeted tests.** The verify cadence lives in `skills/andres-mode/SKILL.md`, "Check your own work":
-targeted checks while editing and at DONE, no CI on a ticket PR into an integration branch, and the
-full `bin/verify --base <integration branch>` (remote-verify from the laptop) once per integration
-branch, before it lands in `main`, or when Andres asks. CI runs when that branch lands. Nothing
+**Targeted tests.** The checks are each exit line's proof, run once, plus lint and type-check on
+the files you touched, with the commands in `~/.agents/skills/verify/SKILL.md` and the repo's
+`TESTING.md`. Paste each command with its pass line and name what you did not run. Wider suites run
+when the branch lands or when Andres dispatches them, and the full `bin/verify --base <integration
+branch>` runs once per integration branch, before it lands in `main`, or when Andres asks; nothing
 reruns on push. Heavy work (e2e, builds, stacks, perf) runs on the host whose
 `~/.config/thoven/host.json` says `mini`, through
-`~/thoven/agent-skills/enforcement/bin/thoven-load-gate -- <cmd>`. There, `bin/verify` takes a gate
-slot itself, so run it as is. On a `laptop` host the Bash guard denies verify, builds, e2e and whole
-suites: run `remote-verify` for verify and the `remote-check` skill for the rest. Stop the servers
-you started after each step, and delete scratch you can regenerate. A subagent runs a long command
-in the foreground with a timeout, because the harness blocks `sleep` and a subagent without Monitor
-cannot poll a background job.
+`~/thoven/agent-skills/enforcement/bin/thoven-load-gate -- <cmd>`; there `bin/verify` takes its own
+slot, so run it as is. On a `laptop` host the Bash guard denies verify, builds, e2e and whole
+suites: run `remote-verify` for verify and the `remote-check` skill for the rest. When Andres says
+hold, stop the heavy jobs you started and run only single-file tests, type-check and lint until he
+says go. Stop the servers you started after each step, and delete scratch you can regenerate. A
+subagent runs a long command in the foreground with a timeout, because the harness blocks `sleep`.
 
 **Local database.** `thoven-worktree create` sets `TEST_DATABASE_URL` to `neondb_test_<slug>`, drops
 a `DATABASE_URL` that names the shared `thoven_development`, and creates `thoven_dev_<slug>` when the
 branch adds a migration. Every backend command, `git commit` included, names the pane's own local
 database: export `DATABASE_URL` and `TEST_DATABASE_URL` in the same line.
 
-**Review order.** A builder's DONE is a claim. A fresh verifier pane reviews feature slices; an Opus
-(high) subagent of main reviews cleanup and hardening work. Both open with spec parity. Main reruns the
-touched files and merges backend before the frontend that reads it. Backend-first holds only for a
-backward-compatible change: a newly required request field stays optional until the frontend that
-sends it is on staging. (Backend #278 made `source_timezone` required hours before the frontend
-sent it, and staging refused every reschedule for six hours.) Evidence goes on the work-session
-page (andres-mode, Replies). Procedure: `dispatch-work/references/review.md`.
-
 **Scope.** Make the surgical edit the ticket asks for. Debt, bugs and smells in code the ticket or
 feature owns are fixed on its branch in the same round. A problem outside it gets one line in an
 existing grouped Linear issue, or a new issue only when none fits. A product call goes to Andres as
 a question. Work bigger than the brief stops and reports back.
+Done means a user can reach it: a module with no call site is not built. Before scoping a ticket or
+fix for a data defect, name one real record (environment, id) that shows it; a critique line, ledger
+row or fixture repeating the claim is not evidence.

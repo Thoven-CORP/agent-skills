@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-12 — andres-mode is main's file; Pitfalls is the writer's card
+
+> session · 2026-11-12 · meta-analysis instructions rewrite · broken-rule · applied · seen 2+
+
+**What happened.** Builders read all 4,289 words, and parity, the verify cadence and the fix-round rule each had up to five other copies that disagreed.
+**Why.** One rule with many homes means a change reaches some of them.
+**What changed.** Parity and the builder's checks moved to the law and `verify`; Records and Spec writing point at `workspace`; Hard rules hold each rule once; Pitfalls is four writing rules. Details: `releases/2026-11-12-instructions-rewrite.md`.
+
 ## 2026-11-09 — hard rules go first; CI runs on the integration landing, not each ticket
 
 > session · 2026-11-09 · automate-me mining of Claude sessions since 10-07 · broken-rule · applied · seen 1+

@@ -10,6 +10,6 @@ Nested BE/FE skills (one name, two workflows): `publish`, `orchestrate`, `prompt
 
 Renames: `manual-qa` → `qa-flow`; `email` (mailers) → `thoven-email-system`; `docs-freshness` → `doc-freshness`.
 
-This repo takes no PRs and runs no CI: commit the exact paths in `git worktree add --detach <tmp> origin/main`, `git push origin HEAD:main`, then reinstall (README). See `enforcement/rules/thoven-law.md`.
+This repo takes no PRs and runs no CI: commit the exact paths in `git worktree add --detach <tmp> origin/main`, `git push origin HEAD:main`, then reinstall (README). See `enforcement/rules/branches-and-prs.md`.
 
 Never copy third-party npx skills or plugin skills into this repo. Team install instructions: [README.md](./README.md).

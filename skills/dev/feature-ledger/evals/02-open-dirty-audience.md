@@ -6,8 +6,8 @@
 
 ## MUST
 
-- [ ] Proposes the full Project-local folder shape.
-- [ ] Uses the templates and pointer-only Project coverage.
+- [ ] Proposes native Linear documents, not a Project-local folder.
+- [ ] Creates the Spec, Architecture and Log from their Linear templates.
 - [ ] Treats audience files as compatibility inputs and leaves them untouched.
 - [ ] Records starting git state and exact intended paths.
 - [ ] Shows one exact proposed write set and waits for approval.

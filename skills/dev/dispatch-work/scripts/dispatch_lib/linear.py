@@ -12,8 +12,8 @@ QUERY = """query($id: String!) {
   issue(id: $id) {
     identifier title url description
     state { name }
-    parent { identifier title description }
-    comments(first: 250) { nodes { body createdAt user { name } } }
+    parent { identifier title }
+    comments(first: 250) { nodes { id } }
   }
 }"""
 
@@ -54,16 +54,15 @@ def fetch_issue(ticket: str, post=http_post) -> dict:
 
 
 def render(issue: dict) -> str:
-    comments = sorted((issue.get("comments") or {}).get("nodes") or [], key=lambda c: c.get("createdAt", ""))
+    """The description is the builder's spec. The parent and the comments are named, not copied:
+    the parent's body and the comment thread are history, and main folds any ruling in them into
+    the description before it snapshots."""
+    comments = (issue.get("comments") or {}).get("nodes") or []
     out = [f"# {issue['identifier']}: {issue['title']}", "",
            f"State: {(issue.get('state') or {}).get('name', '?')}  ", f"URL: {issue.get('url', '')}", "",
            "## Description", "", (issue.get("description") or "(none)").strip(), ""]
     parent = issue.get("parent")
     if parent:
-        out += [f"## Parent {parent['identifier']}: {parent['title']}", "",
-                (parent.get("description") or "(none)").strip(), ""]
-    out += [f"## Comments ({len(comments)}, newest last)", ""]
-    for c in comments:
-        who = (c.get("user") or {}).get("name") or "?"
-        out += [f"### {c.get('createdAt', '?')} {who}", "", (c.get("body") or "").strip(), ""]
+        out += [f"Parent: {parent['identifier']} {parent['title']}"]
+    out += [f"{len(comments)} comments in Linear: the history, not the spec"]
     return "\n".join(out).rstrip("\n") + "\n"

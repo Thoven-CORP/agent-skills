@@ -19,12 +19,12 @@ When coordinating existing panes, inspect only the requested Project with availa
 Use [dispatch-work](../dispatch-work/SKILL.md) for a deliberate dispatch; ordinary orientation does
 not install fleet hooks or watchers. Pane state describes execution; Linear describes the Project.
 
-After go, update the agreed Linear records and read them back. Use the existing decision row,
+After go, update the agreed Linear records and read them back. Use the existing Spec or Architecture section,
 issue or Project Update; do not maintain required `STATE.md` or `CONTINUE_HERE.md` copies. Preserve
 local runbooks/history and user-unseen evidence. For continuation use
 [handoff.md](../workspace/references/handoff.md), including actual read content, host, checkout,
 branch/base HEAD and paired repository. Do not claim that a document URL was read.
 
-A tab digest reads the requested work, reconciles with the Project's current decisions and shows
+A tab digest reads the requested work, reconciles with the Project's Spec and shows
 what shipped, changed or remains. It does not automatically start another pane. Only when Andres
 explicitly requests a watch, read [monitor.md](monitor.md); otherwise no watcher is required.

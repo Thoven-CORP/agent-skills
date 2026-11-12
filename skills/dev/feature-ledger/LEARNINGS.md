@@ -5,6 +5,13 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-11-12 — local templates deleted, reconcile writes in place
+
+**What changed.** The local `templates/` folder is gone. `open` goes to `linear-project`, which creates the Spec, Architecture and Log from their Linear templates. A reconcile rewrites the section in place and adds a Log entry.
+**Why.** The local templates were a third spec shape that kept history in the governing record.
+**More.** `releases/2026-11-12-instructions-rewrite.md`
+
+
 ## 2026-10-28 — current project authority moves to Linear
 
 The approved migration ruling makes Linear briefs, documents and accepted decisions primary. The older local-ledger-first and mandatory scaffolding recommendations below are historical, superseded where they conflict. Preserve technical runbooks, evidence and history; do not create duplicate mandatory state files or rebuild a local folder to start work.

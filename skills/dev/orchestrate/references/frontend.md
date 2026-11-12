@@ -31,9 +31,8 @@ domain row over a universal one. When two rows match equally, ask one question.
 | Shape types and module boundaries before code | `/architect` |
 | Design a flow with three or more states, or one a job, webhook, timer or another person can move | `/state-brief` |
 | Audit a built flow for flag soup, hidden transitions or missing recovery | `/state-audit` |
-| Turn a settled design into a written spec | `/to-spec` |
-| Reconcile a large feature's PRD, design, contract and code | `/feature-ledger` |
-| Write an implementation plan from requirements | `/superpowers:writing-plans` |
+| Reconcile a large feature's Spec, Architecture and code | `/feature-ledger` |
+| Plan your own session's steps on one ticket | `/writing-plans` (scratch file) |
 | Something is broken at runtime in Thoven | `/investigate-thoven` |
 | A hard bug or perf regression anywhere | `/diagnosing-bugs` |
 | Claiming done, pre-commit | `/verify` |
@@ -141,7 +140,7 @@ A chain is worth naming when the order matters and the wrong order wastes work.
 
 | Pattern | Chain |
 |---|---|
-| Idea to shipped feature | `/grill-with-docs` → `/architect` → `/to-spec` → `/feature-ledger` |
+| Idea to shipped feature | `/grill-with-docs` → `/architect` → `/to-tickets`; `/feature-ledger` when documents and code may disagree |
 | Bug report | `/investigate-thoven` → `/verify` |
 | New component | `/thoven-designer` → `/building-components` → `/verify` |
 | New component with motion | `/thoven-designer` → `/motion` → `/motion-react` → `/verify` |

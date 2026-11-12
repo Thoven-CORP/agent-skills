@@ -5,6 +5,12 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-12 — the ticket is the brief; one report; corrections edit in place
+
+> session · 2026-11-12 · instructions rewrite · ruling · applied · seen 1
+
+**What changed.** brief.md holds only who, where and how to report; the ticket is the spec. No HANDOFF: the pane reports once. Corrections and takeovers rewrite in place. review.md is one review. The snapshot carries the ticket description only, so main folds comment rulings into it before `dispatch snapshot`. **Why.** Briefs restated the ticket and grew by appending. Details: `releases/2026-11-12-instructions-rewrite.md`.
+
 ## 2026-11-08 — review once on the final diff, one fix round, fresh agents, the page as the view
 
 > session · 2026-11-08 · usage audit · ruling · applied · seen 1

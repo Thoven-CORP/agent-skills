@@ -244,10 +244,6 @@
         "skillPath": "skills/dev/subagent-creator/SKILL.md"
       },
       {
-        "name": "technical-spec-generator",
-        "skillPath": "skills/dev/technical-spec-generator/SKILL.md"
-      },
-      {
         "name": "test-audit",
         "skillPath": "skills/dev/test-audit/SKILL.md"
       },
@@ -851,12 +847,6 @@
           "skillPath": "skills/dev/subagent-creator/SKILL.md",
           "installedFolderPresent": true,
           "installedFolderHash": "7a3ddfdf44465aa19dc0d01e2c4b7317213417c9"
-        },
-        {
-          "name": "technical-spec-generator",
-          "skillPath": "skills/dev/technical-spec-generator/SKILL.md",
-          "installedFolderPresent": true,
-          "installedFolderHash": "240d845b7dd4537a1df53a5f68971ba2736baa67"
         },
         {
           "name": "test-audit",

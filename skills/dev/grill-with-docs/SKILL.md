@@ -30,4 +30,7 @@ Shipped product code is out of scope. Protos and `app/dev/` routes are in. The i
 
 ## Close
 
-When Andres confirms a ruling, run workspace `update THV-n grill` in that turn. Done when the reply quotes the decision id from that read-back and `Writes to:` is finished.
+When Andres answers, run workspace `update THV-n grill` in that turn. His words, the question and
+the options he turned down go in a Log entry. The Spec or Architecture section the
+answer changes is rewritten in place to say what is now true. Done when the reply links that
+section and the log entry, and `Writes to:` is finished.
