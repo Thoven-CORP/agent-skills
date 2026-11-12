@@ -68,7 +68,10 @@ DESIGN     <<no UI; "UI, no design source: before/after line only"; or, per scre
            thoven-designer are reference, not constraint: use a token where it equals the frame's
            value and the frame's value where none does; use the shared component and change it,
            or the global component, when the frame needs it; build a missing one with
-           /building-components. A design scan that refuses a Paper value gets one allowlist entry
+           /building-components. What exists is in design/components.md (status and options),
+           design/tokens.md and design/blocks.md: build on a `current` row, and after adding or
+           changing a component, token module or block run `pnpm run design:catalogue` and
+           commit those three files (a new block also gets its design/blocks.registry.json row). A design scan that refuses a Paper value gets one allowlist entry
            naming the Paper node and the reason; leave every count and ratchet baseline as it is.
            Make it production: widths between the frames reflow by component best practice, and
            loading, empty, error and pressed states the frame does not draw

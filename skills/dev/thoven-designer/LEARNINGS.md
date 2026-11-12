@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-12 — lookups start at the generated catalogue
+
+**What happened.** The frontend gained a catalogue written from the code (`design/components.md`, `design/tokens.md`, `design/blocks.md`, THV-1735). The lookup references still sent an agent to list `components/ui/` and `lib/*-tokens.ts`, and four paths named `docs/design/` files that live in `design/`.
+
+**Why.** A folder listing shows files. It cannot show that a component is deprecated, what replaces it, or which composite owns a loading, empty or error state, so new work could land on a deprecated component: 121 imports of one were counted on 2026-11-12.
+
+**What changed.** `references/sources.md` and `references/implementation.md` open the three generated files first, name the scans that hold the rules (`ui-boundary-scan`, `library-use-scan`), and tell a builder to rerun `pnpm run design:catalogue` after adding or changing a component, token module or block. The `docs/design/` paths now read `design/`. The dated hand-rolled counts stay as history; `pnpm run design:audit` prints today's.
+
 ## 2026-11-08 — compare Paper with the rendered implementation and explain the result
 
 **What happened.** Andres approved clearer task routing, composition criteria and output, then asked for a connection between a Paper reference and visual parity on the implemented surface. He wants discrepancies in visual language and composition explained alongside design-system compliance.

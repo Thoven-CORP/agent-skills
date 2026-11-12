@@ -4,17 +4,23 @@ For lookup and compliance, read this file when `classify` returns `undecided` or
 
 ## Where the system lives
 
-Four tiers. **One binds.** Established 2026-07-28, phase 3 of the 2.0 design track.
+Four tiers and a generated index. **One tier binds.** Established 2026-07-28, phase 3 of the 2.0
+design track; index added 2026-11-12 (THV-1735).
 
 ```
 Tier 0   lib/*-tokens.ts + tests        the ONLY binding layer
          tools/build-palette.mjs        generates the palette
+Index    design/components.md           every components/ui component: status, when to use, options
+         design/tokens.md               every token module, what it locks, its test
+         design/blocks.md               every composite, who draws loading, empty and error
 Tier 1   DESIGN.md                      the hub - decisions and why
-Tier 2   docs/design/*.md               deep reference per part
+Tier 2   design/*.md                    deep reference per part
 Tier 3   docs/design-system.html        rendered view, compiled from app/globals.css
 ```
 
-Everything below Tier 0 is derived.
+Everything below Tier 0 is derived. The index is derived by script: `pnpm run design:catalogue`
+writes it from the code and `__tests__/design-catalogue.test.ts` fails when it is stale, so it is
+the first file to open for "what exists".
 
 ## The map
 
@@ -28,18 +34,16 @@ reference only for intent and rationale.
 | Type ramp, fonts, weights | `app/globals.css` type roles; `__tests__/type-roles.test.ts`; `lib/cn-type-roles.test.ts` | `design/typography.md` |
 | Existing content-title roles and `text-supporting` colour (muted is state-specific) | `app/globals.css` semantic colour aliases and existing type roles; `components/teacher/private-lessons/LessonsOverview.sheet.browser.test.tsx` computed browser paint | `design/typography.md` and `design/color.md` |
 | Buttons, ledges, variants | `thovenButtonTokens` in `lib/live-lesson-tokens.ts:53`; `components/ui/thoven-button.tsx`; `__tests__/design-system-doc.test.ts` | `design/buttons.md` |
-| Icons, the two tiers, K2 | `lib/icon-tokens.ts`; `__tests__/icon-tier-scan.test.ts`, `__tests__/icon-tokens.test.ts`, `__tests__/openmoji-icon-map.test.ts` | `docs/design/icons.md` |
-| Motion, springs, reduced motion | `lib/motion-config.ts` | `docs/design/motion.md` |
+| Icons, the two tiers, K2 | `lib/icon-tokens.ts`; `__tests__/icon-tier-scan.test.ts`, `__tests__/icon-tokens.test.ts`, `__tests__/openmoji-icon-map.test.ts` | `design/icons.md` |
+| Motion, springs, reduced motion | `lib/motion-config.ts` | `design/motion.md` |
 | Async loading, unavailable, degraded, action, field-error, and empty states | `lib/loading-tokens.ts`; `components/ui/shimmer-text.tsx`; `components/shared/RowSkeleton.tsx`; `components/ui/thoven-button.tsx`; the owning feature component listed below | `docs/design/async-states.md` |
 | Layout, viewport, spacing | *(no token module)* | `design/layout.md` |
 | What a thing is **called** | *(no token module)* | frontend `design/lexicon/LEXICON.md` - LIVING, not frozen |
-| Does a component exist? | `components/ui/` (primitives only) | [Does it already exist](#does-it-already-exist) |
+| Does a component exist? | `design/components.md`: status (`current`, `deprecated` with its replacement, `unused`), when to use it, options, slots | [Does it already exist](#does-it-already-exist) |
+| Which composite, and who draws its loading, empty and error | `design/blocks.md`, generated from `design/blocks.registry.json` | [Async-state ownership](#async-state-ownership) |
+| Which token module owns a value, and what locks it | `design/tokens.md` | the module's own header comment |
 
-**Anything not in this table:** find its binding layer before answering.
-
-```bash
-ls lib/*-tokens.ts && ls lib/*.test.ts __tests__/*.test.ts
-```
+**Anything not in this table:** find its binding layer in `design/tokens.md` before answering.
 
 ### Async-state ownership
 
@@ -84,7 +88,7 @@ but it must not invent retry, reload, dismissal, or empty-state semantics.
 | Tier | Where it lives | Binding? |
 |---|---|---|
 | **Enforced** | A token module plus a unit test | **Yes.** Drift fails the suite |
-| **Declared** | `DESIGN.md`, `docs/design/`, or a sprint decision log | Advisory. A human has to notice |
+| **Declared** | `DESIGN.md`, `design/`, or a sprint decision log | Advisory. A human has to notice |
 
 `lib/entry-morph-tokens.ts` is the reference shape: values, a comment naming them LOCKED, and a
 test pinning them.
@@ -101,8 +105,10 @@ leave as a token module with a test.
 
 In order, and stop at the first hit:
 
-1. **`components/ui/`** - primitives only. If a feature component is living there it is drift; move
-   it out when you touch it.
+1. **`design/components.md`**, then `design/blocks.md` for a composite. Build on a `current` row. A
+   `deprecated` row names its replacement. An `unused` row has no caller yet: read it before
+   building on it. `components/ui/` holds primitives only, and
+   `__tests__/invariants/ui-boundary-scan.test.ts` fails when a file there imports feature code.
 2. **The known-drift problem.** Count both sides before concluding nothing exists - the real
    shared component usually exists and is outnumbered by hand-rolled copies. As of 2026-08-04:
    7 real `Dialog`/`ResponsiveDialog` against **95** hand-rolled `fixed inset-0` modals, with
@@ -110,6 +116,10 @@ In order, and stop at the first hit:
    grepping for the import finds the real one. **Do both.**
    Before grepping for component copies or imports at all, `graphify query` the component node —
    missing-import edges surface hand-rolls that grep cannot see.
+   The hand-built buttons, spinners, chevrons and close buttons, the imports of a deprecated
+   component and the off-palette colours are counted per file in
+   `__tests__/library-use-scan-baseline.json`; `pnpm run design:audit` prints today's totals. A
+   file in that baseline holds a copy to replace, never a pattern to follow.
 3. **The library tables before hand-rolling** - Magic UI, React Bits, Aceternity, Kokonut, Fancy,
    Canvas UI, Rare UI, Interior. The first seven give you a *look* that then
    needs a token pass; **Interior** ([interior.dev](https://www.interior.dev/), MIT, dep is the
@@ -154,7 +164,8 @@ Route to the narrow skill, not the broad one.
 
 | Mistake | Fix |
 |---|---|
-| Answering from `docs/design/*.md` alone | That tier is derived. Read the token module first |
+| Answering from `design/*.md` alone | That tier is derived. Read the token module first |
+| Listing `components/ui/` to see what exists | Open `design/components.md`: the folder shows files, the index shows status and replacement |
 | Quoting a value from memory because it is "well known" | The rejected button hover shipped for months that way |
 | Treating a grep miss as "nothing exists" | Declared locks are not greppable. Open `DESIGN.md` |
 | "No component exists" after grepping the pattern | Grep the *import* too - the real one is outnumbered |

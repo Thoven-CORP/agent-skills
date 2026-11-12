@@ -50,9 +50,12 @@ the main workflow; use [sources.md](sources.md) for lookup owners and specialist
 | `motion` | `lib/motion-config.ts` |
 | `layout` | `design/layout.md`; vertical rhythm and type rules: [Rulings held in Linear](#rulings-held-in-linear) |
 | `lexicon` | frontend `design/lexicon/LEXICON.md` |
-| `components_ui` | `components/ui/` then [Does it already exist](sources.md#does-it-already-exist) |
+| `components_ui` | `design/components.md`, and `design/blocks.md` for a composite, then [Does it already exist](sources.md#does-it-already-exist) |
 | `stack_md` | frontend `design/STACK.md` rule 7 |
 | `design_md` | `DESIGN.md` |
+
+A token question the table does not name: `design/tokens.md` lists every token module, what it
+locks and its test.
 
 **A ruling made this session is not in a file yet.** Check what this session already ruled
 before answering from files, then hand it to `workspace` `capture`.
@@ -146,9 +149,12 @@ The browser is Andres's, not a scratch surface.
 
 ## Standing checks
 
-- `components/ui/` holds primitives only.
-- Raw `<button>` only inside `components/ui/`.
-- No raw colours. `bg-blue-600`, hand-rolled shadows and hex literals route through tokens.
+- `components/ui/` holds primitives only (`__tests__/invariants/ui-boundary-scan.test.ts`).
+- New work builds on a `current` row of `design/components.md`; a `deprecated` row names its replacement.
+- Raw `<button>` only inside `components/ui/`. Chevrons, spinners and close buttons come from the component that owns them.
+- No raw colours. `bg-blue-600`, hand-rolled shadows and hex literals route through tokens. Write the palette name (`bg-amber-600`, `text-gray-500`, `border-gray-200`); the stock shadcn names (`bg-primary`, `text-muted-foreground`, `border-border`) are frozen.
+- `__tests__/library-use-scan.test.ts` enforces the three lines above per file: a file adds none, and a count only goes down.
+- After adding or changing a component, token module or block, run `pnpm run design:catalogue` and commit the regenerated `design/components.md`, `design/tokens.md` and `design/blocks.md`. A new block gets a row in `design/blocks.registry.json` naming its purpose and who draws loading, empty and error.
 - Focus rings are `:focus-visible` only.
 - The 44px tap minimum comes from the transparent hit-area pseudo-element in `design/buttons.md` (Hit target row). Never enlarge a component's visible size to meet it.
 - Every component covers loading, empty, error and disabled before it is called done.

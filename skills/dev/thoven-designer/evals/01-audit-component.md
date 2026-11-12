@@ -23,7 +23,7 @@ into an eval rots exactly like a value baked into the skill.
 
 - [ ] Reads the actual file before commenting. No "it probably uses…" claims
 - [ ] Opens at least one **Tier 0 binding source** (a `lib/*-tokens.ts`, `tools/build-palette.mjs`,
-      or the `GENERATED:palette` region of `app/globals.css`) — **not only** `docs/design/*.md`
+      or the `GENERATED:palette` region of `app/globals.css`) — **not only** `design/*.md`
 - [ ] Sorts findings into the three buckets the skill defines: **hard violation** (contradicts an
       enforced lock), **drift** (contradicts a declared lock), **unruled** (the system does not
       settle it)
@@ -44,7 +44,7 @@ into an eval rots exactly like a value baked into the skill.
 ## Automatic FAIL
 
 - ❌ Audits without reading the file
-- ❌ Answers only from `docs/design/*.md` or from memory, never opening a binding source
+- ❌ Answers only from `design/*.md` or from memory, never opening a binding source
 - ❌ Reports a value with no citation
 - ❌ Decides an unruled question itself and presents it as the system's answer
 - ❌ Asserts on `className` as proof of rendered output (see the skill's silent-failure section)

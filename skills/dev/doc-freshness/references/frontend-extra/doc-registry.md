@@ -37,15 +37,15 @@ These are loaded into Claude context regularly. Staleness here directly degrades
 - **Key sections to check**: API module count, module list by domain, feature flags table, env config, auth flow descriptions
 
 ### DESIGN.md (the design-system hub)
-- **Path**: `DESIGN.md` (repo root). Deep reference in `docs/design/`; rendered view at `docs/design-system.html`.
+- **Path**: `DESIGN.md` (repo root). Deep reference in `design/`; generated lists in `design/components.md`, `design/tokens.md` and `design/blocks.md`; rendered view at `docs/design-system.html`.
 - **Watches**: `app/globals.css`, `lib/*-tokens.ts`, `components/ui/`
 - **Content verification**:
   - There is **no `tailwind.config.ts`** — Tailwind 4 is CSS-first, so read the `@theme inline` block in `app/globals.css`
-  - Enforced locks: every `lib/*-tokens.ts` with a matching `.test.ts` must appear in DESIGN.md §3
+  - Enforced locks: token modules are listed in the generated `design/tokens.md`, and `pnpm run design:catalogue:check` fails when it is stale. DESIGN.md §3 lists only the locks that live outside a token module
   - Rendered view: run `pnpm run docs:design` — a non-empty diff means the doc has drifted from the tokens
   - `__tests__/design-system-doc.test.ts` enforces the button values; if it fails, the doc is wrong, not the test
 - **Update strategy**: the token modules are the authority. Fix the doc to match `lib/`, never the reverse. Anything decided here should leave as a token module **plus a test**.
-- **Key sections to check**: §3 enforced locks (complete?), §4 known divergence (still accurate?), the palette (amber-500 never orange-500), the heading rule (Fredoka stops at h2)
+- **Key sections to check**: §3 enforced locks (points at `design/tokens.md`; its own rows still exist?), §4 known divergence (still accurate?), the palette (amber-500 never orange-500), the heading rule (Fredoka stops at h2)
 
 ### DEBUGGING.md
 - **Path**: `.claude/docs/DEBUGGING.md`
