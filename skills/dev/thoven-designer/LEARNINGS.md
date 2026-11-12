@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-12 — Paper exports land in ~/Downloads
+
+**What happened.** Exporting Keri's 37 printables for THV-1555 (`export` to PDF and WebP, `export_combined_pdf` for the card sets) wrote 74 files into `~/Downloads`, mixed in with Andres's own files. The exporter copied them to `/tmp` by hand and left the originals behind.
+
+**Why.** Neither tool takes an output path. Each one writes to `~/Downloads` and returns the path it wrote.
+
+**What changed.** A pitfall in `references/implementation.md`: move each returned path into the task's scratch directory with `mv` on that exact path.
+
 ## 2026-11-12 — lookups start at the generated catalogue
 
 **What happened.** The frontend gained a catalogue written from the code (`design/components.md`, `design/tokens.md`, `design/blocks.md`, THV-1735). The lookup references still sent an agent to list `components/ui/` and `lib/*-tokens.ts`, and four paths named `docs/design/` files that live in `design/`.
