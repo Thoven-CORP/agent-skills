@@ -29,10 +29,11 @@ vocabulary: the words tables are the inventory it builds, and section 4 sets the
 
 - **Write:** draft the copy. A headline on the homepage or an instrument page uses the locked header. Copy that tells a family what to do (which button, what happens next) comes from the shipped route: open it and follow the steps in their real order before writing them. (2026-11-05: a Day 0 email listed the purchase steps out of order.)
 - **Review:** run better-writing's review over the copy, with the step 3 findings beside it.
-- **One screen names each thing once.** Read the header, subheader, toolbar and buttons together; when two of them say the same phrase, keep it in the one that carries it and cut it from the rest.
+- **Product screens:** for copy on a signed-in product screen, read [plain copy](references/plain-copy.md) first and write or review every line by it.
 
 Done when, writing, every piece of copy the request names is drafted, or, reviewing, better-writing's
-findings table and its Block or Approve verdict are written.
+findings table and its Block or Approve verdict are written. Product-screen copy is done when every
+line has passed plain copy's three questions.
 
 ## 3. Lint the words
 
