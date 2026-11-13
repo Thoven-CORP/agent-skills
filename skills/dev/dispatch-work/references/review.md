@@ -72,13 +72,17 @@ Report with STATUS VERIFIED or FINDINGS:
   $DISPATCH post {{PROJECT}} --ticket THV-<id> --kind report --status STATUS --from {{AGENT_NAME}} < REPORT_FILE
   then SendMessage to {{MAIN_SESSION}}: "STATUS THV-<id>. Entry: ENTRY_PATH".
 The body opens with SPEC PARITY: one row per exit line and per spec rule, then the measures and
-design rows; each row has its verdict and evidence. Each finding carries file:line and its severity.
+design rows; each row has its verdict and evidence. A diff that changes a design decision (a D#
+comment, a token lock's expectation or title) gets a row naming the D# and the Andres ruling that
+allows it; with no ruling on record, the row is a finding. Each finding carries file:line and its severity.
 ```
 
 ## Every PR
 
 The one review is the PR review for the PR that carries the work. A hotfix, follow-up or CI-fix PR
-with no verifier pane gets it from main, once, on its final diff. Once it passes, main arms
+with no verifier pane gets it from main, once, on its final diff. Its brief asks the same design-decision row
+as SPEC PARITY above. (2026-11-12: PR #671 rewrote D24's lock on a bundled "yes" to a QA list, and
+the review checked that the new tick rendered, not whether a tick was allowed.) Once it passes, main arms
 auto-merge (`~/thoven/agent-skills/enforcement/rules/branches-and-prs.md`), and the work-session page says in one line what
 merged. /deslop, /no-comments, /thermo-nuclear-code-quality-review and /thermos run only when
 Andres asks.
