@@ -19,7 +19,7 @@ and issue comments. It does not perform semantic feature reconciliation.
 ## Pitfalls
 
 - When Andres describes a problem while building a backlog, file it with what is known and the candidates named as candidates; investigate or grill only when he asks. (LEARNINGS 2026-09-03)
-- Add a finding to an existing grouped issue as a checklist line, keep a cleanup Project near 20 grouped issues by merging, and close a done or stale ticket with one evidence line instead of moving it. (LEARNINGS 2026-09-29)
+- File a finding as its own `Follow-up` or `Tech debt` ticket (WORKFLOW.md, "Follow-ups"), and close a done or stale ticket with one evidence line instead of moving it. (LEARNINGS 2026-09-29, 2026-11-12)
 - After every merge or promote, check the Project's open tickets against the merged diff by id and file path, and put each one it fixed into the write set with its SHA in the same turn; say where each verifier follow-up lives. (LEARNINGS 2026-09-29)
 - Close a research ticket once its findings are build tickets, and cancel the tickets the research made stale. (LEARNINGS 2026-10-03)
 - When an issue has no `Writes to:` line, write the spec into its Linear description below Andres's text with `Writes to: this ticket`, through `save_issue` patch ops, then check its embeds survived. (LEARNINGS 2026-10-03)
@@ -50,8 +50,9 @@ Each kind of writing has one home. Write it there; everywhere else links to it.
 | How it is built: shape, units, data, payload fields, modules by path, the seam between the repos | The Project's Architecture document, from the Architecture template | Builders, reviewers |
 | History: the question asked, his answer verbatim, options turned down and why, the chat it came from | The Project's Log document, from the Log template | Main and grills, before asking or ruling |
 | One unit of work | The issue, from the Build ticket template (Work item for other work). It is the builder's brief | The builder |
+| Where the Project stands | The description's first block, "Where we are": 200 words at most | Andres |
 | Purpose, scope, approach, sources of truth | The Project description, through `$linear-project` | Everyone |
-| Progress, risk, handoff, next step | A Project Update with health | Andres |
+| Progress, risk, handoff, next step | A Project Update with health (WORKFLOW.md, "Project Update") | Andres |
 | A status event | An issue comment | |
 | Design exploration | tldraw or Paper. The accepted choice becomes a Spec edit | |
 
@@ -121,9 +122,9 @@ When Andres rules, or a grill or spec session ends, write the ruling before the 
 | Event | Write |
 |---|---|
 | `started` | `node tools/set-status.js "In Progress" THV-n`, plus its parent when the parent reads Todo or Backlog. Fires for main-session work with Andres too, not only a dispatched pane |
-| `pr <number>` | `set-status.js "Ready" THV-n`, then one comment: `PR #<number> opened` |
+| `pr <number>` | Linear sets In Review when the PR opens. Read the status back; when it still reads In Progress, run `set-status.js "In Review" THV-n`. Then one comment: `PR #<number> opened` |
 | `report <STATUS>` | One comment: the report's status line and its Exit criteria rows, nothing else. Take them from the newest REPORT entry that `~/.agents/skills/dispatch-work/scripts/dispatch board <project> --ticket THV-n` prints |
-| `merged <number>` | `set-status.js "Done" THV-n`, then one comment: `Merged #<number>`. List the open tickets the merge may close; moving them needs the Recipe |
+| `merged <number>` | Linear sets Merged (into an integration branch) or Done (into `main`). Read the status back, then one comment: `Merged #<number>`. List the open tickets the merge may close; moving them needs the Recipe |
 | `grill` | Ruling, steps 1–4. Comment on THV-n with links to the edited headings. |
 | `brief` | Ruling, steps 1–4, for each settled choice. A Project Update links the edited headings. The slot map stays on the design board the Spec section links. |
 

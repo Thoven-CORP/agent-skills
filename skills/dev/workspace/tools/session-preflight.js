@@ -4,7 +4,7 @@
 // node session-preflight.js < snapshot.json
 // exit 0 = may proceed; exit 1 = claim / milestone / Writes to: first.
 
-const ALLOWED = new Set(['In Progress', 'Ready']);
+const ALLOWED = new Set(['In Progress', 'In Review']);
 const UNCLAIMED = new Set(['Triage', 'Backlog', 'Todo']);
 
 function preflight(issue) {
@@ -25,7 +25,7 @@ function preflight(issue) {
   }
 
   if (!issue.milestone) {
-    failures.push(`milestone: ${id} has no lifecycle milestone. Create the stage this work is, then attach.`);
+    failures.push(`milestone: ${id} has no milestone. Put it in the Project stage it belongs to.`);
   }
 
   if (state && !ALLOWED.has(state) && !UNCLAIMED.has(state)) {

@@ -5,6 +5,12 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-12 — Linear moves the ticket; findings become tickets
+
+**What changed.** DONE no longer moves a ticket to Ready: Linear sets In Review when the PR opens, Merged or Done on merge. Close reads the status back. A minor or `Noticed` finding is a `Follow-up` or `Tech debt` ticket, not a line in a grouped issue.
+**Why.** Done now means in `main`, and follow-ups are tracked as tickets (Andres's picks, 2026-11-12).
+**More.** `releases/2026-11-12-linear-system.md`
+
 ## 2026-11-12 — the ticket is the brief; one report; corrections edit in place
 
 > session · 2026-11-12 · instructions rewrite · ruling · applied · seen 1

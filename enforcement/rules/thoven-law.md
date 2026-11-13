@@ -87,9 +87,9 @@ branch adds a migration. Every backend command, `git commit` included, names the
 database: export `DATABASE_URL` and `TEST_DATABASE_URL` in the same line.
 
 **Scope.** Make the surgical edit the ticket asks for. Debt, bugs and smells in code the ticket or
-feature owns are fixed on its branch in the same round. A problem outside it gets one line in an
-existing grouped Linear issue, or a new issue only when none fits. A product call goes to Andres as
-a question. Work bigger than the brief stops and reports back.
+feature owns are fixed on its branch in the same round. One the round leaves is a `Follow-up`
+ticket in the same Project; a problem outside that code is a `Tech debt` ticket in the inbox
+(`workspace` `WORKFLOW.md`, "Follow-ups"). A product call goes to Andres as a question. Work bigger than the brief stops and reports back.
 Done means a user can reach it: a module with no call site is not built. Before scoping a ticket or
 fix for a data defect, name one real record (environment, id) that shows it; a critique line, ledger
 row or fixture repeating the claim is not evidence.

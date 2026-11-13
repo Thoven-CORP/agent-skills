@@ -31,3 +31,10 @@ test("a finished Project is complete, not unknown", () => {
   assert.equal(sessionGate(null, { hasTickets: false }).state, "UNKNOWN");
   assert.equal(sessionGate(null).state, "UNKNOWN");
 });
+
+test("the stage gate admits In Review and refuses the retired Ready and a Merged ticket", () => {
+  const issue = { identifier: "THV-1", assignee: "A", milestone: "Build", writesTo: "x" };
+  assert.equal(sessionGate({ ...issue, state: "In Review" }).state, "VERIFIED");
+  assert.equal(sessionGate({ ...issue, state: "Ready" }).state, "BLOCKED");
+  assert.equal(sessionGate({ ...issue, state: "Merged" }).state, "BLOCKED");
+});

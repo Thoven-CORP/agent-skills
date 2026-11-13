@@ -54,6 +54,12 @@ merge or watch a PR. A dispatched pane commits only; its main session pushes and
   The queue has one method, and it is the merge commit, so an integration branch is never squashed.
   (#256 and #318 squashed 282 and 403 commits into one each, and later Private Lessons conflicts
   traced to a 470-file commit with no ticket id.)
+- **Landing line.** The pull request that lands an integration branch in `main` lists every ticket
+  the branch carries in its description, each with a closing word: `Closes THV-1, THV-2`. Take the
+  list from the Project's tickets in Merged. Linear links a ticket by its id in the branch name, the
+  pull request title or a closing word in the description, and the landing pull request's name
+  carries no ticket ids, so it moves only the tickets the line names; without the line they stay
+  Merged for ever. After the merge, read the Project's Merged tickets again: none is left.
 - When an integration branch lands in `main`, retire it: remove its `worktree-projects.tsv` row and
   its tree, and point follow-up tickets at `origin/main`. A Project that continues cuts a fresh
   `<project-slug>/integration` from `main`.

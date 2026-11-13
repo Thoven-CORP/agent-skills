@@ -26,7 +26,7 @@
       "id": 4,
       "name": "done-report-verify-and-close",
       "prompt": "THV-862 pane just reported back, see fixtures/done-report.txt. take it from here",
-      "expected_output": "Moves ticket to Ready (not Done), runs working-if checks, opens a fresh tier-2 verifier pane (not the builder pane) with the verifier brief, flags the inferred acceptance line 3 for real evidence, waits for Andres before Done, files the StudentSelect empty state as a follow-up at close.",
+      "expected_output": "Leaves the ticket In Progress until the PR opens (Linear then sets In Review; not Done), runs working-if checks, opens a fresh tier-2 verifier pane (not the builder pane) with the verifier brief, flags the inferred acceptance line 3 for real evidence, waits for Andres before Done, files the StudentSelect empty state as a follow-up at close.",
       "files": ["fixtures/done-report.txt"]
     },
     {

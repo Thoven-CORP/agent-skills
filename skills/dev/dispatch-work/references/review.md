@@ -95,13 +95,13 @@ Andres asks.
 - **One fix round carries every critical and important finding left**, owned structural debt
   included: about five per pane, split by concern into panes whose files do not overlap. Each is a
   fresh pane with the fix-round brief (`brief.md`). The reviewer then reads the fix diff and its
-  proofs. The ticket stays **Ready**.
+  proofs. The ticket stays **In Review**.
 - **Gate repair, CI fixes and redesigns** go to Andres as one line with a choice.
 - **After the fix round,** main rules on each finding still open. Wrong or contestable: park it with
-  the reason in the Linear comment. Real: one line in the follow-up ticket. A critical one still
+  the reason in the Linear comment. Real: a `Follow-up` ticket. A critical one still
   open goes to Andres as one line with a choice.
-- **Minor findings, and problems outside the work's code,** start no fix round. Each is a line in
-  the follow-up ticket (`SKILL.md` close step 6.2).
+- **Minor findings, and problems outside the work's code,** start no fix round. Each is its own
+  ticket (`SKILL.md` close step 6.2).
 
-**Done when:** the verifier replied VERIFIED, or every finding is fixed, parked or lined into the
-follow-up ticket, and the work-session page shows the outcome.
+**Done when:** the verifier replied VERIFIED, or every finding is fixed, parked or filed as a
+ticket, and the work-session page shows the outcome.

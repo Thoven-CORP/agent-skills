@@ -2,11 +2,11 @@
 
 const { sections } = require("./markdown.js");
 
-const DEFAULT_LANES = ["Triage", "Backlog", "Todo", "In Progress", "Ready", "Done", "Canceled"];
+const DEFAULT_LANES = ["Triage", "Backlog", "Todo", "In Progress", "In Review", "Merged", "Done", "Canceled"];
 
 function parseWorkflow(markdown) {
   const parsed = sections(markdown);
-  const laneLine = markdown.match(/`Triage\s*→\s*Backlog\s*→\s*Todo\s*→\s*In Progress\s*→\s*Ready\s*→\s*Done`/);
+  const laneLine = markdown.match(/`Triage\s*→\s*Backlog\s*→\s*Todo\s*→\s*In Progress\s*→\s*In Review\s*→\s*Merged\s*→\s*Done`/);
   const folder = markdown.match(/projects\/<project>\/[\s\S]{0,500}/);
   return {
     lanes: laneLine ? DEFAULT_LANES : [],

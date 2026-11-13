@@ -5,6 +5,12 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-11-12 — Linear moves the status; labels and follow-ups changed
+
+**What changed.** Statuses run Todo, In Progress, In Review, Merged, Done. Linear sets all but In Progress from the PR; Done means in `main`. Two labels, `Follow-up` and `Tech debt`, with a route each. Priority, milestones as stages, standing projects, the 150-word Update and the 200-word "Where we are" block are in WORKFLOW.
+**Why.** Andres could not read where a Project stood.
+**More.** `releases/2026-11-12-linear-system.md`
+
 ## 2026-11-12 — a spec became a history list
 
 **What changed.** "Writing to Linear" gives each kind of writing one home: Spec, Architecture, Log, ticket. A ruling edits the Spec in place and adds a Log entry. Project documents get size limits. WORKFLOW teaches the ticket and its exit criteria and drops the milestone ladder. Handoffs pass links, not summaries. map.js input moved to `references/map-input.md`.

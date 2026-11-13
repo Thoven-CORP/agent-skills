@@ -35,8 +35,8 @@ test('claimed In Progress issue with a resolving Writes to: is green', () => {
   assert.deepEqual(r.failures, []);
 });
 
-test('Ready with Writes to: is green — wrap-up is allowed', () => {
-  const r = preflight({ ...thv63Claimed, state: 'Ready' });
+test('In Review with Writes to: is green — wrap-up is allowed', () => {
+  const r = preflight({ ...thv63Claimed, state: 'In Review' });
   assert.equal(r.ok, true);
 });
 

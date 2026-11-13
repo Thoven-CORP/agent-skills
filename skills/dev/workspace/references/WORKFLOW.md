@@ -13,7 +13,7 @@ The rules on pointing at sources and on where a fact lives are in `~/thoven/agen
 ```
   Initiative      Thoven 2.0                  the release arc
   └ Project       Teacher 2.0: Dashboard      one feature, audience in the name
-    └ Milestone   chosen per Project          a checkpoint, from $linear-project
+    └ Milestone   3 to 5, then Follow-ups    a stage Andres can open on staging
       └ Issue     wire notifications          one session · one Slice
         └ Sub     write the failing test      a step
 ```
@@ -34,10 +34,15 @@ booking. A label, never a container.
 
 **Initiative.** A release arc with an end. `Thoven 2.0`.
 
-**Feature.** A named body of work holding several shippable Issues. In Linear, a **Project**, named
-`<Audience>: <Feature>` — `Teacher 2.0: Dashboard`, `Student 2.0: Up Next`.
+**Feature.** A named body of work holding several shippable Issues, with an end. In Linear, a
+**Project** inside an Initiative, named `<Audience>: <Feature>` — `Teacher 2.0: Dashboard`,
+`Student 2.0: Up Next`.
 
-**Milestone.** A checkpoint the Project chose at setup (`$linear-project`).
+**Standing project.** Ongoing work with no end date: `Tech debt`, `Small fixes`, `Operations`. A
+ticket for no feature goes in one. **No ticket floats with no Project**: it is on no page Andres reads.
+
+**Milestone.** A stage Andres can open on staging and judge: three to five per Project, then a last
+one, **Follow-ups**. The status, not the milestone, says where a slice is in its lifecycle.
 
 **Issue.** One unit of work a single agent session can finish, and **one Slice**: the decision says
 it, the backend emits it, the contract pins it, the frontend renders it, a user reaches it on a
@@ -54,15 +59,25 @@ or Work-tab names, not Issues.
 
 | State | Means |
 |---|---|
-| **Triage** | A report nobody has accepted yet. The Bug template and integrations put it here. |
+| **Triage** | The inbox: a report or a `Tech debt` ticket nobody has accepted yet. It cannot leave without a priority. |
 | **Backlog** | Parked by Andres in words ("park it", "later", "not this month"). |
 | **Todo** | The default. Every issue a session creates is born here. Any agent may claim it. |
-| **In Progress** | Someone is working on it now: a pane, or the main session with Andres. Protos and `app/dev/` are in scope on a document issue. Shipped product code waits for a Build issue. |
-| **Ready** | Come look. The work is executed. A surface still needs his eyes. Not a merge queue. |
-| **Done** | The issue's job is finished. Code executed. Design or PRD task complete. Merge is git and does not move this. |
+| **In Progress** | A builder is building: a pane, or the main session with Andres. Protos and `app/dev/` are in scope on a document issue. Shipped product code waits for a Build issue. |
+| **In Review** | Its pull request is open. |
+| **Merged** | In the Project's integration branch, not yet in `main`. |
+| **Done** | In `main`. |
 | **Canceled** | Closed without shipping. Cancel rather than delete, so the id keeps resolving. |
 
+Done is in `main`, where a user can reach the work. `Ready` ("come look") is now `In Review`.
+
 Claim is `In Progress`. A `Writes to:` line names the Linear record or deliberately selected technical artifact. It does not pick a second lane.
+
+**Linear moves a ticket with its pull request; an agent sets only `In Progress`, when it claims.**
+A draft PR sets In Progress. An opened PR, a review request and ready-to-merge set In Review. A
+merge into a Project's integration branch sets Merged, into `main` Done. This is the main team
+(`THV`); Deployment and Lab keep their own rules. A ticket with no PR (a document, research) moves
+by hand: In Review when the work is at its path, Done when every exit line is shown true (main's
+reading; the rulings cover pull requests).
 
 **Born in Todo.** Create an issue with `state` left out; the THV team default is Todo (read from
 Linear 2026-11-05). Pass `In Progress` instead when this session starts the work in the same turn.
@@ -120,7 +135,7 @@ demoable alone. Split an issue by repo and both suites can pass while the produc
 
 ## 3. The lifecycle
 
-`$linear-project` chooses each Project's milestones; there is no fixed ladder. Issues are created one milestone ahead, because an issue's shape is not knowable until the milestone before it closes.
+`$linear-project` chooses each Project's three to five stages with Andres, and Follow-ups is always last. Issues are created one milestone ahead, because an issue's shape is not knowable until the milestone before it closes.
 
 **The gate is native.** Linear counts issues, not points, toward milestone progress. An empty milestone reads 0% forever, and a canceled issue leaves the denominator (measured 2026-08-18). Trim a milestone by deleting it; drop scope by canceling the issue.
 
@@ -138,16 +153,25 @@ demoable alone. Split an issue by repo and both suites can pass while the produc
     │  agent claims: In Progress, assigns itself, comments which tool it is
     ▼
   In Progress                                the lock. One issue, one session.
-    │
-    │  doc lands at the named path, or the code is executed
+    │  PR opened (Linear moves it from here down)
     ▼
-  Ready          optional. A surface still needs his eyes.
+  In Review
+    │  merged into the Project's integration branch (a PR into `main` skips Merged)
     ▼
-  Done           the job is finished. Merge is git. It does not move Linear.
+  Merged
+    │  the integration branch lands in `main`
+    ▼
+  Done
 ```
 
-**A merged PR does not move Linear.** `Done` is finished work. `Ready` is come-look.
-`THV-42` in a commit is a git reference. Do not write `Fixes`. That word auto-closes Linear.
+The id in the branch name or PR title links the PR to its ticket. `THV-42` in a commit is a git
+reference and moves nothing. A closing word (`Fixes`, `Closes`) belongs only in the landing PR's
+description (`branches-and-prs.md`, "Landing line"), because Linear moves only the tickets that PR
+names.
+
+**Auto-close stays on** (Andres's pick, against main's recommendation, 2026-11-12): closing the last
+child closes the parent, and closing a parent closes its remaining children. Read the children
+first (Gotchas).
 
 ### Branching across both repos
 
@@ -160,12 +184,12 @@ A vertical issue touches both repos, so it gets **the same branch name in each**
 frontend    teacher/thv-42
 backend     teacher/thv-42
 
-"THV-42"  in both commits. No `Fixes`. That word auto-closes Linear.
+"THV-42"  in both commits. No closing word outside the landing PR.
 ```
 
-One magic word per issue, or Linear closes it on whichever repo merges first while the other half is
-still unmerged. Merge the backend first so the frontend never ships against a contract that is not
-live yet.
+Both PRs link the issue by its id. Linear's documentation says a ticket waits until every linked PR
+has merged (not yet seen on a Thoven ticket), so read the status after the second merge. Merge the backend first so the frontend never ships against a contract that
+is not live yet.
 
 ### The ticket
 
@@ -263,7 +287,19 @@ An accepted design source binds the surface it shows. A shipped component is the
 
 ### Project Update
 
-One Update carries health (`onTrack`, `atRisk`, or `offTrack`), what changed, the Spec headings it changed, the risks, and what is next. It links each heading and does not restate the change.
+Post an Update on every landing (a merge into `main`; main's reading) and every week, because Andres reads where a Project stands from
+the newest one. It carries health (`onTrack`, `atRisk`, or `offTrack`), what changed, the Spec
+headings it changed, the risks, and what is next, in 150 words at most. It links each heading and
+does not restate the change.
+
+Health (main's reading, 2026-11-12, not Andres's words): **off track** when open work has not moved
+in 14 days or a blocker has no owner; **at risk** when something waits on Andres or a target date
+has passed; otherwise **on track**.
+
+**The front page.** The Project description opens with **Where we are**, 200 words at most, one
+screen: **Built**, **Next**, **Blocked**, **Needs Andres**. Whoever posts an Update rewrites this
+block in place in the same turn, so the state reads before any history. Purpose, scope and sources
+follow it (`$linear-project`).
 
 Keep the existing Git branches and PR route across hosts. Use a dedicated disposable test mirror
 for remote checks and separate worktrees for remote coding. See
@@ -300,17 +336,37 @@ worktree, paired-repo and proof provenance.
 
 **One team, `THV`.**
 
-**Projects are Features, never repos.** A Project spans frontend and backend.
+**Projects are Features, never repos.** A Project spans frontend and backend. A standing Project
+(`Tech debt`, `Small fixes`, `Operations`) has no end date.
 
-**Labels name the kind, and `THV` has exactly three:** `Bug` (something is broken),
-`Improvement` (an existing thing made better) and `Feature` (a new capability). Give an issue one
-when its kind is known. Checked against Linear 2026-10-08.
+**The workspace has two labels, `Follow-up` and `Tech debt`,** because "the labels need to be
+actually something useful" (Andres, 2026-11-12); the ticket header already says its kind. `Bug`,
+`Feature` and `Improvement` are retired: old tickets keep them, no new ticket gets one. Deployment's
+own labels are untouched.
+
+### Follow-ups
+
+A problem found during a build goes by where it sits:
+
+| Where it sits | Label | Goes to |
+|---|---|---|
+| In the feature's own code | `Follow-up` | The same Project, milestone **Follow-ups** (its last stage) |
+| Outside the feature's code | `Tech debt` | The inbox (Triage). Andres accepts it into the `Tech debt` Project, declines it, or marks it a duplicate |
+
+A builder or reviewer files each problem the round leaves (law, "Scope") as its own ticket with its
+evidence, because a ticket shows in a view and a line inside another ticket does not.
+
+### Priority
+
+Set priority only where it changes the order: Projects, bug tickets, `Follow-up` and `Tech debt`.
+A build ticket takes its parent's. **Urgent means production is broken**, so the word keeps its
+alarm. A ticket cannot leave the inbox without a priority.
 
 **The gate is a Status, not a label.** `Triage` means not yet agreed; `Todo` means an agent may
 claim it. When `/to-tickets` or `triage` speak of `needs-triage` or `ready-for-agent`,
 set that Status and leave the label off.
 
-⚠ **Casing is exact.** Linear rejects case-variant duplicates and cannot rename, so `bug` would
+⚠ **Casing is exact.** Linear rejects case-variant duplicates and cannot rename, so `follow-up` would
 create a second, unmergeable label. A new label is Andres's call, asked for before it is created.
 
 The repo is not a label either. It belongs in the build ticket's `Writes to:` line, where a
@@ -321,15 +377,16 @@ cross-repo ticket names both.
 **Cycles: weekly, Monday start.** In the cycle is what you intend to touch this week. Review the
 rollover rather than accepting it.
 
-**WIP cap 3** on **Build** `In Progress` + `Ready`, one per agent. PRD and Design fat cards sit
+**WIP cap 3** on **Build** `In Progress` + `In Review`, one per agent. PRD and Design fat cards sit
 outside that cap.
 
-**Two views over one dataset.**
+**Views.** Two over one dataset, and five that show where the Project is lost:
 
 | View | Grouped by | Who |
 |---|---|---|
 | Shipping | Milestone | Andres, watching whether things ship |
 | Work | Status | agents, moving issues |
+| Building now · Merged, not in main · Project health · Follow-ups and tech debt · Tickets with no project | | Andres |
 
 **Linear is engineering work only.** The test: would an agent claim this and open a branch? Dogfood
 observations, session synthesis, marketing copy, personal todos, CFO and fundraising stay in Notion.
@@ -345,6 +402,8 @@ A dogfood observation stays there; the bug it turns into is born in Linear.
 CREATING
 - Leave the status out when you create an issue; it is born in Todo.
   Use In Progress if you start it now. Backlog only when Andres parks it.
+- Every ticket has a Project: a standing one (Tech debt, Small fixes, Operations) when it belongs
+  to no feature. Labels are only `Follow-up` and `Tech debt`.
 
 CLAIMING
 - Claim only from Todo. Anything past it is owned by another session.
@@ -357,7 +416,7 @@ CLAIMING
 DOCUMENTS
 - Grill with /grill-with-docs, then /architect. Protos and app/dev/ routes are in scope.
   Shipped product code waits for a Build issue.
-- Write to the record or technical path "Writes to:" names. Done when its exit criteria pass, not merely when it exists. Then set Ready.
+- Write to the record or technical path "Writes to:" names. Done when its exit criteria pass, not merely when it exists. Then set In Review (no pull request moves it).
 - If the grill produces build work, run /to-tickets after Andres asks.
 - New top-level docs/ folders are Andres's call. Ask in a comment.
 - Current truth lives in the Project's Spec and Architecture; why it changed lives in the Log. A ticket links the headings it builds.
@@ -370,18 +429,17 @@ BUILDING
 BRANCHES AND PULL REQUESTS
 - Branch, PR and worktree rules: `~/thoven/agent-skills/enforcement/rules/branches-and-prs.md`.
   `thoven-worktree create <fe|be> <area> <id>` gives `<area>/thv-<id>`, the same name in both repos.
-- Open a PR into `main`, append the ticket's remaining known work to it, and arm auto-merge once its PR review passes; GitHub merges it on green `CI`, backend first, with no go from Andres, UI included (2026-11-05). The method follows the PR's role (`~/thoven/agent-skills/enforcement/rules/branches-and-prs.md`): a PR into `main` queues with `gh pr merge --auto` and `main`'s merge queue lands it as a merge commit (THV-1707); a ticket into an integration branch squashes (`--squash` on green targeted CI and the verifier's pass); a docs-only PR merges in the same pass; a catch-up of `main` into an integration branch merges with `--merge`. Name source, target and method in the report line.
-- Put `THV-<id>` in the commit message with no magic word. `Fixes` auto-closes Linear. Merge does not own Done.
-- A ticket that takes more than one PR: an id in the branch name or PR title links that PR as closing, so its first merge moves the ticket to Done. Keep the id out of both and write `Part of THV-<id>` in the PR body, which links without closing. (2026-10-25: the test-cadence ticket closed on its first of five PRs.)
-- Write Ready if a surface still needs his eyes. Write Done when the job is finished, and only after
-  `dispatch-work`'s close step has run for it: panes closed, its tree removed, its merged branches gone. UI merges on green `CI` too; Andres reviews it on staging.
-- `--auto` queues a PR into `main` once its `CI` check passes, and the queue's broad `CI` run merges it. Watch a PR unattended with `/babysit-pr` (`pr-wait --until green`), then for a PR into `main` with `enforcement/bin/pr-queue-wait <owner/repo> <n>` until it merges (exit 0) or leaves the queue unmerged (exit 1), or with `/loop-on-ci` when you watch CI in the terminal.
+- Open a PR, append the ticket's remaining known work to it, and arm auto-merge once its PR review passes, backend first, with no go from Andres, UI included (2026-11-05). The merge method follows the PR's role (`branches-and-prs.md`); name source, target and method in the report line.
+- Put `THV-<id>` in the commit message with no closing word. Linear moves the ticket with its PR: In Review when the PR opens, Merged when it lands in an integration branch, Done in `main`. The PR that lands an integration branch in `main` lists every ticket it carries as `Closes THV-<id>` (`branches-and-prs.md`, "Landing line").
+- A ticket that takes more than one PR: an id in the branch name or PR title links that PR as closing, so its first merge moves the ticket to Merged or Done. Keep the id out of both and write `Part of THV-<id>` in the PR body, which links without closing. (2026-10-25: the test-cadence ticket closed on its first of five PRs.)
+- After the merge, read the status back (Linear set it) and run `dispatch-work`'s close step: panes closed, its tree removed, its merged branches gone. UI merges on green `CI` too; Andres reviews it on staging.
+- Watch a PR unattended with `/babysit-pr`, then for a PR into `main` with `enforcement/bin/pr-queue-wait <owner/repo> <n>` (`branches-and-prs.md`).
 - A PR or branch behind `main`: `/modernize` gives MODERNIZE, REWORK or CLOSE before any rebase. On a shared integration branch take the verdict only; the catch-up stays a merge commit.
 - Another person's or agent's PR, branch or dead pane: `/takeover` re-proves it and keeps their credit.
 - In the same comment, say what you did AND what you deliberately did not do.
 
 DEFERRING
-- A deferral is a Linear issue or it does not exist.
+- A deferral is a Linear issue or it does not exist: `Follow-up` or `Tech debt` by where the problem sits (WORKFLOW, "Follow-ups"), with a priority.
 - Name an owner that resolves and link blocked-by.
 ```
 
@@ -400,7 +458,7 @@ already in herdr finish there. The same names apply in both: a Rex **session** i
 |---|---|---|
 | Feature / Linear **Project** | Rex **session** / herdr **space** (see Live spaces below) | One Project and one ledger. Meta is optional. An audience is several spaces, not one. |
 | (none required) | **Work tab** | A prose unit Meta or Andres named (`notifications`, `upcoming`, `payments`). Independent items get their own tab. A checkbox on the fat card does not. |
-| Issue, when one exists | **Pane**. Label = `<Kind> · <job> (THV-x)` | `Design · Messages panel (THV-149)`. Kind is the milestone word for milestone work (`Plan` covers PRD and Architecture), `Research`, `Audit` or `Fix` for work outside a milestone, and `Meta` for main. `dispatch-work/scripts/dispatch label --kinds` prints the full list, and `dispatch label` refuses any other word. A pane can exist before a THV- does. Status words stay on Meta, not the pane name. |
+| Issue, when one exists | **Pane**. Label = `<Kind> · <job> (THV-x)` | `Design · Messages panel (THV-149)`. Kind is the kind of job (`Plan` covers PRD and Architecture) and `Meta` is main. `dispatch-work/scripts/dispatch label --kinds` prints the list, and `dispatch label` refuses any other word. A pane can exist before a THV- does. Status words stay on Meta, not the pane name. |
 | Dispatched issue (`dispatch-work`) | **Window / tab** = the issue, **blocks / panes** = its sub-issues | Main creates them when it dispatches. Sub-issue panes run in parallel only when their Paths share no file. Andres ruling 2026-09-27. |
 | | Optional **Meta** tab in that space | An organizer for **this** Project when orchestration needs one. |
 
@@ -414,12 +472,6 @@ Derived, never hand-kept: `rex ls` lists Rex sessions and `herdr workspace list`
 spaces. A session or space is named for its Linear Project, so the name is the mapping. One with no
 matching Project is a hotfix, scratch or repo-home room.
 
-### Ledger bind
-
-Retired by THV-1038 (2026-10-03), with the Teacher 2.0 and Parent 2.0 Project folders it bound.
-No space binds a folder now. Meta writes only for the Project it was opened for, and Project state
-is Linear's.
-
 ### Two ladders, one board
 
 Do not collapse these. They answer different questions.
@@ -427,10 +479,10 @@ Do not collapse these. They answer different questions.
 | Ladder | Question | Lives |
 |---|---|---|
 | **Initiative → Project → Issue** | Which audience, which feature, which slice | Linear + the multiplexer (session or space = Project, pane = issue when one exists) |
-| **Milestone** | Which **lifecycle** is this slice in (spec, draw, code, review) | Linear field on the issue. **Tag on the pane label.** No tab named Design. |
+| **Milestone** | Which stage of the feature, one Andres can open on staging, does this slice belong to | Linear field on the issue. The pane label carries the kind, never the milestone. No tab named Design. |
 | **DESIGN_SKELETON L1–L6** | How far the **design walk** for a track has gone | Hash bars in the skeleton. Not a Linear milestone |
 
-A Dashboard issue in `Build` can sit under an L3 wireframe bar. That is consistent: this slice is being coded while another track is still drawing.
+A Dashboard `Build` issue can sit under an L3 wireframe bar. That is consistent: this slice is being coded while another track is still drawing.
 
 **Trust the multiplexer, not OpenCode chrome.** The pane label and the tab label are the room. OpenCode's session title (`OC | THV-178 Business Shell…`) is a leftover from whichever chat was last `/rename`d inside that process. If it disagrees with the pane, it is wrong. Fix it with `/rename` in that chat to the **same sentence as the pane label**. Route work by the pane label.
 
@@ -452,7 +504,7 @@ skill from spawn to close.
    staggered ~5 min apart, and only after Andres says go. Spinning a room does
    not mint a ticket. The Begin does not tell the pane to run workspace or
    feature-ledger.
-2. Work **pane** titles itself **milestone + job**, then the id:
+2. Work **pane** titles itself **kind + job**, then the id:
    `Design · Messages panel (THV-149)`. The **tab** stays the named room.
    After a recycle-and-Begin in the same pane, rename the pane **and** `/rename` the
    OpenCode session, or the next glance still says the old ticket.
@@ -462,7 +514,7 @@ skill from spawn to close.
 4. A Work pane stays until Andres has seen the surface. Idle after work is a Meta
    recap + how-to-proceed, not an auto-Begin and not a recycle. Unsatisfied → he
    types in that pane, or Meta pastes his approved correction. Recycle only after
-   he is satisfied, or he confirms a leftover. Linear Ready is not a visual pass.
+   he is satisfied, or he confirms a leftover. Linear In Review is not a visual pass.
 5. The human owns the issue; agents receive bounded work units and exact path sets. Record starting
    HEAD plus staged, unstaged, and untracked paths. Disjoint work units may proceed and commit
    independently on one issue. Same-file work blocks until a named integration session serializes
@@ -479,10 +531,10 @@ skill from spawn to close.
   (`mcp__plugin_linear_linear__*`); other clients may only load the UUID one
   (`mcp__claude_ai_Linear__*`). Before declaring either dead, call a read (`list_issues`) and
   check the exact tool name that responds.
-- **Moving a parent issue to Done can auto-close its sub-issues silently.** A Linear automation
-  closes open children when the parent goes Done (THV-848 to Done closed THV-850). Before moving a
-  parent to Done, list its children first (`list_issues` with `parentId=<id>`) with their state
-  and cycle. After the save, re-list and restore any child that moved: use `get_issue`
+- **A parent that closes closes its open sub-issues silently,** and auto-close stays on (Andres's
+  pick, 2026-11-12; THV-848 to Done closed THV-850). Before a parent closes, in Linear or by merge,
+  list its children (`list_issues` with `parentId=<id>`) with their state and cycle; move an unbuilt
+  one out first. After the save, re-list and restore any child that moved: use `get_issue`
   `stateHistory` to find its state before the move, and restore both state and cycle (a Backlog
   child normally has cycle null). Adding a Backlog issue to the active cycle also moves it to Todo
   silently, so the same check applies there.
@@ -491,5 +543,3 @@ skill from spawn to close.
 - **Read a merge before trusting it.** `.claude/launch.json` merges cleanly and wrong across
   worktrees, taking the other checkout's port.
 - **Staging and publish are not on the board.** They live in the GitHub Releases on `prod/` tags.
-- **OpenCode's session title is not the pane.** `herdr pane list` / `herdr tab list` are. A dashboard
-  pane showing `OC | THV-178…` is a stale inner title, not proof that Business is in that tab.

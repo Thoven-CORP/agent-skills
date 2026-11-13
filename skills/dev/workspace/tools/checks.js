@@ -11,7 +11,7 @@ function sessionGate(issue, { hasTickets = false } = {}) {
   if (!issue) return hasTickets
     ? finding(S.VERIFIED, "session-gate", "every issue in this Project is complete")
     : finding(S.UNKNOWN, "session-gate", "No matching Linear issue was found");
-  if (!["In Progress", "Ready"].includes(issue.state)) return finding(S.BLOCKED, "session-gate", `${issue.identifier} is ${issue.state}`);
+  if (!["In Progress", "In Review"].includes(issue.state)) return finding(S.BLOCKED, "session-gate", `${issue.identifier} is ${issue.state}`);
   if (!issue.assignee) return finding(S.BLOCKED, "session-gate", `${issue.identifier} has no assignee`);
   if (!issue.milestone) return finding(S.BLOCKED, "session-gate", `${issue.identifier} has no milestone`);
   if (!issue.writesTo) return finding(S.BLOCKED, "session-gate", `${issue.identifier} has no Writes to: path`);

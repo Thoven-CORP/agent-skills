@@ -161,7 +161,7 @@ A peer message from a pane carries a status line and its entry path:
 
 | Status | Main does |
 | -- | -- |
-| `DONE THV-x` with a proof on each exit line | Move the ticket to **Ready**. Go to step 5. |
+| `DONE THV-x` with a proof on each exit line | The ticket stays In Progress until main opens the PR; Linear then sets In Review. Go to step 5. |
 | `DONE THV-x` with an exit line that has no proof | Not done. Reply `Attach the proof for each exit line.` The ticket stays In Progress. |
 | `DONE_WITH_CONCERNS THV-x` | As `DONE`; its concerns join the review findings (review.md, "Handling findings"). |
 | `NEEDS_CONTEXT THV-x` | Answer from Linear and this conversation, by peer message plus an ANSWER entry. A product call goes to Andres word for word; relay his answer and add it to the Linear parent. |
@@ -215,14 +215,16 @@ they link (review.md).
 
 After the verifier passes and the PR merges on green, put the outcome on the canonical work-session page, with the current walkthrough and links to its evidence table and complete parity grid on a UI ticket, as review.md describes. Then, with no go to wait for:
 
-1. Move the ticket to **Done** with one comment: the page's human-readable part for this ticket
-   and the merged SHA. Done means merged into its target, the Project's integration branch or
-   `main`, and the comment says where it lives: "Done on `<branch>`, reaches staging when the
-   branch lands", or "Done on `main`, on staging". On a UI ticket, upload the parity images to the
-   issue and place them on the board beside their frames.
-2. Each minor finding, and each `Noticed` line of the report (a problem outside the
-   ticket's code), goes as one line into the follow-up ticket: an existing grouped Linear issue, or
-   a new issue only when none fits.
+1. Read the ticket back: Linear moved it to **Merged** (PR into the Project's integration branch)
+   or **Done** (PR into `main`). Add one comment: the page's human-readable part for this ticket and
+   the merged SHA, saying where it lives: "Merged on `<branch>`, reaches `main` when the branch
+   lands", or "Done on `main`, on staging". A branch lands through the landing line
+   (`enforcement/rules/branches-and-prs.md`). A ticket still In Review after its merge was not linked
+   to the PR: link it and set the status. On a UI ticket, upload the parity images to the issue and
+   place them on the board beside their frames.
+2. Each minor finding, and each `Noticed` line of the report, becomes its own ticket by where it
+   sits (`workspace` `WORKFLOW.md`, "Follow-ups"): `Follow-up` in this Project when it is in the
+   feature's code, `Tech debt` in Triage when it is outside it, each with a priority.
 3. `scripts/dispatch close <pane>` for every pane this dispatch opened. Remove the ticket's own tree
    with `thoven-worktree remove`, never a live integration tree. It drops the tree's databases and
    deletes every local branch whose PR merged; GitHub deletes the branch on origin at merge.
@@ -231,4 +233,4 @@ After the verifier passes and the PR merges on green, put the outcome on the can
 
 **Done when:** `dispatch board <project> --ticket THV-x` prints nothing, `git worktree list` no
 longer shows the ticket's own tree, its merged branches are gone locally and on origin, and the
-ticket reads Done with the comment saying where the work lives.
+ticket reads Merged or Done with the comment saying where the work lives.

@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-12 — the landing line, and where a leftover problem goes
+
+> session · 2026-11-12 · linear system · ruling · applied · seen 1
+
+**What changed.** `rules/branches-and-prs.md` gains "Landing line": the PR that lands an integration branch in `main` lists every ticket with `Closes`. The law's "Scope" sends a leftover problem to a `Follow-up` or `Tech debt` ticket.
+**Why.** Linear moves only the tickets a landing PR names.
+Details: `releases/2026-11-12-linear-system.md`.
+
 ## 2026-11-12 — Builders start lean; Project documents have a size counter
 
 > session · 2026-11-12 · meta-analysis · tooling · applied · seen 1

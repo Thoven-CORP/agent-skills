@@ -53,7 +53,7 @@ Higher wins. Meta repairs the lower one, after go.
 
 1. Ledger files (what to build). Ticket bodies **point** (location stamp). They
    do not restate the spec.
-2. Linear (lifecycle: In Progress / Ready / Done). Done is finished work. Ready is come-look.
+2. Linear (lifecycle: In Progress / In Review / Merged / Done). Done is in `main`.
 3. herdr (liveness). `working` is not shipped.
 4. Named-path git (what landed). Stage the paths you wrote.
 
@@ -110,7 +110,7 @@ the watcher process has exited.
 status: quiet | landed | drifted | hallucinated | stuck | recap
 kind: design_check | build_landed | plan_landed | files | req_gap | stuck | quiet_recap
 issue: ISSUE-… or none
-linear: In Progress | Ready | Done | Todo | …
+linear: In Progress | In Review | Merged | Done | Todo | …
 pane: herdr pane id or none
 files: named paths only
 quotes: ledger rows touched (verbatim)
@@ -127,7 +127,7 @@ Quote contract rows.
 If the pane claims a payload key, route, or ADR number that is not in
 `closed_read_list`, `status: hallucinated`, `verdict: HALLUCINATION`.
 
-Shipped means Linear Done and the named paths exist at the watermark SHAs. Ready is come-look.
+Shipped means Linear Done and the named paths exist at the watermark SHAs.
 
 ## Meta on ping
 

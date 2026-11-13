@@ -30,9 +30,9 @@ sources. Do not ask Andres to repeat known facts. Separate settled facts from op
 Discuss only the choices needed to make the project understandable and start useful work:
 
 - Overall goal, who benefits, initial scope and explicit non-goals.
-- An approach that fits this project: useful phases or checkpoints, whether a prototype is
-  needed, dependencies and real timing constraints. Milestones are project-specific; no fixed
-  lifecycle or placeholder dates.
+- An approach that fits this project: three to five stages Andres can open on staging and judge,
+  then a last stage called Follow-ups; whether a prototype is needed, dependencies and real timing
+  constraints. No fixed lifecycle or placeholder dates.
 - The actual authoritative artifacts needed, what each governs and which are missing.
 - First useful work. It may be a product-direction brainstorm; do not manufacture a build backlog.
 
@@ -60,6 +60,11 @@ Fill the template's five sections: **Goal**, **Scope and non-goals**, **Project 
 Use native fields for lead, status, priority, dates and initiative where decided; native milestones
 for chosen checkpoints with completion descriptions; issues for actual work. Keep native values
 out of duplicate field tables or ticket-status lists.
+
+A feature Project sits inside an Initiative and has an end. Ongoing work goes in a standing Project
+instead (`Tech debt`, `Small fixes`, `Operations`), and no ticket floats with no Project (workspace
+`WORKFLOW.md`, "The words"). The description opens with the "Where we are" block (`WORKFLOW.md`,
+"Project Update").
 
 Link actual specs, designs and decisions as Resources. A small project may need only the brief.
 A Project that builds across several tickets gets three native documents at setup, each created

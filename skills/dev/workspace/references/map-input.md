@@ -67,7 +67,7 @@ Rules the parser enforces:
   `started` · `completed` · `canceled`. Omit it and the issue still lists, sorted last, with a
   `·` glyph.
 - The state *name* is what the session gate reads; it must be the Linear state name
-  (`In Progress`, `Ready`, …), not the type.
+  (`In Progress`, `In Review`, …), not the type.
 - `Writes to: <path>` is parsed out of `description` — first match, own line, verbatim. Linear
   descriptions usually wrap the path in backticks, and the parsed value keeps them; strip before
   using the string as a path.
