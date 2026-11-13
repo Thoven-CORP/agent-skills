@@ -72,3 +72,13 @@ He answered four rounds of questions, then said "Yes, apply all of it". His pick
 - The WIP cap counts `In Progress` plus `In Review`; Merged is outside it.
 - WORKFLOW section 7 is pasted into Linear's agent guidance by hand.
 - Each product repo's `CLAUDE.md` carries the old "Scope" sentence until sync.
+
+## Added later the same day
+
+- The size counter counted the shortened body Linear returns after a save (a 2,297-word Spec read
+  as 82 words). It now counts what was sent, and says "not counted" after a partial edit whose
+  result came back shortened. Two tests cover it.
+- The Project `Agent workflow and Linear system` holds the Spec, Architecture and Log for this work.
+  Its Log is built from a ledger of Andres's words mined from the session transcript; where an
+  earlier file here differs from the Log, the Log wins.
+

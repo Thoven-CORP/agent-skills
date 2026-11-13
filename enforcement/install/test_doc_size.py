@@ -38,6 +38,21 @@ def ticket(exit_count, extra_words=0):
 
 
 class DocSizeTest(unittest.TestCase):
+    def test_post_counts_the_body_that_was_sent_not_the_shortened_result(self):
+        body = "word " * 2297
+        shortened = json.dumps({"title": "Spec · Booking", "content": "word " * 82 + "… (truncated, use `get_document`)"})
+        code, out, _ = post(SAVE_DOC, shortened, title="Spec · Booking", content=body)
+        self.assertEqual(code, 0)
+        self.assertIn("2,297 of 3,000 words", json.loads(out)["hookSpecificOutput"]["additionalContext"])
+
+    def test_post_after_a_patch_with_a_shortened_result_gives_no_count(self):
+        shortened = json.dumps({"title": "Spec · Booking", "content": "word " * 82 + "… (truncated, use `get_document`)"})
+        code, out, _ = post(SAVE_DOC, shortened, id="abc", patch=[{"op": "append", "text": "x"}])
+        self.assertEqual(code, 0)
+        context = json.loads(out)["hookSpecificOutput"]["additionalContext"]
+        self.assertIn("not counted", context)
+        self.assertNotIn("of 3,000", context)
+
     def test_empty_stdin_is_refused(self):
         for stdin in ("", "  \n"):
             with self.subTest(stdin=repr(stdin)):

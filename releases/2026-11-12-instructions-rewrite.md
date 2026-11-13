@@ -80,8 +80,9 @@ Andres chose to execute and dogfood: "We do not need to prove anything yet".
 
 ## Left open
 
-- The law's moved parity bullet still says "acceptance line" and "decision id". Andres ruled the
-  wording moves unchanged.
+- The law's moved parity bullet still says "acceptance line" and "decision id". Main moved the
+  wording unchanged (main's reading; the transcript holds no ruling from Andres on it, found by the
+  2026-11-12 decisions ledger).
 - `WORKFLOW.md` sections 1, 6 and 8 still carry old stage names ("PRD and Design fat cards", the
   DESIGN_SKELETON ladder).
 - `thoven-designer/SKILL.md:10` cites a `feature-ledger` rule 16 that no longer exists.

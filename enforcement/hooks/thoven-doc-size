@@ -11,8 +11,10 @@ The page kind comes from the title prefix:
 
 PreToolUse: a save that sends the whole body (content or description) with a known title is
 counted, and an over-limit save is denied with the count, the limit and the consolidate step.
-PostToolUse: when the tool result carries the saved title and body, one line with the count goes
-to the agent, so a partial edit (patch) that pushed a page over is caught one step later.
+PostToolUse: one line with the count goes to the agent. A whole-body save is counted from what was
+sent, because the connector returns a shortened body (a 2,297-word Spec came back as 82 words on
+2026-11-12). A partial edit (patch) is counted from the result only when the result is whole;
+a shortened result says so instead of giving a wrong count.
 
 Anything else passes in silence: another tool, an unknown title, a patch with no full body, a
 payload it cannot read. It must never break a Linear save it does not understand. Empty stdin
@@ -34,6 +36,7 @@ WORD = re.compile(r"\S+")
 HEADING = re.compile(r"^#{1,6}\s")
 EXIT_HEADING = re.compile(r"^##\s+Exit criteria\s*$", re.I)
 ENTRY_HEADING = re.compile(r"^##\s")
+SHORTENED = "(truncated"
 LIST_ITEM = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+\S")
 
 
@@ -165,7 +168,15 @@ def decide(payload):
         return {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny",
                                        "permissionDecisionReason": result[1]}}
     if event == "PostToolUse":
-        page = saved_page(payload.get("tool_response"))
+        fields = payload.get("tool_input") or {}
+        if isinstance(fields.get("title"), str) and body_of(fields) is not None:
+            page = (fields["title"], body_of(fields))
+        else:
+            page = saved_page(payload.get("tool_response"))
+            if page and SHORTENED in page[1] and kind_of(page[0]):
+                return {"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": (
+                    f"{page[0]}: the save returned a shortened body, so its size is not counted. "
+                    "Read the page back and count it.")}}
         result = measure(*page) if page else None
         if not result:
             return None
