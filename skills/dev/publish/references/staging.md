@@ -87,7 +87,7 @@ Run each step in the repo it names. Steps 1 to 4 check each repo that changed. S
 GCS round-trip: mint, PUT, download byte-identical, purge
 intro call booking is created, then reversed
 parent login returns a JWT and a parent profile
-parent socket is welcomed and subscribed to ParentBookingRequestsChannel
+parent socket is welcomed and subscribed to their student's HomeworkChannel
 student login returns a JWT
 teacher login returns a JWT and a teacher profile
 SKIPS
