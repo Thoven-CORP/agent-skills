@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-13 — documents lead with a picture
+
+> session · 2026-11-13 · Linear system trial · ruling · applied · seen 1
+
+**What happened.** Andres confirmed an agent-written Mermaid flowchart draws in a Linear document, then asked that every document default to diagrams, charts and graphs: "always try to pursue highly visual outputs whether through diagrams charts graphs bar graphs different types of visualizations".
+**Why.** Visual output was a rule only for HTML pages (`visual-artifacts`); Specs, Architecture documents, Logs and reports were prose.
+**What changed.** Replies gained "Documents default to visual" as the rule's home. No line was removed: the visual-explainer bullet covers HTML pages only. `workspace` ("How to write a Project document"), `call-prep`, `thoven-boardroom`, `market-research-vc-intelligence` and the global `~/.claude/CLAUDE.md` point at it.
+
 ## 2026-11-12 — andres-mode is main's file; Pitfalls is the writer's card
 
 > session · 2026-11-12 · meta-analysis instructions rewrite · broken-rule · applied · seen 2+

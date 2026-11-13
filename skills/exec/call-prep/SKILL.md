@@ -42,6 +42,7 @@ Use WebSearch to gather:
 Save to: `Meetings/YYYY-MM-DD - [Person Name] Call Prep.md`
 
 Include:
+- At the top, the call flow as a Mermaid diagram or timed table, and the must-ask questions as a table (`andres-mode`, "Documents default to visual")
 - Call objective and success metrics
 - Quick background on person/company
 - Your elevator pitch and "why" story

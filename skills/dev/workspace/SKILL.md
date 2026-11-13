@@ -65,6 +65,7 @@ The connector cannot apply a template. To make a Spec, Architecture or Log, read
 - **Every rule carries its reason** after "because". A reason several rules share is written once, on the area's "Why" line.
 - **Write what looking cannot tell.** The frame carries copy, layout, colour and motion. The code carries what it already does.
 - **Plain sentences.** Present tense. One thought per sentence. Say who does what. Write the real screen, file or field name, and keep one name per thing.
+- **Picture first.** Each page leads with a Mermaid diagram, a chart or a table, and the prose explains it, because Andres reads the picture before the words (`andres-mode`, "Documents default to visual").
 
 | Page | Limit |
 |---|---|

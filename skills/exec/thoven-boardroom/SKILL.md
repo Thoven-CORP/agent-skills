@@ -173,7 +173,7 @@ Continue until the CEO signals they're done or says "close the meeting" / "wrap 
 
 1. Send `shutdown_request` to all teammates
 2. After all teammates shut down, use `TeamDelete` to clean up
-3. Produce meeting notes using the template in `references/meeting-template.md`
+3. Produce meeting notes using the template in `references/meeting-template.md`, led by a table or Mermaid diagram of the options and where each role leaned (`andres-mode`, "Documents default to visual")
 4. Save to: `Meetings/Thoven Boardroom/YYYY-MM-DD - [Topic Summary].md`
 5. Create the `Thoven Boardroom/` directory if it doesn't exist
 6. If a major decision was made, flag for `Agent Knowledge/Memory/major_memory.md` update

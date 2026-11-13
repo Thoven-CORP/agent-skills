@@ -7,6 +7,8 @@ description: Structure market analysis, competitive intelligence, and investor-r
 
 Transform raw market data into compelling investor narratives. This skill provides frameworks for market sizing, competitive analysis, and the storytelling patterns VCs expect to see.
 
+Show each result as a picture first: market size as a nested or bar chart, the competitive landscape as the 2x2, timing as a curve, drawn by the `dataviz` skill (`andres-mode`, "Documents default to visual").
+
 ## When to Use This Skill
 
 - Preparing pitch deck market slides
