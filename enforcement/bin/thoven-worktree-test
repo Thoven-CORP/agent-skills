@@ -357,10 +357,14 @@ expect "create prunes merged branches once its tree exists" "$(tail -n 1 "$TMP/p
 mkdir -p "$SPECS/.specs"
 printf 'spec\n' > "$SPECS/.specs/notes.md"
 mkdir -p "$SPECS/build" && printf 'rebuildable\n' > "$SPECS/build/out.txt"
+# The tree checks out a second branch and back, as a ticket does when it closes one PR and opens another.
+git -C "$SPECS" switch -q -c specs/thv-980-take2 && git -C "$SPECS" switch -q specs/thv-980
 before=$(wc -l < "$TMP/prunes" | tr -d " ")
 err="$("$TOOL" remove "$SPECS" 2>&1 >/dev/null)"; code=$?
 expect "remove of a tree with an untracked .specs/ exit" "$code" 0
 expect "remove prunes merged branches once its tree is gone" "$(wc -l < "$TMP/prunes" | tr -d " ")" "$((before + 1))"
+expect "remove names every branch the tree checked out, for closed-PR pruning" "$(tail -n 1 "$TMP/prunes")" \
+  "prune --repo $TMP/backend --delete --closed specs/thv-980 --closed specs/thv-980-take2"
 if [ -e "$SPECS" ]; then fail "remove of a tree with an untracked .specs/ deletes it" "still there"; else ok "remove of a tree with an untracked .specs/ deletes it"; fi
 SPECS_ARCH="$TMP/archive/backend-thv-980-$(date +%Y-%m-%d)"
 expect "the untracked file is archived with its path" "$(cat "$SPECS_ARCH/.specs/notes.md" 2>/dev/null)" "spec"

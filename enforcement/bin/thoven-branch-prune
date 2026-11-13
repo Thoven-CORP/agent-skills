@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Deletes branches whose work GitHub already merged. Prints what it would delete unless --delete.
 
-  thoven-branch-prune [--repo PATH ...] [--delete] [--remote]
+  thoven-branch-prune [--repo PATH ...] [--delete] [--remote] [--closed BRANCH ...]
 
 Repos default to $THOVEN_ROOT/frontend and $THOVEN_ROOT/backend. A branch goes only when all hold:
   - it is not main, and no worktree has it checked out;
@@ -10,6 +10,11 @@ Repos default to $THOVEN_ROOT/frontend and $THOVEN_ROOT/backend. A branch goes o
     keeps them under the PR, so nothing is lost;
   - no open PR uses it as head or base, so a live integration branch stays.
 A branch with no PR, or with commits the merged PR never had, is never touched.
+
+--closed BRANCH also deletes that local branch when its PR was closed unmerged and its tip is
+exactly that PR's head, with no open PR on it. GitHub keeps the head under refs/pull/<n>/head, so
+nothing is lost. Only named branches go: thoven-worktree remove names the ones its tree checked
+out, so an abandoned PR's branch leaves with its tree, and a sweep never takes one.
 
 --remote applies the same test to origin's branches. GitHub already deletes a PR's head branch
 on merge in frontend and backend; this clears what that missed. Each deletion prints the sha it
@@ -78,40 +83,48 @@ def merged_by(repo, tip, prs):
     return None
 
 
-def candidates(repo, rows, prs, skip):
+def candidates(repo, rows, prs, skip, closed_ok=frozenset()):
     open_names = set()
     merged = {}
+    closed = {}
     for pr in prs:
         if pr["state"] == "OPEN":
             open_names.update((pr["headRefName"], pr["baseRefName"]))
         elif pr["state"] == "MERGED":
             merged.setdefault(pr["headRefName"], []).append(pr)
+        elif pr["state"] == "CLOSED":
+            closed.setdefault(pr["headRefName"], []).append(pr)
     found = []
     for name, tip in sorted(rows.items()):
-        if name in skip or name in open_names or name not in merged:
+        if name in skip or name in open_names:
             continue
-        pr = merged_by(repo, tip, merged[name])
+        pr = merged_by(repo, tip, merged[name]) if name in merged else None
         if pr:
-            found.append((name, tip, pr["number"]))
+            found.append((name, tip, f"PR #{pr['number']}"))
+            continue
+        if name in closed_ok:
+            pr = next((p for p in closed.get(name, []) if p["headRefOid"] == tip), None)
+            if pr:
+                found.append((name, tip, f"closed PR #{pr['number']}"))
     return found
 
 
-def prune(repo, delete, remote):
+def prune(repo, delete, remote, closed_ok=frozenset()):
     repo = Path(repo).resolve()
     git(repo, "fetch", "--quiet", "--prune", "origin")
     prs = pull_requests(repo)
     if not prs:
         raise RuntimeError("gh returned no pull requests, so nothing can be proved merged")
     verb = "deleted" if delete else "would delete"
-    local = candidates(repo, branches(repo, "refs/heads/"), prs, checked_out(repo))
-    for name, sha, number in local:
+    local = candidates(repo, branches(repo, "refs/heads/"), prs, checked_out(repo), closed_ok)
+    for name, sha, why in local:
         if delete:
             git(repo, "update-ref", "-d", f"refs/heads/{name}", sha)
             git(repo, "config", "--remove-section", f"branch.{name}", check=False)
-        print(f"{repo.name}: {verb} local {name} {sha[:12]} (PR #{number})")
+        print(f"{repo.name}: {verb} local {name} {sha[:12]} ({why})")
     gone = 0
     if remote:
-        for name, sha, number in candidates(repo, branches(repo, "refs/remotes/origin/"), prs, set()):
+        for name, sha, why in candidates(repo, branches(repo, "refs/remotes/origin/"), prs, set()):
             if delete:
                 push = git(repo, "push", "--quiet", f"--force-with-lease=refs/heads/{name}:{sha}",
                            "origin", f":refs/heads/{name}", check=False)
@@ -119,7 +132,7 @@ def prune(repo, delete, remote):
                     print(f"{repo.name}: kept origin/{name}: {push.stderr.strip()}")
                     continue
             gone += 1
-            print(f"{repo.name}: {verb} origin/{name} {sha[:12]} (PR #{number})")
+            print(f"{repo.name}: {verb} origin/{name} {sha[:12]} ({why})")
     print(f"{repo.name}: {verb} {len(local)} local" + (f" and {gone} origin" if remote else "")
           + " branch(es)")
 
@@ -129,12 +142,13 @@ def main():
     parser.add_argument("--repo", action="append")
     parser.add_argument("--delete", action="store_true")
     parser.add_argument("--remote", action="store_true")
+    parser.add_argument("--closed", action="append", default=[], metavar="BRANCH")
     args = parser.parse_args()
     root = Path(os.environ.get("THOVEN_ROOT", Path.home() / "thoven"))
     status = 0
     for repo in args.repo or [root / "frontend", root / "backend"]:
         try:
-            prune(repo, args.delete, args.remote)
+            prune(repo, args.delete, args.remote, frozenset(args.closed))
         except RuntimeError as err:
             print(f"{Path(repo).name}: skipped, {err}")
             status = 1

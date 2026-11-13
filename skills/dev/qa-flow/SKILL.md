@@ -57,6 +57,8 @@ If the control surface or Feature Map required an avoidable recovery, leave one 
 
 Verdicts are `pass` / `fail` / `design` / `partial` / `blocked` / `info`. `design` keeps the fail count meaning "broken"; `partial` is what stops an environment limitation being filed as a defect.
 
+A finding that questions the shipped design itself (a colour, an estimated contrast ratio, how a control looks) when the code matches the design is `design`, and it goes to Andres as one question. It becomes a ticket item only after he calls it a defect. (2026-11-12: two estimated-contrast findings on designed button colours sat on THV-1469 as open items and were raised again after he had ruled them as designed.)
+
 ## Two hard safety gates (part of the workflow, not optional)
 
 1. **The live prod-PII read is human-triggered.** You build and validate the extractor, do the graph-scoping, the neutralization, the load, the harness, the creds — all autonomously. The one step you do **not** run yourself is the actual `pg_dump` from production; a human authorizes and runs that read. (Full rationale + the localhost guard in `prod-snapshot.md`.)

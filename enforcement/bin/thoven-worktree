@@ -328,12 +328,30 @@ registry_file() {
   printf '%s/../worktree-projects.tsv\n' "$(script_dir)"
 }
 
-# prune_merged <checkout>: deletes the checkout's local branches whose PR merged, so branches
-# go when branch work happens rather than on a timer. A checked-out branch is never touched, so
-# create calls this only once its tree exists. A failure (gh offline) is logged, never fatal.
+# prune_merged <checkout> [branch ...]: deletes the checkout's local branches whose PR merged, so
+# branches go when branch work happens rather than on a timer. Each named branch also goes when
+# its PR was closed unmerged at its tip (thoven-branch-prune --closed). A checked-out branch is
+# never touched, so create calls this only once its tree exists. A failure (gh offline) is logged,
+# never fatal.
 prune_merged() {
-  local prune="${THOVEN_BRANCH_PRUNE:-$(script_dir)/thoven-branch-prune}" line
-  while IFS= read -r line; do log "$line"; done < <("$prune" --repo "$1" --delete 2>&1 || true)
+  local prune="${THOVEN_BRANCH_PRUNE:-$(script_dir)/thoven-branch-prune}" line repo="$1" b args=()
+  shift
+  for b in "$@"; do args+=(--closed "$b"); done
+  while IFS= read -r line; do log "$line"; done < <("$prune" --repo "$repo" --delete ${args[@]+"${args[@]}"} 2>&1 || true)
+}
+
+# tree_branches <tree>: the local branches the tree has checked out, read from its own HEAD reflog,
+# which git deletes with the tree. A ticket that closed one PR and opened another leaves both.
+tree_branches() {
+  local name
+  {
+    git -C "$1" symbolic-ref -q --short HEAD
+    git -C "$1" reflog show --format=%gs HEAD 2>/dev/null |
+      sed -n 's/^checkout: moving from \([^ ]*\) to \([^ ]*\)$/\1\n\2/p'
+  } | LC_ALL=C sort -u | while IFS= read -r name; do
+    [ -n "$name" ] && [ "$name" != main ] &&
+      git -C "$1" rev-parse -q --verify "refs/heads/$name" >/dev/null && printf '%s\n' "$name"
+  done
 }
 
 # plain_arg <name> <value>: usage error on an empty value or one holding a tab or newline.
@@ -696,7 +714,7 @@ procs_inside() {
 # remove converges whenever nothing unrecoverable would be lost: tracked edits and a detached HEAD's
 # own commits are refused, everything untracked is archived, then git removes the tree with --force.
 remove() {
-  local path main db key suffix dbs=() dirty ahead procs dest
+  local path main db key suffix dbs=() dirty ahead procs dest seen=()
   path="$(physical "$1")" || die 1 "remove: $1 is not a directory"
   [ "$(physical "$(git -C "$path" rev-parse --show-toplevel 2>/dev/null)")" = "$path" ] ||
     die 1 "remove: $path is not the top of a git worktree"
@@ -726,9 +744,10 @@ $procs"
       { [ "$db" = "neondb_test_$suffix" ] || [ "$db" = "thoven_dev_$suffix" ]; } && dbs+=("$db")
     done
   fi
+  while IFS= read -r db; do seen+=("$db"); done < <(tree_branches "$path")
   git -C "$main" worktree remove --force "$path" >&2 || die 1 "git worktree remove --force $path failed, so no database was dropped"
   log "removed $path"
-  prune_merged "$main"
+  prune_merged "$main" ${seen[@]+"${seen[@]}"}
   # A database another live worktree still names is shared, not this one's to drop.
   local still
   still="$(referenced_dbs "$main")"

@@ -12,14 +12,17 @@ export HOME="$TMP"
 WT="$TMP/thoven/frontend-thv-1"
 mkdir -p "$WT"
 unset DEVIN_PROJECT_DIR
-# A stub gh on PATH, so the merged-PR check never reaches GitHub (THV-1067). It logs its args to
-# $HOME/gh-args, exits with $HOME/gh-rc when that exists, else prints $HOME/gh-out (no file: no PR).
+# A stub gh on PATH, so the PR check never reaches GitHub (THV-1067). It logs its args to
+# $HOME/gh-args, exits with $HOME/gh-rc when that exists, else applies the call's -q filter to the
+# JSON in $HOME/gh-out (no file: no PR), as gh does.
 mkdir -p "$TMP/bin"
 cat >"$TMP/bin/gh" <<'STUB'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >>"$HOME/gh-args"
 [ -f "$HOME/gh-rc" ] && exit "$(cat "$HOME/gh-rc")"
-cat "$HOME/gh-out" 2>/dev/null
+q=.; prev=""
+for a in "$@"; do [ "$prev" = "-q" ] && q="$a"; prev="$a"; done
+[ -f "$HOME/gh-out" ] && jq -r "$q" "$HOME/gh-out"
 exit 0
 STUB
 chmod +x "$TMP/bin/gh"
@@ -128,14 +131,23 @@ if [ -e "/tmp/$ESC" ]; then fail "a session id with ../ writes nothing outside /
 
 # branch -D after a squash merge (THV-1067)
 reason() { run claude "$(claude_payload "$1" "$REPO")" | sed 's/^rc=0 //' | jq -r '.hookSpecificOutput.permissionDecisionReason // empty'; }
-g -C "$REPO" rev-parse ahead >"$HOME/gh-out"
+pr_json() { jq -nc --arg o "$(g -C "$REPO" rev-parse ahead)" --arg s "$1" '[{headRefOid:$o,state:$s}]' >"$HOME/gh-out"; }
+pr_json MERGED
 expect "branch -D allows a branch whose merged PR head is its tip" "$(decision claude "git branch -D squash-merged")" "allow"
-expect "the merged check asks gh for that branch's merged PRs" "$(grep -c -- '--head squash-merged --state merged' "$HOME/gh-args")" "1"
+expect "the PR check asks gh for that branch's PRs in every state" "$(grep -c -- '--head squash-merged --state all' "$HOME/gh-args")" "1"
 expect "branch -D refuses a merged branch with a commit added after the merge" "$(decision claude "git branch -D squash-plus")" "deny"
+# gh pr close --delete-branch drops the remote, and GitHub keeps the head under refs/pull/<n>/head.
+pr_json CLOSED
+expect "branch -D allows a branch whose closed PR head is its tip" "$(decision claude "git branch -D squash-merged")" "allow"
+expect "branch -D refuses a closed PR's branch with a commit added after closing" "$(decision claude "git branch -D squash-plus")" "deny"
+pr_json OPEN
+expect "branch -D refuses when the only PR at the tip is open" "$(decision claude "git branch -D squash-merged")" "deny"
+echo '[]' >"$HOME/gh-out"
+expect "branch -D refuses when gh returns an empty PR list" "$(decision claude "git branch -D squash-merged")" "deny"
 rm -f "$HOME/gh-out"
 expect "branch -D refuses when gh finds no merged PR" "$(decision claude "git branch -D squash-merged")" "deny"
-case "$(reason "git branch -D squash-merged")" in *"merged PR"*) ok "the refusal names the merged-PR check" ;; *) fail "the refusal names the merged-PR check" "$(reason "git branch -D squash-merged")" ;; esac
-g -C "$REPO" rev-parse ahead >"$HOME/gh-out"; echo 1 >"$HOME/gh-rc"
+case "$(reason "git branch -D squash-merged")" in *"merged or closed PR"*) ok "the refusal names the PR check" ;; *) fail "the refusal names the PR check" "$(reason "git branch -D squash-merged")" ;; esac
+pr_json MERGED; echo 1 >"$HOME/gh-rc"
 expect "branch -D refuses when gh fails" "$(decision claude "git branch -D squash-merged")" "deny"
 rm -f "$HOME/gh-out" "$HOME/gh-rc"
 

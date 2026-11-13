@@ -42,10 +42,15 @@ branch integration         # merged once, now the base of an open PR
 branch nopr                # never had a PR
 branch older 2             # merged at its second commit; local copy stopped at the first
 branch remote-only         # merged; only origin still has it
+branch abandoned           # PR closed unmerged, at its head
+branch abandoned-plus      # PR closed unmerged, then a commit the PR never had
+branch unnamed-closed      # PR closed unmerged, at its head, but nobody names it
 git -C "$REPO" fetch -q origin
 
 SQUASHED=$(tip squashed) EXTRA=$(tip extra) HELD=$(tip held) INTEGRATION=$(tip integration)
 OLDER=$(tip older) REMOTE_ONLY=$(tip remote-only)
+ABANDONED=$(tip abandoned) ABANDONED_PLUS=$(tip abandoned-plus) UNNAMED=$(tip unnamed-closed)
+git -C "$REPO" checkout -q abandoned-plus && git -C "$REPO" commit -q --allow-empty -m "after close" && git -C "$REPO" checkout -q main
 git -C "$REPO" update-ref refs/heads/older "$OLDER~1"
 git -C "$REPO" checkout -q extra && git -C "$REPO" commit -q --allow-empty -m "after merge" && git -C "$REPO" checkout -q main
 git -C "$REPO" worktree add -q "$TMP/held-tree" held
@@ -59,7 +64,10 @@ cat > "$TMP/prs.json" <<EOF
  $(pr 4 MERGED integration "$INTEGRATION" main),
  $(pr 5 OPEN feature "$SQUASHED" integration),
  $(pr 6 MERGED older "$OLDER" main),
- $(pr 7 MERGED remote-only "$REMOTE_ONLY" main)]
+ $(pr 7 MERGED remote-only "$REMOTE_ONLY" main),
+ $(pr 8 CLOSED abandoned "$ABANDONED" main),
+ $(pr 9 CLOSED abandoned-plus "$ABANDONED_PLUS" main),
+ $(pr 10 CLOSED unnamed-closed "$UNNAMED" main)]
 EOF
 export THOVEN_PRUNE_PRS="$TMP/prs.json"
 
@@ -77,6 +85,14 @@ expect "a branch with no PR is kept" "$(local_has nopr)" yes
 expect "a merged branch is deleted on origin with --remote" "$(origin_has remote-only)" no
 expect "the base of an open PR is kept on origin" "$(origin_has integration)" yes
 expect "an origin branch with no PR is kept" "$(origin_has nopr)" yes
+
+expect "a closed PR's branch is kept unless named" "$(local_has abandoned)" yes
+out=$("$TOOL" --repo "$REPO" --delete --closed abandoned --closed abandoned-plus --closed nopr)
+expect "a named branch at its closed PR's head is deleted" "$(local_has abandoned)" no
+case "$out" in *"deleted local abandoned "*"(closed PR #8)"*) ok "the deletion names the closed PR" ;; *) fail "the deletion names the closed PR" "$out" ;; esac
+expect "a named closed-PR branch with a later commit is kept" "$(local_has abandoned-plus)" yes
+expect "a named branch with no PR is kept" "$(local_has nopr)" yes
+expect "an unnamed closed-PR branch is kept" "$(local_has unnamed-closed)" yes
 
 echo '[]' > "$TMP/empty.json"
 out=$(THOVEN_PRUNE_PRS="$TMP/empty.json" "$TOOL" --repo "$REPO" --delete)

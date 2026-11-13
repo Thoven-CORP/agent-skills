@@ -83,6 +83,7 @@ When Andres rules, or a grill or spec session ends, write the ruling before the 
 2. Add one Log entry in the Log template's shape: Asked, Andres (verbatim), Changed, Turned down, Reading only when needed, and Chat, which says where the exchange is. An entry you write on your own says Asked "unprompted" and has no Andres line.
 3. Write no more than his words cover. A part of the question his answer skipped stays open: it goes under the page's Open questions with its default, and the next question asks it.
 4. Read back the edited line and the Log entry, with the size counter's line for each page when the counter prints one. Say the edited heading in one line.
+5. A ruling that a listed item is not a defect strikes it in the same pass, wherever it is listed: an issue's checklist, and its title when the title names it. The struck line reads `~~item~~ Struck <date>: not an issue (Andres). Do not reopen.` A struck item is settled; a status or remaining-work list leaves it out. (2026-11-12: THV-1469 kept two ruled contrast items as open boxes, and a session read them back as open work.)
 
 ## Recipe
 
