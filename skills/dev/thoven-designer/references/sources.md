@@ -36,10 +36,11 @@ reference only for intent and rationale.
 | Buttons, ledges, variants | `thovenButtonTokens` in `lib/live-lesson-tokens.ts:53`; `components/ui/thoven-button.tsx`; `__tests__/design-system-doc.test.ts` | `design/buttons.md` |
 | Icons, the two tiers, K2 | `lib/icon-tokens.ts`; `__tests__/icon-tier-scan.test.ts`, `__tests__/icon-tokens.test.ts`, `__tests__/openmoji-icon-map.test.ts` | `design/icons.md` |
 | Motion, springs, reduced motion | `lib/motion-config.ts` | `design/motion.md` |
-| Async loading, unavailable, degraded, action, field-error, and empty states | `lib/loading-tokens.ts`; `components/ui/shimmer-text.tsx`; `components/shared/RowSkeleton.tsx`; `components/ui/thoven-button.tsx`; the owning feature component listed below | `docs/design/async-states.md` |
+| Async loading, unavailable, degraded, action, field-error, and empty states | `lib/loading-tokens.ts`; `components/ui/shimmer-text.tsx`; `components/shared/RowSkeleton.tsx`; `Skeleton` from `skullet/react` for a page or section whose shape is known; `components/ui/thoven-button.tsx`; the owning feature component listed below. The loader for a waiting control outside `ThovenButton` is not ruled, and `components/ui/spinner.tsx` is not it | `docs/design/async-states.md` |
 | Layout, viewport, spacing | *(no token module)* | `design/layout.md` |
 | What a thing is **called** | *(no token module)* | frontend `design/lexicon/LEXICON.md` - LIVING, not frozen |
-| Does a component exist? | `design/components.md`: status (`current`, `deprecated` with its replacement, `unused`), when to use it, options, slots | [Does it already exist](#does-it-already-exist) |
+| Does a component exist? | `design/components.md`: status (`current`, `deprecated` with its replacement or "none ruled yet", `unused`; `on Radix` marks the old stack), when to use it, options, slots | [Does it already exist](#does-it-already-exist) |
+| What a new part is built on, and when to build or take a library | *(no token module)* | frontend `design/STACK.md`: new parts on Base UI; a Radix part moves there in the change that next fixes it |
 | Which composite, and who draws its loading, empty and error | `design/blocks.md`, generated from `design/blocks.registry.json` | [Async-state ownership](#async-state-ownership) |
 | Which token module owns a value, and what locks it | `design/tokens.md` | the module's own header comment |
 
