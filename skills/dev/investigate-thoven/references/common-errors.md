@@ -603,6 +603,16 @@ Known error patterns for this project. Check here first when debugging.
 ---
 
 
+### Error: Hidden-But-Mounted Control Fired by a Crawler (Phantom Requests With Empty Payloads)
+- **Symptom:** Server logs show a burst of requests to a step that needs user input (an upload, a submit) with an empty or placeholder payload, every one refused (422), and nothing after them in the flow. It reads like real users stuck at that step, but product analytics show no matching user events.
+- **Root Cause:** The control is hidden visually (opacity 0, `inert`, `aria-hidden`) but stays mounted, and its handler checks no precondition. An automated client (an ad network's review crawler, a link previewer, a test bot) clicks it programmatically, and a fallback meant for a design lab or demo (`file ?? new Blob()`) fills the missing input.
+- **Fix:** Guard the handler on the state that makes the action valid (the flow's stage, a picked file), not on visibility, and keep placeholder payloads out of the production path.
+- **Prevention:** Before reading "N users stuck at step X" from server logs, check user agents and IP ranges (`meta-externalads`, `facebookexternalhit`, `Googlebot`) and compare with client analytics for the same window. A control a user should not reach yet gets a precondition check in its handler, because hiding it does not stop a programmatic click.
+- **Applies to:** Any multi-step flow on a page that ads or link shares point at; hidden submit buttons, prefetching forms, lab or storybook fallbacks that ship in production code.
+- **Files:** Any step component whose handler starts a request; any `x ?? placeholder` on a request body.
+- **Date Added:** 2026-11-14
+- **Reference:** Got-an-instrument redeem slot, 2026-11-12: Meta's ad-review crawler clicked the hidden Redeem 12 times and uploaded an empty blob (all 422), which looked like 12 families stuck after upload (THV-1838, PR #713).
+
 ## TypeScript / Build
 
 ### Error: Source-Scanning Gate False-Negatives on a Benign Refactor (and Trains `--no-verify`)
