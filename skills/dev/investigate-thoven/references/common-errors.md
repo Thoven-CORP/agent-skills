@@ -101,6 +101,16 @@ Known error patterns for this project. Check here first when debugging.
 - **Date Added:** 2026-01-23
 - **Reference:** CHANGELOG [1.0.35] - Safari Mobile Analytics Fix
 
+### Error: Vendor Ingestion Lag Read as Lost Events
+- **Symptom:** Right after a tracking change ships (a proxy, a new SDK host, a new event), the request returns 200 and the vendor's verbose reply says accepted, but a report or query a minute later shows nothing. That looks like the change is dropping events.
+- **Root Cause:** An accepted request only means the vendor received it. Its pipeline indexes the event later: seconds usually, minutes sometimes, and a report can lag behind the live view. A check run inside that window reads as loss, and at low traffic an empty hour also looks like loss when it is just chance.
+- **Fix:** Before calling events lost, send the same probe event through the new path and through the vendor's own host at the same time. Wait at least 15 minutes, then query both. Read the vendor's own ingestion timestamp (Mixpanel `mp_processing_time_ms`) and its live view. Events lost only through the new path mean the change loses them. Both late means lag.
+- **Prevention:** Any check that an analytics event "arrived" waits 15 minutes before it reads, compares the new path with a direct control probe, and quotes how often the baseline itself has an empty hour before treating an empty one as a signal.
+- **Applies to:** Mixpanel, GA4, Meta CAPI, PostHog, Segment, and any first-party relay or server-side forward of analytics.
+- **Files:** any analytics relay or proxy (e.g. `middleware.ts`), SDK init files, release checks that read the vendor's dashboard
+- **Date Added:** 2026-11-14
+- **Reference:** THV-1820: the Mixpanel `/relay` went live, a query 1 minute after the visit found nothing, and all events had arrived 2-4 minutes later. A real visitor's page view had arrived 5 s after it was sent.
+
 ---
 
 ## React Hooks / State
