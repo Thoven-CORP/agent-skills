@@ -61,9 +61,10 @@ Use native fields for lead, status, priority, dates and initiative where decided
 for chosen checkpoints with completion descriptions; issues for actual work. Keep native values
 out of duplicate field tables or ticket-status lists.
 
-A feature Project sits inside an Initiative and has an end. Ongoing work goes in a standing Project
-instead (`Tech debt`, `Small fixes`, `Operations`), and no ticket floats with no Project (workspace
-`WORKFLOW.md`, "The words"). The description opens with the "Where we are" block (`WORKFLOW.md`,
+A feature Project sits inside a feature Initiative and has an end. Non-feature work with an end, such
+as a big refactor or an upgrade, is a Project inside the `Foundations` Initiative. Ongoing work goes
+in a standing Project instead (`Tech debt`, `Small fixes`, `Operations`), and no ticket floats with
+no Project (workspace `WORKFLOW.md`, "The words"). The description opens with the "Where we are" block (`WORKFLOW.md`,
 "Project Update").
 
 Link actual specs, designs and decisions as Resources. A small project may need only the brief.
