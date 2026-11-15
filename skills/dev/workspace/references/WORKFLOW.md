@@ -32,7 +32,9 @@ Every piece of work sits in exactly one container.
 **Surface.** A permanent area that never finishes: teacher dashboard, marketplace, classroom,
 booking. A label, never a container.
 
-**Initiative.** A release arc with an end. `Thoven 2.0`.
+**Initiative.** A release arc with an end (`Thoven 2.0`), or a standing area with no end that groups
+related Projects (`Foundations`, `Growth`, `Labs and internal`), because non-feature work needs one
+place on the board too (Andres, 2026-11-15).
 
 **Feature.** A named body of work holding several shippable Issues, with an end. In Linear, a
 **Project** inside an Initiative, named `<Audience>: <Feature>` — `Teacher 2.0: Dashboard`,
@@ -40,6 +42,9 @@ booking. A label, never a container.
 
 **Standing project.** Ongoing work with no end date: `Tech debt`, `Small fixes`, `Operations`. A
 ticket for no feature goes in one. **No ticket floats with no Project**: it is on no page Andres reads.
+The three sit in the `Foundations` Initiative, beside `Design System`, `Agent workflow and Linear
+system` and `Observability weekly`. A large piece of non-feature work with an end, such as a big
+refactor, gets its own Project there.
 
 **Milestone.** A stage Andres can open on staging and judge: three to five per Project, then a last
 one, **Follow-ups**. The status, not the milestone, says where a slice is in its lifecycle.
@@ -123,7 +128,8 @@ First yes wins.
 2  Can one agent finish it in one session?  Yes →  ISSUE
 3  Holds several Issues, one feature?       Yes →  PROJECT
                                                    named <Audience>: <Feature>
-4  A release arc across features?           Yes →  INITIATIVE
+4  A release arc across features,
+   or a standing area across Projects?     Yes →  INITIATIVE
 ```
 
 Milestones are not routed to. `$linear-project` chooses them (§3).
