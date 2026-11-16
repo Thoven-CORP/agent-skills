@@ -24,13 +24,13 @@ class RedeployTest(unittest.TestCase):
             release = root / 'release.json'
             release.write_text(json.dumps(dict(id='fixture', be=dict(to=SHA, **{'from': SHA}),
                 fe=dict(to=SHA, **{'from': SHA}), rollback=False, migrations=[],
-                staging_hold='b' * 32, done={})))
+                done={})))
             (lock / 'release').write_text(str(release))
             binaries = root / 'bin'
             binaries.mkdir()
             fakes = {
                 'hostname': '#!/bin/sh\necho fixture-laptop\n',
-                'ssh': '#!/bin/sh\ncase "$*" in *release-hold*) echo released;; *) printf aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa;; esac\n',
+                'ssh': '#!/bin/sh\necho "unexpected ssh: $*" >&2; exit 99\n',
                 'curl': '''#!/usr/bin/env python3
 import json, os, pathlib, sys
 args = sys.argv[1:]

@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-16 — A release goes from main straight to production
+
+> Andres · 2026-11-16 · ruling · applied
+
+**What happened.** Release prod/2026-11-16-4 needed a staging proof, but the mini's Render key returned 401 and the mini had no staging secrets, so the proof ran on the laptop path with no job probe. Andres: "skip staging on mini, and skip stagin in gernal striaght to production".
+**Why.** Every promote took a staging hold, read staging's SHAs and waited on staging-green, so a broken staging host blocked each production release.
+**What changed.** `promote.sh plan` pins each repo's `origin/main` tip and never reads or holds staging; `staging-hold.sh` and its test are gone. production.md step 3 is "CI is green on each SHA" (with "Stop: no run on the SHA"), and a risky bullet whose proof is "CI only" is a named gap. staging.md and the qa-flow release pass run only when Andres asks for staging.
+
 ## 2026-11-09 — Each changelog bullet carries its risk and its proof
 
 > reflect · 2026-11-09 · d7e67eac, 489a6eae · skill-gap · applied · seen 2

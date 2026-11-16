@@ -67,7 +67,7 @@ FAKES = {
     'vercel': FAKE_VERCEL,
     'curl': FAKE_CURL,
     'hostname': '#!/bin/sh\necho fixture-laptop\n',
-    'ssh': '#!/bin/sh\ncase "$*" in *release-hold*) echo released;; *) printf aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa;; esac\n',
+    'ssh': '#!/bin/sh\necho "unexpected ssh: $*" >&2; exit 99\n',
     'neonctl': '#!/bin/sh\necho "[]"\n',
 }
 
@@ -147,7 +147,7 @@ class BuildAtPlanTest(unittest.TestCase):
         lock.mkdir(parents=True)
         release = self.root / '.thoven/releases/fixture.json'
         release.write_text(json.dumps(dict(
-            id='fixture', rollback=rollback, staging_hold='a' * 32,
+            id='fixture', rollback=rollback,
             be={'from': self.be, 'to': self.be},
             fe={'from': self.fe_to, 'to': self.fe_from} if rollback else {'from': self.fe_from, 'to': self.fe_to},
             migrations=[], build_at_plan='', build_started=build_started,
@@ -167,6 +167,12 @@ class BuildAtPlanTest(unittest.TestCase):
         self.assertIn('started dpl_new', result.stdout)
         lookups = [e['path'] for e in events if e['path'].startswith('/v7/deployments')]
         self.assertTrue(lookups and all(f'sha={self.fe_to}' in p for p in lookups), lookups)
+
+    def test_plan_defaults_to_the_tip_of_main_and_never_reads_staging(self):
+        result, events = self.run_step('plan', '--be', 'keep')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.release()['fe']['to'], self.fe_to)
+        self.assertNotIn('staging', json.dumps(events))
 
     def test_plan_starts_nothing_when_a_fresh_build_is_ready(self):
         ready = dict(uid='dpl_ready', url='ready.vercel.app', projectId=PROJECT, target='production',

@@ -29,7 +29,7 @@ description: Use when Andres asks to publish, deploy, release, promote or hotfix
    | Andres says | Path | Do |
    |---|---|---|
    | "put it on staging", "deploy to staging", "I want to see it on staging" | staging deploy | Frontend only: run `~/thoven/agent-skills/skills/dev/publish/scripts/staging-frontend.sh <sha>` (default: the tip of `main`); done when it prints `staging serves <sha9>`. Backend, or both, or extend or stop a session: load the `start-staging` skill and follow it |
-   | "is it staging-green", "prove staging" before a promote | staging proof | `references/staging.md` |
+   | "is it staging-green", "prove staging" (only on that ask: a release skips staging) | staging proof | `references/staging.md` |
    | "ship this", "deploy to production", "promote", "go live" | production | `references/production.md` |
    | "hotfix", "fix the live site", "skip the ceremony", "straight through", "no go's" | production straight through | `references/production.md`, section "Straight through" |
    | "roll back", "revert production", or production misbehaves after a promote | rollback | `references/production.md`, section "Roll back" |

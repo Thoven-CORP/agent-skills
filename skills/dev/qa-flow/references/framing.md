@@ -19,7 +19,7 @@ SKILL.md Step 1 decides when to ask. On a dispatched or release run, answer thes
 
 **Regression** (after a fix): rerun the same flows and compare with the last run's `steps.jsonl`: fixed, new, still failing.
 
-**Release pass.** For a release's larger feature (a money, upload, job or email, migration or new-surface change), a tester pane separate from the builder runs the development hunt on staging, on the mini, with writes and Stripe test cards, before publish shows `plan`. After the promote, the production smoke runs per user type. The pass delivers videos and the reader page, and its verdict link goes on the feature's changelog bullet (`~/.agents/skills/publish/references/production.md` step 1).
+**Release pass.** For a release's larger feature (a money, upload, job or email, migration or new-surface change), a tester pane separate from the builder runs the development hunt on staging, on the mini, with writes and Stripe test cards, only when Andres asks for it: a release goes from `main` straight to production and does not wait for it (`~/.agents/skills/publish/references/production.md`). After the promote, the production smoke runs per user type. The pass delivers videos and the reader page, and its verdict link goes on the feature's changelog bullet (`~/.agents/skills/publish/references/production.md` step 1).
 
 ## Data strategy — prod snapshot vs. seed
 

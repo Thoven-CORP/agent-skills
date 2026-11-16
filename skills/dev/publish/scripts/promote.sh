@@ -9,9 +9,9 @@
 #   status         prints the open release
 #   abort    ID    closes the open release without tagging
 #
-# plan is the only step that reads staging. It takes the lock, pins every SHA in a
-# release file and prints the ID; each later step names that ID, so the go Andres
-# gives on plan's output binds exactly what ships. Forward releases run backend,
+# plan takes the lock, pins every SHA (default: each repo's origin/main tip; staging
+# is never read) in a release file and prints the ID; each later step names that
+# ID, so the go Andres gives on plan's output binds exactly what ships. Forward releases run backend,
 # then frontend. Rollbacks run frontend, then backend. backend and frontend can
 # each wait 30 minutes: run them in the background. When no production build of the
 # frontend SHA is ready, plan starts one, so it builds while the backend steps run.
@@ -22,7 +22,6 @@ BE_REPO=~/thoven/backend
 FE_REPO=~/thoven/frontend
 API_ID=srv-dar05h3ncjis73bki8qg
 WORKER_ID=srv-dar05h3ncjis73bki8s0
-STAGING_API_ID=srv-dao470bm8hqs73d71sh0
 PROD_ENV_GROUP=evg-dar05ajncjis73bkhi40
 NEON_PROJECT=dry-sound-31987419
 NEON_PROD_BRANCH=br-lingering-frost-b5phtwra
@@ -30,7 +29,6 @@ VERCEL_SCOPE=andres-3203s-projects
 VERCEL_PROJECT_ID=prj_kJp3i6YAA6bC5jOGbg7xypzIkPta
 PROD_API=https://api.thoven.co
 PROD_SITE=https://thoven.co
-STAGING_SITE=https://staging.thoven.co
 SNAPSHOT_MAX_AGE=7200
 # A snapshot expires this many days after creation, so an erased child's data cannot
 # outlive the retention promise. Call sites keep the time 1 hour under Neon's cap.
@@ -59,8 +57,6 @@ iso_utc() {
   [ -n "$out" ] || die "cannot format $1 as RFC 3339 UTC"
   printf '%s' "$out"
 }
-# shellcheck source=staging-hold.sh
-. "$(dirname "${BASH_SOURCE[0]}")/staging-hold.sh"
 
 is_sha() { [[ $1 =~ ^[0-9a-f]{40}$ ]]; }
 
@@ -182,11 +178,10 @@ open_release() {
   jq -e '.id and .be.to and .fe.to' "$REL" >/dev/null 2>&1 || die "release file $REL is unreadable"
   [ -n "$ID" ] || die "name the release: $cmd $(jq -r .id "$REL")"
   [ "$(jq -r .id "$REL")" = "$ID" ] || die "open release is $(jq -r .id "$REL"), not $ID"
-  staging_hold_refresh
 }
 rel() { jq -r "$1" "$REL"; }
 rel_set() { local tmp; tmp=$(mktemp); jq "$@" "$REL" >"$tmp" && mv "$tmp" "$REL"; }
-close_release() { staging_hold_release "$(rel '.staging_hold // empty')" || die "cannot release staging hold; release remains open"; mkdir -p "$RELEASES/$1"; mv "$REL" "$RELEASES/$1/"; rm -f "$REL_PTR"; rmdir "$LOCK"; }
+close_release() { mkdir -p "$RELEASES/$1"; mv "$REL" "$RELEASES/$1/"; rm -f "$REL_PTR"; rmdir "$LOCK"; }
 
 # Refuses when a half moved since plan: prod must be at .from or already at .to.
 still_planned() {
@@ -250,9 +245,8 @@ deploy() {
 case "$cmd" in
   plan)
     mkdir "$LOCK" 2>/dev/null || die "a release is open ($(jq -r .id "$(cat "$REL_PTR" 2>/dev/null)" 2>/dev/null || echo unknown)); finish it or run abort"
-    planned=0; plan_hold=""
-    trap '[ "$planned" = 1 ] || { staging_hold_release "$plan_hold" || true; rm -f "$REL_PTR"; rmdir "$LOCK" 2>/dev/null || true; }' EXIT
-    plan_hold=$(staging_hold_acquire "release planning") || die "cannot acquire shared staging hold; plan stopped"
+    planned=0
+    trap '[ "$planned" = 1 ] || { rm -f "$REL_PTR"; rmdir "$LOCK" 2>/dev/null || true; }' EXIT
     [ "$ROLLBACK" = 1 ] || guard_snapshot_ttl "$NEON_PROJECT"
     auto_assign_off || die "Vercel autoAssignCustomDomains is on, so merges go live by themselves. Switch it off first"
     for r in "$BE_REPO" "$FE_REPO"; do git -C "$r" fetch -q origin main; done
@@ -268,24 +262,16 @@ case "$cmd" in
     fi
     PROD_FE=$(prod_fe) || die "cannot tell what thoven.co serves (site and Vercel both failed)"
 
-    if [ -z "$BE_ARG" ] || [ -z "$FE_ARG" ]; then
-      staging_require_ready || die "staging execution probe failed; plan stopped"
-    fi
-    STAGE_BE=""; STAGE_FE=""
-    if [ -z "$BE_ARG" ]; then STAGE_BE=$(live_commit "$STAGING_API_ID") || die "cannot read staging deploys"; fi
-    if [ -z "$FE_ARG" ]; then
-      STAGE_FE=$(retry curl -sS --max-time 20 "$STAGING_SITE/api/version" | jq -r '.sha // empty') || die "staging did not answer"
-    fi
     pick() {
       case "$2" in
         keep) echo "$3" ;;
-        "") git -C "$1" rev-parse --verify -q "$4^{commit}" || die "$(basename "$1") does not have staging's ${4:-SHA}" ;;
+        "") git -C "$1" rev-parse --verify -q "origin/main^{commit}" || die "$(basename "$1") has no origin/main" ;;
         *) [[ $2 =~ ^[0-9a-fA-F]{7,40}$ ]] || die "SHA must be hex, got '$2'"
            git -C "$1" rev-parse --verify -q "$(tr 'A-F' 'a-f' <<<"$2")^{commit}" || die "$(basename "$1") does not have $2" ;;
       esac
     }
-    BE=$(pick "$BE_REPO" "$BE_ARG" "$PROD_BE" "$STAGE_BE")
-    FE=$(pick "$FE_REPO" "$FE_ARG" "$PROD_FE" "$STAGE_FE")
+    BE=$(pick "$BE_REPO" "$BE_ARG" "$PROD_BE")
+    FE=$(pick "$FE_REPO" "$FE_ARG" "$PROD_FE")
     [ "$BE" != "$PROD_BE" ] || [ "$FE" != "$PROD_FE" ] || die "prod already runs backend ${BE:0:9} and frontend ${FE:0:9}"
 
     check_half() {
@@ -331,8 +317,8 @@ Pass --schema-stays only if the older code runs on the newer schema."
     id="$(TZ=America/New_York date +%Y%m%d-%H%M%S)-${BE:0:7}-${FE:0:7}"
     REL="$RELEASES/$id.json"
     jq -n --arg id "$id" --arg be "$BE" --arg pbe "$PROD_BE" --arg fe "$FE" --arg pfe "$PROD_FE" \
-      --arg migs "$MIGS" --arg build "$BUILD" --arg started "$STARTED" --arg staging_hold "$plan_hold" --argjson rb "$ROLLBACK" --argjson order "$ORDER" \
-      '{id:$id, staging_hold:$staging_hold, rollback:($rb==1), order:$order, be:{from:$pbe,to:$be}, fe:{from:$pfe,to:$fe},
+      --arg migs "$MIGS" --arg build "$BUILD" --arg started "$STARTED" --argjson rb "$ROLLBACK" --argjson order "$ORDER" \
+      '{id:$id, rollback:($rb==1), order:$order, be:{from:$pbe,to:$be}, fe:{from:$pfe,to:$fe},
         migrations:($migs|split("\n")|map(select(.!=""))), build_at_plan:$build, build_started:(if $started == "" then null else $started end),
         snapshot:null, snapshot_at:null, tag:null,
         done:{snapshot:false, backend:false, api_healthy:false, frontend:false}}' >"$REL"

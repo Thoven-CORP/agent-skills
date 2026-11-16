@@ -1,6 +1,6 @@
 ---
 name: qa-flow
-description: Product QA through the real UI, with exact criteria and a durable evidence record. Use after a feature or bug fix, to reproduce a production report on a prod snapshot, to QA a release's larger features on staging before promote, or to break or stress-test a flow like a real user.
+description: Product QA through the real UI, with exact criteria and a durable evidence record. Use after a feature or bug fix, to reproduce a production report on a prod snapshot, to QA a feature on staging when Andres asks for it, or to break or stress-test a flow like a real user.
 ---
 
 # /qa-flow — Product verification loop
