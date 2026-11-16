@@ -26,8 +26,8 @@ watch a PR, read `~/thoven/agent-skills/enforcement/rules/branches-and-prs.md` i
 it. Everywhere: `main` is the only 2.0 branch; one ticket gets one branch and one PR per repo, and
 every fix to it is appended there; production moves only through
 `~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh`; and a newly required request field
-stays optional until the frontend that sends it is on staging (backend #278 made staging refuse
-every reschedule for six hours).
+stays optional until the frontend that sends it is live on thoven.co, because a release deploys the
+backend before the frontend (backend #278 made staging refuse every reschedule for six hours).
 
 **Records and sources.** Linear holds the Project's record: decisions, status, evidence and
 handoffs. Read a document's body, not only its link. A Project's spec says what is true now, its
