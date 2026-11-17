@@ -31,8 +31,9 @@ PROD_API=https://api.thoven.co
 PROD_SITE=https://thoven.co
 SNAPSHOT_MAX_AGE=7200
 # A snapshot expires this many days after creation, so an erased child's data cannot
-# outlive the retention promise. Call sites keep the time 1 hour under Neon's cap.
-SNAPSHOT_TTL_DAYS=30
+# outlive the retention promise and prod stays within Launch's 10 included branches.
+# Point-in-time restore already covers 7 days. Call sites keep the time 1 hour under the TTL.
+SNAPSHOT_TTL_DAYS=7
 RELEASES=~/.thoven/releases
 LOCK=$RELEASES/lock
 REL_PTR=$LOCK/release
@@ -112,8 +113,8 @@ policy_permits() {
 
 # A non-default branch without expires_at keeps a full copy of the database forever, so an
 # erased child's data could outlive the retention promise. A forward plan refuses until each
-# carries an expiry. Suggested time is created_at + 30 days, or now + 30 days - 1 hour when
-# that is already past or beyond Neon's 30-day cap.
+# carries an expiry. Suggested time is created_at + SNAPSHOT_TTL_DAYS, or now +
+# SNAPSHOT_TTL_DAYS - 1 hour when that is already past or further out.
 guard_snapshot_ttl() {
   local out msg
   out=$(neonctl branches list --project-id "$1" -o json) || die "cannot list the Neon branches of $1"
