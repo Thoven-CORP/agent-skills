@@ -159,6 +159,7 @@ class BuildAtPlanTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         [create] = self.creates(events)
         self.assertIn('forceNew=1', create['path'])
+        self.assertNotIn('withCache', create['path'])
         body = json.loads(create['body'])
         self.assertEqual(body['target'], 'production')
         self.assertIs(body['autoAssignCustomDomains'], False)

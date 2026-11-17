@@ -94,6 +94,7 @@ class StagingFrontendTest(unittest.TestCase):
         self.assertEqual(run.returncode, 0, run.stderr)
         [create] = creates
         self.assertIn('forceNew=1', create['path'])
+        self.assertIn('withCache=1', create['path'])
         body = json.loads(create['body'])
         self.assertEqual((body['project'], body['name'], body['target']), (STAGING, 'thoven-staging', 'production'))
         self.assertIs(body['autoAssignCustomDomains'], True)

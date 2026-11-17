@@ -68,7 +68,7 @@ Its progress and done lines start with `== ` and show SHAs as their first 9 char
    ~/thoven/agent-skills/skills/dev/publish/scripts/promote.sh frontend <id>
    ```
 
-   It promotes Vercel's staged production build of `<fe-sha>`. When `plan` started that build, it waits for it; if that build fails, it stops without promoting, and running `frontend` again builds a fresh one. It builds one first (about 5 minutes) when none is newer than the last production env change. Done when it prints `thoven.co serves <sha9>` or `thoven.co already serves <sha9>`. A `canceled` build means `vercel-ignore-build.sh` skipped a docs-only commit: tell Andres, and plan again with the last code commit.
+   It promotes Vercel's staged production build of `<fe-sha>`. When `plan` started that build, it waits for it; if that build fails, it stops without promoting, and running `frontend` again builds a fresh one. It builds one first (about 5 minutes) when none is newer than the last production env change. Done when it prints `thoven.co serves <sha9>` or `thoven.co already serves <sha9>`. A `canceled` build means `vercel-ignore-build.sh` skipped a commit that changes no app files (docs, tests or agent tooling): tell Andres, and plan again with the last code commit.
 
 9. **Production harness.** From a detached frontend checkout of `<fe-sha>` (`git -C ~/thoven/frontend worktree add --detach ~/thoven/frontend-publish-<fe-sha7> <fe-sha>`, then `pnpm install --frozen-lockfile` in it), with `thoven-prod.env` loaded as in step 7. Use the read-only `production` target (`e2e/ghost/target.ts`: thoven.co and api.thoven.co, `writes: false`, which no env var can change). The retired `ghost` target refuses to run.
 

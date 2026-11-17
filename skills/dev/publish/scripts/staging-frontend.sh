@@ -45,7 +45,7 @@ git -C "$FE_REPO" rev-list --first-parent origin/main | grep -x "$SHA" >/dev/nul
 now=$(retry staging_sha || true)
 if [ "$now" = "$SHA" ]; then say "staging already serves ${SHA:0:9}"; exit 0; fi
 say "building ${SHA:0:9} for staging, which serves ${now:0:9}"
-dep=$(start_build "$STAGING_PROJECT_ID" thoven-staging "$SHA" true) || die "Vercel refused to create a deployment"
+dep=$(start_build "$STAGING_PROJECT_ID" thoven-staging "$SHA" true true) || die "Vercel refused to create a deployment"
 wait_build "$dep" >/dev/null
 got=""
 for _ in $(seq 30); do got=$(staging_sha || true); [ "$got" = "$SHA" ] && break; sleep 10; done
