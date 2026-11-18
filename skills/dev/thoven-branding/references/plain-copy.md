@@ -28,8 +28,13 @@ concise, never by a word count; a count games the copy into short phrases nobody
 
 - A screen names each thing once. Read the title, header, filter, toolbar and buttons together;
   copy below them adds only what they leave out. Example: with the diverse-learners filter on,
-  "Teaches diverse learners" on every card repeats the filter, so it comes off the cards.
+  "Teaches diverse learners" on every card repeats the filter, so it comes off the cards. The
+  same goes for any fact the list was matched on: recommended teachers drop the age range,
+  because "that's why they were shown" (Andres, 2026-11-18).
 - One name per thing everywhere, and counts that agree from screen to screen.
+- A sentence that sums up the parent's answers names the kind of answer, "Andres's needs" or
+  "the times you chose", and never lists the picks, because a parent can pick five needs and a
+  diagnosis and the line no longer fits (Andres, 2026-11-18, said several times).
 
 ## Voice
 
@@ -39,3 +44,9 @@ concise, never by a word count; a count games the copy into short phrases nobody
 - Reuse the platform's lexicon (frontend `design/lexicon/LEXICON.md`) and the sentence shapes the
   nearby screens already use. Keep the voice warm and helpful, never technical or robotic.
 - A title stands on its own, with no eyebrow label (the small all-caps line above it).
+- A badge with room reads as a whole phrase with its verb, "Reviewed to teach diverse learners",
+  because a clipped label like "Reviewed for diverse learners" is "not a proper phrase" (Andres,
+  2026-11-18).
+- Text a teacher or parent wrote shows as plain body text, with no quotation marks or quote
+  styling, because nothing else on the screen is quoted (Andres, 2026-11-18: "drop the quotes
+  everywhere").
