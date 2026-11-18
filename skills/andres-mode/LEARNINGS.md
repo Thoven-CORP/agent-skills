@@ -5,6 +5,16 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-18 — a flag needs a product purpose, never a hedge
+
+> session · 2026-11-18 · d515ee1a, PR 582 retiring `OPTIMISTIC_CLASS_CREATION_ENABLED` · ruling · applied · seen 1
+
+**What happened.** Andres could not say why a flag existed or what was live in production, and had it deprecated. He then asked for a standing rule: "avoid feature flags at all costs unless. I approve and bypass it for product strategy. Feature flags are cope for risky changes with low trust, unless a feature flag has ane xplicit product (such as an A/B test, or phased rollout , or trnasitionary phase for depracting a feature) to always avoid."
+**Why.** The retired flag guarded four jobs, one of them money, and its live value sat in a dashboard no agent had read. A hedge for a change nobody trusts leaves behaviour that depends on state outside the code.
+**What changed.** Hard rules, "Ship without flags" became "No flags". The removed line allowed a flag whenever he asked for one. The new line allows one with an explicit product purpose, or when he approves it as product strategy. `feature-flag-creator` opens with that gate, and `product-advisor` no longer prompts for a flag.
+
+---
+
 ## 2026-11-13 — documents lead with a picture
 
 > session · 2026-11-13 · Linear system trial · ruling · applied · seen 1

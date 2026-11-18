@@ -1,11 +1,15 @@
 ---
 name: feature-flag-creator
-description: Scaffold a new Thoven feature flag the canonical way so it always appears in the admin panel and is wired across repos. Repo-aware — does the frontend half in the Next.js repo (thoven/frontend) and the backend half in the Rails repo (thoven/backend). Use when adding or creating a feature flag, gating a feature behind a toggle, or setting up a rollout. Triggers on "feature flag", "new flag", "add a flag", "gate behind a flag", "toggle", "rollout". NOT for retiring or deleting flags, and NOT for general feature work (use /dev).
+description: Scaffold a new Thoven feature flag the canonical way so it always appears in the admin panel and is wired across repos. Repo-aware — does the frontend half in the Next.js repo (thoven/frontend) and the backend half in the Rails repo (thoven/backend). Use only when the flag has an explicit product purpose (an A/B test, a phased rollout, or a transition while deprecating a feature) or Andres approved it; a flag that only hedges a risky change is refused. Triggers on "feature flag", "new flag", "add a flag", "gate behind a flag", "toggle", "rollout". NOT for retiring or deleting flags, and NOT for general feature work (use /dev).
 ---
 
 # Feature Flag Creator
 
 Scaffolds ONE new Thoven feature flag correctly. The flag system spans two repos and has two competing frontend patterns, so flags routinely end up half-wired or invisible to the admin panel. This skill enforces the one right path.
+
+## The gate: no flag without a product purpose
+
+Andres's rule (`andres-mode`, "No flags"): avoid feature flags at all costs. Scaffold one only when it has an explicit product purpose (an A/B test, a phased rollout, or a transition while a feature is deprecated) or he approved it as product strategy. A flag on a risky change is cope for low trust, so make the change safe and stop here. Name the purpose in step 2. With no purpose to name, create nothing and tell him why.
 
 ## The core rule: remote by default
 

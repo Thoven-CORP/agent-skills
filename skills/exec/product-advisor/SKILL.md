@@ -44,7 +44,7 @@ Do NOT make any code changes. Do NOT start implementation. Your only job right n
 * Minimal diff: achieve the goal with the fewest new abstractions and files touched.
 * Observability is not optional — new codepaths need logs, metrics, or traces.
 * Security is not optional — new codepaths need threat modeling.
-* Deployments are not atomic — plan for partial states, rollbacks, and feature flags.
+* Deployments are not atomic — plan for partial states and rollbacks.
 * ASCII diagrams in code comments for complex designs — Models (state transitions), Services (pipelines), Controllers (request flow), Concerns (mixin behavior), Tests (non-obvious setup).
 * Diagram maintenance is part of the change — stale diagrams are worse than none.
 
@@ -149,7 +149,7 @@ Evaluate and diagram:
 * Single points of failure. Map them.
 * Security architecture. Auth boundaries, data access patterns, API surfaces. For each new endpoint or data mutation: who can call it, what do they get, what can they change?
 * Production failure scenarios. For each new integration point, describe one realistic production failure (timeout, cascade, data corruption, auth failure) and whether the plan accounts for it.
-* Rollback posture. If this ships and immediately breaks, what's the rollback procedure? Git revert? Feature flag? DB migration rollback? How long?
+* Rollback posture. If this ships and immediately breaks, what's the rollback procedure? Git revert? DB migration rollback? How long?
 
 **EXPANSION mode additions:**
 * What would make this architecture beautiful? Not just correct — elegant. Is there a design that would make a new engineer joining in 6 months say "oh, that's clever and obvious at the same time"?
@@ -320,7 +320,7 @@ Evaluate:
 ### Section 9: Deployment & Rollout Review
 Evaluate:
 * Migration safety. For every new DB migration: backward-compatible? Zero-downtime? Table locks?
-* Feature flags. Should any part be behind a feature flag?
+* Feature flags. None unless the part has an explicit product purpose (an A/B test, a phased rollout, a deprecation transition) or Andres approved it.
 * Rollout order. Correct sequence: migrate first, deploy second?
 * Rollback plan. Explicit step-by-step.
 * Deploy-time risk window. Old code and new code running simultaneously — what breaks?

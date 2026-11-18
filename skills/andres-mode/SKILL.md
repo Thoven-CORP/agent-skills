@@ -12,7 +12,7 @@ Each rule has one home, here or in the file a line points at. Read `LEARNINGS.md
 ## Hard rules
 
 - **Verify small.** The cadence is `verify`'s: targeted checks per ticket, and the full verify and CI once, when an integration branch lands in `main`, or when he asks.
-- **Ship without flags.** Add a feature flag, hold, throttle or on-switch only when he asks for one.
+- **No flags.** Avoid feature flags at all costs. A flag on a risky change is cope for low trust: make the change safe instead. A flag is allowed only with an explicit product purpose (an A/B test, a phased rollout, or a transition while a feature is deprecated) or when he approves it as product strategy. A hold, throttle or on-switch follows the same rule.
 - **Build the designed thing.** Build from the Paper frame that exists, and restyle only what the frame says differs. The rule is the law's "Design parity" (`thoven-law.md`); the run is frontend `TESTING.md`, "Mini parity pilot".
 - **Use the vendor's tool.** Platform actions (Render, Vercel, Neon, Stripe, Mixpanel, Linear, Sentry) go through the vendor's CLI or attached plugin. A repo script is the last resort.
 - **Stay in your own sessions.** Act only on PRs, branches and panes this session opened, and do the work he gives this session yourself. Read another session's pane for state. Coordinate a shared board or tree through git and file state, and message only sessions you spawned. Leave another session's PR to it, even when it looks stuck.
