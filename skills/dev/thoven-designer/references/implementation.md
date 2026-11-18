@@ -91,7 +91,9 @@ THV-1389's rhythm rule, and every text block against its wrapping, tracking, mea
 and truncation rules. Done when each gap is on the rhythm or listed as a finding with `file:line`.
 
 Every spacing or size value reaches code through `rem()` in `lib/density-tokens.ts`, so the 90%
-desktop scale (THV-1333) applies. A raw px vertical value is a defect.
+desktop scale (THV-1333) applies. A raw px vertical value is a defect. A signed-in frame's values
+are already at 90%: divide each by 0.9 for the code number (frame size and scale: the law's Design
+parity, "Desktop frames are a 1280×720 window").
 
 When the named file gains the ruling, repoint the row's source at that file and delete the row.
 

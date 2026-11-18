@@ -7,8 +7,10 @@ description: Refresh or build the Thoven Product Map, the Paper file of every au
 
 The **Thoven Product Map** is a Paper file with one page per audience: Teacher, Parent, Student,
 Adult student. Each page opens with Row 0 (the rooms), then one row per journey: steps left to
-right in user order, each step the 1440 shot with the 390 shot beside it, arrows labelled with the
-button text, and `route · date · commit` under each step. Decisions: Linear THV-1672 (PM1-PM17).
+right in user order, each step the desktop shot (1280×720, the law's desktop frame) with the 390
+shot beside it, arrows labelled with the button text, and `route · date · commit` under each step.
+The file's own layer names still end in `/1440` for the desktop slot; they stay as they are, so
+refresh keeps finding its nodes. Decisions: Linear THV-1672 (PM1-PM17).
 
 Everything runs from a **frontend checkout** that has `scripts/product-map/` (main, or the branch
 being mapped), with its paired backend checkout beside it as `../backend` or named by
@@ -18,7 +20,7 @@ being mapped), with its paired backend checkout beside it as `../backend` or nam
 
 1. **Shoot.** On the MacBook: `bash scripts/product-map/refresh.sh <audience>` (`teacher`,
    `parent`, `student`, `adult-student`; add `lane,lane` to reshoot only those rows). It rebuilds
-   the showcase world on the mini, shoots every step at 1440 and 390, and copies the shots to
+   the showcase world on the mini, shoots every step at 1280×720 and 390, and copies the shots to
    `~/.cache/thoven-product-map/<audience>/shots/`. A lane-only run replaces just those rows and
    keeps the rest. If it prints `still running on the mini`, collect with
    `bash scripts/product-map/refresh.sh --fetch <audience> [lane,lane]` (the same lanes).
@@ -53,7 +55,7 @@ For a new audience page, a new row, or a row whose steps changed in the spec.
    into the node whose layer name is `into` (the row container, from the previous result's
    `createdNodes`).
 4. **Record the node ids.** Each `write_html` result lists `createdNodes` with their layer names.
-   Pipe a JSON object of every name ending in `/1440`, `/390` or `/caption`, plus the artboard
+   Pipe a JSON object of every name ending in `/1440` (the desktop slot), `/390` or `/caption`, plus the artboard
    name, mapped to its node id into `node scripts/product-map/paper.mjs record <audience>`.
    Refresh finds nodes only through this map (`get_tree_summary` rebuilds it if the cache is
    lost). Done when `record` reports one node per step and slot.
