@@ -67,7 +67,7 @@ PATCHES = [
     # deslop `old` strings assume the patch above, so they stay below it.
     (
         "poteto-mode",
-        "- Before commit → the **deslop** skill (`/deslop`).\n- Before review → the **no-comments** skill (`/no-comments`).",
+        "- Before commit → `/deslop` from the `cursor-team-kit` plugin. Before review → **no-comments**.",
         "- The user asks for a slop pass → the **deslop** skill (`/deslop`); a comment pass → the **no-comments** skill (`/no-comments`). Neither runs by default.",
     ),
     (
@@ -75,30 +75,23 @@ PATCHES = [
         "The code is ready only after the slop-strip (the **deslop** skill (`/deslop`)) and the `/no-comments` pass, so the full swarm runs on finished code.",
         "The slop-strip (the **deslop** skill (`/deslop`)) and the `/no-comments` pass run only when the user asks.",
     ),
+    # Upstream's 2026-11 rewrite folded the "**PRs.**" paragraph, the subagent-PR line and the
+    # pre-commit checklist item into opening-a-pr.md's one sentence, so those three patches are
+    # replaced by this one.
     (
         "poteto-mode",
-        "**PRs.** Run `/deslop` from `cursor-team-kit` over the diff before commit and `/no-comments` before review.",
-        "**PRs.** Run `/deslop` and `/no-comments` only when the user asks.",
+        "Run `/deslop` from `cursor-team-kit` over the diff before commit.",
+        "Run `/deslop` and `/no-comments` only when the user asks.",
     ),
     (
         "poteto-mode",
-        "A subagent that opens a PR runs `/deslop` and `/no-comments`, and posts the URL.",
-        "A subagent that opens a PR posts the URL.",
+        "Across a function boundary → **architect**.",
+        "Across a function boundary on a ticket that spans more than one surface → **architect**; a single-surface ticket names its shape inline.",
     ),
     (
         "poteto-mode",
-        "- [ ] Run `/deslop` before each commit and `/no-comments` before review.",
-        "- [ ] Run `/deslop` and `/no-comments` only when the user asks.",
-    ),
-    (
-        "poteto-mode",
-        "- Code crossing a function boundary → the **architect** skill, parallel design exploration before implementing.",
-        "- Code crossing a function boundary on a ticket that spans more than one surface → the **architect** skill, parallel design exploration before implementing. A single-surface ticket names its shape inline.",
-    ),
-    (
-        "poteto-mode",
-        "2. `architect` for parallel design exploration.\n",
-        "2. `architect` for parallel design exploration when the ticket spans more than one surface. A single-surface ticket names its shape inline and runs no panel.\n",
+        "2. `architect` for the shape.\n",
+        "2. `architect` for the shape when the ticket spans more than one surface. A single-surface ticket names its shape inline and runs no panel.\n",
     ),
     (
         "poteto-mode",
@@ -246,22 +239,19 @@ PATCHES = [
     # Project documents (Andres, 2026-11-12 grill): the arena judges a design by the Architecture
     # document's four fixed measures, and its choice lands in that document. THV-1701's arena ranked
     # "parallel build" first and dropped a module move, so the old wizard model shipped as dead code.
+    # Upstream's architect is now one paragraph with no Phase A, runner prompt or rationale template,
+    # so the two patches that hung off those lines are one patch on its arena sentence.
     (
         "architect",
-        "Run the **arena** skill with the design-sketch task and the Phase A grounding artifacts. Pass `references/runner-prompt.md` as each runner's prompt.",
-        "Run the **arena** skill with the design-sketch task and the Phase A grounding artifacts. Pass `references/runner-prompt.md` as each runner's prompt.\n\n"
-        "In a Thoven Project, the Project's Architecture document is a Phase A input: what it already decides binds, and the arena designs what it leaves open. "
-        "The arena rubric is the Architecture's four fixed measures, in this order: builds on what exists before adding; one job per module, behind a small interface; simple over clever; each unit provable on its own. "
+        "For a large or contested design, run the **arena** skill instead of sketching alone.",
+        "For a large or contested design, run the **arena** skill instead of sketching alone.\n\n"
+        "In a Thoven Project, the Project's Architecture document is an input: what it already decides binds, and the design covers what it leaves open. "
+        "Judge the candidate shapes by the Architecture's four fixed measures, in this order: builds on what exists before adding; one job per module, behind a small interface; simple over clever; each unit provable on its own. "
         "Under the first, each concern builds on the module that does that job today, named by path, or the candidate names what replaces that module and where its callers go. "
         "Score on these four alone. Which units can be built at the same time is the Units table's Alongside column, filled after the shape is chosen, and never a measure. "
-        "In the synthesis note, every structural difference between candidates (a module added, moved, merged or deleted) is grafted or rejected by name with one line of why, "
-        "and a candidate that contradicts the Architecture document goes to main as a finding.",
-    ),
-    (
-        "architect",
-        "The rationale ships alongside, shaped per `references/rationale-template.md`, including the usage sketch and the synthesis decision.",
-        "The rationale ships alongside, shaped per `references/rationale-template.md`, including the usage sketch and the synthesis decision. "
-        "In a Thoven Project the chosen design goes into the Project's Architecture document: the Shape paragraph, one Units row per unit, and the Data and contract section. "
+        "Every structural difference between candidates (a module added, moved, merged or deleted) is grafted or rejected by name with one line of why, "
+        "and a candidate that contradicts the Architecture document goes to main as a finding. "
+        "The chosen design goes into the Project's Architecture document: the Shape paragraph, one Units row per unit, and the Data and contract section. "
         "A choice that breaks one of the four measures says so beside it, with its reason. The synthesis note and the candidate folders stay scratch.",
     ),
     # Tickets are cut from the Architecture's Units rows, and each exit line is an outcome with its
