@@ -166,6 +166,9 @@ flowchart LR
 <p class="cap">One line saying what to look at.</p>
 ```
 
+## Live flow
+Use for: a diagram the reader should walk through, one case and one step at a time. Add `data-live="<name>"` to the diagram's `<pre class="mermaid">` and put the cases in `<script type="application/json" data-live-for="<name>">` straight after it. The fields, a full snippet and how to write cases that teach are in [live-flow.md](live-flow.md).
+
 ## Hand-drawn layout or journey
 
 Use for: spatial arrangements, a user's path, and simple explanations in the Excalidraw visual style. Use Excalidraw when an editable canvas is part of the handoff; rough.js is a suitable way to produce that style as inline SVG in a self-contained page. This is a choice of medium, not proof of product behaviour.

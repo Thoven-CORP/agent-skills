@@ -28,8 +28,8 @@ Keep the implementation plan and running status in chat. Technical state-by-stat
 
 1. The question and boundary of the system.
 2. A dependency map, ownership map or swimlane.
-3. The consequential path through it; use a sequence diagram for ordering.
-4. Failure or recovery paths that change the design.
+3. The consequential path through it; use a sequence diagram for ordering. When the reader should follow it step by step, make that diagram a [live flow](live-flow.md).
+4. Failure or recovery paths that change the design, each as one more case of the live flow.
 5. Exact contracts in a table only when the reader needs field-by-field lookup; otherwise label the boundaries directly.
 
 ## Decision

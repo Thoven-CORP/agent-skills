@@ -193,6 +193,45 @@ pre.mermaid { background:var(--panel); border-radius:var(--r-lg); padding:24px; 
 .diagram .pele-node.dim     > :not(text):not(g) { fill:transparent; stroke:var(--edge-strong); stroke-dasharray:4 3; }
 .diagram .pele-node.dim     text { fill:var(--muted); }
 
+/* ---------- live flow: a diagram stepped through its cases (references/live-flow.md) ---------- */
+.liveflow { display:grid; gap:14px; }
+.lf-body, .lf-panel { display:grid; gap:14px; min-width:0; }
+.liveflow.lf-side .lf-body { grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); gap:20px; align-items:start; }
+.lf-cases { display:flex; flex-wrap:wrap; gap:8px; }
+.lf-case { font:600 13px/1.25 var(--font-sans); padding:8px 13px; border-radius:var(--r-sm); border:1px solid var(--edge); background:transparent; color:var(--muted); cursor:pointer; text-align:left; }
+.lf-case:hover { border-color:var(--edge-strong); color:var(--head); }
+.lf-case[aria-pressed="true"] { background:var(--invert-bg); color:var(--invert-fg); border-color:var(--invert-bg); }
+.lf-case .n { font-family:var(--font-mono); opacity:.55; margin-right:7px; }
+.lf-rail { list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:6px 2px; align-items:center; }
+.lf-rail li { display:flex; align-items:center; gap:2px; margin:0; }
+.lf-rail li + li::before { content:""; width:12px; height:1px; background:var(--edge-strong); }
+.lf-step { display:inline-flex; align-items:center; gap:7px; font:500 13px/1.2 var(--font-sans); padding:5px 11px 5px 5px; border-radius:999px; border:1px solid transparent; background:transparent; color:var(--dim); cursor:pointer; }
+.lf-step .n { width:20px; height:20px; border-radius:50%; display:inline-grid; place-items:center; font:600 11px/1 var(--font-mono); background:var(--raise); color:var(--muted); }
+.lf-step:hover { color:var(--head); }
+.lf-step.done { color:var(--text); }
+.lf-step.done .n { background:var(--edge-strong); color:var(--head); }
+.lf-step[aria-current="step"] { color:var(--head); background:var(--raise); border-color:var(--edge-strong); }
+.lf-step[aria-current="step"] .n { background:var(--invert-bg); color:var(--invert-fg); }
+.lf-when { font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--dim); margin:0 0 4px; }
+.lf-say { font:500 19px/1.4 var(--font-sans); color:var(--head); margin:0; max-width:760px; }
+.lf-ctrl { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.lf-ctrl .btn:disabled { opacity:.35; cursor:default; }
+.lf-hint { font-size:12px; color:var(--dim); margin-left:6px; }
+.lf-cards { display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); }
+.lf-cards .panel { padding:16px 18px 18px; }
+.diagram.lf-on .pele-node, .diagram.lf-on .pele-edge, .diagram.lf-on .pele-edge-label { transition:opacity .25s ease; }
+.diagram.lf-on .pele-node { opacity:.6; }
+.diagram.lf-on .pele-edge, .diagram.lf-on .pele-edge-label { opacity:.5; }
+.diagram.lf-on .lf-seen, .diagram.lf-on .lf-cur, .diagram.lf-on .lf-taken, .diagram.lf-on .lf-hit:hover, .diagram.lf-on .lf-hit:focus-visible { opacity:1; }
+.diagram.lf-on .lf-off { opacity:.16; }
+.diagram.lf-on .pele-edge.lf-cur > path:not(.pele-marker) { stroke:var(--head); stroke-width:2.5px; }
+.diagram.lf-on .pele-edge.lf-cur > .pele-marker { fill:var(--head); }
+.diagram.lf-on .pele-edge-label.lf-cur text { fill:var(--head); font-weight:600; }
+.diagram.lf-on .lf-hit { cursor:pointer; }
+.diagram.lf-on .pele-node.lf-hit:hover > :not(text):not(g) { stroke:var(--head); }
+.lf-ring { fill:none; stroke:var(--head); stroke-width:2px; pointer-events:none; transition:x .3s ease, y .3s ease, width .3s ease, height .3s ease; }
+.lf-token { fill:var(--head); stroke:var(--panel); stroke-width:3px; pointer-events:none; }
+
 /* ---------- code + quote ---------- */
 pre.code { background:var(--panel2); border:1px solid var(--line); border-radius:var(--r-md); padding:16px 18px; margin:0; white-space:pre-wrap; overflow-wrap:anywhere;
            font:13px/1.6 var(--font-mono); color:var(--text); tab-size:2; }
@@ -304,5 +343,6 @@ input[type=range] { width:100%; accent-color:var(--head); }
   .defs { grid-template-columns:1fr; } .defs dt { border-bottom:0; padding-bottom:0; }
   .slider { grid-template-columns:1fr 1fr; } .slider input { grid-column:1/-1; grid-row:2; }
 }
+@media (max-width:900px) { .liveflow.lf-side .lf-body { grid-template-columns:1fr; } }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } * { transition:none !important; } }
 @media print { .bar { position:static; } body { background:#fff; } }
