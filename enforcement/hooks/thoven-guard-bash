@@ -558,6 +558,22 @@ for entry in "${subcommands[@]}"; do
     fi
   fi
 
+  # `main` runs GitHub's merge queue, which sets the merge method: `gh pr merge --auto --squash` is
+  # refused there with "merge strategy for main is set by the merge queue" (2026-11-17, #556). The
+  # queue is also the first CI run, so the specs the queue runs go first.
+  if [ "${w0#(}" = "gh" ] && [ "$w1" = "pr" ] && [ "${words[2]:-}" = "merge" ]; then
+    pm_auto=0; pm_strategy=0
+    for pw in "${words[@]:3}"; do
+      case "$pw" in
+        --auto) pm_auto=1 ;;
+        --squash|--merge|--rebase|-s|-m|-r) pm_strategy=1 ;;
+      esac
+    done
+    if [ "$pm_auto" = 1 ] && [ "$pm_strategy" = 1 ]; then
+      deny "main's merge queue sets the merge method, so gh pr merge --auto takes no --squash, --merge or --rebase. Run bare gh pr merge <n> --auto. The queue is the first CI run: run the specs it runs first (backend: bin/verify --print-merge-specs), then watch it with the babysit-pr skill (pr-queue-wait)."
+    fi
+  fi
+
   # Matched at command position, so a doc or script that merely names these stays allowed.
   # Read past git's global options, so `git -C <tree> reset --hard` is judged like `git reset --hard`.
   [ "${w0#(}" = "git" ] || continue

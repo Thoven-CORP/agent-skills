@@ -23,7 +23,8 @@ usage: remote-verify [--host HOST] [--repo frontend|backend] [--profile PATH] [-
   `git ls-files --others --exclude-standard`. Secret and generated paths (.env*, keys,
   credentials, .git, node_modules, build output) never leave this machine; each one skipped is
   named on stderr. The THOVEN_VERIFY block goes to stdout, verify's progress to stderr.
-  Exit codes: bin/verify's own, 2 usage, 3 HEAD not pushed, 4 setup failed on the mini.
+  Exit codes: bin/verify's own, 2 usage, 3 HEAD not pushed, 4 setup failed on the mini, 5 the mini's
+  gh token is invalid (nothing is sent; the message names the login command).
 USAGE
 }
 
@@ -207,6 +208,17 @@ base_sha=""
 if [ -n "$base" ]; then
   base_sha=$(git rev-parse --verify -q "$base^{commit}") || { say "cannot resolve --base $base"; exit 2; }
   verify_args=(--base "$base_sha" "${verify_args[@]+"${verify_args[@]}"}")
+fi
+
+# The mini fetches the pushed commit with its own gh token. An invalid token fails deep inside setup
+# as "could not read Username", so check it here, before anything is sent (2026-11-17: it recurred).
+# An unreachable host or a mini without gh falls through to the normal failure path.
+if [ "$host" != local ]; then
+  gh_state=$(ssh -o BatchMode=yes -o ConnectTimeout=15 "$host" 'command -v gh >/dev/null 2>&1 && ! gh auth status >/dev/null 2>&1 && echo GH_AUTH_BAD; true' </dev/null 2>/dev/null) || gh_state=""
+  if [ "$gh_state" = GH_AUTH_BAD ]; then
+    say "the gh token on $host is invalid, so it cannot fetch ${sha:0:12}. Nothing was sent. Run: ssh -t $host gh auth login -h github.com"
+    exit 5
+  fi
 fi
 
 stage=$(mktemp -d "${TMPDIR:-/tmp}/remote-verify-out.XXXXXX") || exit 4

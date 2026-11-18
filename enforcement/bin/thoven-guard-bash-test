@@ -355,5 +355,17 @@ for c in "gh run list -L 5" "gh run view 123 --log-failed" "gh run watch 123" "g
   expect "ci: $c is allowed" "$(decision claude "$c" "$WT")" "allow"
 done
 
+# main's merge queue sets the merge method, so --auto with a strategy flag is refused.
+for c in "gh pr merge 556 --auto --squash" "gh pr merge --auto --merge 556" "gh pr merge 556 --auto -r" \
+  "cd ../backend && gh pr merge 556 --squash --auto" "bash -c 'gh pr merge 9 --auto --rebase'"; do
+  expect "merge queue: $c is denied" "$(decision claude "$c" "$WT")" "deny"
+done
+for c in "gh pr merge 556 --auto" "gh pr merge --auto" "gh pr view 556 --json state" "echo gh pr merge --auto --squash" \
+  "gh pr merge 556 --squash"; do
+  expect "merge queue: $c is allowed" "$(decision claude "$c" "$WT")" "allow"
+done
+# An empty command is allowed: the rule reads words, and an empty list has none to judge.
+expect "merge queue: an empty command is allowed" "$(decision claude "" "$WT")" "allow"
+
 [ "$failed" -eq 0 ] || exit 1
 echo "all passed"
