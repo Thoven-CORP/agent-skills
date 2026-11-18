@@ -5,8 +5,9 @@ description: >-
   ("make it the accordion", "library indigo", "max 5"), when a grill or spec
   session ends, when he asks to update the docs, the Project description, the
   Project status, or a Project Update, or when he asks where work stands, what
-  is next, to capture or close work, to log a session, or to reconcile the
-  board. Read the Project snapshot before proposing a lifecycle write.
+  is next, to capture or close work, to log a session, to reconcile the
+  board, or when your own turn ends with a still-open, left-alone or follow-ups
+  list to file. Read the Project snapshot before proposing a lifecycle write.
 ---
 
 # Workspace

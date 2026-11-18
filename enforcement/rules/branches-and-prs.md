@@ -30,7 +30,7 @@ merge or watch a PR. A dispatched pane commits only; its main session pushes and
   2026-11-08: one session opened 15 PRs, 4 of them needed.)
 - Open a PR into `main` and push to it while the session still has known work for that ticket; arm
   auto-merge with `gh pr merge --auto` once its PR review passes. No PR waits for a go
-  from Andres, UI included: he reviews screens on staging (Andres, 2026-11-05). `main` runs GitHub's
+  from Andres, UI included: he reviews screens on staging (Andres, 2026-11-05). The gate is the required checks green and the PR not DIRTY, never merge state CLEAN: read the required checks from the ruleset, `gh api repos/<owner>/<repo>/rules/branches/main` (branch protection returns 404 here). UNSTABLE from a pending check that is not required, such as the Cursor GitHub App's "Cursor Approval Agent: Pull Request Router", is not a hold. `main` runs GitHub's
   merge queue (THV-1707): a push to the PR runs no check, and `CI` passes in seconds only so the
   queue can take the PR (THV-1751). Before `gh pr merge --auto`, run the changed tests, lint
   (oxlint and ESLint on the frontend) and type-check locally: the queue is the first CI run, and

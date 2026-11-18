@@ -5,6 +5,16 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-18 — what is live, confusion first, every clause of an ask
+
+> reflect · 2026-11-18 · d515ee1a, PR 582 · broken-rule · applied · seen 1
+
+**What happened.** Asked what was live, the agent read `render.yaml` and never tried the loaded Render plugin. Andres wrote "I am confused… and we need to deprecate this flag" and the explanation came about 600 lines later, after the work. "Includes plus per_page limit" shipped without `per_page` and the gap surfaced after the PR opened as "left alone".
+**Why.** A config file is intent, a work order in the same message outranked the Confused rule, and a clause dropped silently reads as scope creep avoided.
+**What changed.** Three sentences added, none removed, since no line covered them: "Look before you claim or ask" (what is live comes from the vendor's tool), "Confused" (it holds when the message also orders work), "Hold his scope" (each clause is an exit line, asked before dropping).
+
+---
+
 ## 2026-11-18 — a flag needs a product purpose, never a hedge
 
 > session · 2026-11-18 · d515ee1a, PR 582 retiring `OPTIMISTIC_CLASS_CREATION_ENABLED` · ruling · applied · seen 1

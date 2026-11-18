@@ -273,6 +273,36 @@ PATCHES = [
         "(\"A failed save keeps the text and says Try again. Proof: a test that fails the save request and reads the field and the message.\")\n"
         "\n<issue-template>\n",
     ),
+    # Reflect 2026-11-18 (session d515ee1a). blast-radius never fired when a kill switch was
+    # retired or a root-cause fix was declined on an unchecked risk.
+    (
+        "blast-radius",
+        "or reviewing a small diff you don't trust.",
+        "reviewing a small diff you don't trust, retiring or removing a flag or kill switch, or declining a root-cause fix because it touches a shared model or association.",
+    ),
+    # The org has no GitHub repo connected, so `Fixes <ID>` links nothing, and "next release"
+    # pinned a release older than the fix. Ranking by raw counts hid that 3 of 4 issues were staging-only.
+    (
+        "sentry-debug-issue",
+        "Don\u2019t just flip the issue status \u2014 resolve the issue *with the fix*.",
+        "Don\u2019t just flip the issue status. Check first that the repo is connected to Sentry: without it `Fixes <ID>` links nothing and `update_issue` with `inCommit` fails with \"Unable to find the given repository\". Then say so at PR time, leave the issue unresolved with a note naming the PR, and resolve `inRelease` against the deployed release after `/publish`. `resolvedInNextRelease` pins the latest release Sentry has seen, which can predate the fix, and `inRelease` is refused on a resolved issue, so reopen it first. Where it is connected, resolve the issue *with the fix*.",
+    ),
+    (
+        "sentry-debug-issue",
+        "When a search returns several candidates, ",
+        "Rank several issues only after filtering `environment:production` (or splitting each by environment): staging traffic can dominate raw counts. With several candidates, ",
+    ),
+    # Teaching a product's own code: the arc is a request's path, and a comparison that maps to named code lands.
+    (
+        "teach",
+        "Walk through what happens as the person does the thing (opens a long chat, scrolls up) when that is what makes it land.",
+        "When it makes the idea land, walk the path of a request as the person triggers it (opens a long chat, scrolls up): screen, server, serializer, database. A recap of each change is reference, not teaching.",
+    ),
+    (
+        "teach",
+        "State the concrete mechanism, not a metaphor, a framing, or a preview of what is coming.",
+        "State the concrete mechanism, not a framing or a preview of what is coming. An everyday comparison is fine when each part of it maps to a named piece of the code.",
+    ),
 ]
 
 # Routers whose named skills must stay model-invocable. Each entry is a skill

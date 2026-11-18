@@ -114,8 +114,9 @@ If nothing has changed, stay quiet rather than posting filler comments. Stop
 when `pr-wait` exits 0, or in T3 Code when the merge gate passes on the latest
 head. On a merge-queue base, green PR checks only mean queued: then wait with
 `~/thoven/agent-skills/enforcement/bin/pr-queue-wait <owner/repo> <n>`, which exits
-0 when the PR merges and 1 when the queue removes it unmerged. Merge only when the user explicitly requested it;
-otherwise report that the PR is ready. Right before a merge, run `git fetch` and
-check the PR again. Never merge when it is DIRTY. Without a merge queue, also never
+0 when the PR merges and 1 when the queue removes it unmerged. Merge only when the user explicitly requested it,
+except on a Thoven repo, where `~/thoven/agent-skills/enforcement/rules/branches-and-prs.md` says when to arm auto-merge;
+otherwise report that the PR is ready. Right before a merge, and in any reply that follows an interrupted or rejected merge call, run `git fetch` and
+check the PR again, because the user may have acted in the GitHub UI. Never merge when it is DIRTY. Without a merge queue, also never
 merge when it is BEHIND or when base commits that landed after the last green run
 touch this PR's files: rebase, push, and wait for green again.
