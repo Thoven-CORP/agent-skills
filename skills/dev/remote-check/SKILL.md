@@ -13,6 +13,7 @@ plus the dirty and untracked files to a throwaway worktree on the mini and never
 ## Pitfalls
 
 - Read mini-side logs and screenshots yourself over the ssh host in `~/.config/thoven/host.json`. (LEARNINGS 2026-10-31)
+- A "could not read Username for 'https://github.com'" failure on the mini means its `gh` token is invalid; ssh works. Give Andres the one command, `! ssh -t <host> gh auth login -h github.com`. If it backgrounds, read its output file at once and put the one-time code and the `https://github.com/login/device` URL in the reply, because he cannot see the background output. (2026-11-17: he had to ask "i need the code".)
 
 ## Select the input
 

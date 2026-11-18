@@ -35,6 +35,10 @@ merge or watch a PR. A dispatched pane commits only; its main session pushes and
   queue can take the PR (THV-1751). Before `gh pr merge --auto`, run the changed tests, lint
   (oxlint and ESLint on the frontend) and type-check locally: the queue is the first CI run, and
   a failure there re-runs every PR behind it (#707 passed ESLint and failed oxlint in the queue).
+  On the backend the changed tests are the set the queue will run, `bin/verify --print-merge-specs`
+  (mapped specs plus the protected list), not only the PR's own spec files: a change that adds a job
+  or broadcast at a lifecycle point moves the delivery-oracle goldens in the protected list (#556
+  passed its own seven spec files and failed `stream_names_oracle_spec` in the queue).
   The queue's own `CI` run, on the commit that will land, runs the change's tests plus
   `config/merge-check-protected.txt` and merges it with a merge commit; the nightly runs the
   whole suite. Green PR checks are not a merge: a

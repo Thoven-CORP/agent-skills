@@ -38,7 +38,7 @@ Ask for a measurable claim first when the claim is vague ("the code is cleaner")
 
    If `status` is `undecided` or binding is false, read [Fallback surfaces](#fallback-surfaces) and pick from that list.
 
-3. Capture a baseline from the old state. Merge base, parent commit, failing branch, or current broken repro. Done when the baseline artifact exists.
+3. Capture a baseline from the old state. Merge base, parent commit, failing branch, or current broken repro. Take it from a detached copy (`git archive <base> | tar -x -C <scratch>/base-<sha>`), never by restoring tracked files in a tree that holds uncommitted work: a killed run would leave the only copy of the treatment in scratch, and sibling sessions would see the old code. Copy the spec files in, and export the pane's own database variables, since the archive has no `.env`. A spec for code that does not exist on the base aborts the whole run on load, so run it alone or drop it from the baseline set, and delete the copy by exact path afterwards. Done when the baseline artifact exists.
 
 4. Capture treatment from the changed state with the same command, data, warmup, and environment. Done when the treatment artifact exists.
 
