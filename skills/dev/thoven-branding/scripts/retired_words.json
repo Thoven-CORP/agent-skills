@@ -78,12 +78,6 @@
     "why": "BRANDING.md 4 Sliders (Mass appeal/Elite at 4) and 5 Outside the audience: the trophy-chasing parent"
   },
   {
-    "id": "music-passport",
-    "pattern": "\\bmusic\\s+passports?\\b",
-    "say": "what ships today: a real teacher and a music journey built around the kid",
-    "why": "BRANDING.md 3 Sell the Music Passport once it ships: a public claim needs a feature a parent can see"
-  },
-  {
     "id": "diagnosis-label",
     "pattern": "\\b(?:autis(?:m|tic)|adhd|add/adhd|down'?s?\\s+syndrome|special[\\s-]+needs?)\\b",
     "say": "diverse learners, or name the support (a teacher who adapts to how the kid learns)",

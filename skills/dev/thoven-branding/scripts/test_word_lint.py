@@ -91,6 +91,12 @@ class Findings(unittest.TestCase):
                 result = lint("-", stdin=header)
                 self.assertEqual(result.returncode, 0, result.stdout)
 
+    def test_shipped_music_passport_is_clean(self):
+        # The Passport counts as shipped (Andres, 2026-11-18), so the homepage journey's line passes.
+        result = lint("-", stdin="Every milestone earns a stamp in their Music Passport.")
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertEqual(result.stdout, "")
+
     def test_diagnosis_label_is_flagged(self):
         result = lint("-", stdin="Our teachers love working with autistic kids.")
         self.assertEqual(result.returncode, 1)
