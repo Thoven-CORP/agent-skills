@@ -64,7 +64,7 @@ The connector cannot apply a template. To make a Spec, Architecture or Log, read
 - **One page, one job.** The Spec states what is true now. The Architecture states where it lives in the code. The Log explains why, in his words. A ticket says what to build and when it is done. A sentence of another kind moves to its own page.
 - **One decision, one line, one home.** Every other page links to that line.
 - **Every rule carries its reason** after "because". A reason several rules share is written once, on the area's "Why" line.
-- **Write what looking cannot tell.** The frame carries copy, layout, colour and motion. The code carries what it already does.
+- **A Spec is product language, not a description.** It says what the product does for the person and why, never what a screen looks like or says. The frame carries copy, layout, colour and motion, and the code carries what it already does, so a rule names its frame and stops there. (Andres, 2026-11-18: "specs are not descirptors but product langiage".)
 - **Plain sentences.** Present tense. One thought per sentence. Say who does what. Write the real screen, file or field name, and keep one name per thing.
 - **Picture first.** Each page leads with a Mermaid diagram, a chart or a table, and the prose explains it, because Andres reads the picture before the words (`andres-mode`, "Documents default to visual").
 
