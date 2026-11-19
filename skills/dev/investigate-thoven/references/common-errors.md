@@ -708,6 +708,16 @@ Known error patterns for this project. Check here first when debugging.
 - **Date Added:** 2026-06-02
 - **Reference:** Honest-`can_publish` E2E (2026-06-02) — runner-minted teacher tokens 401'd with zero server log lines while decoding fine in-process; the puma on `:3001` had booted days earlier with a different in-memory secret AND was serving the pre-fix `can_publish`. Restarting single-mode + minting via `/auth/login` fixed both, and the fresh server then served the honest flag. See memory `project_stale_longrunning_puma_dev_server`.
 
+### Error: Allowlist Default Silently Demotes an Unlisted Role
+- **Symptom:** "Login no longer works" for one kind of account (admin, a staff or partner role), right after a new header, nav or gate replaced an older one. The API logs show the login succeeding; the page reloads looking signed out (Log in shown again), or the user lands somewhere with no route to their area. Every other role works, and both suites stay green.
+- **Root Cause:** A mapper turns the session's role into what the UI shows with a `switch` or lookup that lists only the roles its author had in mind and sends everything else to a catch-all default (`signedOut`, `null`, `'/'`). The surface it replaced was permissive (it showed the account menu to anyone signed in), so the unlisted role worked before. Neither the mapper nor its tests enumerate the full set of values the backend can send, so the role that falls through is never named anywhere.
+- **Fix:** Add the dropped role as an explicit case, with its destination, in the mapper and in any sibling redirect (the post-sign-in route usually has the same chain). Add the role as a row in the mapper's table test and in the component test that renders it.
+- **Prevention:** A mapper over a closed set (profile types, statuses, roles) has a test row for every value the backend defines, including the ones meant to fall through, so a fall-through is a decision the test names rather than an accident. When a new surface replaces an old one, list what the old one did for each role and carry each row across or drop it on purpose. Before calling a "can't log in" report a credentials problem, read the server's login log: a success there means the break is client-side routing or session mapping.
+- **Applies to:** Role-to-UI mappers, post-login redirects, route guards and nav visibility, feature gates keyed on account type, any `switch` on a backend enum with a `default` branch, and replacing a permissive component with a stricter fork.
+- **Files:** Any session-to-UI mapper, any sign-in form's redirect chain, any header or nav that branches on profile type.
+- **Date Added:** 2026-11-18
+- **Reference:** THV-1988. The new public header counted only Parent and Teacher as signed in (a rule meant to keep students on the signed-out header), and the sign-in form sent every other profile to `/`. The old nav had shown the avatar menu to any signed-in user, so admins lost their only link to `/admin`. Production logs showed five successful admin logins in three minutes while the page kept showing Log in.
+
 ---
 
 ## Next.js App Router
