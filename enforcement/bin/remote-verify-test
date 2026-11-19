@@ -28,7 +28,7 @@ cat > "$T/shim/ssh" <<SH
 printf '%s\n' "\$@" > "$T/ssh.args"
 cat > "$T/ssh.stdin"
 for last; do :; done
-case "\$last" in *"gh auth status"*) [ "\${FAKE_GH:-ok}" = bad ] && echo GH_AUTH_BAD; exit 0 ;; esac
+case "\$last" in *"ls-remote"*) case "\${FAKE_GH:-ok}" in bad) echo FETCH_BAD_HTTPS ;; badssh) echo FETCH_BAD ;; *) echo FETCH_OK ;; esac; exit 0 ;; esac
 bash -c "\$last" < "$T/ssh.stdin"
 SH
 chmod +x "$T/shim/ssh"
@@ -175,10 +175,13 @@ has "g) detached refusal says so" "$T/err" "detached HEAD"
 g -C "$L" checkout -q feature 2>/dev/null || true
 g -C "$L" reset -q --hard "$(g -C "$L" rev-parse origin/feature)" 2>/dev/null || true
 rm -f "$T/ssh.stdin"
-FAKE_GH=bad run "${NOPROFILE[@]}"; expect_rc "h) invalid gh token exits 5" $? 5
-has "h) refusal names the login command" "$T/err" "gh auth login -h github.com"
+FAKE_GH=bad run "${NOPROFILE[@]}"; expect_rc "h) an https origin that cannot be read exits 5" $? 5
+has "h) https refusal names both fixes" "$T/err" "remote set-url origin git@github.com"
+has "h) https refusal names the login" "$T/err" "gh auth login -h github.com"
 if [ -s "$T/ssh.stdin" ]; then fail "h) nothing sent" "a bundle reached ssh"; else pass "h) nothing sent"; fi
-FAKE_GH=ok run "${NOPROFILE[@]}"; expect_rc "h) a valid gh token goes through" $? 0
+FAKE_GH=badssh run "${NOPROFILE[@]}"; expect_rc "h) an unreadable ssh origin exits 5" $? 5
+has "h) ssh refusal names the ls-remote check" "$T/err" "ls-remote origin HEAD"
+FAKE_GH=ok run "${NOPROFILE[@]}"; expect_rc "h) a readable origin goes through" $? 0
 
 if [ "$failures" -eq 0 ]; then echo "all cases passed"; exit 0; fi
 echo "$failures case(s) failed"; exit 1
