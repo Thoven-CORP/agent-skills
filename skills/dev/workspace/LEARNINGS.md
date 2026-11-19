@@ -5,6 +5,16 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-11-18 — a Spec gives the why, not the design
+
+> session · 2026-11-18 · ff695349, New sign-up flow Spec · ruling · applied · seen many
+
+**What happened.** The Spec restated screens: button labels, header copy, chevrons and slide-ins. A first fix called Specs "product language" and logged the principle in the Project's Log. Andres: "specs are not product lanaguage, specs espeically when ti comes to desing I have said many times are not regurgations of what is presented but its more the guiding princples, user storeies, decisions and rationale why", and the rule belongs in the skills, not a Project Log.
+**Why.** "Write what looking cannot tell" read as a ban on visual detail, not as what a Spec is for.
+**What changed.** That line, and the short-lived "product language" line that replaced it, became "A Spec gives the why, never a retelling of the design". andres-mode's Records line points here.
+
+---
+
 ## 2026-11-12 — Linear moves the status; labels and follow-ups changed
 
 **What changed.** Statuses run Todo, In Progress, In Review, Merged, Done. Linear sets all but In Progress from the PR; Done means in `main`. Two labels, `Follow-up` and `Tech debt`, with a route each. Priority, milestones as stages, standing projects, the 150-word Update and the 200-word "Where we are" block are in WORKFLOW.

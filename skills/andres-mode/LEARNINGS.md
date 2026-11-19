@@ -5,6 +5,16 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-18 — a Spec gives the why
+
+> session · 2026-11-18 · ff695349 · ruling · applied · seen many
+
+**What happened.** A Spec retold its Paper frames, and the fix put the principle in a Project Log. Andres: specs are "the guiding princples, user storeies, decisions and rationale why", and the rule goes in the skills and this mode.
+**Why.** The rule lived only in `workspace`, worded as what to leave out.
+**What changed.** No line removed: Records, "Linear is the record", gained one sentence pointing at the rule's home in `workspace`.
+
+---
+
 ## 2026-11-18 — what is live, confusion first, every clause of an ask
 
 > reflect · 2026-11-18 · d515ee1a, PR 582 · broken-rule · applied · seen 1
