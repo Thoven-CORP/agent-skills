@@ -29,7 +29,7 @@ Apply before baseline/treatment captures, temporary checkouts, dependency instal
 
 1. Lint and type-check on the files you touched: `pnpm run type-check` and oxlint on the changed files (whole-repo lint is CI's). Backend: `bin/rubocop -- <changed files>`.
 2. Each exit line's proof, once: the check the line names after `Proof:`. A test proof is red before the change and green after.
-3. Where a proof is the design capture, make it once, as frontend `TESTING.md` "Mini parity pilot" runs it, since CI has none (frontend #575). What it covers and how it is judged: the law's Design parity.
+3. Where a proof is the design capture, make it once, as frontend `TESTING.md` "Mini parity pilot" runs it, since CI has none (frontend #575). Thoven law's **Design parity** defines coverage and judging. For any visual or user-facing change, deliver the capture under the law's **User-facing evidence**.
 4. Paste each proof and check in the one report: the command, its host and its pass line. A failure is fixed or raised to the user by name, never described away.
 
 A commit that stages a component, route, stylesheet, token module or scan baseline runs the design scans itself (frontend `lefthook.yml`, `design-rules`). A scan that refuses a value the Paper frame shows is handled as the law's Design parity says ("The design system is reference, not hard code").

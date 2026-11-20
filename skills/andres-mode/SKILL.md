@@ -29,7 +29,7 @@ Each rule has one home, here or in the file a line points at. Read `LEARNINGS.md
 ## Records
 
 - Linear is the record. How a ruling, a spec and a ticket are written, and where each one goes, is `workspace`. A Spec carries the why (principles, user stories, decisions and their reasons), never a retelling of the design (`workspace`, "How to write a Project document").
-- **Local evidence stays until Linear and the work-session page carry it.** The page keeps its own copies of what it shows. (E1: seven "show me" asks in one slice after a close step deleted the folder.)
+- **Local evidence stays until Linear and the work-session page carry it.** For visual or user-facing work, verify the PR also carries the evidence under Thoven law's **User-facing evidence**. The work-session page keeps its own copies of what it shows. (E1: seven "show me" asks in one slice after a close step deleted the folder.)
 - **When using a board, edit it in place** and change only the layer or frame the user named. Keep it on one page with nothing overlapping. Columns are the journey's steps. Rows are the states. An ADR, PRD or motion card holds 3-6 requirement lines. Refine a frame in place; frame names, copies and superseded frames follow `~/.agents/skills/thoven-designer/references/paper.md`. Record accepted choices in Linear.
 - A dropped skill or tool loses every mention. No Retired list names it.
 - Lexicon: a "Session" is the unit, "Lessons" is the arrangement. Audiences are the student dashboard, the parent side, the adult student. Demo data uses Andres Martinez or real fixtures, never an invented name.

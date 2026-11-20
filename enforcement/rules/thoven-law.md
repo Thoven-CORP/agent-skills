@@ -46,6 +46,13 @@ reason on every rule, and the size limits. A standing preference goes into the s
 governs it, never auto-memory, because memory is keyed per working directory. Missing local project
 folders do not block startup. The handoff procedure is `skills/dev/workspace/references/handoff.md`.
 
+**User-facing evidence.** For every visual or user-facing change, capture the result on the surface
+users actually reach. Use a screenshot for a static state or a short walkthrough for an interaction.
+Before handoff or merge, attach the evidence to the PR under **Verification** and to the linked
+Linear ticket. Reuse the same upload or a durable link reviewers can open. Open both records and
+verify the evidence is reachable from each. If capture or upload is blocked, record the blocker and
+keep the evidence pending.
+
 **Design parity.** Apply visual parity when the task intentionally uses a named design source. Do not invent a board
 or a design gate for work without one. Accepted Linear decisions govern which design applies.
 

@@ -99,8 +99,9 @@ merge or watch a PR. A dispatched pane commits only; its main session pushes and
 
 A builder's DONE is a claim. A fresh verifier pane reviews feature slices; an Opus (high) subagent
 of main reviews cleanup and hardening work. Both open with spec parity. Main reads the review and
-the builder's proofs before it merges. Evidence goes on the work-session page (andres-mode,
-Replies). Procedure: `dispatch-work/references/review.md`.
+the builder's proofs before it merges. When filing or reviewing a PR for a visual or user-facing
+change, check the PR and Linear evidence against Thoven law's **User-facing evidence**. Evidence
+also goes on the work-session page (andres-mode, Replies). Procedure: `dispatch-work/references/review.md`.
 
 ## Skills for PR work
 

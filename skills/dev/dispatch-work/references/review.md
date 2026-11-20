@@ -42,8 +42,10 @@ name.
 
 1. On a UI ticket, put the journey and the builder's capture on the work-session page (`SKILL.md`
    close step 6.1).
-2. Merge backend first, and only a backward-compatible change (the law's required-field rule).
-3. Cite the builder's proofs and the PR's checks. Wider suites run when the branch lands (`verify`).
+2. For a visual or user-facing change, verify the PR and ticket attachments under Thoven law's
+   **User-facing evidence**.
+3. Merge backend first, and only a backward-compatible change (the law's required-field rule).
+4. Cite the builder's proofs and the PR's checks. Wider suites run when the branch lands (`verify`).
 
 ## Verifier brief
 

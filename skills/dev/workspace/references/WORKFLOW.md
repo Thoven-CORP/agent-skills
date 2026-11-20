@@ -231,8 +231,9 @@ first, so a green check alone never counts as done.
   edits them; a builder who thinks one is wrong asks main. A narrower build is fixed in the build,
   never in the line.
 - **Done is every line shown true.** The builder runs each proof once and attaches it to its one
-  report. An issue moves to Done only when every line has its proof. Until then its branch and
-  worktree stay, and an unproven line is finished there, never split into a new issue or PR.
+  report. For a visual or user-facing change, verify the ticket attachment under Thoven law's
+  **User-facing evidence** before moving it to Done. Keep the branch and worktree until every line
+  has its proof, and finish any unproven line there.
   (2026-11-08: the merge-queue ticket closed with its rejection proof still open, and the
   leftovers became new trees, two sync PRs and a probe PR.)
 
