@@ -8,9 +8,9 @@ On this path `/publish` does not deploy staging. It proves the explicitly select
 
 ## Availability hold
 
-Before QA, use the backend's `docs/deployment/staging-lifecycle.md` to acquire a hold on `thoven-mini-ssh`, run `up --apply`, and verify its combined web and async runner. Wake requires a private `STAGING_ADMIN_TOKEN` and a real job probe before it reports ready. A four-hour session expires automatically unless renewed; QA must maintain its own bounded hold throughout active work. Release the hold when the checks finish. QA holds and release holds are separate.
+Before QA, use the backend's `docs/deployment/staging-lifecycle.md` to acquire a hold on the laptop, run `up --apply`, and verify its combined web and async runner. The controller needs no saved key or token: it uses the Render CLI login and signs in as the staging admin from `~/thoven/.secrets/staging.env`, then runs a real job probe before it reports ready. A four-hour session expires automatically unless renewed; QA must maintain its own bounded hold throughout active work. Release the hold when the checks finish. QA holds and release holds are separate.
 
-`promote.sh` neither reads nor holds staging. The mini must have the backend lifecycle command at `~/thoven/backend/bin/staging-lifecycle`; an unreachable mini or a missing lifecycle command blocks this path. When the mini cannot run the job probe, the Checks table says "staging job probe: not run" and why; when the range touches jobs or mail, run a job through "Run code on staging" instead and record that result. A QA session idle for more than 24 hours needs a new hold before further QA. Only enable staging shutdown after the companion integration and hold round trip have been verified as described in the backend runbook.
+`promote.sh` neither reads nor holds staging. Run the lifecycle command on the laptop from backend `main` (`start-staging` gives the form that works from any branch); the Mac mini is not part of this path. When the job probe cannot run, the Checks table says "staging job probe: not run" and why; when the range touches jobs or mail, run a job through "Run code on staging" instead and record that result. A QA session idle for more than 24 hours needs a new hold before further QA. Only enable staging shutdown after the companion integration and hold round trip have been verified as described in the backend runbook.
 
 ## Steps
 
@@ -41,8 +41,8 @@ Run each step in the repo it names. Steps 1 to 4 check each repo that changed. S
 
    ```bash
    render deploys list srv-dao470bm8hqs73d71sh0 -o json --confirm | jq '.[0] | {status, commit: .commit.id}'
-   # On the mini, with its private staging admin token:
-   ~/thoven/backend/bin/staging-lifecycle probe --apply
+   # On the laptop, from a backend tree at main:
+   bin/staging-lifecycle probe --apply
    curl -s https://thoven-api-staging.onrender.com/health | jq '.revision'
    ```
 

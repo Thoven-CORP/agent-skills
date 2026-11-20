@@ -9,7 +9,7 @@ Make `https://staging.thoven.co` usable for a bounded testing session. Merging t
 
 ## Sources and authority
 
-Read `~/thoven/backend/docs/deployment/staging-lifecycle.md` before operating. The installed controller on `thoven-mini-ssh` owns fixed resource identities, leases, holds, locking, dependency order and safe shutdown. Reuse it. Read [the governing staging decision](https://linear.app/thoven/issue/DEP-52/reduce-render-costs-with-smaller-redis-and-on-demand-staging), D4, for current policy.
+Read `~/thoven/backend/docs/deployment/staging-lifecycle.md` before operating. The controller is `bin/staging-lifecycle` on backend `main`, and it runs on the laptop: the Mac mini is for heavy local test runs, never for starting or stopping staging (Andres, 2026-11-19). Run it from a backend tree at `main`, or from any branch with `git -C ~/thoven/backend fetch -q origin main && git -C ~/thoven/backend show origin/main:bin/staging-lifecycle | python3 - <command>`. It needs no key file: it uses the laptop's Render CLI login (run `render login` when it refuses) and signs in to staging as the admin saved in `~/thoven/.secrets/staging.env`. It owns fixed resource identities, leases, holds, locking, dependency order and safe shutdown. Reuse it. Read [the governing staging decision](https://linear.app/thoven/issue/DEP-52/reduce-render-costs-with-smaller-redis-and-on-demand-staging), D4, for current policy.
 
 A request to start staging covers ordinary staging resume, deployment and readiness probes. Preserve independent gates for migrations, money, COPPA, sends and production. Inspect pending migrations before wake: Render resume can trigger a build and pre-deploy migrations. Keep credentials in the existing private environment; never print them.
 
@@ -23,9 +23,9 @@ Use installed Render/Vercel CLI help and skills for provider syntax. Older publi
 
    Both Vercel projects consume the shared `vercel.json`; blanket changes can disable real production builds. The separate staging project uses Vercel's **Production environment**, so `--prod` alone identifies no project. Keep project `thoven` unchanged. If setup is incomplete, identify the exact gap and finish any separately authorized configuration first. Creating this skill does not authorize live setup.
 
-3. **Hold and wake.** On the canonical mini, load its private controller environment, inspect `status`, and verify the expiry scheduler is loaded with `launchctl print "user/$(id -u)/co.thoven.staging-expire"`. If absent after a headless reboot, bootstrap its existing reviewed plist, then require a successful expiry run before wake. Resolve hostname/profile refusals through the reviewed controller setup; never bypass its host guard. Acquire a bounded deployment hold with a unique reason and save its token. Run `up --hours 4 --apply`, or the requested duration within the supported bounds.
+3. **Hold and wake.** On the laptop, inspect `status` and verify the expiry timer is loaded with `launchctl print "gui/$(id -u)/co.thoven.staging-expire"`. If absent, install it from the runbook's "Run expiry on a laptop timer", then require a successful expiry run before wake. Never bypass the host guard. Acquire a bounded deployment hold with a unique reason and save its token. Run `up --hours 4 --apply`, or the requested duration within the supported bounds.
 
-   Resume can build the configured branch even with auto-deploy off; `up` does not pin a revision. If executing an unselected commit or its migrations exceeds authorization, resolve that before wake. Inspect any cold-resume deployment until terminal before explicitly deploying. A health timeout while the build progresses calls for observation and a controller retry after completion, not competing deployments.
+   Resume can build the configured branch even with auto-deploy off; `up` does not pin a revision. If executing an unselected commit or its migrations exceeds authorization, resolve that before wake. Inspect any cold-resume deployment until terminal before explicitly deploying. When the build a resume starts fails on a stale build cache, `up` deploys the same commit with a cleared cache and waits for it. A health timeout while the build progresses calls for observation and a controller retry after completion, not competing deployments.
 
 4. **Deploy the backend.** On the running combined service, deploy the pinned backend SHA unless the cold-resume deployment already reached `live` at that exact SHA. Reuse that proven deployment instead of rebuilding identical source:
 
@@ -33,7 +33,7 @@ Use installed Render/Vercel CLI help and skills for provider syntax. Older publi
    render deploys create srv-dao470bm8hqs73d71sh0 --commit <backend-full-sha> --wait --confirm -o json
    ```
 
-   If cold resume already produced a live deployment at the selected SHA, reuse it rather than rebuilding identical source. Require provider status `live` at that SHA, `/up` HTTP 200, a matching `/health` `revision.sha`, and the mini controller's `probe --apply` completing a real background job. The legacy worker stays suspended. Approved migrations run only through web pre-deploy.
+   If cold resume already produced a live deployment at the selected SHA, reuse it rather than rebuilding identical source. Require provider status `live` at that SHA, `/up` HTTP 200, a matching `/health` `revision.sha`, and the controller's `probe --apply` completing a real background job. The legacy worker stays suspended. Approved migrations run only through web pre-deploy.
 
 5. **Deploy the frontend.** Use a clean checkout of the pinned frontend SHA under existing worktree rules. Vercel uploads local source; a SHA label cannot prove a dirty checkout. Explicitly target staging and withhold domain assignment:
 
@@ -53,7 +53,7 @@ Use installed Render/Vercel CLI help and skills for provider syntax. Older publi
 - **Extend:** for a running session at the selected pair, renew with `up --hours N --apply`, verify versions remain unchanged, and report the new expiry. If suspended, follow the full start path. Renewal does not deploy newer `main` commits.
 - **Stop:** coordinate active use, then use `down --apply`. Respect every hold and drain check; release only holds this operation owns.
 
-The existing five-minute scheduler attempts shutdown after lease expiry, subject to holds and safe-drain checks. The scheduler depends on the mini remaining available and its user-domain task staying loaded; a host outage or reboot can delay expiry until it is restored. Vercel's frontend can remain reachable while backend features are unavailable; expiry does not delete its deployment.
+The existing five-minute scheduler attempts shutdown after lease expiry, subject to holds and safe-drain checks. The timer runs on the laptop, so expiry waits while the laptop sleeps or is off: run `down --apply` when the work ends rather than leaving it to the timer. Vercel's frontend can remain reachable while backend features are unavailable; expiry does not delete its deployment.
 
 ## Stop conditions
 
