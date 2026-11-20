@@ -1,8 +1,9 @@
 # Visual parity with a design reference
 
 Use when Paper or another approved design is the reference for an implementation. This compares
-the rendered product with the frame it was built from. Paper is the build source and the design
-system is reference (`andres-mode`, Parity): the frame's own values are the target.
+the rendered product with the frame it was built from. The build source and the design system's
+role are Thoven law's "Design parity": the frame's own values are the target, or a multi-screen
+flow's main lab once it replaces Paper.
 
 ## Establish the reference
 

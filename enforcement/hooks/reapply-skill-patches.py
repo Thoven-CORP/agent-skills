@@ -170,7 +170,7 @@ PATCHES = [
     ),
     # Paper is the build source (Andres, 2026-11-08): the design's own values win over the
     # project's tokens, a shared component changes to fit the frame, and every difference
-    # left is a reported row or a question. The rule's home is andres-mode, Parity.
+    # left is a reported row or a question. The rule's home is Thoven law, Design parity.
     (
         "build-design",
         "description: Builds UI from a Figma file or a design image so it matches the design, using the project's existing tokens and components.",
@@ -180,6 +180,13 @@ PATCHES = [
         "build-design",
         "A Figma link means the Figma MCP.",
         "A Paper file or frame means the Paper MCP: `get_jsx` and `get_computed_styles` for each frame at each width, desktop and phone frames both, with `get_screenshot` beside them. Those values are exact. In Thoven, Paper is the build source and the design system is reference (`andres-mode`, Parity). A Figma link means the Figma MCP.",
+    ),
+    # The build source moved to the law's Design parity (Andres, 2026-11-20): a multi-screen
+    # flow's main lab replaces Paper once its frames are final. Applies after the patch above.
+    (
+        "build-design",
+        "In Thoven, Paper is the build source and the design system is reference (`andres-mode`, Parity).",
+        "In Thoven, the build source is Thoven law's Design parity: each Paper frame's own values, or a multi-screen flow's main lab once it replaces Paper. The design system is reference.",
     ),
     (
         "build-design",

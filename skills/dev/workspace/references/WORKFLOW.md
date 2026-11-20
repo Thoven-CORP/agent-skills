@@ -108,7 +108,7 @@ the same write if the parent reads Todo or Backlog.
 | **Architecture** | How it is built: data, payload fields, modules by path. A native Linear document. |
 | **Log** | Why the Spec or Architecture changed: the question, his words, options turned down, the chat it came from. A native Linear document. |
 | **Plan** | The builder's scratch file for its own session. Never a Project document. |
-| **Proto** | A runnable HTML or React drawing. The contract for look and behaviour. Never markdown. **It is deleted the day its component ships**, with the surface's row repointed at `<component>@<commit>` (`feature-ledger` `references/RECONCILIATION.md`). A surface with two live artifacts has no contract. |
+| **Proto** | A runnable HTML or React drawing. The contract for look and behaviour. Never markdown. A multi-screen flow has one main Proto, its lab (Thoven law, Design parity). **It is deleted the day its component ships**, with the surface's row repointed at `<component>@<commit>` (`feature-ledger` `references/RECONCILIATION.md`). A surface with two live artifacts has no contract. |
 | **Activity** | Issue comments and Project Updates: status events, progress, where work stopped. |
 | **Map** | The rendered view of the current Project snapshot. Derived per invocation, never hand-edited or synchronized between skills. |
 
