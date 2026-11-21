@@ -22,3 +22,16 @@ with its frame is [visual parity](visual-parity.md).
   after in an explanation. Once an option is picked, mark the losing frames "Superseded ·" and
   delete them when Andres confirms the pick (Andres, 2026-11-18: "remove any scratch and
   superseded items").
+- **Thoven art is the real asset.** Anything that has Thoven art, such as the Passport cover, uses
+  its real image, exported from its Paper file or taken from `design/art`, and greyed out when it is
+  not made yet. Never draw a stand-in, because it hides how the real art reads at that size
+  (inferred reason, approved 2026-11-21; Andres, 2026-11-20: "Use the actual passport artwork").
+- **Check the frame before handing it back.** Code linters cannot see Paper, and two `DESIGN.md`
+  rules broke in Paper with nothing to catch them (Andres, 2026-11-20: "Piano · Classical, which is
+  not how we display it anywhere"; 2026-11-18: "the radius is too wide for an internal block").
+  Before a frame goes back to Andres:
+  1. Search its text nodes for " · " and expect none outside a list of same-kind items
+     (`DESIGN.md`, "never join metadata with a middle dot").
+  2. Read each nested container's radius with `get_computed_styles` and confirm it equals the outer
+     radius minus the inset between them (`DESIGN.md`, "Nested radii are concentric").
+

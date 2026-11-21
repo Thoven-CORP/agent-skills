@@ -9,7 +9,9 @@ Design for the person's task and the whole rendered composition. Thoven's fronte
 
 The named surface is the scope. Where a Paper frame shows the slot, build the slot and the component at the frame's values, changing the shared component to do it. Where no frame sets the slot, fit the component into it; resizing a shell, grid or neighbouring card no frame shows needs Andres (`feature-ledger` rule 16). Before a variant of a shipped surface or attached mockup, a ticket on one, a system audit, or a proposed token or shared component, open the live route and global component, inspect shipped code, and list what already shipped. State what stays and what changes; propose the gap.
 
-For a screen that has never existed, design in Paper first and give it a polish round before lab or code, unless the task chooses a medium. A multi-screen flow then moves to one main lab, which replaces Paper as its design (Thoven law, Design parity). Storyboard only the moving part. During design, “build” means Paper unless the turn names code. Work in a Paper file by [Paper](references/paper.md).
+For a screen that has never existed, design in Paper first and give it a polish round before lab or code, unless the task chooses a medium. A multi-screen flow then moves to one main lab, which replaces Paper as its design (Thoven law, Design parity).
+
+A variant rethinks the screen from first principles: what it must say, what the person must do, which parts need a box, which words are excess and where the main button sits. Removing a container and keeping the layout is not a variant. "Variants" means Paper frames unless the ask names a lab or HTML. Andres, 2026-11-19: "I want you to see the screen from first principles"; "I was not asking for a lab or HTMl. I was asking for new vairants of this screen". Storyboard only the moving part. During design, “build” means Paper unless the turn names code. Work in a Paper file by [Paper](references/paper.md).
 
 ## Design and critique
 
