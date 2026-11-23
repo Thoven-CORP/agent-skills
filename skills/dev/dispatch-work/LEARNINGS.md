@@ -5,6 +5,30 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-23 — the verifier spawns on the final commit
+
+> reflect · 2026-11-23 · verify-thv-1766-2 · verify-thv-1812 · broken-rule · applied · seen 2
+
+**What happened.** `verify-thv-1766-2` and `verify-thv-1812` were spawned while fix commits were still landing, and each got about 13 "new commit, keep holding" messages; the 1812 case came after the 11-12 "review once" rewrite.
+**Why.** review.md's Verifier brief started the pane on the builder's DONE and never tied it to a commit, so `<<head>>` was a moving target.
+**What changed.** review.md, Verifier brief: `<<head>>` is the SHA of the dispatch's final commit, fix commits included, and the verifier or a capture pass starts only once that commit is on the branch.
+
+## 2026-11-23 — the brief's FINISH names standing.md's before-DONE checks
+
+> reflect · 2026-11-23 · build-thv-1665 · broken-rule · applied · seen 1
+
+**What happened.** `build-thv-1665` went through three CI-red rounds on the guard, contract and OpenAPI checks.
+**Why.** brief.md's FINISH line and its REPORT "Checks" row named only lint and type-check, contradicting standing.md's before-DONE bullet, so the brief taught the wrong finish.
+**What changed.** brief.md: FINISH runs every before-DONE command standing.md names for the change, its guard, contract and api-types checks included, and the "Checks" row reports each with its pass line. The command list keeps its one home in standing.md.
+
+## 2026-11-23 — parallel panes in one tree get named file owners
+
+> reflect · 2026-11-23 · build-thv-1701 · build-thv-1702 · correction · applied · seen 1
+
+**What happened.** The THV-1699 to THV-1702 panes in one shared tree collided over `globals.css`, `thoven-dialog.tsx` and the grey tokens, and main only found out afterwards.
+**Why.** The brief's "Parallel panes" slot was not filled from the plan, so no pane knew who owned a shared file.
+**What changed.** Pitfall: before spawning parallel panes in one tree, fill the slot from the plan and name one owning pane per shared file. The two `gh pr merge` pitfalls (2026-10-03, 2026-10-22) became one line to keep the cap at ten.
+
 ## 2026-11-12 — Linear moves the ticket; findings become tickets
 
 **What changed.** DONE no longer moves a ticket to Ready: Linear sets In Review when the PR opens, Merged or Done on merge. Close reads the status back. A minor or `Noticed` finding is a `Follow-up` or `Tech debt` ticket, not a line in a grouped issue.

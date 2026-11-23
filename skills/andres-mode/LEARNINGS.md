@@ -5,6 +5,96 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-23 — Mermaid lives in files; chat uses native visuals or ASCII
+
+> reflect · 2026-11-23 · dda79c0e · correction · applied · seen 2
+
+**What happened.** Andres said "stop using mermaid" on 11-17, then "just use excalidraw or mermaids" in dda79c0e. Asked for one ruling, he set it standing on 11-23.
+**Why.** Three files each held a Mermaid rule: this skill, `~/.claude/CLAUDE.md` and `~/thoven/CLAUDE.md` ("Mermaid diagrams do not render in this terminal"), and none said what chat uses.
+**What changed.** Replies, "Documents default to visual" now owns it: Mermaid only in Linear and markdown files; chat in the desktop app uses native inline visuals, a terminal uses ASCII or plain text. The removed sentence wrote Mermaid for Linear and markdown with no chat rule. Both CLAUDE.md lines are now pointers here.
+
+---
+
+## 2026-11-23 — a fix closes with what broke and what prevents it
+
+> reflect · 2026-11-23 · c39bf30b · 725f7cfe · e2b8902e · skill-gap · applied · seen 3
+
+**What happened.** After fixes landed, Andres typed `/teach` himself to learn the failure: "teach what went wrong" (c39bf30b).
+**Why.** "Say what changed in one line" kept the closing reply to the change and left out the cause.
+**What changed.** No line removed: "Say what changed in one line" gained its one exception, a short visual of what broke, why, what was missing, the fix and what now prevents it.
+
+---
+
+## 2026-11-23 — approved plans fan out at once
+
+> reflect · 2026-11-23 · 6b300bb1 · 5e29c701 · 18445592 · 73b93158 · correction · applied · seen 4
+
+**What happened.** After he approved a plan, sessions worked units one at a time: "you were supposed to parallelize across all".
+**Why.** Delegation said to spawn parallel work only "the moment he asks", so an approved plan read as a serial queue.
+**What changed.** Delegation: the line "Spawn parallel work the moment he asks for it" is replaced. Once he approves a plan, or asks, independent units fan out at once (subagents in one tree when files do not overlap), and a serial order names its dependency.
+
+---
+
+## 2026-11-23 — audit findings are candidates, not the scope
+
+> reflect · 2026-11-23 · d5c04bcd · 6eb68030 · 7528effe · 5320f873 · broken-rule · applied · seen 4
+
+**What happened.** A rated findings list became the work list and grew into a refactor: "I wanted just the first couple of issues" (d5c04bcd).
+**Why.** "Hold his scope" covered the start of a task, not a list a review produced mid-task.
+**What changed.** "Hold his scope" gained one sentence: findings are candidates, rated by severity; fix the top items he picks, file the rest in Linear, ask before the list grows. Promotes the memory note "rate severity before fix loops". Its restate clause now points at "Restate before acting" (row 1).
+
+---
+
+## 2026-11-23 — a designed value changes only with its frame cited
+
+> reflect · 2026-11-23 · f89bf100 · 6b300bb1 · 5e29c701 · broken-rule · applied · seen 3
+
+**What happened.** An accepted end-of-turn offer changed a design he had settled ("those are not issues… why are you changing design", f89bf100); a review's 12 fixes went ahead of his own feedback (6b300bb1); "we have designed these things" (5e29c701).
+**Why.** "A flag against a settled ruling cites it" covered flags, not offers or review findings.
+**What changed.** Split per Q3. The review half now lives in the law, "Design parity", "Every difference is listed or asked". "Look before you claim or ask" gained the end-of-turn-offer half and "his own feedback list is always the first fix round"; no line removed.
+
+---
+
+## 2026-11-23 — platform actions run from the laptop; vendor IDs have one file
+
+> reflect · 2026-11-23 · d7e67eac · 6eb68030 · broken-rule · applied · seen 2
+
+**What happened.** Agents asked him to paste a Render key onto the mini (d7e67eac 11-09, 6eb68030 11-17).
+**Why.** "Use the vendor's tool" named the tool, not which machine runs it, and panes and Codex never load this skill.
+**What changed.** The rule now lives in the law, "Platform actions run from the laptop". "Use the vendor's tool" keeps the vendor-tool rule and points at the law for the host.
+
+---
+
+## 2026-11-23 — vendor IDs are read before the first call
+
+> reflect · 2026-11-23 · 16 Mixpanel and 15 Render sessions · skill-gap · applied · seen 16
+
+**What happened.** Mixpanel calls failed with "organization_id is required" in 16 sessions and Render calls with "no workspace selected" in 15.
+**Why.** The IDs lived only in investigate-thoven `references/vendor-access.md`, which analytics and staging sessions never load.
+**What changed.** Per Q3 the pointer lives in `~/thoven/CLAUDE.md`, inside an `<important if="you are calling Mixpanel, Render, Sentry or Neon tools or CLIs">` block; "Use the vendor's tool" points at `vendor-access.md` too. The file gains the Render workspace in the same run.
+
+---
+
+## 2026-11-23 — the product's nouns, in chat too
+
+> reflect · 2026-11-23 · c028199a · d132e0ed · broken-rule · applied · seen 2
+
+**What happened.** In chat the agent said "lessons" for Sessions (c028199a) and "pop-ups" for a component with its own name (d132e0ed).
+**Why.** The Lexicon line sat under Records and read as a rule for documents, and panes never load this skill.
+**What changed.** The rule now lives in the law, "Lexicon", with frontend `design/lexicon/LEXICON.md` as its source and "a surface goes by its component name in code". Records lost its "Session is the unit" clause (audiences and demo data stay); the Replies "Plain product English" line points at the law. Waiting on a mini run also gained a law pointer to remote-check's "Wait for a mini run" step (row 19; its lesson is logged in remote-check).
+
+---
+
+## 2026-11-23 — a grill ends on a confirmed answer table
+
+> reflect · 2026-11-23 · 6b300bb1 · 5320f873 · 5215583e · 5e29c701 · skill-gap · applied · seen 4
+
+**What happened.** Grill answers were lost before the build: "I said it super clear in the grill", "you barely grilled me… didn't confirm".
+**Why.** A third-party `grilling` run ends without `grill-with-docs` Close, which now maps each answer to an exit line.
+**What changed.** Product thinking gained one pointer: every grill ends with `grill-with-docs` Close's table and builds after he confirms it. The step and its lesson live in `grill-with-docs`.
+
+---
+
 ## 2026-11-18 — a Spec gives the why
 
 > session · 2026-11-18 · ff695349 · ruling · applied · seen many
@@ -302,11 +392,11 @@ In migration session 01a17981, Andres corrected the proposed transfer ceremony: 
 
 ## 2026-10-25 — restate multi-point design feedback before redrawing
 
-> reflect · 2026-10-25 · 0f23577b · 389b9590 · 01a16fa4 · 95c4b104 · skill-gap · applied · seen 7
+> reflect · 2026-10-25 · 0f23577b · 389b9590 · 01a16fa4 · 95c4b104 · 6b300bb1 · dda79c0e · 861c1941 · 5320f873 · 7528effe (+8) · skill-gap · applied · seen 20
 
 **What happened.** Andres asked four times in three sessions for his feedback to be played back before anything was drawn: "Restate your understanding of my feedback. before drawing and tweaking I want you to mockup with ascii in chat" (0f23577b), "Restate my decisions so you can align" (389b9590). When the restate was skipped, the lightbox came back full-screen: "it should be small popup not the full screen".
 **Why.** No rule asked for a restate before a redraw, so each round went straight to drawing.
-**What changed.** Replies: "Restate before redrawing" now covers two or more points on art, copy, or layout. 2026-10-31: still missed with andres-mode loaded (95c4b104). Seen 7.
+**What changed.** Replies: "Restate before redrawing" now covers two or more points on art, copy, or layout. 2026-10-31: still missed with andres-mode loaded (95c4b104). Seen 7. 2026-11-23: Andres typed `/in-your-own-words` himself in 13 sessions, because the rule covered only art, copy and layout and "Hold his scope" only the start of a task. "Restate before redrawing" is replaced by "Restate before acting": any message with two or more points, or a new idea, comes back as a numbered list before work starts; "Hold his scope" points at it. Seen 20.
 
 ## 2026-10-25 — a ruling amends its row and every stale copy
 
@@ -342,11 +432,11 @@ In migration session 01a17981, Andres corrected the proposed transfer ceremony: 
 
 ## 2026-10-25 — a blank ask-tool answer is re-asked at once
 
-> reflect · 2026-10-25 · 39a12a43 · skill-gap · applied · seen 1
+> reflect · 2026-10-25 · 39a12a43 · c9717ba8 · 1333e9c7 · d132e0ed · skill-gap · applied · seen 4
 
 **What happened.** The ask tool came back unanswered twice. Andres: "Ask me the questions again", and "Ask queask qution again its just my comptuer is slow".
 **Why.** A blank answer read as a decision to skip, not as a dropped prompt on a slow machine.
-**What changed.** Promoted 2026-11-09 into Replies. A blank or dismissed ask-tool result is asked again at once, in plain text, with the same options.
+**What changed.** Promoted 2026-11-09 into Replies. A blank or dismissed ask-tool result is asked again at once, in plain text, with the same options. 2026-11-23: after the 11-14 crash, three sessions answered "No response requested." and he typed "ask me the questions again"; the line now adds that after a resume, compaction or crash the first reply asks again every question still waiting and notes which were answered. Seen 4.
 
 ## 2026-10-23 — product grills lose altitude and hide their assumptions
 

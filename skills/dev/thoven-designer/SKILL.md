@@ -1,6 +1,6 @@
 ---
 name: thoven-designer
-description: Design, critique, or polish a Thoven surface; compare its rendered implementation with a Paper or approved design reference; find existing components and system decisions; or check implementation compliance.
+description: Design, critique, or polish a Thoven surface; draw, mock or edit frames in Paper; compare its rendered implementation with a Paper or approved design reference; find existing components and system decisions; or check implementation compliance.
 ---
 
 # Thoven Designer

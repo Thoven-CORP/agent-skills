@@ -8,7 +8,8 @@ flow's main lab once it replaces Paper.
 ## Establish the reference
 
 Identify the named file, page, artboard and relevant approval or later ruling; state whether the
-reference is approved or exploratory. Open the Paper
+reference is approved or exploratory, and name its frame status as [Paper](paper.md), "One source
+of truth", has it. Open the Paper
 reference through the available Paper connection and inspect its rendered frame. The foreground
 canvas alone does not establish which version was approved. Use an identified export when direct
 access is unavailable, and state its provenance and limits. Keep the reference intact during review.

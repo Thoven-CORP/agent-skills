@@ -72,7 +72,7 @@ KEEP / CUT / DEFER   one line each, with the reason
 LATER          questions parked below the level we reached
 ```
 
-Mermaid does not render in this terminal, so draw in ASCII.
+Draw in ASCII; where each kind of diagram goes is andres-mode's "Documents default to visual".
 
 ## Neighbours
 

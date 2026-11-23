@@ -18,7 +18,7 @@ Before generating a verification plan or delegating a check, read `~/.agents/ski
 | Run another pstack skill (`/name` or "the **name** skill") | The `Skill` tool with that name. If it refuses, `Read` `~/.agents/skills/<name>/SKILL.md` and follow it. When you tell the user to type it, write `/<name>`, with no `pstack:` prefix. |
 | Cursor's `/loop` command | Claude Code's `/loop` skill. |
 | `/visualize` | The **visual-artifacts** skill, and the **dataviz** skill for a chart. |
-| A Mermaid diagram | One HTML page built with the **visual-artifacts** skill. Mermaid does not render in this terminal. |
+| A Mermaid diagram | One HTML page built with the **visual-artifacts** skill (where diagrams go: andres-mode, "Documents default to visual"). |
 | `Grep`, `Glob` | `Bash` with `rg` when the session has no `Grep` or `Glob`. |
 | A playbook step that writes or changes a spec in a Thoven repo | Load the **test-audit** skill first. Its own triggers did not fire inside a pstack playbook (2026-11-18: three specs written without it, each gate it holds caught one later). |
 

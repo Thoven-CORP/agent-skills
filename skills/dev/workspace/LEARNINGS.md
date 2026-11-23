@@ -5,6 +5,16 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-11-23 — a design pick lives in its frame, not the Spec
+
+> reflect · 2026-11-23 · ff695349 · broken-rule · applied · seen 1
+
+**What happened.** On 11-20 a design pick went into the Spec's B3.05 line, two days after "A Spec gives the why" shipped.
+**Why.** The "Writing to Linear" table row said "The accepted choice becomes a Spec edit", and Ruling step 1 sent every ruling to the Spec, so the skill's own text taught the old fix.
+**What changed.** The row now says the accepted frame holds the pick, the Spec gains a line only for its principle or reason, and the Log keeps the exchange. Ruling step 1 defers to that row for design picks.
+
+---
+
 ## 2026-11-18 — a Spec gives the why, not the design
 
 > session · 2026-11-18 · ff695349, New sign-up flow Spec · ruling · applied · seen many

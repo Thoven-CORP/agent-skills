@@ -40,6 +40,8 @@ concise, never by a word count; a count games the copy into short phrases nobody
 
 - Ask directly, with no softener such as "Please".
 - Name the real channel: "email thovie@thoven.co", not "contact the team".
+- Give each metadata fact its own row or line (frontend `DESIGN.md`, "Copy — never join metadata
+  with a middle dot").
 - Fold a stray word or date into its sentence, or drop it, so it never sits on a line of its own.
 - Reuse the platform's lexicon (frontend `design/lexicon/LEXICON.md`) and the sentence shapes the
   nearby screens already use. Keep the voice warm and helpful, never technical or robotic.

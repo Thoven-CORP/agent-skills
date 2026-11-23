@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-23 — the Mixpanel organization and Render workspace IDs are written down
+
+> reflect · 2026-11-23 · f89bf100 · d5c04bcd · skill-gap · applied · seen 16
+
+**What happened.** Mixpanel's `Get-Business-Context` failed with "organization_id is required when project_id is not provided" in 16 sessions (f89bf100 and many subagents), and Render MCP calls failed with "no workspace selected" in 15 (d5c04bcd and others).
+**Why.** `vendor-access.md` named the Mixpanel project but not its organization, had no Render line, and analytics and staging sessions never load this skill.
+**What changed.** `references/vendor-access.md`: Mixpanel organization `3073149` (from a real `List-Organizations` result) and which ID each call takes; a Render line with workspace `tea-dao3d9qjnfac73aebo90` from `render workspaces`, the MCP's `select_workspace` and the CLI's `render workspace set`. The pointer for sessions that never load this skill lives in `~/thoven/CLAUDE.md` (Andres's ruling Q3, 2026-11-23).
+
 ## 2026-11-05 — vendor access is written down, not guessed
 
 > reflect · 2026-11-05 · 39a12a43 · DEP-20 pane · tooling · applied · seen 2

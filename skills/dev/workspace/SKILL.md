@@ -55,7 +55,7 @@ Each kind of writing has one home. Write it there; everywhere else links to it.
 | Purpose, scope, approach, sources of truth | The Project description, through `$linear-project` | Everyone |
 | Progress, risk, handoff, next step | A Project Update with health (WORKFLOW.md, "Project Update") | Andres |
 | A status event | An issue comment | |
-| Design exploration | tldraw or Paper. The accepted choice becomes a Spec edit | |
+| Design exploration | tldraw or Paper. The accepted frame holds the design pick; the Spec gains a line only for its principle or reason, and the Log keeps the exchange | |
 
 The connector cannot apply a template. To make a Spec, Architecture or Log, read its template with `get_template`, save the content as the new document's first text, and fill every bracketed line. A template edit never changes a document already made.
 
@@ -82,7 +82,7 @@ The connector cannot apply a template. To make a Spec, Architecture or Log, read
 
 When Andres rules, or a grill or spec session ends, write the ruling before the next task. This pass does not wait for capture, close, or log.
 
-1. Edit the Spec or Architecture line the ruling changes, in place, so it states the new current truth. Delete the sentences it replaces; Linear's version history keeps the old text. A rule that came from chat uses his words and links its Log entry. His name sits only on his quoted words, as the law's "Records and sources" has it.
+1. A design pick lands as the "Design exploration" row says. Any other ruling: edit the Spec or Architecture line it changes, in place, so it states the new current truth. Delete the sentences it replaces; Linear's version history keeps the old text. A rule that came from chat uses his words and links its Log entry. His name sits only on his quoted words, as the law's "Records and sources" has it.
 2. Add one Log entry in the Log template's shape: Asked, Andres (verbatim), Changed, Turned down, Reading only when needed, and Chat, which says where the exchange is. An entry you write on your own says Asked "unprompted" and has no Andres line.
 3. Write no more than his words cover. A part of the question his answer skipped stays open: it goes under the page's Open questions with its default, and the next question asks it.
 4. Read back the edited line and the Log entry, with the size counter's line for each page when the counter prints one. Say the edited heading in one line.

@@ -46,6 +46,11 @@ reason on every rule, and the size limits. A standing preference goes into the s
 governs it, never auto-memory, because memory is keyed per working directory. Missing local project
 folders do not block startup. The handoff procedure is `skills/dev/workspace/references/handoff.md`.
 
+**Lexicon.** Chat, tickets and documents use the product's nouns from frontend
+`design/lexicon/LEXICON.md`: a "Session" is one meeting and "Lessons" is the arrangement, and a
+surface goes by its component name in code. (2026-11: "lessons" for Sessions, "pop-ups" for a named
+component.)
+
 **User-facing evidence.** For every visual or user-facing change, capture the result on the surface
 users actually reach. Use a screenshot for a static state or a short walkthrough for an interaction.
 Before handoff or merge, attach the evidence to the PR under **Verification** and to the linked
@@ -62,7 +67,7 @@ or a design gate for work without one. Accepted Linear decisions govern which de
 - **Desktop frames are a 1280×720 window.** That is the browser window on a 1280×800 laptop, the smallest common one, and Thoven's visitors use it as often as 1440. A signed-in frame draws what the user sees, the app at 90% (a 44 button draws 39.6), so a 1280×720 shot lays on it one to one; a public page, which has no `AppScale`, draws at 100%. 1440 is a second check. A builder divides a signed-in frame's value by 0.9 to get the code number, until THV-1971 retires the 90% shrink (Andres 2026-11-17, THV-1970).
 - **The design system is reference, not hard code.** Build through the shared component and change it, or the global component, when a frame needs it; build a missing one with `building-components`. Use a token where it equals the frame's value and the frame's value where none does. A design scan or test that refuses a Paper value gets one allowlist entry naming the Paper node and the reason; a count or ratchet baseline stays where it is.
 - **Production holds between frames.** Widths between the frames reflow by component best practice, and the builder says how.
-- **Every difference is listed or asked.** Each difference left between the build and its frame is a row in the REPORT's Discrepancies table (brief.md, REPORT, Parity), with its why: not built yet, a spec rule, a production need, or a fix to an unpolished frame such as a wrong icon or chevron. A layout, spacing, height, veil or colour difference goes to main as a question before anyone builds it. A difference in neither place is a defect.
+- **Every difference is listed or asked.** Each difference left between the build and its frame is a row in the REPORT's Discrepancies table (brief.md, REPORT, Parity), with its why: not built yet, a spec rule, a production need, or a fix to an unpolished frame such as a wrong icon or chevron. A layout, spacing, height, veil or colour difference goes to main as a question before anyone builds it, and so does a review finding that changes a designed value without citing the frame. A difference in neither place is a defect.
 - **Phone frames are build targets.** 390 is shot for every state. Where Paper has a phone frame, the phone layout is built from its values and judged against it. A state of a surface a phone reaches with no phone frame is a question to main before its phone layout is built; its 390 capture is then only a compatibility check.
 - **Visual parity on the real page.** Capture every state at each of its Paper frames' widths, desktop and phone, and 390, plus a short video, on the route a user reaches. The builder makes the captures itself with the local parity run (`scripts/verify/parity-run.mjs`, the Parity row in the frontend `TESTING.md`) for every surface the ticket names, sibling rows included, and attaches the grid. A surface with no parity map entry gets a 390 capture beside the commit before the change. A `/dev` or lab route, a component without its parent panel, or a re-render of the board is not parity.
 - **Parity is a looked-at verdict.** A judge who did not build the screen writes MATCH, or NO with its differences, for each state at each width against that state's own Paper frame, phone frames included. The grid proves what was built; "N/N captured" is not parity.
@@ -85,10 +90,16 @@ reruns on push. Heavy work (e2e, builds, stacks, perf) runs on the host whose
 `~/.config/thoven/host.json` says `mini`, through
 `~/thoven/agent-skills/enforcement/bin/thoven-load-gate -- <cmd>`; there `bin/verify` takes its own
 slot, so run it as is. On a `laptop` host the Bash guard denies verify, builds, e2e and whole
-suites: run `remote-verify` for verify and the `remote-check` skill for the rest. When Andres says
+suites: run `remote-verify` for verify and the `remote-check` skill for the rest, and wait on a
+mini run with remote-check's "Wait for a mini run" step. When Andres says
 hold, stop the heavy jobs you started and run only single-file tests, type-check and lint until he
 says go. Stop the servers you started after each step, and delete scratch you can regenerate. A
 subagent runs a long command in the foreground with a timeout, because the harness blocks `sleep`.
+
+**Platform actions run from the laptop.** Render, Vercel, Neon, Stripe, Mixpanel, Linear and Sentry
+actions run on the laptop, where their CLIs and plugins are signed in. The mini runs heavy tests and
+publishing checks, and nobody asks Andres to copy a key to it. (2026-11-09 and 11-17: agents asked
+him to paste a Render key onto the mini.)
 
 **Local database.** `thoven-worktree create` sets `TEST_DATABASE_URL` to `neondb_test_<slug>`, drops
 a `DATABASE_URL` that names the shared `thoven_development`, and creates `thoven_dev_<slug>` when the

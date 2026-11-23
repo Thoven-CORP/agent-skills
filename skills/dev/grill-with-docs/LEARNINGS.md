@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-23 — grill answers map to exit lines before the build
+
+> reflect · 2026-11-23 · 6b300bb1 · 5320f873 · 5215583e · 5e29c701 · skill-gap · applied · seen 4
+
+**What happened.** Grill answers were lost before the build. Andres: "I said it super clear in the grill"; "you barely grilled me… didn't confirm".
+**Why.** Close wrote the Spec and the Log but never tied each answer to where it lands and the exit line that checks it.
+**What changed.** Close shows a table (answer, change, where it lands, exit line) and builds only after he confirms it. The andres-mode "Product thinking" pointer is a separate edit.
+
 ## 2026-11-12 — Close writes the Spec and a Log entry
 
 > instructions rewrite · 2026-11-12 · meta-analysis · ruling · applied · seen 1

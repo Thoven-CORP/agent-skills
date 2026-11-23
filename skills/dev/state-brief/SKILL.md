@@ -90,7 +90,7 @@ Done when: every invariant has a check or names the type that enforces it, and e
 
 ## 6. Draw it and record it
 
-- **Diagram.** When statechart ran, its `chart.mmd` is the diagram, because it was checked rather than drawn. Otherwise write a Mermaid `stateDiagram-v2` from the transition table, with compound states as nested blocks and parallel regions split by `--`. For a flow across services, add a `sequenceDiagram`. This terminal does not render Mermaid, so put the diagram on a page made with the `visual-artifacts` skill and open it.
+- **Diagram.** When statechart ran, its `chart.mmd` is the diagram, because it was checked rather than drawn. Otherwise write a Mermaid `stateDiagram-v2` from the transition table, with compound states as nested blocks and parallel regions split by `--`. For a flow across services, add a `sequenceDiagram`. Put the diagram on a page made with the `visual-artifacts` skill and open it (where diagrams go: andres-mode, "Documents default to visual").
 - **Record.** The transitions, owner and invariants go in the Project's Architecture document, under State rules, numbered A1, A2 …, each with its reason; status payload fields and enum changes go under Data and contract. Use the `workspace` skill, or write to the path the issue's `Writes to:` line names. The HTML page is only a view of it.
 
 Done when: the page is open with its path in the reply, and the Architecture sections are written and read back.

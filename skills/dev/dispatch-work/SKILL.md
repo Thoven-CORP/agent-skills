@@ -30,9 +30,9 @@ corrections, alerts and tokens.
 - Let `dispatch spawn` fill `{{MAIN_SESSION}}` from the live session. A name carried over from a summary goes stale. (LEARNINGS 2026-10-10)
 - Write each ruling Andres gave in chat into the spec before dispatch, as a rule in his words with its Log entry, and link it from the ticket's Build from. Your reading of his words goes in the Log entry's Reading line, labelled as yours. (LEARNINGS 2026-09-27; root LEARNINGS 2026-11-08)
 - Give a minor fix, fix round or review pass a clean existing tree. Run at most two heavy builders across every main session on this Mac and stagger the rest. Before each spawn, count them from the live process list and re-read `df -h /`, `memory_pressure` and load; when Andres's answer settles one of two risks you raised together, the standing rule still binds the other. (LEARNINGS 2026-10-25)
-- List the ticket's Linear comments right before `gh pr merge`. A ruling newer than the last commit holds the merge until the diff applies it. (LEARNINGS 2026-10-03)
 - On a UI or copy ticket, put the changed behaviour on the work-session page at the builder's first DONE, so Andres's notes ride the one fix round and review runs once on the final diff. Retain required before/after evidence in the technical report; the finished-feature walkthrough shows current behaviour unless the comparison is needed for his decision. (LEARNINGS 2026-10-22)
-- After every `gh pr merge`, read back `gh pr view <n> --json state,mergeCommit`: a nonzero exit means unknown (`--delete-branch` fails after a good merge when a worktree holds the branch), and a PR already clean merges without `--auto`. (LEARNINGS 2026-10-22)
+- Right before `gh pr merge`, list the ticket's Linear comments: a ruling newer than the last commit holds the merge until the diff applies it. After it, read back `gh pr view <n> --json state,mergeCommit`: a nonzero exit means unknown (`--delete-branch` fails after a good merge when a worktree holds the branch), and a PR already clean merges without `--auto`. (LEARNINGS 2026-10-03, 2026-10-22)
+- Before spawning parallel panes in one tree, fill each brief's Parallel panes slot from the plan and name one owning pane for each shared file (`globals.css`, `components/ui/*`, the colour tokens); every other pane leaves that file to its owner. (LEARNINGS 2026-11-23)
 
 ## Roles
 

@@ -9,7 +9,7 @@ Read this when the work is a Thoven product. The core skill is product-neutral.
 - **Teacher:** teaches. Every ask of a teacher needs a payoff they can see, and effort that ends up hidden is waste.
 - **Ops:** Andres and Keri approve, review and support. A rung that needs "a personal note from Andres or Keri" names their capacity.
 
-Lexicon: a "Session" is the unit and "Lessons" is the arrangement. Demo data uses Andres Martinez or real fixtures.
+Product nouns follow the law's "Lexicon". Demo data uses Andres Martinez or real fixtures.
 
 ## Positioning
 

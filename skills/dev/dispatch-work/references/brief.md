@@ -32,8 +32,10 @@ WHERE      Repo <<absolute path>>, branch <<branch>>, base <<sha>>.
 KNOWN      <<commits and interfaces from earlier tickets this one builds on, by SHA and path, or none>>
 RESUME     <<a takeover or fix round line, or none>>
 FINISH     Build the whole dispatch, then REPORT once. Prove each exit line once with its named
-           proof, and run lint and type-check on the files you touched (commands: verify). Make
-           a design capture once. Wider suites run when the branch lands.
+           proof. Run lint and type-check on the files you touched (commands: verify), then
+           every before-DONE command standing.md names for your change, its guard, contract
+           and api-types checks included. Make a design capture once. Wider suites run when
+           the branch lands.
 STANDING   Read ~/.agents/skills/dispatch-work/references/standing.md now and follow it.
 
 ASK
@@ -51,7 +53,8 @@ When the whole dispatch is built, or you are blocked, write the report to a file
 STATUS is DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT or BLOCKED. The body:
   Exit criteria  one row per exit line: true or not, with its proof attached (command, host and
                  pass line; file:line; capture path)
-  Checks         the lint and type-check commands and their pass lines
+  Checks         each command FINISH runs (lint, type-check and standing.md's before-DONE
+                 guard, contract and api-types commands) with its pass line
   Parity         a ticket with a design frame: the Discrepancies table the law's Design parity
                  names, one row per difference left between the build and its frame, with its why
   Commits        SHAs and git diff --stat against base

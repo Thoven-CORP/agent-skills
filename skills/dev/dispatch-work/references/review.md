@@ -49,9 +49,11 @@ name.
 
 ## Verifier brief
 
-Write it to the board's `briefs/THV-x-verify.md` with every `<<…>>` slot filled, then start it
-once the builder has reported DONE on the whole dispatch: `dispatch spawn <project> THV-x --kind
-Verify --brief <that file> --split-of <builder pane> ...`, with the other flags as in step 3.
+Write it to the board's `briefs/THV-x-verify.md` with every `<<…>>` slot filled, `<<head>>` being
+the SHA of the dispatch's final commit, fix commits included. Start it, or a capture pass, only
+once the builder has reported DONE on the whole dispatch and that commit is on the branch:
+`dispatch spawn <project> THV-x --kind Verify --brief <that file> --split-of <builder pane> ...`,
+with the other flags as in step 3.
 
 ```text
 /poteto-mode Verify THV-<id> "<<ticket title>>"

@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-23 — name the frame and its status before building from it
+
+> reflect · 2026-11-23 · c9717ba8 · 93acf8c7 · ff695349 · d132e0ed · correction · applied · seen 4
+
+**What happened.** Agents built from or compared against outdated frames: "v1 of the landing page" (c9717ba8), "the old classroom" (93acf8c7), "brought back v1 as v3" (ff695349), and again in d132e0ed.
+**Why.** Only the losing frames were ever marked, so nothing told a builder which frame was current.
+**What changed.** `references/paper.md`, "One source of truth": the picked frame is marked "Finalized ·" when the others are marked "Superseded ·", and a build or comparison first names its frame and status, asking Andres when it has none. `references/visual-parity.md`'s "Establish the reference" points there. The proposed stale-screenshots clause (one session) was dropped.
+
 ## 2026-11-12 — Paper exports land in ~/Downloads
 
 **What happened.** Exporting Keri's 37 printables for THV-1555 (`export` to PDF and WebP, `export_combined_pdf` for the card sets) wrote 74 files into `~/Downloads`, mixed in with Andres's own files. The exporter copied them to `/tmp` by hand and left the originals behind.
@@ -54,11 +62,12 @@ New entries on top. Each one: what happened, why, what changed.
 
 ## 2026-10-25 — the skill never fired on drawings and protos
 
-> reflect · 2026-10-25 · 7c3d7896 · 389b9590 · 39a12a43 · broken-rule · applied · seen 3
+> reflect · 2026-10-25 · 7c3d7896 · 389b9590 · 39a12a43 · 5215583e · dda79c0e · broken-rule · applied · seen 5
 
 **What happened.** Protos and board variants reached Andres with design-system misses that this skill already covers. In 7c3d7896 he said "the button fro approve is on the wrong side according to /thoven-designer" and "it should use or gloabal radio box". In 389b9590 a drawing subagent's claim that the sort "uses the design system's own select" was passed on unchecked, and he said "the dropwdown is still nto correct /thoven-designer". He typed /thoven-designer himself in more than eight prompts that week. The skill loaded last in those sessions was better-interface.
 **Why.** The description fired on design-system questions and on hand-rolling, not on drawing or presenting a frame, so the popup-footer and component checks in the body never loaded before the drawing went out.
 **What changed.** The description now also fires when drawing, critiquing or presenting a proto, board frame, Paper screen or design variant, so it is checked against the shipped component before Andres sees it. Backlog: a design-run `RULES.md` reportedly sends critique to interface-craft and the pick to better-ui; it was not found.
+2026-11-23: the 11-08 rewrite dropped drawing from the description. 5215583e drew Paper frames without loading the skill, at 1440×900 a day after the law set 1280×720, and dda79c0e loaded it once and still shipped a dot. The description fires again on drawing, mocking or editing Paper frames, and `references/paper.md` points at the law's frame-size line.
 
 ## 2026-10-22 — rhythm, popup footers, button states and icon tiles had no pointer
 
@@ -194,7 +203,7 @@ fits. Phones scrolling the page is fine.
 
 ## 2026-09-25 — no middle-dot separators
 
-> reflect · 2026-09-25 · memory:feedback_no_middle_dot_separators · correction · applied · seen 1
+> reflect · 2026-09-25 · memory:feedback_no_middle_dot_separators · 394e3ae6 · ff695349 · dda79c0e · correction · applied · seen 4
 
 **What happened.** Reviewing the Materials v3 detail pane, metadata ran as one string joined by
 middle dots (composer, opus, duration). Andres: *"Do not do dots. I hate fucking dots."* He asked
@@ -203,6 +212,7 @@ for it to go into the design system.
 **What changed.** A Pitfall line puts metadata in labelled rows or separate lines. Pane metadata
 becomes one label and value table. A card subline carries one fact or goes to two lines. The shipped
 app already carries many middle-dot strings. Leave them unless asked, and add none.
+2026-11-23: dots reached Andres again in 394e3ae6, ff695349 and dda79c0e, the last a day after the Paper check landed, because copy proposals never read the rule. thoven-branding `references/plain-copy.md` now points at `DESIGN.md`'s rule.
 
 ---
 

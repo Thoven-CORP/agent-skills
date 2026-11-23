@@ -1,6 +1,6 @@
 ---
 name: remote-check
-description: Run a requested check on the Mac mini using saved MacBook changes, return logs or screenshots, and preserve the existing Git branch and PR workflow. Uses dedicated Mutagen test mirrors, separate from remote coding worktrees.
+description: Run a requested check on the Mac mini using saved MacBook changes, return logs or screenshots, and preserve the existing Git branch and PR workflow. Uses dedicated Mutagen test mirrors, separate from remote coding worktrees. Also use it to wait on a mini run or to free mini disk space.
 ---
 
 # Remote check
@@ -25,8 +25,9 @@ cannot be transferred. No product commit, branch switch or extra PR is required 
 
 Choose the smallest command that tests the claim, using the target checkout's `TESTING.md` and
 existing verification skills. State whether it needs a real backend, browser, database or external
-provider. Do not silently substitute mocked proof. Check mini load/disk before starting heavy work;
-on an 8 GB host, start with one check/browser at a time.
+provider. Do not silently substitute mocked proof. Check mini load/disk before starting heavy work,
+and run Free mini space (below) first when free disk is under the floor; on an 8 GB host, start
+with one check/browser at a time.
 
 ## Verify the mapping
 
@@ -90,6 +91,26 @@ remote automation connection, or use mini-local browser automation. Desktop inte
 available graphical session and that host's permissions; report that gap instead of claiming remote
 GUI access. Use a separate test profile, not a synchronized personal browser profile.
 
+## Wait for a mini run
+
+A mini run (`remote-verify`, `thoven/bin/remote-check` over ssh, a parity capture) outlasts one
+foreground call, and a bare `sleep N` call is blocked. Start it as a background command (the Bash
+tool's `run_in_background`) that writes a laptop log ending in a marker line, then wait on the
+marker with one Monitor until-loop, its `timeout_ms` set to the run's budget:
+
+```bash
+log=<evidence or scratch dir>/<run>.log
+{ remote-verify --base <branch>; echo "RUN_END exit=$?"; } > "$log" 2>&1   # background
+until grep -q '^RUN_END' "$log"; do sleep 5; done; tail -n 40 "$log"     # Monitor
+```
+
+Wrap a `ssh thoven-mini-ssh 'thoven/bin/remote-check …'` call the same way. Above the marker, the
+run's own last lines report it: `remote-verify: exit <n>; log <path>` after the `THOVEN_VERIFY`
+block, or `remote-check: exit=<rc> duration=…` and then the run folder. macOS has no `timeout` or
+`gtimeout`, so the Monitor's `timeout_ms` is the bound.
+
+**Done when:** `RUN_END` is in the log and you have read its exit code and the run's last lines.
+
 ## Return the result
 
 Report the exact command, execution host, paired source paths/branches/HEADs and captured dirty
@@ -97,3 +118,25 @@ input identity, exit/result, proof type and accessible log/screenshot paths. Sta
 and missing context. A green remote run proves that captured input passed that command; it does
 not prove a causal fix, hosted CI or production behavior. Reuse the existing verification skill
 for a baseline/treatment comparison when the task is to prove a fix.
+
+## Free mini space
+
+Run this when the mini's `df -h /` shows less free space than its host profile's `minDiskFreeGiB`
+(15 GiB), the floor below which the load gate refuses heavy runs, or when asked to free mini space.
+
+1. **List** over ssh, with size and last change, the run folders in `~/thoven/runs/`; the scratch,
+   captures and evidence checkouts in `~/thoven/tmp/` and `~/thoven/tmp-evidence/`; the captures in
+   `~/.thoven-artifacts/`; the Mutagen mirrors in `~/thoven/mirrors*/` and `~/thoven-test-mirrors/`;
+   and every `git worktree list` entry of the mini's frontend, backend and agent-skills clones
+   other than the clone itself.
+2. **Keep** what is owned: a path some running process has as its cwd (`lsof -d cwd -Fn`), a mirror
+   a laptop `mutagen sync list` session targets, evidence of a ticket still in progress, and a
+   worktree with dirty files, a HEAD on no origin branch (`git branch -r --contains HEAD` prints
+   nothing) or a branch with an open PR (`gh pr list --head <branch>`). The rest is the removal set.
+3. **Show** the removal set in the reply as a table (path, size, age, why it is unowned) with the
+   free space it should leave. Then remove exactly that set: `git worktree remove` without
+   `--force` and `git worktree prune` for worktrees, `rm -rf` for the rest.
+4. **Report** each removed path with its size, and `df -h /` before and after.
+
+**Done when:** free space is above 15 GiB, or the report names what still holds the space and
+who owns it.
