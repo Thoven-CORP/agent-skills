@@ -4,19 +4,23 @@
     {
       "id": 1,
       "prompt": "/thoven-reflect --since 2026-10-13. Stop at the approval question; do not apply anything.",
-      "expected_output": "A digest of main Claude + Codex sessions since 10-13; three reviewers in parallel; a synthesizer table where every finding is Accepted, Rejected or Backlog, each Accepted row with routing and seen; broken rules name where the rule was written; the run stops at an AskUserQuestion with no file in ~/thoven/agent-skills changed.",
+      "expected_output": "A digest of main Claude + Codex sessions since 10-13; the judgment, tooling, divergent, skill-walk, escaped-defect and opportunity reviewers; a synthesis where every finding is Accepted, Fix in this run, Ask or Rejected, each Accepted row with routing and seen; broken rules name where the rule was written; the run stops at an AskUserQuestion with no file in ~/thoven/agent-skills changed.",
       "files": [],
       "assertions": [
         "digest-built: a corrections digest for the window exists under the run folder",
         "no-relay-rows: no digest row opens with a herdr relay label (Main:, MAIN:, THV-n from main:, F<n> restore:, Lock released:)",
-        "three-lenses: three separate reviewer outputs are saved",
-        "every-finding-placed: the synthesis has Accepted, Rejected and Backlog sections",
+        "all-lenses: judgment, tooling, divergent, escaped-defect and opportunity outputs and one to three skill-walk outputs are saved",
+        "every-finding-placed: the synthesis has Accepted, Fix in this run, Ask and Rejected sections, and no Backlog section",
         "routed-with-seen: every Accepted row names a routing from the skill's vocabulary and a seen count",
         "pitfall-cap: no single skill receives more than 10 pitfall: rows",
         "broken-rule-cited: any supported broken-rule finding names the existing guidance; an empty result is valid",
         "stops-at-approval: the question offers apply all, named rows, or none",
         "no-side-effects: no tracked file in ~/thoven/agent-skills, no memory file and no last-run state file changed",
-        "step-needs-seen-2: every Accepted step: row has seen 2 or more, or corrects a step whose own text teaches the wrong fix"
+        "step-needs-seen-2: every Accepted step: row has seen 2 or more, or corrects a step whose own text teaches the wrong fix",
+        "origins-mined: corrections.tsv rows carry a skills column and an origin of main, subagent or pane, and at least one subagent or pane row exists when the window had one",
+        "skills-walked: every Thoven skill loaded in three or more sessions of skills.tsv has a worked, partly, failed or not-judged verdict citing the sessions read",
+        "history-checked: every Accepted row's reviewer finding names the git command it ran on the files it cites",
+        "opportunity-shape: every new, split, umbrella or rework proposal cites two session ids and names the skills it checked first"
       ]
     },
     {
@@ -46,6 +50,19 @@
         "broken-rule-cited: any supported broken-rule finding names where the rule was written; no finding is invented to fill a category",
         "stops-at-approval: a question for approval exists before any edit",
         "no-side-effects: no tracked file in ~/thoven/agent-skills, no memory file and no last-run state file changed"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "/thoven-reflect --since 2026-11-16. Stop at the approval question; do not apply anything.",
+      "expected_output": "The escaped-defect lens lists the bug tickets created since 11-16, reads each ticket and the session that fixed it, and traces THV-2003 (an adult signing up as Myself got the kid flow, found in production) to qa-flow: no run walked the adult seat before launch, and qa-flow first ran after the fix. The synthesis routes it to qa-flow and has no Backlog section.",
+      "files": [],
+      "assertions": [
+        "bugs-listed: the escaped-defect output lists bug tickets created in the window, including THV-2003",
+        "thv-2003-traced: THV-2003 is a skill-gap or broken-rule finding routed to qa-flow, naming the adult seat no journey walked",
+        "fixing-session-read: the THV-2003 finding cites the session that fixed it",
+        "no-backlog: no synthesis section or row routes to Backlog; product defects sit in Ask with their ticket",
+        "no-side-effects: no tracked file in ~/thoven/agent-skills, no memory file, no Linear issue and no last-run state file changed"
       ]
     }
   ]

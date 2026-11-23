@@ -14,6 +14,7 @@
 verify-this
 graphify
 qa-flow
+journey-map
 thoven-designer
 writing-for-agents
 technical-writing
@@ -53,6 +54,7 @@ test-audit
 thoven-branding
 verify
 workspace
+workspace-sweep
 # Third-party skills the same steering files name (reflect 2026-11-05).
 babysit-pr
 better-writing

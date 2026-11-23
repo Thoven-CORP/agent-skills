@@ -51,8 +51,8 @@ Walk the sheet one check at a time (see non-negotiables). The scripted core yiel
 **Done when:** every standing domain and every scripted step has a ✅/⚠️/❌, and the grill note is captured.
 
 ### 4. Route findings
-A real bug (something broken) → mint it into the bug tracker and link it. Soft friction (confusing copy, slow screen, awkward flow) → note it in the run page body. → `references/logging.md`
-**Done when:** every ❌/⚠️ is either a linked bug or a recorded friction note.
+A real bug (something broken) follows Thoven law's **Own what you find** (`~/thoven/agent-skills/enforcement/rules/thoven-law.md`): fix it in the round when it sits in the work's area, make it a sub-issue of the ticket that owns it when it is too big for one round, and otherwise take it to Andres as a question; link the fix, sub-issue or question in the run page. Soft friction (confusing copy, slow screen, awkward flow) → note it in the run page body. → `references/logging.md`
+**Done when:** every ❌/⚠️ is a linked fix, a linked sub-issue, a question put to Andres, or a recorded friction note.
 
 ### 5. Log the run & advance state
 Create the Notion **Dogfood Runs** row (versions, buckets, Result = Go/No-Go, entering-state, linked bugs; detail in the page body) → `references/logging.md`. Then update `state.json`: bump `last_dogfooded` to the `prod/*` tags just tested, set `last_run_date`, refresh `last_known_state`.
@@ -60,4 +60,4 @@ Create the Notion **Dogfood Runs** row (versions, buckets, Result = Go/No-Go, en
 
 ## Go/No-Go gate
 
-**GO** if the always-on critical core (home · login · marketplace · a real `/teacher/[id]` load) and the contract-removal sweep pass with no Criticals. A cosmetic miss elsewhere is a follow-up, not a NO-GO. → `references/standing-checklist.md`
+**GO** if the always-on critical core (home · login · marketplace · a real `/teacher/[id]` load) and the contract-removal sweep pass with no Criticals. A cosmetic miss elsewhere stays a GO: fix it when it sits in the work's area (law, "Own what you find"), and route any other as step 4 does. → `references/standing-checklist.md`

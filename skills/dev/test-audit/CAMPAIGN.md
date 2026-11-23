@@ -70,9 +70,7 @@ Edit lane by lane. Serialize changes to shared harnesses and support files
 through one owner. With each lane, remove the test-only production seams it
 unlocks: injection parameters, getters, reset exports, and indirection layers.
 Register moved suites in CI routing and test inventories. Put durable test-ownership rules in the repo `CLAUDE.md` or `TESTING.md`,
-drawn from mistakes this campaign actually found. Production seams are removed
-only with Andres's approval (see SKILL.md, Edit shape); otherwise list them as
-follow-ups.
+drawn from mistakes this campaign actually found (SKILL.md, Edit shape).
 
 Done when every lane plan is applied and each lane's keepers pass.
 
@@ -94,9 +92,9 @@ every restored contract has a caught mutation.
 
 A baseline failure that survives into a keeper is a bug report. Fix it at its
 owner as a separate commit, and prove it through the real user flow, with a
-**control** run that reverts the fix and shows the old behavior. Record
-unrelated product discrepancies you find as follow-ups instead of fixing them
-in the campaign.
+**control** run that reverts the fix and shows the old behavior. An unrelated
+product discrepancy you find follows the law's "Own what you find": fix it at
+its owner the same way, or take it to Andres as a question or a proposal.
 
 Done when each repaired defect has a failing control and a passing candidate
 on the same harness.

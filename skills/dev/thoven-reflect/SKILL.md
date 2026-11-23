@@ -1,6 +1,6 @@
 ---
 name: thoven-reflect
-description: Improve agent skills from main Claude Code and Codex corrections, discoveries and successes. Use for weekly reflection, reflection on a named skill, repeated agent mistakes, or migrating feedback memories. Diagnose causes and propose scoped edits for approval.
+description: Improve agent skills from Claude Code and Codex sessions, their subagents and panes, and the bug tickets that escaped them. Use for weekly reflection, reflection on a named skill, repeated agent mistakes, a bug that slipped past QA, proposing a new or split skill, or migrating feedback memories. Diagnose causes and propose scoped edits for approval.
 ---
 
 # Thoven reflect
@@ -25,35 +25,46 @@ bash ~/thoven/agent-skills/scripts/mine-transcripts.sh --since "$since" --out "$
 ~/.agents/skills/dispatch-work/scripts/dispatch stats --since "$since" --md > "$out/dispatch.md"
 ```
 
-The mine takes several minutes, so run it with a 10-minute timeout or in the background. The broad window starts at the last recorded run, or seven days back; a focused run uses its independently resolved range. The digest is `<out>/corrections.md`, where `<out>` is the `--out` folder above. It holds correction candidates after the script's noise filter; validate human authorship and context before counting a candidate as evidence. Each row carries the agent's text before it, Andres's own words and the last skill loaded. Each session heading names its raw transcript, and `<out>/skills.tsv` provides harness-dependent skill attribution leads, with incomplete coverage.
+The mine takes several minutes, so run it with a 10-minute timeout or in the background. The broad window starts at the last recorded run, or seven days back; a focused run uses its independently resolved range. The digest is `<out>/corrections.md`, where `<out>` is the `--out` folder above. It holds correction candidates after the script's noise filter; validate authorship and context before counting a candidate as evidence. Each row carries the agent's text before it, the speaker's own words, the last skill loaded and every skill the session had loaded. Each session heading names its origin and raw transcript: `main` is Andres in a main session, `subagent` is main writing to a Claude or Codex subagent, `pane` is main or Andres inside a dispatched pane. `<out>/skills.tsv` lists every skill each session loaded, by origin, across Claude, Codex and Cursor; treat it as attribution leads.
 
 The second input is `<out>/dispatch.md`: one row per builder pane that ran in the window, from the dispatch events log, and a friction footer. It is empty when no pane ran.
 
-Done when you have counted the digest's rows (`grep -c '^- \*\*' <out>/corrections.md`) and the panes in `dispatch.md` (`grep -c '^| [a-z0-9-]* | THV-' <out>/dispatch.md`). For a broad run, zero of both ends the run with a one-line report. In focused mode follow the reference to collect other relevant leads before deciding there are no findings.
+Done when you have counted the digest's rows (`grep -c '^- \*\*' <out>/corrections.md`), the panes in `dispatch.md` (`grep -c '^| [a-z0-9-]* | THV-' <out>/dispatch.md`) and the walk list below. A broad run ends with a one-line report only when all three are zero and Linear has no bug ticket created in the window (the query in `references/escaped-defect-reviewer.md`). In focused mode follow the reference to collect other relevant leads before deciding there are no findings.
 
-## 2. Three reviewers in parallel
+## 2. Reviewers in parallel
 
-Use the host's native subagent API and model-routing policy for three independent reviewer calls (Claude Code: `Agent`, `subagent_type: general-purpose`). Each prompt is [`references/reviewer-common.md`](references/reviewer-common.md) followed by its lens file, with the digest and `dispatch.md` paths substituted.
+Use the host's native subagent API for independent reviewer calls (Claude Code: `Agent`, `subagent_type: general-purpose`), with models from the host's routing policy (Claude Code: `~/.claude/pstack-models.md`). Each prompt is [`references/reviewer-common.md`](references/reviewer-common.md) followed by its lens file, with `<OUT>`, the digest and `dispatch.md` paths, the window start and, for the skill walk, its batch (`<WALK_BATCH>`) substituted.
 
-| Lens | `model` | Lens file |
+| Lens | Calls | Lens file |
 |---|---|---|
-| Judgment | inherit | `references/judgment-reviewer.md` |
-| Tooling | `sonnet` | `references/tooling-reviewer.md` |
-| Divergent | inherit | `references/divergent-reviewer.md` |
+| Judgment | 1 | `references/judgment-reviewer.md` |
+| Tooling | 1 | `references/tooling-reviewer.md` |
+| Divergent | 1 | `references/divergent-reviewer.md` |
+| Skill walk | up to 3, the walk list split into batches | `references/skill-walk-reviewer.md` |
+| Escaped defects | 1 | `references/escaped-defect-reviewer.md` |
+| Opportunity | 1 | `references/opportunity-reviewer.md` |
 
-For a broad run reviewers read `corrections.md` and `dispatch.md`; for a focused run substitute the focused digest for `<DIGEST_PATH>` and pass scoped dispatch context. Open raw transcripts only around relevant leads and as needed to corroborate distinct sessions.
+The walk list is every Thoven skill that three or more sessions loaded:
 
-Done when all three have returned a numbered list. A reviewer may return no supported findings; do not force a retry. Pass focused scope and coverage limitations when applicable.
+```bash
+awk -F'\t' 'NR > 1 {n = $3; sub(/^\//, "", n); sub(/^[a-z0-9-]+:/, "", n); print n "\t" $2}' "$out/skills.tsv" \
+  | sort -u | cut -f1 | uniq -c | awk '$1 >= 3 {print $2}' \
+  | grep -Fx -f <(find ~/thoven/agent-skills/skills -name SKILL.md -exec dirname {} \; | xargs -n1 basename)
+```
+
+For a broad run reviewers read `corrections.md` and `dispatch.md`; for a focused run substitute the focused digest for `<DIGEST_PATH>`, pass scoped dispatch context, and walk only the target skill. Open raw transcripts only around relevant leads and as needed to corroborate distinct sessions.
+
+Done when every call has returned a numbered list and every skill on the walk list has a verdict. A reviewer may return no supported findings; do not force a retry. Pass focused scope and coverage limitations when applicable.
 
 ## 3. Synthesize
 
-One synthesis subagent call, model inherit: [`references/synthesizer.md`](references/synthesizer.md) with the three outputs inlined.
+One synthesis subagent call: [`references/synthesizer.md`](references/synthesizer.md) with every reviewer output inlined, each under its lens name.
 
-Done when every reviewer finding sits in exactly one of Accepted, Rejected or Backlog, and every Accepted row has a routing and a `seen` count. Carry focused scope and coverage limitations into synthesis.
+Done when every reviewer finding sits in exactly one of Accepted, Fix in this run, Ask or Rejected, every Accepted row has a routing and a `seen` count, and every Fix row names its test. Carry focused scope and coverage limitations into synthesis.
 
 ## 4. Approve
 
-Show the synthesizer's tables as they came back. Ask with the host's question tool (`AskUserQuestion` in Claude Code): apply all Accepted rows, apply named rows, or apply none. For named rows, Andres lists the row numbers in his free-text answer; the four-option limit holds no matter how many rows there are. He may reroute any row. Edits wait for his answer.
+Show the synthesizer's tables as they came back. Ask with the host's question tool (`AskUserQuestion` in Claude Code): apply all Accepted and Fix rows, apply named rows, or apply none. For named rows, Andres lists the row numbers in his free-text answer; the four-option limit holds no matter how many rows there are. Put each Ask item to him as its own question in the same round. He may reroute any row. Edits wait for his answer.
 
 ## 5. Apply
 
@@ -67,16 +78,19 @@ Work in `~/thoven/agent-skills`, one commit per run, as its README describes und
 | `tune description: <skill>` | Rewrite the description so it fires on the branch it missed. |
 | `law` | Edit `enforcement/rules/thoven-law.md`, then run `enforcement/sync.sh --apply`. Cross-repo rules only. |
 | `memory` | A Claude memory file: a fact about Andres or a live project. |
-| `linear` | A product or code defect, filed through the `workspace` skill. |
+| `fix: <path>` | A tooling defect from Fix in this run: fix the script, hook or config in the same commit, with a test that goes red on the defect and green after. |
+| `new skill: <name>` | Build the skill through `writing-for-agents` (and its `SKILL-MECHANICS.md`) under `skills/<area>/<name>/`, as the README's "Adding or changing a skill" describes. |
+| `split: <skill>` | Split the skill along the seam the proposal names through `writing-for-agents`; the old skill keeps a pointer to each part. |
+| `sub-issue: <THV-id>` | A product defect Andres approved from Ask: a sub-issue of the ticket it belongs to, filed through the `workspace` skill. |
 
-Every applied `pitfall:`, `step:` and `tune description:` row also gets a `learnings:` entry. The log keeps the history; Pitfalls keep the summary.
+Every applied `pitfall:`, `step:`, `tune description:` and `split:` row also gets a `learnings:` entry. The log keeps the history; Pitfalls keep the summary.
 
 **Entry shape.** The existing prose shape, plus one header line that the next run greps to count repeats:
 
 ```markdown
 ## 2026-10-20 — <the lesson in a phrase>
 
-> reflect · 2026-10-20 · <session id, first 8> · <correction | skill-gap | broken-rule | tooling | discovery | success> · <applied | backlog> · seen <n>
+> reflect · 2026-10-20 · <session id, first 8> · <correction | skill-gap | broken-rule | tooling | discovery | success> · <applied | asked> · seen <n>
 
 **What happened.** <the moment, with Andres's words>
 **Why.** <the cause>
@@ -85,9 +99,9 @@ Every applied `pitfall:`, `step:` and `tune description:` row also gets a `learn
 
 A lesson that already has an entry gets its `seen` raised and the new session id appended in place.
 
-Commit the exact paths and push. Then reinstall the touched skills with the README's install command, adding `--skill <name>` for each one.
+Before the commit, run `bash scripts/check-no-filing.sh`; a line it flags is rewritten to point at the law's "Own what you find" before you commit. Commit the exact paths and push. Then reinstall the touched skills with the README's install command, adding `--skill <name>` for each one.
 
-Done when the push has landed and every approved row is in its file.
+Done when `check-no-filing.sh` prints `ok`, the push has landed, every approved row is in its file, and every `fix:` row's test passes.
 
 ## 6. Record and report
 
@@ -101,5 +115,6 @@ Then a short list, no preamble:
 
 - Applied: `<path>`, what changed, one line each.
 - Lessons: diagnosis, chosen intervention or preservation, and corroborated `seen` count.
-- Backlog: Linear issue id, one line each.
+- Fixed: the tooling defect, its test and the pass line, one line each.
+- Asked: each Ask item and Andres's answer.
 - Dropped: one line per rejected finding and its reason.

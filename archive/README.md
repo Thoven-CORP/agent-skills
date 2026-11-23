@@ -10,6 +10,7 @@ Retired Thoven-custom skills. **History, not an install source.**
 | `investigate` (generic) | `/investigate-thoven` or `/diagnosing-bugs` |
 | `dev` (GSD conductor) | retired. Session plan is `/writing-plans`. Slices are `/to-tickets`. `app/dev/` proto routes are unrelated |
 | `session-memory` | `/workspace` Project-local log and continuation |
+| `future-improvements` | retired 2026-11-23: a found problem is fixed, a sub-issue, or a question to Andres (law, "Own what you find") |
 
 Do not move these folders back under `skills/dev/`. Do not rename `SKILL.md.archived` to `SKILL.md`. A merge from an old branch that restores a retired live `SKILL.md` will make `npx skills add --skill '*'` install it again for everyone.
 

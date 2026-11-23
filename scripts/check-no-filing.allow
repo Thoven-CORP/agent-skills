@@ -1,0 +1,7 @@
+# Sanctioned filing, one extended regex per line (matched case-insensitively against the hit line).
+# Law, "Own what you find": a standalone ticket is only an agreed deferral or tech debt outside the
+# feature, after Andres's yes.
+Andres('s)? yes|after his yes|waits for (Andres's|his) yes|once Andres says yes
+deferrals? Andres agreed|agreed deferral
+# An outreach follow-up is an email, not a ticket.
+outreach-followup

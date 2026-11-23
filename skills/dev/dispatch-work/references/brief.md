@@ -59,7 +59,8 @@ STATUS is DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT or BLOCKED. The body:
                  names, one row per difference left between the build and its frame, with its why
   Commits        SHAs and git diff --stat against base
   Rulings        what you decided that the ticket did not, and why
-  Noticed        one line per problem outside this ticket's code
+  Noticed        one line per problem outside this ticket's code, with file:line; main sorts
+                 each into fix now, ask or propose
 Then SendMessage to {{MAIN_SESSION}}: "STATUS THV-<id>: ONE LINE. Entry: ENTRY_PATH".
 Codex: post the entry only; main hears when you settle.
 End by printing the block in this pane.

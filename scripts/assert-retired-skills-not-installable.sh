@@ -17,6 +17,7 @@ must_not_exist=(
   "skills/dev/feature-orchestrator/SKILL.md"
   "skills/dev/design-workflow-outline/SKILL.md"
   "skills/dev/building-thoven-ui/SKILL.md"
+  "skills/dev/future-improvements/SKILL.md"
 )
 
 echo "assert-retired-skills-not-installable"

@@ -35,7 +35,7 @@ name.
 - **Critical:** data loss, security, a broken core flow.
 - **Important:** an exit line not true; a bug a user hits in the normal flow; a design difference
   built without a ruling; structural debt in code this work owns, such as a second copy of an
-  existing module or a replaced path still live (law, "Scope").
+  existing module or a replaced path still live (law, "Own what you find").
 - **Minor:** rare edge cases, test nits, style.
 
 ## Main's pass
@@ -96,16 +96,17 @@ Andres asks.
 - **Check first.** Main reads the builder's concerns, the review findings and Andres's notes as one
   set. The session holding the context makes each easy, cheap fix on the spot. Only real work left
   opens a pane.
-- **One fix round carries every critical and important finding left**, owned structural debt
+- **One fix round carries every finding left**, critical, important and minor, owned structural debt
   included: about five per pane, split by concern into panes whose files do not overlap. Each is a
   fresh pane with the fix-round brief (`brief.md`). The reviewer then reads the fix diff and its
   proofs. The ticket stays **In Review**.
 - **Gate repair, CI fixes and redesigns** go to Andres as one line with a choice.
+- **Each `Noticed` line,** main sorts into one of three (law, "Own what you find"): fix now, in the
+  fix round or as a sub-issue of the ticket; ask Andres through the question tool; or propose its
+  own spec or ADR.
 - **After the fix round,** main rules on each finding still open. Wrong or contestable: park it with
-  the reason in the Linear comment. Real: a `Follow-up` ticket. A critical one still
-  open goes to Andres as one line with a choice.
-- **Minor findings, and problems outside the work's code,** start no fix round. Each is its own
-  ticket (`SKILL.md` close step 6.2).
+  the reason in the Linear comment. Real: a sub-issue of the ticket, done before it closes. A
+  critical one still open goes to Andres as one line with a choice.
 
-**Done when:** the verifier replied VERIFIED, or every finding is fixed, parked or filed as a
-ticket, and the work-session page shows the outcome.
+**Done when:** the verifier replied VERIFIED, or every finding is fixed, parked, a sub-issue,
+asked or proposed, and the work-session page shows the outcome.

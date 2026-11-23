@@ -13,7 +13,7 @@ SKILL.md Step 1 decides when to ask. On a dispatched or release run, answer thes
 
 ## Modes
 
-**In development** (a branch, local, or staging before promote): diff-aware and wide. Map the diff to the pages it reaches (a route or controller to its paths, a component to the pages that render it, a model, service, job or mailer to the pages and emails that show its result), then hunt there and on the neighbouring pages: happy paths, the real-user take, the literal-user take, the dependency checks, and UI polish filed as `design`. A backend-only diff gets the browser on the pages that show its result.
+**In development** (a branch, local, or staging before promote): diff-aware and wide. Map the diff to the pages it reaches (a route or controller to its paths, a component to the pages that render it, a model, service, job or mailer to the pages and emails that show its result), then hunt there and on the neighbouring pages: the storylines that pass through them, the real-user take, the literal-user take, the dependency checks, and UI polish filed as `design`. A backend-only diff gets the browser on the pages that show its result.
 
 **Production** (after a promote, or a live report): a quick read-only smoke per user type. Their home, the top navigation targets and the changed pages, each checked for console errors, failed calls and broken links. Reads only, on accounts publish's gates leave alone.
 
@@ -53,7 +53,7 @@ Decide which layers the change **touches in the product**, which is not the same
 - **ID mismatch** — a newer request exists for the same slot; the stale notification must be non-actionable even though *a* pending request exists.
 - **Fetch failure** — the refetch throws (500/network); must land in an error state, never silently fall back to the raw payload.
 
-**Feature:** happy path through each part, plus the cross-part journeys (state that carries across logins). Then the takes and checks below. Depth follows what the change can break: a money, upload, job or email, migration or new-surface change gets all of them on staging; a UI or copy change or a hotfix gets one targeted take.
+**Feature:** each seat's storyline from `JOURNEYS.md` (`journey-map`), which carries the cross-part journeys (state that carries across logins). Then the takes and checks below. Depth follows what the change can break: a money, upload, job or email, migration or new-surface change gets all of them on staging; a UI or copy change or a hotfix gets one targeted take.
 
 **Real-user take.** Act like a person. Each product flow is one recorded take, and the reversible moves below happen inside it, the way people navigate; a destructive action or a different persona starts the next take. After each move, check what persisted:
 

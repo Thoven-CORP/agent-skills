@@ -11,15 +11,21 @@
 #   prompts.tsv   HUMAN-typed turns only, with provenance. Pass --include-subagents to keep
 #                 agent-authored dispatches too. The distinction matters; see NOISE below.
 #   tools.tsv     harness, session, tool name, call count
-#   skills.tsv    harness, session, skill or /slash invocation, count
+#   skills.tsv    harness, session, skill or /slash invocation, count, origin. A skill counts only when
+#                 it is loaded: a Skill call, a /slash command, a Read of its SKILL.md, the "Base directory
+#                 for this skill" message, a Codex <skill> injection or a Codex shell read (cat, sed, head,
+#                 nl) of its SKILL.md, in every origin (main, subagent, pane). An Edit, Write, rg or a
+#                 path inside REPL code or an Agent prompt only mentions it.
 #   repeats.tsv   runs of 3+ identical consecutive COMMANDS (not tool names). The loop signal.
 #   polling.tsv   per session, calls that only wait for something. Pure waste; see mine_claude.
 #   errors.tsv    failed tool results with the tool that failed
 #   tokens.tsv    per-session usage, deduped by message.id, with cache_read and cache_create split
-#   corrections.tsv  human turns that correct, re-explain or push back, from MAIN sessions only,
-#                 with the agent's text just before, the last skill loaded and the turn's source
-#                 (Claude Code's promptSource: typed, sdk, queued; "-" when absent). thoven-reflect reads
-#                 corrections.md, the same rows grouped by session with each transcript's path.
+#   corrections.tsv  turns that correct, re-explain or push back, with the agent's text just before,
+#                 the last skill loaded, the turn's source (Claude Code's promptSource: typed, sdk,
+#                 queued; "-" when absent), every skill the session had loaded by then, and the origin:
+#                 main (Andres in a main session), subagent (main writing to a Claude or Codex subagent)
+#                 or pane (main or Andres inside a dispatched pane). thoven-reflect reads corrections.md,
+#                 the same rows grouped by session with each transcript's path.
 #
 # Validation: on a 0.8GB / 232-session corpus this agreed with an independent reimplementation
 # to within 0.4% on human turns and 3% on token totals. Treat that agreement as weak evidence:
@@ -54,12 +60,12 @@ mkdir -p "$OUT"
 printf 'harness\tsession\tproject\tmtime\tbytes\tuser_turns\ttool_calls\terrors\n' >> "$OUT/index.tsv"
 printf 'harness\tsession\tturn\ttext\n'          >> "$OUT/prompts.tsv"
 printf 'harness\tsession\ttool\tcount\n'         >> "$OUT/tools.tsv"
-printf 'harness\tsession\tskill\tcount\n'        >> "$OUT/skills.tsv"
+printf 'harness\tsession\tskill\tcount\torigin\n' >> "$OUT/skills.tsv"
 printf 'harness\tsession\ttool\tconsecutive\n'   >> "$OUT/repeats.tsv"
 printf 'harness\tsession\ttool\tmessage\n'       >> "$OUT/errors.tsv"
 printf 'harness\tsession\tinput\toutput\tcache_read\tcache_create\n' >> "$OUT/tokens.tsv"
 printf 'harness\tsession\tpolling_calls\n'  >> "$OUT/polling.tsv"
-printf 'harness\tsession\tpath\tts\tlast_skill\tagent_before\ttext\tsource\n' >> "$OUT/corrections.tsv"
+printf 'harness\tsession\tpath\tts\tlast_skill\tagent_before\ttext\tsource\tskills\torigin\n' >> "$OUT/corrections.tsv"
 
 # A user turn is REAL only if a human typed it. Everything else arriving in the `user` slot is
 # machinery, and leaving it in is not a cosmetic problem: an unfiltered corpus attributes an
@@ -94,10 +100,14 @@ clean() { tr '\t\n\r' '   ' | sed 's/  */ /g' | cut -c1-2000; }
 
 # ---------------------------------------------------------------- Claude Code
 mine_claude() {
-  local f sid proj turns tools errs
+  local f sid proj turns tools errs origin
   while IFS= read -r f; do
     sid=$(basename "$f" .jsonl)
     proj=$(basename "$(dirname "$f")")
+    origin=main
+    [[ "$sid" =~ $AUTHOR_FILTER || "$f" == */subagents/* ]] && origin=subagent
+    claude_turns "$sid" "$f" > "$OUT/.turns"
+    origin=$(session_origin "$origin" < "$OUT/.turns")
 
     # Real user turns: role=user, content is a string or carries a text block, and no tool_result.
     jq -r --arg h claude --arg s "$sid" '
@@ -132,14 +142,25 @@ mine_claude() {
       $4 ~ /(sleep |herdr agent wait|until \[|tail -c|\.output|&& echo READY|wait_agent)/ {n++}
       END {if (n>0) print h"\t"s"\t"n}' "$OUT/.tc" >> "$OUT/polling.tsv"
 
-    # Skill invocations, from the Skill tool and from /slash commands in user turns.
-    jq -r --arg h claude --arg s "$sid" '
-      select(.type=="assistant") | .message.content[]? | select(.type=="tool_use" and .name=="Skill")
-      | [$h, $s, (.input.skill // "?")] | @tsv' "$f" 2>/dev/null >> "$OUT/.sk"
-    jq -r --arg h claude --arg s "$sid" '
-      select(.type=="user") | (.message.content | if type=="string" then . else "" end)
-      | capture("<command-name>(?<c>[^<]+)</command-name>")? | select(.!=null)
-      | [$h, $s, ("/" + (.c|ltrimstr("/")))] | @tsv' "$f" 2>/dev/null >> "$OUT/.sk"
+    # Skill loads: the Skill tool, /slash commands, a Read of a SKILL.md, and a "Base directory for this
+    # skill" message that no Skill call or slash command just produced (that one is their echo).
+    jq -rn --arg h claude --arg s "$sid" --arg o "$origin" "$SKILL_JQ"'
+      foreach inputs as $e ({pending: [], out: []};
+        .out = []
+        | if $e.type == "assistant" then
+            reduce ($e.message.content[]? | select(.type == "tool_use")) as $c (.;
+              if $c.name == "Skill" then .out += [$c.input.skill // "?"] | .pending += [($c.input.skill // "") | split(":") | last]
+              elif $c.name == "Read" then read_skill($c.input.file_path) as $n | (if $n == "" then . else .out += [$n] end)
+              else . end)
+          elif $e.type == "user" and $e.isMeta == true then
+            meta_skill($e) as $n
+            | if $n == "" then . elif any(.pending[]; . == $n) then .pending -= [$n] else .out += [$n] end
+          elif $e.type == "user" and ($e.message.content | type) == "string" then
+            ((($e.message.content | capture("<command-name>(?<c>[^<]+)</command-name>")? | .c) // "") | ltrimstr("/")) as $c
+            | if $c == "" then . else .out += ["/" + $c] | .pending += [$c | split(":") | last] end
+          else . end;
+        .out[])
+      | [$h, $s, ., $o] | @tsv' "$f" 2>/dev/null >> "$OUT/.sk"
 
     jq -r --arg h claude --arg s "$sid" '
       select(.type=="user") | .message.content[]? | select(.type=="tool_result" and .is_error==true)
@@ -169,7 +190,7 @@ mine_claude() {
       "$turns" "$tools" "$errs" >> "$OUT/index.tsv"
 
     consecutive_repeats claude "$sid" < "$OUT/.tc"
-    [[ "$sid" =~ $AUTHOR_FILTER ]] || claude_turns "$sid" "$f" | flag_corrections claude
+    flag_corrections claude "$origin" < "$OUT/.turns"
     cut -f1-3 "$OUT/.tc" | sort | uniq -c | awk '{print $2"\t"$3"\t"$4"\t"$1}' >> "$OUT/tools.tsv"
   done < <(find ~/.claude/projects -name '*.jsonl' -type f -newermt "$SINCE" 2>/dev/null)
 }
@@ -185,7 +206,7 @@ mine_cursor() {
       | awk -F"\t" -v noise="$NOISE" -v author="$AUTHOR_FILTER" -v inc="$INCLUDE_SUBAGENTS" '$3 !~ noise && (inc==1 || $2 !~ author) {print $1"\t"$2"\t"NR"\t"$3}' \
       | cut -c1-2000 >> "$OUT/prompts.tsv"
     jq -r --arg h cursor --arg s "$sid" '.[]? | select(type=="string") | select(startswith("/"))
-      | [$h,$s,(split(" ")[0])] | @tsv' "$p" 2>/dev/null >> "$OUT/.sk"
+      | [$h,$s,(split(" ")[0]),"main"] | @tsv' "$p" 2>/dev/null >> "$OUT/.sk"
     n=$(jq -r 'length' "$p" 2>/dev/null || echo 0)
     printf 'cursor\t%s\t%s\t%s\t%s\t%s\t-\t-\n' \
       "$sid" "$(basename "$(dirname "$(dirname "$p")")")" \
@@ -195,17 +216,34 @@ mine_cursor() {
 
 # ----------------------------------------------------------------------- Codex
 mine_codex() {
-  local f sid turns tools
+  local f sid turns tools origin
   while IFS= read -r f; do
     sid=$(basename "$f" .jsonl | sed 's/^rollout-//')
+    # A Codex subagent is its own rollout file; its session_meta names the thread that spawned it.
+    origin=$(jq -r 'select(.type=="session_meta")
+      | if (.payload.thread_source == "subagent" or ((.payload.source | type) == "object" and .payload.source.subagent != null))
+        then "subagent" else "main" end' "$f" 2>/dev/null | head -1)
+    codex_turns "$sid" "$f" > "$OUT/.turns"
+    origin=$(session_origin "${origin:-main}" < "$OUT/.turns")
 
-    jq -r --arg h codex --arg s "$sid" '
+    # A subagent's user turns are its parent's prompts, so they stay out of the human corpus.
+    [[ "$origin" == subagent && "$INCLUDE_SUBAGENTS" == 0 ]] || jq -r --arg h codex --arg s "$sid" '
       select(.type=="response_item" and .payload.type=="message" and .payload.role=="user")
       | .payload.content[]? | select(.type=="input_text") | .text
       | select(. != null and . != "")
       | [$h,$s,.] | @tsv' "$f" 2>/dev/null \
       | awk -F"\t" -v noise="$NOISE" -v author="$AUTHOR_FILTER" -v inc="$INCLUDE_SUBAGENTS" '$3 !~ noise && (inc==1 || $2 !~ author) {print $1"\t"$2"\t"NR"\t"$3}' \
       | cut -c1-2000 >> "$OUT/prompts.tsv"
+
+    # Codex skill use: the <skill> body it injects as a user turn, and shell reads of a SKILL.md.
+    jq -r --arg h codex --arg s "$sid" --arg o "$origin" "$SKILL_JQ"'
+      (.payload // {}) as $q
+      | if ($q.type == "message" and $q.role == "user") then
+          ($q.content[]? | (.text? // "") | capture("^<skill>\\s*<name>(?<n>[^<]+)</name>")? | .n)
+        elif ($q.type == "function_call" or $q.type == "custom_tool_call") then
+          shell_read($q.arguments // $q.input // "")[]
+        else empty end
+      | [$h, $s, ., $o] | @tsv' "$f" 2>/dev/null >> "$OUT/.sk"
 
     jq -r --arg h codex --arg s "$sid" '
       select(.payload.type=="custom_tool_call" or .payload.type=="function_call")
@@ -226,70 +264,99 @@ mine_codex() {
       "$(stat -f '%Sm' -t '%Y-%m-%d %H:%M' "$f")" "$(stat -f '%z' "$f")" "$turns" "$tools" >> "$OUT/index.tsv"
 
     consecutive_repeats codex "$sid" < "$OUT/.tc"
-    codex_turns "$sid" "$f" | flag_corrections codex
+    flag_corrections codex "$origin" < "$OUT/.turns"
     cut -f1-3 "$OUT/.tc" | sort | uniq -c | awk '{print $2"\t"$3"\t"$4"\t"$1}' >> "$OUT/tools.tsv"
   done < <(find ~/.codex/sessions -name '*.jsonl' -type f -newermt "$SINCE" 2>/dev/null)
 }
 
-# Corrections are the thoven-reflect signal: a human turn that pushes back on what the agent just
-# did. Each row keeps the agent's text before it and the last skill loaded, because a correction
-# without its trigger cannot be routed to a skill. Main sessions only: subagents never reach here
-# (AUTHOR_FILTER), and a session whose first real turn is a pane brief is dropped whole, since its
-# "human" turns are main relaying to a pane. A bare "try again" is a retry, not a lesson. Only the
-# human's own words count: a pasted pane report inside <pasted_content> is transport (class 8), and
-# so is a herdr relay. A message re-sent word for word counts once. BRIEF's last two phrases are the
-# dispatch-work v2 brief's opening lines, which survive filling its {{fields}}. A prompt Andres only
-# accepted from Claude Code's suggestion chip (promptSource suggestion_accepted) is the agent's own
-# words, and a compaction preamble is the harness's, so both are dropped by source. The Claude Desktop
+# Corrections are the thoven-reflect signal: a turn that pushes back on what the agent just did. Each
+# row keeps the agent's text before it, the last skill loaded and every skill loaded so far, because a
+# correction without its trigger cannot be routed to a skill. Rows carry their origin. In a main session
+# the human is Andres. A subagent's turns are main writing to it, and a pane's turns are main relaying or
+# Andres typing into it; for both, the first turn is the brief and is skipped, and the sender label or
+# <teammate-message> wrapper is stripped. A bare "try again" is a retry, not a lesson. Only the
+# speaker's own words count: a pasted pane report inside <pasted_content> is transport (class 8), and in a
+# main session so is a herdr relay. A message re-sent word for word counts once. BRIEF's last two phrases
+# are the dispatch-work v2 brief's opening lines, which survive filling its {{fields}}. A prompt Andres only
+# accepted from Claude Code's suggestion chip (promptSource suggestion_accepted) is the agent's own words,
+# and a compaction preamble is the harness's, so both are dropped by source. The Claude Desktop
 # artifact-view wrapper is stripped rather than dropped: Andres's typed message follows it in the same turn.
 CORRECTION='(i told you|i said|i already|we already|already (told|said|decided|did)|as i (said|mentioned)|again|remember|forgot|we (talked|discussed|decided|agreed)|last time|how many times|you keep|keep (doing|asking)|stop (doing|asking)|not what i|wrong|why did you|i never said|settled|stale|re-?ask|same (mistake|thing)|confused|lost|instead of)'
 BRIEF='(DONE WHEN|REPORT TO|Writes to:|EXIT CRITERIA|Exit criteria|## Brief|herdr pane|Main is the Claude session|Read it in full first\. It holds the ticket)'
 # herdr relays: main's prompt inside a pane session, or a pane's report typed into main. Each opens
 # with a sender label ("Main:", "THV-1303 from main:", "F3 restore:", "Lock released:", "PR 319 run").
 RELAY='^(MAIN|Main|main|THV-[0-9]+[^:]{0,30}|F[0-9]+[^:]{0,24}|Lock released|PR [0-9]+ run[^:]{0,30}):'
+# The speaker's own words in a turn (field 6): pasted blocks and the artifact-view wrapper removed.
+OWN_AWK='{ own = $6; gsub(/<pasted_content[^>]*>.*<\/pasted_content[^>]*>/, "", own)
+  gsub(/<artifact-view-context[^>]*>.*<\/artifact-view-context>/, "", own); sub(/^(\\n|[ \t])+/, "", own) }'
 
-
-flag_corrections() {
-  awk -F'\t' -v OFS='\t' -v h="$1" -v since="$SINCE" -v noise="$NOISE" -v corr="(^|[^a-z])$CORRECTION([^a-z]|$)" -v brief="$BRIEF" -v relay="$RELAY" '
-    { own = $6; gsub(/<pasted_content[^>]*>.*<\/pasted_content[^>]*>/, "", own)
-      gsub(/<artifact-view-context[^>]*>.*<\/artifact-view-context>/, "", own); sub(/^(\\n|[ \t])+/, "", own) }
+# Prints main, subagent or pane for one session's turns. A main session whose first real turn is a
+# long dispatch brief is a pane.
+session_origin() {
+  awk -F'\t' -v base="$1" -v noise="$NOISE" -v brief="$BRIEF" -v relay="$RELAY" '
+    base != "main" {exit}
     $7 == "suggestion_accepted" || $7 == "compaction" {next}
-    own ~ noise || own ~ relay || own == "" || said[own]++ {next}
-    !seen++ && length($6) > 1500 && $6 ~ brief {exit}
-    $3 >= since && tolower(own) ~ corr && split(own, w, " ") > 3 {$6 = own; print h"\t"$0}' >> "$OUT/corrections.tsv"
+    '"$OWN_AWK"'
+    own ~ noise || own ~ relay || own == "" {next}
+    {if (length($6) > 1500 && $6 ~ brief) base = "pane"; exit}
+    END {print base}'
 }
 
+flag_corrections() {
+  awk -F'\t' -v OFS='\t' -v h="$1" -v o="$2" -v since="$SINCE" -v noise="$NOISE" -v corr="(^|[^a-z])$CORRECTION([^a-z]|$)" -v relay="$RELAY" '
+    '"$OWN_AWK"'
+    o != "main" { sub(/^<teammate-message[^>]*>(\\n|[ \t])*/, "", own); sub(/(\\n|[ \t])*<\/teammate-message>(\\n|[ \t])*$/, "", own)
+                  if (sub(relay, "", own)) sub(/^(\\n|[ \t])+/, "", own) }
+    $7 == "suggestion_accepted" || $7 == "compaction" {next}
+    own ~ noise || own ~ relay || own == "" || said[own]++ {next}
+    o != "main" && !seen++ {next}
+    $3 >= since && tolower(own) ~ corr && split(own, w, " ") > 3 {$6 = own; $9 = o; print h"\t"$0}' >> "$OUT/corrections.tsv"
+}
+
+# Shared by the skill readers: what counts as loading a skill, and adding one to the running set.
+# Only a read loads a skill; an edit, a search or a path quoted in a prompt or REPL code mentions it.
+SKILL_JQ='def read_skill($p): (($p // "") | tostring | capture("(?<n>[A-Za-z0-9._-]+)/SKILL\\.md$")? | .n) // "";
+  def shell_read($t): [$t | tostring
+    | scan("(?:^|[\\s\"\u0027])(?:cat|head|nl|sed)(?:\\s+-[a-z]+(?:\\s*[0-9,]+p?)?|\\s+\u0027[0-9,]+p\u0027)*\\s+[\"\u0027]?[^\\s\"\u0027]*/([A-Za-z0-9._-]+)/SKILL\\.md")
+    | .[0]] | unique;
+  def meta_skill($e): (($e.message.content | if type == "string" then . else ([.[]? | select(.type == "text") | .text] | join(" ")) end)
+    | capture("^Base directory for this skill: [^\n]*/(?<n>[^/\n]+)")? | .n) // "";
+  def loaded($n): if ($n // "") == "" then . else .skill = $n | (if any(.skills[]; . == $n) then . else .skills += [$n] end) end;'
+
 claude_turns() {
-  jq -rn --arg s "$1" --arg p "$2" '
-    foreach inputs as $e ({skill: "", before: "", out: null};
+  jq -rn --arg s "$1" --arg p "$2" "$SKILL_JQ"'
+    foreach inputs as $e ({skill: "", skills: [], before: "", out: null};
       .out = null
       | if $e.type == "assistant" then
           reduce ($e.message.content[]?) as $c (.;
             if $c.type == "text" then .before = $c.text
-            elif $c.type == "tool_use" and $c.name == "Skill" then .skill = (($c.input.skill // "") | split(":") | last)
-            elif $c.type == "tool_use" and (($c.input.file_path // "") | test("/SKILL\\.md$"))
-              then .skill = ($c.input.file_path | capture("(?<n>[^/]+)/SKILL\\.md$").n)
+            elif $c.type == "tool_use" and $c.name == "Skill" then loaded(($c.input.skill // "") | split(":") | last)
+            elif $c.type == "tool_use" and $c.name == "Read" then loaded(read_skill($c.input.file_path))
             else . end)
-        elif $e.type == "user" and ($e.message.content | type) == "string" and ($e.isMeta | not) then
+        elif $e.type == "user" and $e.isMeta == true then loaded(meta_skill($e))
+        elif $e.type == "user" and ($e.message.content | type) == "string" then
           .out = [$s, $p, (($e.timestamp // "")[0:16]), .skill, (.before | .[-300:]), $e.message.content,
-                  (if $e.isCompactSummary then "compaction" else ($e.promptSource // "-") end)]
+                  (if $e.isCompactSummary then "compaction" else ($e.promptSource // "-") end), (.skills | join(","))]
         else . end;
       .out // empty) | @tsv' "$2" 2>/dev/null
 }
 
 codex_turns() {
-  jq -rn --arg s "$1" --arg p "$2" '
-    foreach inputs as $e ({skill: "", before: "", out: null};
+  jq -rn --arg s "$1" --arg p "$2" "$SKILL_JQ"'
+    foreach inputs as $e ({skill: "", skills: [], before: "", out: null};
       .out = null
       | ($e.payload // {}) as $q
       | if ($q.type == "function_call" or $q.type == "custom_tool_call") then
-          ((($q.arguments // $q.input // "") | tostring | (capture("(?<n>[A-Za-z0-9._-]+)/SKILL\\.md")? | .n)) // null) as $n
-          | if $n then .skill = $n else . end
+          reduce shell_read($q.arguments // $q.input // "")[] as $n (.; loaded($n))
         elif $q.type == "message" and $q.role == "assistant" then
           .before = ([$q.content[]? | .text? // empty] | join(" "))
         elif $q.type == "message" and $q.role == "user" then
-          .out = [$s, $p, (($e.timestamp // "")[0:16]), .skill, (.before | .[-300:]),
-                  ([$q.content[]? | .text? // empty] | join(" ")), "-"]
+          [$q.content[]? | .text? // empty] as $texts
+          | reduce ($texts[] | capture("^<skill>\\s*<name>(?<n>[^<]+)</name>") | .n) as $n (.; loaded($n))
+          | ([$texts[] | select(startswith("<skill>") | not)] | join(" ")) as $t
+          | if $t == "" then . else
+              .out = [$s, $p, (($e.timestamp // "")[0:16]), .skill, (.before | .[-300:]), $t, "-", (.skills | join(","))]
+            end
         else . end;
       .out // empty) | @tsv' "$2" 2>/dev/null
 }
@@ -298,8 +365,9 @@ corrections_md() {
   # The same opening words in several sessions are main forwarding a ruling to its panes: keep the first.
   awk -F'\t' 'NR == 1 || !said[substr($7, 1, 160)]++' "$OUT/corrections.tsv" > "$OUT/.corr" && mv "$OUT/.corr" "$OUT/corrections.tsv"
   awk -F'\t' 'NR > 1 {
-      if ($3 != path) { path = $3; printf "\n## %s · %s · %s\n\n", $1, $4, $3 }
-      printf "- **%s** (last skill loaded: %s)\n  - Agent before: %s\n  - Andres: %s\n", $4, ($5 == "" ? "none" : $5), $6, $7
+      if ($3 != path) { path = $3; printf "\n## %s · %s · %s · %s\n\n", $1, $10, $4, $3 }
+      who = ($10 == "subagent" ? "Main" : ($10 == "pane" ? "Main or Andres" : "Andres"))
+      printf "- **%s** (last skill loaded: %s; skills loaded: %s)\n  - Agent before: %s\n  - %s: %s\n", $4, ($5 == "" ? "none" : $5), ($9 == "" ? "none" : $9), $6, who, $7
     }' "$OUT/corrections.tsv" > "$OUT/corrections.md"
 }
 
@@ -321,9 +389,9 @@ case "$HARNESS" in
 esac
 
 if [[ -f "$OUT/.sk" ]]; then
-  sort "$OUT/.sk" | uniq -c | sort -rn | awk '{print $2"\t"$3"\t"$4"\t"$1}' >> "$OUT/skills.tsv"
+  sort "$OUT/.sk" | uniq -c | sort -rn | awk '{print $2"\t"$3"\t"$4"\t"$1"\t"$5}' >> "$OUT/skills.tsv"
 fi
-rm -f "$OUT/.tc" "$OUT/.sk"
+rm -f "$OUT/.tc" "$OUT/.sk" "$OUT/.turns"
 corrections_md
 
 echo "wrote $OUT"

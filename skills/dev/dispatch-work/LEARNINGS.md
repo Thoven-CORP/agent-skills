@@ -5,6 +5,16 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-23 — minor findings join the fix round; Noticed lines are sorted, not filed
+
+> reflect · 2026-11-23 · e2ee8938 · broken-rule · applied · seen 1
+
+**What happened.** On 2026-11-23 Andres ruled "Own what you find" (Spec S19, S31, S32): "things that are like fixes and things that are found during review need to be either added as a sub-issue and worked on or just fixed". A sweep found about twenty skill lines that still taught filing instead. Here: close step 2 and review.md turned every minor finding and `Noticed` line into its own ticket with no fix round.
+**Why.** The close step ran after the merge, so filing was the only move left.
+**What changed.** review.md "Handling findings": one fix round carries minor findings too, main sorts each `Noticed` line into fix now, ask or propose, and a real finding left after the round is a sub-issue. Close step 2 reads those sub-issues back. brief.md's Noticed field says main sorts it. A new Pitfall points at review.md.
+
+---
+
 ## 2026-11-23 — the tick stops false and repeated alerts
 
 > reflect · 2026-11-23 · tick.log 2026-11-05..23 · broken-rule · applied · seen 1

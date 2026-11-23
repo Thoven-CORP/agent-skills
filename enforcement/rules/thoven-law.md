@@ -106,12 +106,16 @@ a `DATABASE_URL` that names the shared `thoven_development`, and creates `thoven
 branch adds a migration. Every backend command, `git commit` included, names the pane's own local
 database: export `DATABASE_URL` and `TEST_DATABASE_URL` in the same line.
 
-**Scope.** Make the surgical edit the ticket asks for. Debt, bugs and smells in code the ticket or
-feature owns are fixed on its branch in the same round, never filed as a follow-up instead (Andres,
-2026-11-23: "Stop adding tickets when I clearly say its a fix, that needs to be built default to
-action rather than secretly adding followup"). A `Follow-up` ticket in the same Project holds only
-work Andres names for later; a problem outside that code is a `Tech debt` ticket in the inbox
-(`workspace` `WORKFLOW.md`, "Follow-ups"). A product call goes to Andres as a question. Work bigger than the brief stops and reports back.
+**Own what you find.** Keep the diff lazy and the finish thorough. Make the surgical edit the
+ticket asks for, then own every problem found in or touching that work: design-system drift,
+spacing, hairlines, mobile clamping, DOM issues and a spec gone red while finishing are fixed on its
+branch in the same round (a cheap flaky test that asserts nothing is deleted). Andres, 2026-11-23:
+"part of completing a feature is fixing this test". An edge case real users will plausibly hit, and
+any product call, goes to Andres as a question. An architecture change that widens the blast radius
+is proposed as its own spec or ADR. Work bigger than the brief stops and reports back. A fix too big
+for one round is a sub-issue of its ticket, done before the parent closes. A standalone ticket holds
+only new scope, an agreed deferral or tech debt outside the feature, filed after his yes; `Follow-up`
+marks only an agreed deferral, because a quiet follow-up never closes.
 Done means a user can reach it: a module with no call site is not built. Before scoping a ticket or
 fix for a data defect, name one real record (environment, id) that shows it; a critique line, ledger
 row or fixture repeating the claim is not evidence.

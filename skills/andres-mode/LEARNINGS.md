@@ -5,6 +5,16 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-23 — a found defect is fixed, not filed
+
+> reflect · 2026-11-23 · e2ee8938 · broken-rule · applied · seen 2
+
+**What happened.** Andres ruled that fixes and review findings "need to be either added as a sub-issue and worked on or just fixed", and that agents should stop adding tickets for a fix (e2ee8938; the law's 11-23 Scope quote).
+**Why.** Two lines here sent found problems to Linear: "Hold his scope" said "file the rest in Linear", and the correction rule gave "an adjacent defect … one sentence and a Linear line", with no test for whether the defect sat in the ticket.
+**What changed.** The rule now lives in the law, "Own what you find", which replaced its "Scope" paragraph. "Hold his scope" now fixes defects inside the ticket and keeps the severity menu only for findings outside it; it supersedes today's "audit findings are candidates, not the scope" entry, which added "file the rest in Linear". The adjacent-defect sentence points at the law; removed: "gets one sentence and a Linear line".
+
+---
+
 ## 2026-11-23 — Mermaid lives in files; chat uses native visuals or ASCII
 
 > reflect · 2026-11-23 · dda79c0e · correction · applied · seen 2

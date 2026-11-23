@@ -5,6 +5,16 @@ editing SKILL.md.** New entries go on top. Keep each one to: what happened, why,
 
 ---
 
+## 2026-11-23 — a found problem is fixed or a sub-issue, not a Follow-up
+
+> reflect · 2026-11-23 · e2ee8938 · broken-rule · applied · seen 1
+
+**What happened.** On 2026-11-23 Andres ruled "Own what you find" (Spec S19, S31, S32): "things that are like fixes and things that are found during review need to be either added as a sub-issue and worked on or just fixed". A sweep found about twenty skill lines that still taught filing instead. Here: the Pitfalls line "File a finding as its own `Follow-up` or `Tech debt` ticket" and WORKFLOW.md "Follow-ups", which had builders file each problem a round left.
+**Why.** The labels were written as the home for every finding, so a quiet follow-up never closed.
+**What changed.** The Pitfall and WORKFLOW.md "Follow-ups" now fix a finding in its round or make it a sub-issue; `Follow-up` marks only a deferral Andres agreed and `Tech debt` only a problem outside the feature, after his yes. The DEFERRING line and the description's "follow-ups list to file" trigger changed with them.
+
+---
+
 ## 2026-11-23 — a design pick lives in its frame, not the Spec
 
 > reflect · 2026-11-23 · ff695349 · broken-rule · applied · seen 1

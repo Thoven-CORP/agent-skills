@@ -120,10 +120,6 @@
         "skillPath": "skills/dev/frontend-handover/SKILL.md"
       },
       {
-        "name": "future-improvements",
-        "skillPath": "skills/dev/future-improvements/SKILL.md"
-      },
-      {
         "name": "geo-audit",
         "skillPath": "skills/dev/geo-audit/SKILL.md"
       },
@@ -601,12 +597,6 @@
           "skillPath": "skills/dev/frontend-handover/SKILL.md",
           "installedFolderPresent": true,
           "installedFolderHash": "59bea032ee46c5f5773b0b32524bf0e05389ae85"
-        },
-        {
-          "name": "future-improvements",
-          "skillPath": "skills/dev/future-improvements/SKILL.md",
-          "installedFolderPresent": true,
-          "installedFolderHash": "e1156a8c5856ceab5f167a653c8e9dc2373c4163"
         },
         {
           "name": "goal-creator",

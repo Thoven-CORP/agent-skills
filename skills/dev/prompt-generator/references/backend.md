@@ -120,8 +120,8 @@ After classification, identify which existing skills AND agents the generated pr
 |---|---|---|---|
 | Implementation | `/grill-with-docs` (if Heavy tier), `/production-data-audit` (if touching existing models) | `/verify` (always), `/publish` (if deploying) | `/safe-migrate` (if migration needed), `/email` (if mailer work), `/security-review` (if touches auth/payments/student data) |
 | Architecture | `/grill-with-docs` → `/architect` (always — design before build) | `/verify` (validate design meets requirements) | `/security-review` (if COPPA/auth/payment implications) |
-| Research | — | `/future-improvements` (to log deferred ideas found during research) | `/tech-debt` (if research reveals existing debt) |
-| Audit | `/production-data-audit` (audit real data first) | `/tech-debt` (to log findings), `/manage-todos` (to track remediation) | `/security-review` (if security audit), `/investigate-thoven` (if audit reveals bugs) |
+| Research | — | — | Thoven law's "Own what you find" (if research reveals existing debt) |
+| Audit | `/production-data-audit` (audit real data first) | Thoven law's "Own what you find": fix each finding in the round, or make it a sub-issue of its ticket | `/security-review` (if security audit), `/investigate-thoven` (if audit reveals bugs) |
 | PRD/Spec | `/grill-with-docs` (validate design before specifying) | `/feature-ledger` (break spec into executable tasks) | — |
 | Testing | `/production-data-audit` (understand real data shapes) | `/verify` (confirm tests actually pass) | — |
 | Migration | `/safe-migrate` (always — pre-flight safety checks) | `/verify` (confirm migration succeeded in both envs), `/publish` (if deploying) | — |

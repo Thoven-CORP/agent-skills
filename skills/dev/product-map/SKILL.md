@@ -26,8 +26,9 @@ being mapped), with its paired backend checkout beside it as `../backend` or nam
    `bash scripts/product-map/refresh.sh --fetch <audience> [lane,lane]` (the same lanes).
    Done when it prints the `shots:` line. Each
    `STEP FAILED` line has a failure shot in `~/.cache/thoven-product-map/<audience>/failures/`;
-   read the shot, and fix the journey script when the selector is ours, or record the product
-   defect as a Noticed line when the app is wrong. Never fix product code from this skill.
+   read the shot, and fix the journey script when the selector is ours. When the app is wrong,
+   bring the defect to Andres with its failure shot, as a question or a proposed fix (law, "Own
+   what you find"). This skill edits journey scripts and the map; product code changes elsewhere.
 2. **Open Paper.** The Paper desktop app must be open. Load the Paper tools and read
    `get_guide paper-mcp-instructions` once per session. Touch only the Thoven Product Map file.
    One writer at a time: if another session is writing to it, wait.

@@ -5,6 +5,16 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-23 — an audit deletes the dead code it finds
+
+> reflect · 2026-11-23 · e2ee8938 · broken-rule · applied · seen 1
+
+**What happened.** On 2026-11-23 Andres ruled "Own what you find" (Spec S19, S31, S32): "things that are like fixes and things that are found during review need to be either added as a sub-issue and worked on or just fixed". A sweep found about twenty skill lines that still taught filing instead. Here: "Audits edit tests only" listed dead production code and test-only seams as named follow-ups; CAMPAIGN.md did the same for seams and unrelated product discrepancies.
+**Why.** The 2026-10-01 rule kept audits out of production code, and its escape hatch was a follow-up list nobody worked.
+**What changed.** Edit shape: dead production code whose only callers are tests, and test-only seams, are deleted in the batch that unlocks them (S32); any other production change waits for Andres's yes. Handoff reports deletions and questions instead of follow-ups. CAMPAIGN.md cutover and product-defect lines point at the same rule. This narrows the 2026-10-01 entry.
+
+---
+
 ## 2026-10-01 — A test audit changes tests only
 
 > reflect · 2026-10-01 · memory:feedback_test_audit_means_tests_only · correction · applied · seen 1

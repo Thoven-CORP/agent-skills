@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-23 — Walk every seat the spec names, and route findings under Own what you find
+
+> reflect · 2026-11-23 · e2ee8938 · skill-gap · applied · seen 1
+
+**What happened.** THV-2003: the first adult to sign up as "Myself" after the Music Passport launch got the kid onboarding in production on Nov 20. qa-flow first ran on the Passport on Nov 21, after the fix, and no run had walked the adult seat. On 2026-11-23 Andres ruled that a found problem is fixed in the round, asked, or proposed (Spec S19, S32), and that qa-flow runs journey-map first (S34).
+**Why.** Step 2 let the tester pick happy paths from the diff, so a seat the diff never named went unwalked. Step 4, its maintenance line and execute-and-evaluate's "Log follow-ups" sent findings to `future-improvements`, `TECH_DEBT.md` or a ticket, where a quiet follow-up never closes.
+**What changed.** Step 1 runs `journey-map` first, and its `JOURNEYS.md` sets the flows and criteria; Step 2's What to test, phases 0 and 2, framing.md's Feature and development hunt read the storylines; Step 4's Done-when needs every seat walked or `blocked`. "Log follow-ups", the maintenance follow-up and "explained or filed" now route under Thoven law's **Own what you find**, and the map or control is fixed in the run.
+
 ## 2026-11-09 — writing-for-agents pass over the day's edits
 
 > session · 2026-11-09 · 96e39a9f · discovery · applied · seen 1

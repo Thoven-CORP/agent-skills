@@ -119,7 +119,7 @@ If nothing is wrong, the row says so. An empty row means you did not look.
 
 ## 5. REQUIRED: a network and performance row in every verdict table
 
-**Network first.** Every failed request, 4xx or 5xx, and console error from the flow's agent-browser log (`execute-and-evaluate.md`, "Evidence, not vibes") is explained or filed, and each write shows one POST per user intent. Then performance. You are already in the page with the network tab
+**Network first.** Every failed request, 4xx or 5xx, and console error from the flow's agent-browser log (`execute-and-evaluate.md`, "Evidence, not vibes") is explained or routed under Thoven law's **Own what you find**, and each write shows one POST per user intent. Then performance. You are already in the page with the network tab
 open; the marginal cost is close to zero and it catches things static analysis cannot.
 
 Use the Resource Timing API rather than eyeballing a waterfall:

@@ -69,7 +69,6 @@ When two rows match equally, ask one question.
 | Mailers, templates, delivery | `/thoven-email-system` |
 | Write or rewrite the copy in an email | `/email-writing` |
 | A new endpoint or contract for the frontend | `/frontend-handover` |
-| Defer an improvement rather than build it now | `/future-improvements` |
 | Docs have drifted from the code | `/doc-freshness` |
 
 ### Before review

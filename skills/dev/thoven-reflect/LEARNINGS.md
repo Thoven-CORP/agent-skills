@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-23 — review every skill in use, not only the last one loaded before a correction
+
+> reflect · 2026-11-23 · e2ee8938 · skill-gap · applied · seen 1
+
+**What happened.** Andres asked why reflect covers so few skills and ruled "the scope needs to be increased" (Spec S27, S28, S33). In one window andres-mode took 54 of 189 correction rows while thoven-art, qa-flow and the research skills took none. THV-2003, an adult signup that got the kid flow, reached production and never became a row, and reflect filed what it did not apply into a Backlog that nobody closed.
+**Why.** Each row credited only the last skill loaded. The miner dropped subagent transcripts and whole pane sessions, and recorded no Codex skill use. Reviewers read only corrections, so a skill nobody corrected and a bug a user found were invisible, and no lens proposed a new or split skill.
+**What changed.** The miner tags each row by origin (main, subagent, pane), credits every skill the session loaded, mines subagents and panes past their brief, and records Codex skill use in `skills.tsv`; Codex subagent prompts leave the human corpus. Three lenses join: a skill walk for each Thoven skill loaded in three or more sessions, escaped defects from the window's bug tickets, and opportunity proposals (new, split, umbrella, rework). Reviewers check git history before a finding counts. The synthesis has Accepted, Fix in this run, Ask and Rejected, with no Backlog; step 5 routes `fix:`, `new skill:`, `split:` and `sub-issue:`.
+
 ## 2026-11-23 — count only what Andres typed, not what he accepted or the harness wrapped
 
 **What happened.** `corrections.tsv` counted a CI-monitor auto-fix event and a Codex `<codex_internal_context source="goal">` continuation as Andres's corrections, and could count prompts he only accepted from Claude Code's suggestion chip and Claude Desktop's `<artifact-view-context>` board wrapper, whose boilerplate says "read it again".

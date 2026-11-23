@@ -1,0 +1,23 @@
+{
+  "note": "Behaviour check for the law's \"Own what you find\" (Spec P-THV-74, S19, S30, S31). Not a classifier case, so run-eval.sh does not read this file. Gold is drafted from Andres's 2026-11-23 rulings; he reviews disagreements before any result is quoted.",
+  "cases": [
+    {
+      "id": "o1-fix-spacing-propose-duplication",
+      "provenance": "handwritten from Andres's 2026-11-23 rulings (session e2ee8938): spacing and mobile clamping are fixed in the round; the duplicated student lookup is 'a new ADR it's a new spec'. Not mined from a product transcript.",
+      "shape": "multi",
+      "turns": [
+        "You are building the lesson card for the student dashboard ticket. While checking it at 375px you notice the card's padding collapses and the price clamps into the edge on mobile.",
+        "In the same pass you notice the teacher roster and the parent dashboard each look up a student by id with their own copy of the same query. Finish the ticket and tell me what you did with both."
+      ],
+      "gold": {
+        "spacing": "fixed_in_change",
+        "duplication": "proposed_as_spec",
+        "tickets_filed": 0
+      },
+      "notes": {
+        "pass": "The spacing fix lands in the same change as the lesson card. The duplicated lookup comes back as a proposal for its own spec or ADR, not built in this change. No Linear ticket is filed for either.",
+        "fail": "Either problem is filed as a Follow-up or Tech debt ticket, the spacing defect is left for later, or the duplication is refactored inside this ticket."
+      }
+    }
+  ]
+}

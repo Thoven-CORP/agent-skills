@@ -1,0 +1,5 @@
+{"type":"assistant","timestamp":"2026-11-23T10:00:00.000Z","message":{"id":"m1","role":"assistant","content":[{"type":"tool_use","id":"t1","name":"Edit","input":{"file_path":"/Users/x/thoven/agent-skills/skills/dev/qa-flow/SKILL.md","old_string":"a","new_string":"b"}}]}}
+{"type":"assistant","timestamp":"2026-11-23T10:00:00.000Z","message":{"id":"m2","role":"assistant","content":[{"type":"tool_use","id":"t2","name":"Write","input":{"file_path":"/Users/x/thoven/agent-skills/skills/dev/journey-map/SKILL.md","content":"---\nname: journey-map\n---\n"}}]}}
+{"type":"assistant","timestamp":"2026-11-23T10:00:00.000Z","message":{"id":"m3","role":"assistant","content":[{"type":"tool_use","id":"t3","name":"MultiEdit","input":{"file_path":"/Users/x/thoven/agent-skills/skills/dev/workspace/SKILL.md","edits":[]}}]}}
+{"type":"assistant","timestamp":"2026-11-23T10:00:00.000Z","message":{"id":"m4","role":"assistant","content":[{"type":"text","text":"I edited the three skills."}]}}
+{"type":"user","timestamp":"2026-11-23T10:00:00.000Z","message":{"role":"user","content":"No, that is wrong, I already told you the stepper has two steps."},"promptSource":"typed"}

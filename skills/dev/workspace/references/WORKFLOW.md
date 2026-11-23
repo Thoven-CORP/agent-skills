@@ -86,7 +86,7 @@ reading; the rulings cover pull requests).
 
 **Born in Todo.** Create an issue with `state` left out; the THV team default is Todo (read from
 Linear 2026-11-05). Pass `In Progress` instead when this session starts the work in the same turn.
-A follow-up, a deferral, a spec that is not fully specced, a sub-issue of a parent nobody is
+A deferral Andres agreed, a spec that is not fully specced, a sub-issue of a parent nobody is
 working: all Todo. How ready it is lives in its Exit criteria and its cycle, never in the
 status. Linear's Active view hides Backlog, so an issue there drops out of sight; 92 agent-created
 issues landed there before this rule.
@@ -353,15 +353,14 @@ own labels are untouched.
 
 ### Follow-ups
 
-A problem found during a build goes by where it sits:
+A problem found during a build is fixed in its round, or becomes a sub-issue of its ticket, done before the parent closes (law, "Own what you find"). A labelled ticket holds only what Andres said yes to, and goes by where it sits:
 
-| Where it sits | Label | Goes to |
+| What he agreed | Label | Goes to |
 |---|---|---|
-| In the feature's own code | `Follow-up` | The same Project, milestone **Follow-ups** (its last stage) |
-| Outside the feature's code | `Tech debt` | The inbox (Triage). Andres accepts it into the `Tech debt` Project, declines it, or marks it a duplicate |
+| A deferral of work in the feature's own code | `Follow-up` | The same Project, milestone **Follow-ups** (its last stage) |
+| A problem outside the feature's code | `Tech debt` | The inbox (Triage). Andres accepts it into the `Tech debt` Project, declines it, or marks it a duplicate |
 
-A builder or reviewer files each problem the round leaves (law, "Scope") as its own ticket with its
-evidence, because a ticket shows in a view and a line inside another ticket does not.
+The ticket quotes his yes and carries its evidence, because a quiet follow-up never closes.
 
 ### Priority
 
@@ -446,7 +445,7 @@ BRANCHES AND PULL REQUESTS
 - In the same comment, say what you did AND what you deliberately did not do.
 
 DEFERRING
-- A deferral is a Linear issue or it does not exist: `Follow-up` or `Tech debt` by where the problem sits (WORKFLOW, "Follow-ups"), with a priority.
+- A deferral exists once Andres says yes, as a Linear issue: `Follow-up` or `Tech debt` by where the problem sits (WORKFLOW, "Follow-ups"), with a priority. Every other finding is fixed in its round or is a sub-issue (law, "Own what you find").
 - Name an owner that resolves and link blocked-by.
 ```
 

@@ -33,6 +33,7 @@ corrections, alerts and tokens.
 - On a UI or copy ticket, put the changed behaviour on the work-session page at the builder's first DONE, so Andres's notes ride the one fix round and review runs once on the final diff. Retain required before/after evidence in the technical report; the finished-feature walkthrough shows current behaviour unless the comparison is needed for his decision. (LEARNINGS 2026-10-22)
 - Right before `gh pr merge`, list the ticket's Linear comments: a ruling newer than the last commit holds the merge until the diff applies it. After it, read back `gh pr view <n> --json state,mergeCommit`: a nonzero exit means unknown (`--delete-branch` fails after a good merge when a worktree holds the branch), and a PR already clean merges without `--auto`. (LEARNINGS 2026-10-03, 2026-10-22)
 - Before spawning parallel panes in one tree, fill each brief's Parallel panes slot from the plan and name one owning pane for each shared file (`globals.css`, `components/ui/*`, the colour tokens); every other pane leaves that file to its owner. (LEARNINGS 2026-11-23)
+- Sort every minor finding and `Noticed` line before the merge, as review.md "Handling findings" says; a standalone ticket waits for Andres's yes. (LEARNINGS 2026-11-23)
 
 ## Roles
 
@@ -222,9 +223,8 @@ After the verifier passes and the PR merges on green, put the outcome on the can
    (`enforcement/rules/branches-and-prs.md`). A ticket still In Review after its merge was not linked
    to the PR: link it and set the status. On a UI ticket, upload the parity images to the issue and
    place them on the board beside their frames.
-2. Each minor finding, and each `Noticed` line of the report, becomes its own ticket by where it
-   sits (`workspace` `WORKFLOW.md`, "Follow-ups"): `Follow-up` in this Project when it is in the
-   feature's code, `Tech debt` in Triage when it is outside it, each with a priority.
+2. Read back each sub-issue opened for a finding (review.md, "Handling findings"): every one is
+   Done before this ticket closes, and an open one is the next dispatch.
 3. `scripts/dispatch close <pane>` for every pane this dispatch opened. Remove the ticket's own tree
    with `thoven-worktree remove`, never a live integration tree. It drops the tree's databases and
    deletes every local branch whose PR merged; GitHub deletes the branch on origin at merge.

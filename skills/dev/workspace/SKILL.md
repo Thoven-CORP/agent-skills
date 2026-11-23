@@ -5,9 +5,7 @@ description: >-
   ("make it the accordion", "library indigo", "max 5"), when a grill or spec
   session ends, when he asks to update the docs, the Project description, the
   Project status, or a Project Update, or when he asks where work stands, what
-  is next, to capture or close work, to log a session, to reconcile the
-  board, or when your own turn ends with a still-open, left-alone or follow-ups
-  list to file. Read the Project snapshot before proposing a lifecycle write.
+  is next, to capture or close work, to log a session, or when your own turn ends with a still-open or left-alone list. Read the Project snapshot before proposing a lifecycle write.
 ---
 
 # Workspace
@@ -17,11 +15,13 @@ confirmed grill ruling, or a confirmed product brief approves its row under Fixe
 orientation, Linear lifecycle, capture, close, and the derived Map. Its Activity is Project Updates
 and issue comments. It does not perform semantic feature reconciliation.
 
+Board cleanup, which lines tickets up with their pull requests, branches and worktrees, is [`workspace-sweep`](../workspace-sweep/SKILL.md).
+
 ## Pitfalls
 
-- When Andres describes a problem while building a backlog, file it with what is known and the candidates named as candidates; investigate or grill only when he asks. (LEARNINGS 2026-09-03)
-- File a finding as its own `Follow-up` or `Tech debt` ticket (WORKFLOW.md, "Follow-ups"), and close a done or stale ticket with one evidence line instead of moving it. (LEARNINGS 2026-09-29, 2026-11-12)
-- After every merge or promote, check the Project's open tickets against the merged diff by id and file path, and put each one it fixed into the write set with its SHA in the same turn; say where each verifier follow-up lives. (LEARNINGS 2026-09-29)
+- When Andres describes a problem and asks for a ticket, write it with what is known and the candidates named as candidates; investigate or grill only when he asks. (LEARNINGS 2026-09-03)
+- Fix a finding in its round, or make it a sub-issue of its ticket when it is too big for one (law, "Own what you find"); a `Follow-up` or `Tech debt` ticket waits for Andres's yes (WORKFLOW.md, "Follow-ups"). Close a done or stale ticket with one evidence line instead of moving it. (LEARNINGS 2026-09-29, 2026-11-12, 2026-11-23)
+- After every merge or promote, check the Project's open tickets against the merged diff by id and file path, and put each one it fixed into the write set with its SHA in the same turn; say how each verifier finding was settled: fixed, a sub-issue, or asked. (LEARNINGS 2026-09-29)
 - Close a research ticket once its findings are build tickets, and cancel the tickets the research made stale. (LEARNINGS 2026-10-03)
 - When an issue has no `Writes to:` line, write the spec into its Linear description below Andres's text with `Writes to: this ticket`, through `save_issue` patch ops, then check its embeds survived. (LEARNINGS 2026-10-03)
 

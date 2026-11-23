@@ -35,4 +35,4 @@ Log in through the UI or by token injection, whichever is faster. An agent may d
 
 1. **Per-criterion verdict.** For each planned criterion: pass/fail with the exact observed value as evidence. For a bug fix, Criterion #1 is the triggering symptom — it must be provably dead. Overall SHIP only if every criterion passes, no error-level console/network signal, and any scope gap (e.g. an untested teacher-side twin) is resolved or explicitly accepted as out-of-scope by the user.
 2. **Static gates via `verify`.** Run the **`verify`** skill (Quick: type-check / lint / contract-check) — behavioral QA doesn't cover these, and a green browser run with a red `type-check` isn't done. Flag only feature-file errors (the repo lint baseline is not green).
-3. **Log follow-ups.** Out-of-scope findings → `future-improvements` / `TECH_DEBT.md` / the issue tracker. Flag any layer the diff didn't touch but the symptom could live in.
+3. **Route what you find.** Each finding outside the criteria follows Thoven law's **Own what you find**, and its finding card names the route. Flag any layer the diff didn't touch but the symptom could live in.

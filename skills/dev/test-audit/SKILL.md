@@ -170,11 +170,12 @@ one generic contract. Do not add replacement tests that restate the same
 implementation, and do not convert uncertain candidates into cleanup to
 increase deletion counts.
 
-**Audits edit tests only.** Production code (`app/`, `components/`, `lib/`,
-`hooks/`, `contexts/` outside test files, and backend `app/`) stays unchanged
-unless Andres approves it for that batch. List dead production code and
-test-only production seams the audit finds as named follow-ups instead
-(THV-1008 set this rule: "I wanted tests audited, not actual code audited").
+**Audits edit tests and delete the dead code they find.** Dead production code
+whose only callers are tests, and test-only production seams, go on the
+candidate list and are deleted in the batch that unlocks them (Andres,
+2026-11-23). Any other production change (`app/`, `components/`, `lib/`,
+`hooks/`, `contexts/` outside test files, and backend `app/`) waits for his yes
+for that batch (THV-1008: "I wanted tests audited, not actual code audited").
 
 ## Validation
 
@@ -218,9 +219,9 @@ discovery.
 Report:
 
 - root cause and removed low-value categories;
-- production owner simplifications, or the follow-ups filed instead;
+- dead code deleted, and production simplifications Andres approved;
 - retained false positives and why they remain valuable;
 - focused proof actually run;
 - production versus test LOC;
 - PR and merge state;
-- named follow-ups.
+- questions and proposals for Andres (law, "Own what you find").
