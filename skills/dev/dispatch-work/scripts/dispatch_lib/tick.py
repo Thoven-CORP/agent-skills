@@ -7,7 +7,7 @@ import sys
 import traceback
 from dataclasses import dataclass
 
-from . import events, store, usage
+from . import events, procs, store, usage
 from .model import AlertWord, EntryKind, Registration, State, Status, iso, now_utc, parse_iso
 from .mux import BACKENDS
 from .runner import Runner
@@ -25,6 +25,11 @@ LIMIT_RE = re.compile(r"^\W{0,8}(?:you['’]ve hit your (?:usage )?limit\b|claud
                       r"(?:[\w-]+ ){0,2}limit reached\b)", re.I)
 # A banner sits just above the input box and status line; anything higher is scrollback.
 LIMIT_TAIL = 12
+# These repeat across settle episodes with the same text (one pane: LIMIT 16 times, one reset time), so each
+# fires again only when its body, timestamps aside, changes.
+BODY_KEYED = (AlertWord.LIMIT, AlertWord.SETTLED_NO_REPORT)
+TIMESTAMP_RE = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?Z?")
+DIALOG_LINES = 6
 ACTIVE = (State.WORKING, State.BLOCKED)
 SETTLED = (State.DONE, State.IDLE)
 
@@ -77,6 +82,13 @@ class Gates:
             return next((line.strip() for line in lines if LIMIT_RE.search(line)), None)
         return self._soft("limit_line", check, None)
 
+    def dialog(self) -> str:
+        """The bottom of the pane, where a permission or question dialog sits, box drawing dropped."""
+        def check():
+            lines = [line.strip(" │║╭╮╰╯─═┃━") for line in self.mux.read(self.reg.pane, 40).splitlines()]
+            return " | ".join([line for line in lines if line][-DIALOG_LINES:])[:400]
+        return self._soft("dialog", check, "")
+
 
 def _secs(now: datetime.datetime, since: str | None) -> float:
     return (now - parse_iso(since)).total_seconds() if since else 0.0
@@ -91,6 +103,11 @@ def step(reg: Registration, watch: dict, status: Status, now: datetime.datetime,
 
     def alert(word: AlertWord, episode: str, detail: str) -> None:
         # Raised on every tick the condition holds; the board entry named after (pane, word, episode) dedups it.
+        if word in BODY_KEYED:
+            key, fired = TIMESTAMP_RE.sub("", detail), w.setdefault("fired", {})
+            if fired.get(word.value) == key:
+                return
+            fired[word.value] = key
         alerts.append(Alert(word, episode, detail))
 
     def done() -> tuple[dict, list[Alert]]:
@@ -116,11 +133,14 @@ def step(reg: Registration, watch: dict, status: Status, now: datetime.datetime,
 
     if state == State.BLOCKED and _secs(now, w["since"]) >= BLOCKED_AFTER:
         # Rex stamps the blocked record, so its episode survives a lost watch file; herdr has no stamp.
-        alert(AlertWord.BLOCKED, status.updated_at or w["since"], f"blocked {status.kind or '?'}: {status.msg or '-'}")
+        dialog = gates.dialog()
+        alert(AlertWord.BLOCKED, status.updated_at or w["since"], f"blocked {status.kind or '?'}: {status.msg or '-'}"
+              + (f"; screen: {dialog}" if dialog else ""))
 
     if state == State.WORKING and status.fingerprint and _secs(now, w["fingerprint_since"]) >= FROZEN_AFTER:
         cpu = gates.cpu()
-        if cpu is None or cpu < FROZEN_CPU:
+        # A pane waiting on its run on the Mac mini idles here while the mini works.
+        if (cpu is None or cpu < FROZEN_CPU) and not procs.mini_ssh(gates.live_work()):
             alert(AlertWord.FROZEN, status.updated_at or w["fingerprint_since"],
                   f"working with no change since {w['fingerprint_since']}, cpu {'?' if cpu is None else cpu}%")
 
@@ -139,8 +159,11 @@ def settle(reg: Registration, w: dict, now: datetime.datetime, gates, alert) -> 
     """Runs on every settled tick until the settle is resolved: by a report, an alert, or a new turn."""
     episode = w["settle_since"]
     limit = gates.limit_line()
+    fired = w.setdefault("fired", {})
     if limit:
         alert(AlertWord.LIMIT, episode, limit)
+    else:
+        fired.pop(AlertWord.LIMIT.value, None)
     count = gates.report_count()
     if count is None:
         return
@@ -161,6 +184,7 @@ def settle(reg: Registration, w: dict, now: datetime.datetime, gates, alert) -> 
               + (f"; still running: {', '.join(live[:3])}" if live else ""))
         return resolve()
     if reported:
+        fired.pop(AlertWord.SETTLED_NO_REPORT.value, None)
         return resolve()
     live = gates.live_work()
     # A background shell wakes a Claude agent when it ends, so the report may still come.

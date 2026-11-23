@@ -51,6 +51,15 @@ class Blocked(TickCase):
         body = store.entries("proj")[0][1].body
         self.assertEqual(body, "build-thv-1 (rex block:a): blocked permission: approve Bash: rm -rf x")
 
+    def test_the_dialog_on_screen_rides_the_blocked_alert(self):
+        reg = self.reg()
+        self.mux.screen = "⏺ Bash(rm -rf x)\n╭────╮\n│ Do you want to proceed? │\n│ ❯ 1. Yes │\n│   2. No │\n╰────╯\n"
+        blocked = Status(State.BLOCKED, "permission", None, "u1", "u1")
+        self.tick(reg, blocked, 0)
+        self.assertEqual(self.tick(reg, blocked, 120), ["BLOCKED"])
+        self.assertEqual(store.entries("proj")[0][1].body, "build-thv-1 (rex block:a): blocked permission: -; screen: "
+                         "⏺ Bash(rm -rf x) | Do you want to proceed? | ❯ 1. Yes | 2. No")
+
     def test_a_new_blocked_episode_alerts_again(self):
         reg = self.reg()
         blocked = Status(State.BLOCKED, "permission", "m", "u1", "u1")
@@ -70,6 +79,23 @@ class Frozen(TickCase):
         self.assertEqual(self.tick(reg, working("same"), 599), [])
         self.assertEqual(self.tick(reg, working("same"), 600), ["FROZEN"])
         self.assertEqual(self.tick(reg, working("same"), 630), [])
+
+    def test_a_pane_waiting_on_an_ssh_to_the_mini_is_not_frozen(self):
+        reg = self.reg()
+        self.mux.live = ["ssh thoven-mini-ssh cd ~/thoven/worktrees (pid 91)"]
+        self.tick(reg, working("same"), 0)
+        self.assertEqual(self.tick(reg, working("same"), 900), [])
+        self.mux.live = []
+        self.assertEqual(self.tick(reg, working("same"), 930), ["FROZEN"])
+
+    def test_an_ssh_elsewhere_or_no_live_work_does_not_hold_frozen(self):
+        for live in ([], ["ssh github.com git-upload-pack (pid 92)"], ["sleep 300 (pid 93)"]):
+            with self.subTest(live):
+                self.setUp()
+                reg = self.reg()
+                self.mux.live = live
+                self.tick(reg, working("same"), 0)
+                self.assertEqual(self.tick(reg, working("same"), 600), ["FROZEN"])
 
     def test_busy_cpu_or_a_changing_fingerprint_is_not_frozen(self):
         reg = self.reg()
@@ -209,12 +235,26 @@ class Settle(TickCase):
             self.assertEqual(self.tick(reg, done(), s), [])
         self.assertEqual(self.alerts(), [])
 
-    def test_resuming_work_then_settling_again_is_a_new_episode(self):
+    def test_a_repeat_settle_with_the_same_body_is_quiet_until_the_body_changes(self):
         reg = self.reg()
         self.tick(reg, working(), 0)
         self.assertEqual(self.tick(reg, done(), 60), ["SETTLED_NO_REPORT"])
         self.tick(reg, working("w3"), 90)
-        self.assertEqual(self.tick(reg, done("d3"), 120), ["SETTLED_NO_REPORT"])
+        self.assertEqual(self.tick(reg, done("d3"), 120), [])
+        self.run = FakeRunner({("git",): Result(0, " M app.rb\n", "")})
+        self.tick(reg, working("w4"), 150)
+        self.assertEqual(self.tick(reg, done("d4"), 180), ["SETTLED_NO_REPORT"])
+        self.assertEqual(len(self.alerts()), 2)
+
+    def test_a_report_between_two_no_report_settles_lets_the_next_one_fire(self):
+        reg = self.reg()
+        self.tick(reg, working(), 0)
+        self.assertEqual(self.tick(reg, done(), 60), ["SETTLED_NO_REPORT"])
+        self.tick(reg, working("w3"), 90)
+        self.report(reg, 100)
+        self.assertEqual(self.tick(reg, done("d3"), 120), [])
+        self.tick(reg, working("w4"), 150)
+        self.assertEqual(self.tick(reg, done("d4"), 180), ["SETTLED_NO_REPORT"])
 
 
 class Gone(TickCase):
@@ -331,6 +371,54 @@ class Limit(TickCase):
             with self.subTest(name):
                 self.setUp()
                 self.assertEqual(self.settle_with_report(banner), ["LIMIT"])
+
+    def test_the_same_banner_on_the_next_settle_is_quiet_and_a_new_reset_time_fires(self):
+        reg = self.reg()
+        self.mux.screen = BANNERS["claude 5-hour"] + PROMPT
+        self.tick(reg, working(), 0)
+        self.report(reg, 30)
+        self.assertEqual(self.tick(reg, done(), 60), ["LIMIT"])
+        for n, s in enumerate((90, 150, 210)):
+            self.tick(reg, working(f"w{n}"), s)
+            self.report(reg, s + 10)
+            self.assertEqual(self.tick(reg, done(f"d{n}"), s + 30), [])
+        self.mux.screen = BANNERS["claude 5-hour"].replace("3pm", "8pm") + PROMPT
+        self.tick(reg, working("w9"), 300)
+        self.report(reg, 310)
+        self.assertEqual(self.tick(reg, done("d9"), 330), ["LIMIT"])
+        self.assertEqual(self.alerts(), [("LIMIT", "THV-1")] * 2)
+
+    def test_a_banner_that_differs_only_by_a_timestamp_is_the_same_alert(self):
+        reg = self.reg()
+        self.mux.screen = "  ⎿  5-hour limit reached ∙ resets 2026-10-22T15:00:00Z\n" + PROMPT
+        self.tick(reg, working(), 0)
+        self.report(reg, 30)
+        self.assertEqual(self.tick(reg, done(), 60), ["LIMIT"])
+        self.mux.screen = "  ⎿  5-hour limit reached ∙ resets 2026-10-22T15:00:05Z\n" + PROMPT
+        self.tick(reg, working("w2"), 90)
+        self.report(reg, 100)
+        self.assertEqual(self.tick(reg, done("d2"), 120), [])
+
+    def test_a_banner_that_clears_and_comes_back_fires_again(self):
+        reg = self.reg()
+        self.mux.screen = BANNERS["claude 5-hour"] + PROMPT
+        self.tick(reg, working(), 0)
+        self.report(reg, 30)
+        self.assertEqual(self.tick(reg, done(), 60), ["LIMIT"])
+        self.mux.screen = PROMPT
+        self.tick(reg, working("w2"), 90)
+        self.assertEqual(self.tick(reg, done("d2"), 120), ["SETTLED_NO_REPORT"])
+        self.mux.screen = BANNERS["claude 5-hour"] + PROMPT
+        self.tick(reg, working("w3"), 150)
+        self.assertEqual(self.tick(reg, done("d3"), 180), ["LIMIT"])
+
+    def test_an_empty_screen_raises_no_limit_and_keys_nothing(self):
+        reg = self.reg()
+        self.mux.screen = ""
+        self.tick(reg, working(), 0)
+        self.report(reg, 30)
+        self.assertEqual(self.tick(reg, done(), 60), [])
+        self.assertEqual(store.read_watch("proj", reg.pane).get("fired"), {})
 
     def test_limit_words_in_a_report_or_far_up_the_screen_do_not(self):
         for name, screen in NOT_BANNERS.items():

@@ -13,13 +13,16 @@ import re
 from .runner import Runner
 
 INFRA_RE = re.compile(
-    r"(^|/)(caffeinate|herdr|rex|ps)( |$)|mcp|language-server|(^|[/ -])lsp|gopls|"
+    r"(^|/)(caffeinate|herdr|rex|ps|ugrep)( |$)|mcp|language-server|(^|[/ -])lsp|gopls|"
     r"rust-analyzer|pyright|tsserver|sourcekit|statusline|herdr-agent-usage", re.I)
 CODEX_INFRA_RE = re.compile(
     r"^(?:\S*/)?(?:node_repl|codex-code-mode-host)(?:\s|$)|"
     r"^(?:\S*/)?codex\s+app-server(?:\s|$)|"
     r"^(?:\S*/)?node\s+\S*/@oai/cua-repl/bin/cua-repl\.mjs(?:\s|$)")
 WRAPPER_RE = re.compile(r"/shell-snapshots/|^(/bin/)?(ba|z)?sh -c ")
+# A live_work name for an ssh session to the Mac mini, where a pane's heavy runs go: its CPU is remote.
+MINI_SSH_RE = re.compile(r"^(?:auto)?ssh\s+(?:\S+@)?\S*\bmini\b", re.I)
+SSH_ARG_FLAGS = set("BbcDEeFIiJLlmOopQRSWw")
 
 
 def snapshot(run: Runner) -> dict[int, dict]:
@@ -63,7 +66,24 @@ def short_cmd(cmd: str, n: int = 40) -> str:
         words = words[1:]
         if words[0] == "-c" and len(words) > 1:
             words = words[1:]
+    if words[0] in ("ssh", "autossh"):
+        words = _ssh_without_options(words)
     return " ".join(words)[:n]
+
+
+def _ssh_without_options(words: list[str]) -> list[str]:
+    """ssh's options dropped, so the 40-character name still holds the destination."""
+    i = 1
+    while i < len(words) and words[i].startswith("-"):
+        flag, i = words[i], i + 1
+        if len(flag) == 2 and flag[1] in SSH_ARG_FLAGS:
+            i += 1
+    return words[:1] + words[i:]
+
+
+def mini_ssh(names: list[str]) -> list[str]:
+    """The live_work names that are an ssh session to the Mac mini."""
+    return [n for n in names if MINI_SSH_RE.search(n)]
 
 
 def tree_cpu(procs: dict[int, dict], agent: int) -> float | None:

@@ -17,7 +17,8 @@
 #   errors.tsv    failed tool results with the tool that failed
 #   tokens.tsv    per-session usage, deduped by message.id, with cache_read and cache_create split
 #   corrections.tsv  human turns that correct, re-explain or push back, from MAIN sessions only,
-#                 with the agent's text just before and the last skill loaded. thoven-reflect reads
+#                 with the agent's text just before, the last skill loaded and the turn's source
+#                 (Claude Code's promptSource: typed, sdk, queued; "-" when absent). thoven-reflect reads
 #                 corrections.md, the same rows grouped by session with each transcript's path.
 #
 # Validation: on a 0.8GB / 232-session corpus this agreed with an independent reimplementation
@@ -58,7 +59,7 @@ printf 'harness\tsession\ttool\tconsecutive\n'   >> "$OUT/repeats.tsv"
 printf 'harness\tsession\ttool\tmessage\n'       >> "$OUT/errors.tsv"
 printf 'harness\tsession\tinput\toutput\tcache_read\tcache_create\n' >> "$OUT/tokens.tsv"
 printf 'harness\tsession\tpolling_calls\n'  >> "$OUT/polling.tsv"
-printf 'harness\tsession\tpath\tts\tlast_skill\tagent_before\ttext\n' >> "$OUT/corrections.tsv"
+printf 'harness\tsession\tpath\tts\tlast_skill\tagent_before\ttext\tsource\n' >> "$OUT/corrections.tsv"
 
 # A user turn is REAL only if a human typed it. Everything else arriving in the `user` slot is
 # machinery, and leaving it in is not a cosmetic problem: an unfiltered corpus attributes an
@@ -82,7 +83,7 @@ printf 'harness\tsession\tpath\tts\tlast_skill\tagent_before\ttext\n' >> "$OUT/c
 # matching on the word "evidence", inflated a prescriptive:reactive ratio from 0.95:1 to 3.5:1.
 # Three separate classifiers agreed on that number because all three shared the same false
 # positive. Agreement between implementations is not evidence when they read the same dirty input.
-NOISE='^(<system-reminder>|<local-command-caveat>|<command-name>|<command-message>|<local-command-stdout>|<recommended_plugins>|<user-prompt-submit-hook>|<task-notification>|Caveat: The messages below|Base directory for this skill:|Another Claude session sent a message|<teammate-message|\{"type":"idle_notification|>>> (APPROVAL REQUEST|TRANSCRIPT)|Planned action JSON|Assess the exact planned action|The Codex agent has requested|The following is the Codex agent history|Reviewed Codex session id:|\\\\n\[[0-9]+\] |\[[0-9]+\] (user|assistant|tool)|<environment_context>|# AGENTS\.md instructions|<skill>|</?image>$|<subagent_notification>|\{.*"command":|This session is being continued|\\\\nSome conversation entries were omitted|Some conversation entries were omitted|(BUILT|FIXED|FIXED-[0-9]|BLOCKED|DONE|DONE_WITH_CONCERNS|NEEDS_CONTEXT|STATUS) THV-[0-9]+ )'
+NOISE='^(<system-reminder>|<local-command-caveat>|<command-name>|<command-message>|<local-command-stdout>|<recommended_plugins>|<user-prompt-submit-hook>|<task-notification>|<ci-monitor-event>|<codex_internal_context|Caveat: The messages below|Base directory for this skill:|Another Claude session sent a message|<teammate-message|\{"type":"idle_notification|>>> (APPROVAL REQUEST|TRANSCRIPT)|Planned action JSON|Assess the exact planned action|The Codex agent has requested|The following is the Codex agent history|Reviewed Codex session id:|\\\\n\[[0-9]+\] |\[[0-9]+\] (user|assistant|tool)|<environment_context>|# AGENTS\.md instructions|<skill>|</?image>$|<subagent_notification>|\{.*"command":|This session is being continued|\\\\nSome conversation entries were omitted|Some conversation entries were omitted|(BUILT|FIXED|FIXED-[0-9]|BLOCKED|DONE|DONE_WITH_CONCERNS|NEEDS_CONTEXT|STATUS) THV-[0-9]+ )'
 
 # Prompts recorded under a session id beginning `agent-` were written BY an agent, not by the
 # human. Kept out of the human corpus unless --include-subagents is passed, because conflating
@@ -237,7 +238,10 @@ mine_codex() {
 # "human" turns are main relaying to a pane. A bare "try again" is a retry, not a lesson. Only the
 # human's own words count: a pasted pane report inside <pasted_content> is transport (class 8), and
 # so is a herdr relay. A message re-sent word for word counts once. BRIEF's last two phrases are the
-# dispatch-work v2 brief's opening lines, which survive filling its {{fields}}.
+# dispatch-work v2 brief's opening lines, which survive filling its {{fields}}. A prompt Andres only
+# accepted from Claude Code's suggestion chip (promptSource suggestion_accepted) is the agent's own
+# words, and a compaction preamble is the harness's, so both are dropped by source. The Claude Desktop
+# artifact-view wrapper is stripped rather than dropped: Andres's typed message follows it in the same turn.
 CORRECTION='(i told you|i said|i already|we already|already (told|said|decided|did)|as i (said|mentioned)|again|remember|forgot|we (talked|discussed|decided|agreed)|last time|how many times|you keep|keep (doing|asking)|stop (doing|asking)|not what i|wrong|why did you|i never said|settled|stale|re-?ask|same (mistake|thing)|confused|lost|instead of)'
 BRIEF='(DONE WHEN|REPORT TO|Writes to:|EXIT CRITERIA|Exit criteria|## Brief|herdr pane|Main is the Claude session|Read it in full first\. It holds the ticket)'
 # herdr relays: main's prompt inside a pane session, or a pane's report typed into main. Each opens
@@ -247,7 +251,9 @@ RELAY='^(MAIN|Main|main|THV-[0-9]+[^:]{0,30}|F[0-9]+[^:]{0,24}|Lock released|PR 
 
 flag_corrections() {
   awk -F'\t' -v OFS='\t' -v h="$1" -v since="$SINCE" -v noise="$NOISE" -v corr="(^|[^a-z])$CORRECTION([^a-z]|$)" -v brief="$BRIEF" -v relay="$RELAY" '
-    { own = $6; gsub(/<pasted_content[^>]*>.*<\/pasted_content[^>]*>/, "", own); sub(/^(\\n|[ \t])+/, "", own) }
+    { own = $6; gsub(/<pasted_content[^>]*>.*<\/pasted_content[^>]*>/, "", own)
+      gsub(/<artifact-view-context[^>]*>.*<\/artifact-view-context>/, "", own); sub(/^(\\n|[ \t])+/, "", own) }
+    $7 == "suggestion_accepted" || $7 == "compaction" {next}
     own ~ noise || own ~ relay || own == "" || said[own]++ {next}
     !seen++ && length($6) > 1500 && $6 ~ brief {exit}
     $3 >= since && tolower(own) ~ corr && split(own, w, " ") > 3 {$6 = own; print h"\t"$0}' >> "$OUT/corrections.tsv"
@@ -265,7 +271,8 @@ claude_turns() {
               then .skill = ($c.input.file_path | capture("(?<n>[^/]+)/SKILL\\.md$").n)
             else . end)
         elif $e.type == "user" and ($e.message.content | type) == "string" and ($e.isMeta | not) then
-          .out = [$s, $p, (($e.timestamp // "")[0:16]), .skill, (.before | .[-300:]), $e.message.content]
+          .out = [$s, $p, (($e.timestamp // "")[0:16]), .skill, (.before | .[-300:]), $e.message.content,
+                  (if $e.isCompactSummary then "compaction" else ($e.promptSource // "-") end)]
         else . end;
       .out // empty) | @tsv' "$2" 2>/dev/null
 }
@@ -282,7 +289,7 @@ codex_turns() {
           .before = ([$q.content[]? | .text? // empty] | join(" "))
         elif $q.type == "message" and $q.role == "user" then
           .out = [$s, $p, (($e.timestamp // "")[0:16]), .skill, (.before | .[-300:]),
-                  ([$q.content[]? | .text? // empty] | join(" "))]
+                  ([$q.content[]? | .text? // empty] | join(" ")), "-"]
         else . end;
       .out // empty) | @tsv' "$2" 2>/dev/null
 }

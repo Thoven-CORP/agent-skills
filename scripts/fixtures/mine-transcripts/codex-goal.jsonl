@@ -1,0 +1,2 @@
+{"timestamp":"2026-11-23T10:00:00.000Z","type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"I rebuilt the stepper."}]}}
+{"timestamp":"2026-11-23T10:00:00.000Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"<codex_internal_context source=\"goal\">\nContinue working toward the active thread goal. Do not ask again; the goal stays active.\n</codex_internal_context>"}]}}

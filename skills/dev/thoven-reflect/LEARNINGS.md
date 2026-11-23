@@ -5,6 +5,12 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-23 — count only what Andres typed, not what he accepted or the harness wrapped
+
+**What happened.** `corrections.tsv` counted a CI-monitor auto-fix event and a Codex `<codex_internal_context source="goal">` continuation as Andres's corrections, and could count prompts he only accepted from Claude Code's suggestion chip and Claude Desktop's `<artifact-view-context>` board wrapper, whose boilerplate says "read it again".
+**Why.** The filter judged text by its opening words only. A suggestion-accepted prompt reads like a typed one; only the JSONL record's `promptSource` tells them apart.
+**What changed.** Each row carries `source` (the `promptSource`, `compaction` for a compaction preamble, `-` when absent). `suggestion_accepted` and `compaction` rows drop by source; CI-monitor and Codex internal-context drop by marker; the artifact-view wrapper is stripped so the text Andres typed after it still counts. Fixtures and `scripts/mine-transcripts-test.sh` cover each class.
+
 ## 2026-11-08 — diagnose skill gaps and focus a named skill
 
 **What happened.** Andres requested that Reflect improve skills from corrections, useful discoveries and summaries, including focused reviews of a named skill.

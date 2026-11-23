@@ -31,6 +31,29 @@ class LiveWork(unittest.TestCase):
         lines = [line for line in PS.splitlines() if not line.split()[0].startswith("23")]
         self.assertEqual(procs.live_work(self.snapshot("\n".join(lines)), 200), [])
 
+    def test_a_leftover_ugrep_is_not_work(self):
+        ps = PS + "  270   200   270   0.0 S    ugrep -G --ignore-files --hidden -I --exclude-dir=.git x\n"
+        self.assertEqual(procs.live_work(self.snapshot(ps), 200), ["next dev (pid 231)"])
+
+    def test_an_ssh_session_is_named_by_its_destination_past_its_options(self):
+        ps = PS + ("  280   200   280   0.0 Ss   /bin/zsh -c ssh -o BatchMode=yes -o ConnectTimeout=10 -p 22 "
+                   "thoven-mini-ssh 'cd ~/thoven && pnpm test'\n"
+                   "  281   280   280   0.0 S    ssh -o BatchMode=yes -o ConnectTimeout=10 -p 22 thoven-mini-ssh "
+                   "cd ~/thoven && pnpm test\n")
+        names = procs.live_work(self.snapshot(ps), 200)
+        self.assertIn("ssh thoven-mini-ssh cd thoven && pnpm te (pid 281)", names)
+        self.assertEqual(procs.mini_ssh(names), ["ssh thoven-mini-ssh cd thoven && pnpm te (pid 281)"])
+
+    def test_mini_ssh_names_only_an_ssh_to_the_mini(self):
+        self.assertEqual(procs.mini_ssh([]), [])
+        self.assertEqual(procs.mini_ssh(["", "ssh github.com x (pid 1)", "grep mini notes (pid 2)",
+                                         "next dev (pid 3)"]), [])
+        self.assertEqual(procs.mini_ssh(["ssh andres@mac-mini.local (pid 4)"]), ["ssh andres@mac-mini.local (pid 4)"])
+
+    def test_an_empty_process_list_is_no_work_and_no_cpu(self):
+        self.assertEqual(procs.live_work(self.snapshot(""), 200), [])
+        self.assertIsNone(procs.tree_cpu(self.snapshot(""), 200))
+
     def test_cpu_sums_the_tree_without_mcp_servers(self):
         self.assertEqual(procs.tree_cpu(self.snapshot(), 200), 15.0)
         self.assertIsNone(procs.tree_cpu(self.snapshot(), 999))

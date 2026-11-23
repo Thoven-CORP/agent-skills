@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-23 — the tick stops false and repeated alerts
+
+> reflect · 2026-11-23 · tick.log 2026-11-05..23 · broken-rule · applied · seen 1
+
+**What happened.** 134 of 158 FROZEN alerts were panes waiting on their run on the Mac mini. LIMIT and SETTLED_NO_REPORT re-fired byte-identical bodies on each settle (one pane: LIMIT 16 times, one reset time). Leftover `ugrep` processes rode SETTLED_NO_REPORT as "still running".
+**Why.** `tree_cpu` sums local CPU only, so a live `ssh thoven-mini-ssh` reads as idle. Alert dedup keyed on the settle episode, which is new every turn. `ugrep` was missing from `INFRA_RE`.
+**What changed.** `tick.py`: FROZEN holds while `live_work` names an ssh to the mini (`procs.mini_ssh`, ssh names keep their destination past options). LIMIT and SETTLED_NO_REPORT fire again only when their body, timestamps aside, changes; a report or a cleared banner resets that memory. BLOCKED carries the dialog from the bottom of the screen. `procs.py`: `ugrep` is infrastructure. Closes the 2026-10 backlog's double alert and FROZEN-reads-CPU-only lines.
+
 ## 2026-11-23 — the verifier spawns on the final commit
 
 > reflect · 2026-11-23 · verify-thv-1766-2 · verify-thv-1812 · broken-rule · applied · seen 2
@@ -233,7 +241,7 @@ Andres then asked that a builder run poteto-mode as fully as the parent does and
 
 **What happened.** On 10-23, four builders (THV-1383 to 1386) spawned together, and Claude Code killed 1383 at about 70 MB free. On 10-25 main asked Andres about the usage limit and about load 14 in one question. He answered "We are not out of claude", and three panes spawned at load 14 against the load-10 rule. Five builders then ran together, three panes raised TICK_ERROR "rex call timed out after 20s" at once, Andres posted HOLD, and all five hit LIMIT within seconds of it. THV-1379 ran for 4h26m. The TICK_ERROR row told main to blame the backend.
 **Why.** The 2026-10-11 Pitfall checked disk and memory once, at spawn, and could not see the load the panes add later. An answer to a bundled question was read as clearing both risks.
-**What changed.** The Pitfall now allows at most two heavy builders at once, staggers the rest, and re-reads disk, memory and load before each spawn. It also keeps the standing rule on any risk the answer did not settle. TICK_ERROR on several panes together now means overload, so prune or hold first. Backlog: tick's LIMIT/SETTLED_NO_REPORT double alert, FROZEN reading CPU only, and a `dispatch hold` state. 2026-11-05: 18 LIMIT alerts on 10-31 came from 3 to 5 Opus panes across three main sessions, and the Mac swapped (8.2 of 9.2 GB), because each main counted only its own panes. The Pitfall now caps heavy builders across every main session on this Mac, counted from the live process list before each spawn. Seen 3.
+**What changed.** The Pitfall now allows at most two heavy builders at once, staggers the rest, and re-reads disk, memory and load before each spawn. It also keeps the standing rule on any risk the answer did not settle. TICK_ERROR on several panes together now means overload, so prune or hold first. Backlog: tick's LIMIT/SETTLED_NO_REPORT double alert and FROZEN reading CPU only (both closed 2026-11-23, see that entry), and a `dispatch hold` state. 2026-11-05: 18 LIMIT alerts on 10-31 came from 3 to 5 Opus panes across three main sessions, and the Mac swapped (8.2 of 9.2 GB), because each main counted only its own panes. The Pitfall now caps heavy builders across every main session on this Mac, counted from the live process list before each spawn. Seen 3.
 
 ## 2026-10-25 — the brief carries the paired backend tree and a targeted Done-when
 

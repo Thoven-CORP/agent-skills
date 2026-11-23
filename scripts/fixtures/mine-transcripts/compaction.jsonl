@@ -1,0 +1,2 @@
+{"type":"assistant","timestamp":"2026-11-23T10:00:00.000Z","message":{"id":"m1","role":"assistant","content":[{"type":"text","text":"I rebuilt the stepper with three steps."}]}}
+{"type":"user","timestamp":"2026-11-23T10:00:00.000Z","message":{"role":"user","content":"This session is being continued from a previous conversation that ran out of context. We already decided the stepper has two steps."},"isCompactSummary":true}

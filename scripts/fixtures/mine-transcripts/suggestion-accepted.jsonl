@@ -1,0 +1,2 @@
+{"type":"assistant","timestamp":"2026-11-23T10:00:00.000Z","message":{"id":"m1","role":"assistant","content":[{"type":"text","text":"I rebuilt the stepper with three steps."}]}}
+{"type":"user","timestamp":"2026-11-23T10:00:00.000Z","message":{"role":"user","content":"Yes, that is wrong again, rebase both branches on main and rerun the checks."},"promptSource":"suggestion_accepted"}
