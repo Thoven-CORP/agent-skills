@@ -9,10 +9,10 @@ Fork of Matt Pocock's `teach` (github.com/mattpocock/skills, skills/productivity
 
 ## Where the course lives
 
-One course per folder, never inside a product repo. The folder is the course's memory, so every session starts by reading `MISSION.md`, `NOTES.md`, `./learning-records/` and `./assets/` there.
+One course per folder, never inside a product repo. The folder is the course's memory, so every session starts by reading `MISSION.md`, `NOTES.md`, `./learning-records/` and `./assets/` there (or the course doc, in artifact mode).
 
 - **Coding agent (Claude Code, Cursor, Codex):** use the directory it was run in. If that directory is a code repo (it has `package.json`, `Gemfile` or app source), stop and propose a dedicated folder instead, such as `~/learning/<topic-slug>/`, and continue there once the user agrees.
-- **Claude desktop app:** the cloud working directory is cleared between sessions, so never keep the course there. Use `<connected folder>/<topic-slug>/` on the user's computer; on first run ask which connected folder holds their courses and record it in `NOTES.md`. If no folder is connected, say so in one line (open the chat in the desktop app, + menu, "Add folder") and do not build the course in the cloud directory.
+- **Claude app (web, mobile or desktop):** the cloud working directory is cleared between sessions, so never keep the course there. If a folder on the user's computer is connected, use `<connected folder>/<topic-slug>/`; if several are connected, ask once which holds their courses and record it in `NOTES.md`. If none is connected, do not stop: keep the course in artifacts. One doc titled `Course: <Topic>` holds Mission, Resources, Glossary, Notes, numbered Learning records, a Lesson index and an Assets section (shared stylesheet and components, pasted into each page). Each lesson and reference is its own HTML page artifact (`<Topic> Lesson 0001: <name>`, `<Topic> Reference: <name>`), linked by artifact URL. To resume, find the course doc by listing artifacts for `Course:`. Mention once that connecting a folder later would move the course onto their computer.
 
 
 The user has asked you to teach them something. This is a stateful request - they intend to learn the topic over multiple sessions.
