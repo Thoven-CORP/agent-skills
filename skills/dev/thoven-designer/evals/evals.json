@@ -1,0 +1,49 @@
+{
+  "skill_name": "thoven-designer",
+  "grader": "Run from the agent-skills repo root on the final report saved to a file. Exit 0 means every Used line quotes its reference verbatim under the named heading and every required reference has one. Exit 1 means a reference was not read.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review this popup before it ships. Teachers see it after they deny a reschedule request. Title: 'Reschedule Denied'. A red subtitle: 'The reschedule request was denied'. A summary sentence: 'You denied the reschedule request for Emma's piano lesson.' A table headed 'Reschedule Response' with the row 'Response: Denied'. The quoted reason. Footer: a red primary 'Got it!' and a red-outline 'Got it!'.",
+      "expected_output": "Opens references/dialogs.md and references/check.md. Reports the outcome stated five times and keeps one title, one line and a fact list of only what is new; says the secondary is neutral, not red-outline; keeps the ButtonRow footer and does not call phone stacking a defect; runs word_lint.py --once on the dialog text and shows its exit code.",
+      "files": [],
+      "grader": "python3 evals/check-reference-quotes.py <report> --skill-dir skills/dev/thoven-designer --require references/dialogs.md --require references/check.md",
+      "assertions": [
+        "grader-exit-0: the grader exits 0 on the final report with both references required",
+        "each-fact-once: names the repeated outcome and reduces the popup to a title, one line and only facts those two lack, citing dialogs.md 'Each fact once'",
+        "secondary-neutral: says the dismiss button is neutral and only the primary carries the red, citing dialogs.md 'The secondary is neutral'",
+        "footer-row: keeps the footer on ButtonRow and does not report stacking on a phone as a defect",
+        "lint-run: word_lint.py --once is run on the dialog text and its exit code is shown",
+        "not-checked: the report ends with Not checked lines for the check.md gaps that apply (no states route, no shared visible-edge helper)"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "The teacher Notifications rows at 390 wide look wrong. Each row has the icon centred vertically on the left, the text wrapping to five lines in the middle, and a centred Review button on the right. Fix the icon alignment and tell me how you checked it.",
+      "expected_output": "Opens references/layout.md and references/check.md. Aligns the icon to the first line's centre (row on items-start, icon slot one line tall), not the block's centre. The check measures the glyph's centre against the first line's centre within 1px at 390 and at the frame's width, with the longest real copy, and says that no shared measuring helper exists yet.",
+      "files": [],
+      "grader": "python3 evals/check-reference-quotes.py <report> --skill-dir skills/dev/thoven-designer --require references/layout.md --require references/check.md",
+      "assertions": [
+        "grader-exit-0: the grader exits 0 on the final report with both references required",
+        "first-line: the fix centres the icon on the first line of the text and rejects centring on the whole block",
+        "visible-edges: the check reads the glyph (the svg paths) and the first line's rect, not the svg box or the row box, within 1px",
+        "two-widths: the check names 390 and the frame's width and the longest real copy",
+        "gap-named: the report names the missing shared measuring helper as Not checked"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I built the Makeup offered confirmation as a ThovenDialog: a centred check icon inside a circle, a centred line of text, and a footer with a primary and an emerald-outline secondary. Check it before I hand it off.",
+      "expected_output": "Opens references/dialogs.md and references/check.md. Flags the centred icon-in-a-circle as the empty-state layout, which never appears on a confirmation, and the emerald-outline secondary as non-neutral. Runs the rg check for outline variants on the dialog files and shows the match. Names that no confirmation layout exists yet.",
+      "files": [],
+      "grader": "python3 evals/check-reference-quotes.py <report> --skill-dir skills/dev/thoven-designer --require references/dialogs.md --require references/check.md",
+      "assertions": [
+        "grader-exit-0: the grader exits 0 on the final report with both references required",
+        "empty-state-flagged: the centred icon in a circle is called the empty-state layout and rejected for a confirmation",
+        "secondary-flagged: the emerald-outline secondary is reported and replaced with neutral or ghost",
+        "rg-run: the rg command for outline variants is run on the dialog files and its result shown",
+        "gap-named: the report says no confirmation layout block exists yet"
+      ]
+    }
+  ]
+}

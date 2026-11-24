@@ -30,6 +30,7 @@ into an eval rots exactly like a value baked into the skill.
 - [ ] Does **not** score an unruled value as a violation
 - [ ] Every finding carries `file:line` **and** the source that makes it a finding
 - [ ] States which tier each judgement came from, so the reader knows what is enforced vs advisory
+- [ ] Ends with a `Used:` line for each reference it opened, and `python3 evals/check-reference-quotes.py <report> --skill-dir skills/dev/thoven-designer --require references/implementation.md` exits 0 (a reference opened but not quoted counts as not read)
 
 ## SHOULD — ≥80% required to pass
 

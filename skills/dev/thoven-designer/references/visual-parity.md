@@ -23,6 +23,8 @@ motion evidence. A component showcase explains a treatment; the whole product su
 it fits. A static frame supports appearance claims, while interaction claims require exercising
 the implementation and checking the specified behavior.
 
+Compare positions on visible edges, never on boxes ([check](check.md), "Measure what the eye sees"): a 3D button's bottom is its ledge, an icon's edge is its glyph, text aligns by its first line.
+
 Start with composition: reading order, relative visual weight, grouping, proportions, density,
 alignment and action prominence. Examine typography in that layout, then spacing, containment,
 colour, imagery and interaction treatments where they affect the result. For each consequential

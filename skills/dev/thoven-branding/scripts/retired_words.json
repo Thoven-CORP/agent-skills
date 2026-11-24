@@ -62,13 +62,13 @@
   {
     "id": "airbnb",
     "pattern": "\\bairbnb\\b",
-    "say": "an online music academy built around each kid's journey",
+    "say": "an online music academy built for kids",
     "why": "BRANDING.md 8 Rejected: the Airbnb analogy pulls the framing back to a marketplace"
   },
   {
     "id": "duolingo",
     "pattern": "\\bduolingo\\b",
-    "say": "a music adventure your kid will love",
+    "say": "a music journey your kid will love",
     "why": "Internal trueline, kept off public copy; BRANDING.md 1 names the category in Thoven's own words"
   },
   {
@@ -94,5 +94,17 @@
     "pattern": "\\bfollow(?:s|ed|ing)?(?:[\\s-]+up)?(?:\\s+(?:with|on))?\\s+(?:[\\w']+\\s+){0,4}?(?:for\\s+|after\\s+|over\\s+)?(?:\\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|several|many)\\s+(?:weeks?|months?|years?)\\b",
     "say": "what a parent can see today: a real teacher and a weekly rhythm",
     "why": "BRANDING.md 3 Promise follow-up once a feature backs it: check-ins or progress reports ship first"
+  },
+  {
+    "id": "dash-chain",
+    "pattern": "\\s[—–]\\s[^\\n]*?\\s[—–]\\s",
+    "say": "a sentence, or one labelled row per fact",
+    "why": "thoven-branding plain-copy, Facts: a fact sits in a sentence or a labelled row, so a reader can tell what each value is"
+  },
+  {
+    "id": "makeup-refund",
+    "pattern": "\\bmake-?ups?\\b[^.!?\\n]*\\b(?:refund|credit)\\w*|\\b(?:refund|credit)\\w*\\b[^.!?\\n]*\\bmake-?ups?\\b",
+    "say": "a makeup is a missed session the teacher gives back",
+    "why": "thoven-branding plain-copy, Lexicon: a makeup is a missed session the teacher gives back, never a refund or a credit (Andres, 2026-11-24)"
   }
 ]

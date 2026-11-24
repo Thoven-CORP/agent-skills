@@ -4,17 +4,19 @@
     {
       "id": 1,
       "prompt": "Write a homepage headline and subhead for Thoven.",
-      "expected_output": "Takes the write branch: reads BRANDING.md, drafts through better-writing, lints, reports. The homepage headline is the locked header, with its subhead, word for word; any alternative it offers names the academy and frames the kid's path as a journey or an adventure. The final copy passes word_lint with exit 0.",
+      "expected_output": "Takes the write branch: reads BRANDING.md, drafts through better-writing, lints, reports. The homepage headline is the locked header, with its subhead, word for word; any alternative it offers names the academy and frames the kid's path as a journey. The final copy passes word_lint with exit 0.",
       "files": [],
       "assertions": [
+        "grader-exit-0: the grader exits 0 on the final report with BRANDING.md required, so BRANDING.md was read and quoted verbatim",
         "read-branding: BRANDING.md is read in full before any copy is drafted",
         "better-writing-invoked: the Skill tool is called with skill better-writing, with BRANDING.md named as the voice and vocabulary",
-        "locked-header: the headline is exactly \"An online music academy built around each kid's journey.\" and the subhead is exactly \"Start a music adventure your kid will love, from the comfort of home.\"",
+        "locked-header: the headline is exactly \"An online music academy built for kids.\" and the subhead is exactly \"A music journey your kid will love, from the comfort of home.\" (BRANDING.md section 1, The header), read from the file, never from memory",
         "academy-framing: every headline offered contains the word academy",
-        "journey-words: the copy contains journey or adventure",
+        "journey-word: the copy contains journey",
         "lint-run: word_lint.py is run on the final copy and its exit code 0 is shown",
         "report-shape: the reply ends with the final copy and the Before/After/BRANDING.md rule table, or states the lint returned no findings"
-      ]
+      ],
+      "grader": "python3 evals/check-reference-quotes.py <report> --skill-dir skills/dev/thoven-branding --root ~/thoven/frontend --require BRANDING.md"
     },
     {
       "id": 2,
@@ -22,13 +24,15 @@
       "expected_output": "Takes the review branch: reads BRANDING.md, lints first, then reviews through better-writing, then fixes. The lint flags Airbnb and Browse; both are rewritten with the say text and the BRANDING.md rule (8 Rejected for the analogy, 2 Say this for finding a teacher). The rewrite names the academy, uses explore or find your teacher, and passes word_lint with exit 0.",
       "files": [],
       "assertions": [
+        "grader-exit-0: the grader exits 0 on the final report with BRANDING.md required, so BRANDING.md was read and quoted verbatim",
         "lint-before-review: word_lint.py runs before better-writing is invoked",
         "airbnb-flagged: the Airbnb analogy is reported as a finding citing BRANDING.md section 8 Rejected",
         "browse-flagged: Browse is reported as a finding with explore or find your teacher as the replacement",
         "rewrite-academy: the rewritten paragraph contains academy and contains neither Airbnb nor browse",
         "rewrite-lints-clean: word_lint.py is rerun on the rewritten paragraph and exits 0",
         "change-table: each change has a row with Before, After and the BRANDING.md rule it follows"
-      ]
+      ],
+      "grader": "python3 evals/check-reference-quotes.py <report> --skill-dir skills/dev/thoven-branding --root ~/thoven/frontend --require BRANDING.md"
     },
     {
       "id": 3,
@@ -36,12 +40,30 @@
       "expected_output": "Takes the write branch. The line names the support (a Thoven teacher who adapts to how the kid learns) or uses diverse learners, describes the kid by what they love or how they learn, carries no diagnosis label, and passes word_lint with exit 0.",
       "files": [],
       "assertions": [
+        "grader-exit-0: the grader exits 0 on the final report with BRANDING.md required, so BRANDING.md was read and quoted verbatim",
         "names-support: the line says diverse learners or names the support, such as a teacher who adapts to how the kid learns",
         "no-label: the line contains none of the words the diagnosis-label and neurodivergent entries in scripts/retired_words.json match",
         "thoven-teachers: the line calls the teachers Thoven teachers or a real teacher",
         "lint-clean: word_lint.py is run on the line and exits 0",
         "rule-cited: the report cites BRANDING.md section 3 Name the support, then let stories carry it"
+      ],
+      "grader": "python3 evals/check-reference-quotes.py <report> --skill-dir skills/dev/thoven-branding --root ~/thoven/frontend --require BRANDING.md"
+    },
+    {
+      "id": 4,
+      "prompt": "Write the copy for the popup a teacher sees after denying a reschedule request: title, one line, any facts, and the buttons. Emma's piano lesson on Wed, Nov 25 stays as it was, and the teacher gave the reason 'I'm away that week.'",
+      "expected_output": "Takes the write branch for a signed-in product screen, so it opens BRANDING.md and references/plain-copy.md. The popup states the outcome once: a title, one line, and at most a labelled reason row, with no repeated outcome, no dash-joined facts and no eyebrow. It runs word_lint.py --once on the text nodes and the final copy exits 0.",
+      "files": [],
+      "grader": "python3 evals/check-reference-quotes.py <report> --skill-dir skills/dev/thoven-branding --root ~/thoven/frontend --require BRANDING.md --require references/plain-copy.md",
+      "assertions": [
+        "grader-exit-0: the grader exits 0 on the final report with BRANDING.md and references/plain-copy.md both required",
+        "outcome-once: the outcome (not moved, or denied) appears on one line only, with no subtitle, summary sentence and table repeating it",
+        "labelled-facts: the lesson and the reason sit in a sentence or a labelled row, with no dashes or middle dots between facts",
+        "no-eyebrow: the title stands alone, with no eyebrow line above it",
+        "once-lint-run: word_lint.py --once is run on the text nodes, one per line, and its exit code 0 is shown for the final copy",
+        "reason-plain: the teacher's reason shows as plain text with no quotation marks or quote styling"
       ]
     }
-  ]
+  ],
+  "grader": "Run from the agent-skills repo root on the final report saved to a file. Exit 0 means every Used line quotes its reference verbatim under the named heading and every required reference has one. Exit 1 means a reference was not read."
 }

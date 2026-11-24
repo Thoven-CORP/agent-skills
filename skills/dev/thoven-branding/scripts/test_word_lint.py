@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parent / "word_lint.py"
-LOCKED_HEADER = "An online music academy built around each kid's journey."
+LOCKED_HEADER = "An online music academy built for kids."
 
 
 def lint(*args, stdin=""):
@@ -84,8 +84,8 @@ class Findings(unittest.TestCase):
 
     def test_locked_headers_are_clean(self):
         for header in (
-            LOCKED_HEADER + "\nStart a music adventure your kid will love, from the comfort of home.",
-            "Online guitar lessons built around each kid's journey.",
+            LOCKED_HEADER + "\nA music journey your kid will love, from the comfort of home.",
+            "Online guitar lessons built for kids.",
         ):
             with self.subTest(header=header):
                 result = lint("-", stdin=header)
@@ -114,6 +114,99 @@ class Findings(unittest.TestCase):
         result = lint(handle.name)
         self.assertEqual(result.returncode, 1)
         self.assertIn(f'{handle.name}:2:5: "Airbnb"', result.stdout)
+
+
+DENIED = "\n".join([
+    "Reschedule Denied",
+    "Your reschedule request was denied.",
+    "The teacher denied the reschedule, so Wed, Nov 25 stays.",
+    "Reschedule response: Denied",
+    'Reason: "I can\'t reschedule that week."',
+])
+CLEAN_DIALOG = "\n".join([
+    "Lesson not moved",
+    "Emma's piano lesson stays on Wed, Nov 25 at 1:00 PM.",
+    "Reason from the teacher: I'm away that week.",
+])
+REFUND = "\n".join([
+    "Refund request",
+    "From John Smith, 2 minutes ago",
+    "Emma piano — Emma — Wed, Nov 25, 1:00 PM - 2:00 PM EST",
+])
+
+
+class Once(unittest.TestCase):
+    def test_denied_dialog_flags_both_words_with_lines(self):
+        result = lint("--once", "-", stdin=DENIED)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn('"reschedule" is on lines 1, 2, 3, 4, 5', result.stdout)
+        self.assertIn('"denied" is on lines 1, 2, 3, 4', result.stdout)
+        self.assertIn("state each fact once", result.stdout)
+
+    def test_clean_dialog_passes(self):
+        result = lint("--once", "-", stdin=CLEAN_DIALOG)
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_stem_joins_reschedule_forms(self):
+        forms = ["reschedule", "rescheduled", "reschedules", "rescheduling"]
+        for start in range(2):
+            with self.subTest(forms=forms[start:start + 3]):
+                result = lint("--once", "-", stdin="\n".join(forms[start:start + 3]))
+                self.assertEqual(result.returncode, 1)
+
+    def test_two_lines_and_same_line_repeats_pass(self):
+        self.assertEqual(lint("--once", "-", stdin="piano piano piano\nlesson\nlesson").returncode, 0)
+
+    def test_short_and_stop_words_are_ignored(self):
+        self.assertEqual(lint("--once", "-", stdin="about this\nabout that\nabout it").returncode, 0)
+
+    def test_once_runs_retired_check(self):
+        result = lint("--once", "-", stdin="A marketplace for lessons.")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("marketplace", result.stdout)
+
+    def test_without_flag_repeats_are_not_flagged(self):
+        self.assertEqual(lint("-", stdin=DENIED).returncode, 0)
+
+    def test_empty_input_still_refused(self):
+        self.assertEqual(lint("--once", "-", stdin="").returncode, 2)
+
+
+class NewRetiredEntries(unittest.TestCase):
+    def test_refund_request_trips_dash_chain(self):
+        result = lint("-", stdin=REFUND)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("a sentence, or one labelled row per fact", result.stdout)
+        self.assertEqual(result.stdout.count("->"), 1)
+
+    def test_dash_chain_ignores_single_dash_range_and_hyphen(self):
+        for text in (
+            "Emma piano – Wed, Nov 25",
+            "Wed, Nov 25, 1:00–2:00 PM",
+            "Wed, Nov 25, 1:00 PM - 2:00 PM EST - Emma",
+            "Emma—piano—Wed",
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(lint("-", stdin=text).returncode, 0)
+
+    def test_dash_chain_flags_en_dashes(self):
+        self.assertEqual(lint("-", stdin="a – b – c").returncode, 1)
+
+    def test_makeup_with_refund_or_credit_is_flagged(self):
+        for text in (
+            "Your makeup is a refund.",
+            "Get a credit for the make-up lesson.",
+            "Makeups are credited to you.",
+        ):
+            with self.subTest(text=text):
+                result = lint("-", stdin=text)
+                self.assertEqual(result.returncode, 1)
+                self.assertIn("a makeup is a missed session the teacher gives back", result.stdout)
+
+    def test_makeup_alone_or_split_sentences_pass(self):
+        for text in ("Book a makeup lesson.", "Ask for a makeup. Refunds take days.", "Your credit card is saved."):
+            with self.subTest(text=text):
+                self.assertEqual(lint("-", stdin=text).returncode, 0)
 
 
 if __name__ == "__main__":

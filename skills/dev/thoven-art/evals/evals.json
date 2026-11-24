@@ -1,0 +1,20 @@
+{
+  "skill_name": "thoven-art",
+  "grader": "Run from the agent-skills repo root on the final report saved to a file. Exit 0 means every Used line quotes its reference verbatim under the named heading and every required reference has one. Exit 1 means a reference was not read.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Plan the pictures for the new Makeup offered confirmation: a header picture, a small icon for the offered session, and a decorative frame for the box around the session details. List what we have and what we would need to make.",
+      "expected_output": "Takes the use branch and reads design/art/INDEX.md in full before naming any asset. Maps each need to an existing row or writes it down as a gap with kind and meaning. Generates nothing: Andres has not asked for new art in this session.",
+      "files": [],
+      "grader": "python3 evals/check-reference-quotes.py <report> --skill-dir skills/dev/thoven-art --root ~/thoven/frontend --require design/art/INDEX.md",
+      "assertions": [
+        "grader-exit-0: the grader exits 0 on the final report with INDEX.md required, so the index was read and quoted verbatim",
+        "map-before-make: every need is mapped to a locked or chosen row or listed as a gap, and no superseded row is used",
+        "no-generation: no Quiver, nano-banana or Paper generation call is made",
+        "frame-is-accent: a frame, if proposed, is a small accent on a plain box with design-system token colours, not the art palette",
+        "mascot-reuse: Thovie, if used, is reused and never generated"
+      ]
+    }
+  ]
+}

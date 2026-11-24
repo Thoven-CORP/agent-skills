@@ -37,4 +37,7 @@ with its frame is [visual parity](visual-parity.md).
      (`DESIGN.md`, "never join metadata with a middle dot").
   2. Read each nested container's radius with `get_computed_styles` and confirm it equals the outer
      radius minus the inset between them (`DESIGN.md`, "Nested radii are concentric").
+  3. For a dialog frame, pipe its text nodes, one per line, into `python3 ~/.agents/skills/thoven-branding/scripts/word_lint.py --once -`
+     and expect exit 0: a fact in two slots or an unlabelled string of facts is a defect in the frame
+     too ([dialogs](dialogs.md), "Each fact once"). Also confirm its secondary button is neutral.
 

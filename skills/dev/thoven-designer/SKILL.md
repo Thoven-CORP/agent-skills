@@ -5,29 +5,53 @@ description: Design, critique, or polish a Thoven surface; draw, mock or edit fr
 
 # Thoven Designer
 
-Design for the person's task and the whole rendered composition. Thoven's frontend `DESIGN.md` governs the house system; this skill points to its sources rather than restating design values. Token modules and tests prevail where documentation and implementation disagree; that ranks docs against code. A Paper frame outranks both for the surface it shows: the system is reference, and the frame's own values are the build source (`andres-mode`, Parity). Check rulings made in this session too, and hand them to `workspace` `capture`.
+Judge a surface on the rendered page, never on its class list or its token match. `toHaveClass` passes while the colours fight, and the eye sees edges the box model does not.
 
-The named surface is the scope. Where a Paper frame shows the slot, build the slot and the component at the frame's values, changing the shared component to do it. Where no frame sets the slot, fit the component into it; resizing a shell, grid or neighbouring card no frame shows needs Andres (`feature-ledger` rule 16). Before a variant of a shipped surface or attached mockup, a ticket on one, a system audit, or a proposed token or shared component, open the live route and global component, inspect shipped code, and list what already shipped. State what stays and what changes; propose the gap.
+## Authority
 
-For a screen that has never existed, design in Paper first and give it a polish round before lab or code, unless the task chooses a medium. A multi-screen flow then moves to one main lab, which replaces Paper as its design (Thoven law, Design parity).
+1. A Paper frame, for the surface it shows: build its values, never the nearest token or role (Thoven law, "Design parity").
+2. Token modules and their tests (`lib/*-tokens.ts`), then `DESIGN.md` and `design/*.md`. Where a doc and a token module disagree, the doc is the bug.
+3. A ruling made this session that no file carries yet: apply it, then hand it to `workspace` `capture`.
 
-A variant rethinks the screen from first principles: what it must say, what the person must do, which parts need a box, which words are excess and where the main button sits. Removing a container and keeping the layout is not a variant. "Variants" means Paper frames unless the ask names a lab or HTML. Andres, 2026-11-19: "I want you to see the screen from first principles"; "I was not asking for a lab or HTMl. I was asking for new vairants of this screen". Storyboard only the moving part. During design, “build” means Paper unless the turn names code. Work in a Paper file by [Paper](references/paper.md).
+## Scope
+
+- The named surface is the scope. Where a Paper frame sets a slot, build the slot at the frame's values and change the shared component to do it. Where no frame sets it, fit the component into it; resizing a shell, grid or neighbouring card no frame shows needs Andres (`feature-ledger` rule 16).
+- Before a variant of a shipped surface, a ticket on one, a system audit, or a proposed token or shared component: open the live route and the global component, read the shipped code and list what already shipped. State what stays and what changes, and propose only the gap. Variants drawn from memory contradicted the real route.
+- A screen that has never existed is designed in Paper first, with one polish round before any lab or code. A multi-screen flow then moves to one main lab, which replaces Paper (law, "Design parity"). While designing, "build" means Paper unless the turn names code.
+- A variant rethinks the screen from first principles: what it must say, what the person must do, which parts need a box, which words are excess, where the main button sits. Removing a container and keeping the layout is not a variant. "Variants" means Paper frames unless the ask names a lab or HTML. Andres, 2026-11-19: "I want you to see the screen from first principles".
+
+## Open the reference before you act
+
+| Task | Open |
+| --- | --- |
+| A popup, dialog, notice, confirmation, or a footer's buttons | [dialogs](references/dialogs.md) |
+| An icon or text beside text; a header, row, list or section card; spacing, wrapping | [layout](references/layout.md) |
+| Any surface you built or changed, before you say it is done | [check](references/check.md) |
+| A build set beside its Paper frame | [visual parity](references/visual-parity.md) |
+| Drawing, editing or importing a Paper frame | [paper](references/paper.md) |
+| A value, a lock, an existing component, an audit of a file | [implementation](references/implementation.md) |
+| The classifier is undecided, or the work belongs to another skill | [sources](references/sources.md) |
+
+Open every row the task touches, not the first. A built or changed surface always opens `check`.
 
 ## Design and critique
 
-1. Establish the task, audience, context, scope, and what must remain from shipped or approved work. Inspect the actual rendered surface or supplied artifact in context, including relevant states and responsive behavior. If it cannot be inspected, say what is missing and qualify the review. For house atmosphere read frontend `DESIGN.md` “Brand atmosphere” and `BRANDING.md`, and inspect a relevant approved composition. For layout and copy judgement read `DESIGN.md` “Calm screens”. For component treatments inspect `docs/design-system.html`; for typography read `design/typography.md` and its named code owners. When Paper or another approved design is the implementation reference, follow [visual parity](references/visual-parity.md) to compare both rendered surfaces.
-2. State what the person should notice first, understand next, and be able to do. Compare that intended reading order with the rendered composition: visual weight, grouping, density, alignment and affordances. Identify consequential mismatches and preserve strengths. Assess visual balance and Thoven's warmth and clarity in context. Compare typography across its layout: headings against content, labels against values, and text against available space. Examine measure, wrapping, alignment, weight and proportion together; a valid type role can still read poorly in its setting. Consider long content and available widths where relevant.
-3. Explain each consequential observation as what is visible → what in the composition causes it → how it affects the person's task → a concrete change and tradeoff. Separate observation from inferred feeling. For example, if a secondary card title visually competes with the section heading, inspect their relative weight and surrounding space, then adjust their hierarchy using existing roles and check the result in the whole layout. A dense data view may benefit from separators; a selectable unit may need containment. Choose by the relationship the treatment communicates.
-4. Propose or make a coherent, scoped change, preserving what works. Inspect the result at the relevant size and states, including text growth and interaction where applicable, and recheck the reference when parity applies. Complete the review when consequential findings have a proposed or verified resolution and remaining uncertainties are explicit. A visual finding is not proven merely by a token match. Use specialist skills when a specific concern needs deeper work, while keeping ownership of the whole composition here.
+1. Inspect the rendered surface in context: each state, at 390 and at the frame's width, with the longest real copy. If it cannot be inspected, say what is missing and qualify the finding.
+2. State what the person should notice first, understand next, and be able to do. Compare that with the rendered composition (weight, grouping, density, alignment, affordances) and the type in it (measure, wrapping, weight against its space).
+3. Write each finding as: what is visible, what in the composition causes it, how it affects the task, the concrete change and its tradeoff. Keep observation apart from inferred feeling.
+4. Make the scoped change and keep what works. Then run [check](references/check.md) on the result.
 
-When existing components cannot express the needed relationship, explain the gap and propose the missing composition or primitive through its purpose, visual role and states. Check what already exists before hand-rolling it. Use established roles, components and interaction states when resolving the design; consult [lookup and implementation compliance](references/implementation.md) for their sources and checks. An exploratory choice without a settled source may be proposed as provisional; do not present it as a lock. Beyond what a Paper frame shows, changes to enforced standards, new hues or type roles, and scope outside the named surface need Andres's decision. A value a frame shows is already decided: build it at the frame's value, never the nearest hue or role. When a proto and shipped work differ, distinguish enforced standards from emerging primitives; bring the conflict to Andres rather than treating every emerging choice as fixed.
+Sources before drawing: atmosphere in `DESIGN.md` "Brand atmosphere" and `BRANDING.md`, layout and copy judgement in `DESIGN.md` "Calm screens", component treatments in `docs/design-system.html`, type in `design/typography.md`. When no component can express the relationship, name the gap and propose the composition through its purpose, visual role and states, after checking what exists ([implementation](references/implementation.md)). A choice with no settled source is provisional, never a lock. Changes to enforced standards, new hues or type roles, and scope outside the named surface need Andres. A value a frame shows is already decided.
 
-## Output
+## Report
 
-For design and critique, lead with the overall judgment and its consequence for the person's task. Name what should stay, then prioritize the few changes that matter most. Use the observation → cause → impact → change reasoning above, with a tradeoff where material. A sound composition can be reported as such. Close with what was actually inspected, what changed or is proposed, and what remains provisional or unverified. Scale the answer to the request; headings and counts are optional. When parity applies, include the reference and the discrepancy dispositions from [visual parity](references/visual-parity.md).
+- Lead with the overall judgment and what it means for the person's task. Name what stays, then the few changes that matter most.
+- Close with what was inspected, what changed or is proposed, what is provisional, and a `Not checked:` line for each known gap in [check](references/check.md) that applies.
+- A lookup gives the direct answer, the owning source and its lock tier. Compliance gives each deviation with `file:line`, its governing source and its consequence, apart from visual judgment.
+- Parity includes the reference and the dispositions from [visual parity](references/visual-parity.md).
 
-For a lookup, give the direct answer, owning source and authority. For compliance, report deviations with their location, governing source and consequence. Keep technical compliance evidence distinct from visual judgment.
+**Done when** the report ends with one line per reference you opened, in this shape:
 
-## Lookup and compliance
+`Used: references/<file>.md § <heading>: "<one sentence copied verbatim from that section>"`
 
-For a component existence question, a specific design value or lock, a system audit, or code-level implementation verification, follow [lookup and implementation compliance](references/implementation.md). It contains the classifier, source map, lock tiers, implementation pitfalls, and standing checks. Consult it as needed during design; a full token audit is a separate task from assessing the composition.
+`<heading>` is the exact text of a markdown heading in that file. A copied sentence proves you read the section. A reference opened and not quoted counts as not read.
