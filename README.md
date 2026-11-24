@@ -203,6 +203,8 @@ Do **not** copy third-party or plugin skills in here. Those stay where they alre
 - `emilkowalski/skills`, `jakubkrehel/skills`, `t3dotgg/tstack`, `janestreet/agent_skills`
 - Claude Code plugins and their enabled state: see the [full installation guide](skills/dev/workspace/references/remote-install.md)
 
+One exception: `skills/dev/teach-course` is our renamed fork of `mattpocock/skills`' `teach`, adapted for the desktop app. Installing the original would overwrite pstack's `teach`, which has the same name.
+
 Frontend/backend still keep **lockfile** copies of Neon / GSAP where the product needs them. Do not `git rm` those.
 
 ## Adding or changing a skill
