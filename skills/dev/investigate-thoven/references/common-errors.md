@@ -111,6 +111,16 @@ Known error patterns for this project. Check here first when debugging.
 - **Date Added:** 2026-11-14
 - **Reference:** THV-1820: the Mixpanel `/relay` went live, a query 1 minute after the visit found nothing, and all events had arrived 2-4 minutes later. A real visitor's page view had arrived 5 s after it was sent.
 
+### Error: Event Moved Off the SDK Loses the SDK's Automatic Properties
+- **Symptom:** After an event moves to a hand-built send (an inline head script, a beacon, a server forward), reports that filter it on a property the SDK used to add (`utm_source`, browser, OS, a click id) read zero, while the same visitors' SDK-sent events still carry it. It reads as lost attribution.
+- **Root Cause:** An analytics SDK adds properties on its own at send time: campaign tags from the current URL, device and browser, super properties, hooks. A payload built by hand carries only what the code puts in it, so every automatic property disappears from that one event with no error.
+- **Fix:** Add the missing properties to the hand-built payload under the names the SDK uses. First break the event down by a sibling property (`first_touch_*`, a route-derived `campaign`) to confirm the data is there under another name.
+- **Prevention:** When an event changes transport, pull one live event from before and one from after and diff the property names. Every name that disappeared is added back or listed as dropped on purpose. When a report says "0 of N carry X", break the event down by neighbouring properties before calling it lost. A vendor's property list can be incomplete, so confirm a "missing" property with a count.
+- **Applies to:** Mixpanel, GA4, PostHog, Segment; inline scripts, `sendBeacon`, server-side and Conversions API copies of a browser event.
+- **Files:** any hand-built analytics payload (e.g. `lib/analytics/head-visit-script.ts`), relays, server event senders
+- **Date Added:** 2026-11-24
+- **Reference:** THV-2122: the ad page's `landing_page_viewed` moved to a head-script beacon on Nov 19 and stopped carrying `utm_*`. A daily report read "0 of 371 from Meta" while 238 carried `first_touch_utm_source`.
+
 ---
 
 ## React Hooks / State
