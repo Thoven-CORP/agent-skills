@@ -84,6 +84,8 @@ Install these as part of the full manifest, not as a substitute for it:
 - Emil Kowalski: `emilkowalski/skills`, including the nine skills in the example above.
 - Jakub Krehel: `jakubkrehel/skills`, including Better Interface and all its Better helpers,
   Interface Review, Explain Interface, Variant, and the four requested design additions.
+- Jane Street: `socratic-tutor` from [janestreet/agent_skills](https://github.com/janestreet/agent_skills).
+  Instructions only. Upstream takes no PRs, so keep any adaptation as our own copy under a new name.
 - Poteto/pstack, `deslop`, `verify-this`, and review helpers: their recorded paths in `cursor/plugins`.
   Preserve the Claude-specific pstack adapter, playbooks, principles, and referenced files.
 - Thermos: `cursor/plugins`, with `thermos`, `thermo-nuclear-review`, and

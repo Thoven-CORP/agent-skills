@@ -2763,6 +2763,16 @@
         "Expo, React Native or NativeScript app for its own captures; Thoven web uses its ideas, not its capture pipeline"
       ],
       "policy": "Model invocation stays off; a brief names it."
+    },
+    {
+      "source": "janestreet/agent_skills",
+      "observedUpstreamSha": "469868f4489cbdbe178c775a0af05bb6bef63689",
+      "status": "requested 2026-11-24 for destination installation",
+      "skills": [
+        "socratic-tutor"
+      ],
+      "requirements": [],
+      "policy": "Instructions only, no scripts. Triggers on explicit teach/quiz/drill requests; one-off explain questions answer normally."
     }
   ],
   "claudeUserPlugins": [
