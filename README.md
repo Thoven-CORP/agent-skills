@@ -84,8 +84,10 @@ orchestrate and dispatch-work now route to. `pr-wait` needs `gh` and `python3`.
 ```bash
 npx skills@latest add t3dotgg/tstack -g -y -a claude-code -a cursor
 npx skills@latest add jakubkrehel/skills -g -y -a claude-code -a cursor \
-  --skill teardown --skill break --skill build-design --skill state-machine
+  --skill break --skill build-design --skill state-machine
 ```
+
+`teardown` is our own copy in `skills/dev/teardown` (MIT, from `jakubkrehel/skills` at its 2026-11-12 removal; upstream deleted it, so it gets no updates). It installs with step 1.
 
 **3. Put the local patches back.** Both commands overwrite the skill folders, which reverts our
 fixes (the `deslop` description, the `verify-this` rewrite, skill names, the model-invocation
