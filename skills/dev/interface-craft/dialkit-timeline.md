@@ -1,6 +1,6 @@
 # DialKit Timeline
 
-Use DialKit 1.4.3 Timeline to author and tune animation choreography: clip timing, sequences, independent property tracks, loops, replayable interactions, reversible timeline events, and scrubbing. Examples use React; Timeline also supports Solid, Svelte 5, and Vue 3.
+Use DialKit Timeline to author and tune animation choreography: clip timing, sequences, independent property tracks, loops, replayable interactions, reversible timeline events, and scrubbing. Written against DialKit **2.2.1** and upstream `docs/timeline.md` in [joshpuckett/dialkit](https://github.com/joshpuckett/dialkit). Examples use React; Timeline also supports Solid, Svelte 5, Vue 3 and plain JavaScript.
 
 ## Contents
 
@@ -16,7 +16,7 @@ Use DialKit 1.4.3 Timeline to author and tune animation choreography: clip timin
 
 ## Setup
 
-Inspect project instructions, `package.json`, and the lockfile. Verify `dialkit` is version 1.4.3 and the framework's required animation package is installed. Do not add or upgrade dependencies without the user's authorization. Import the shared styles and mount `DialTimeline` once. `DialRoot` is optional unless the project also uses regular parameter panels.
+Inspect project instructions, `package.json`, and the lockfile. Verify the installed `dialkit` version (2.2.1 is documented here; read `dist/index.d.ts` before relying on an option an older release may lack) and that the framework's required animation package is installed. Do not add or upgrade dependencies without the user's authorization. Import the shared styles and mount `DialTimeline` once. `DialRoot` is optional unless the project also uses regular parameter panels.
 
 ```tsx
 import { DialTimeline } from "dialkit";
@@ -40,6 +40,20 @@ Use the adapter that matches the project:
 | Solid | `dialkit/solid` | `createDialTimeline` | `timeline().card.current` |
 | Svelte 5 | `dialkit/svelte` | `createDialTimeline` | `timeline.card.current` |
 | Vue 3 | `dialkit/vue` | `useDialTimeline` | `timeline.value.card.current` in script; auto-unwrapped in templates |
+| Vanilla | `dialkit/vanilla` (styles `dialkit/vanilla/styles.css`) | `createDialTimeline`, dock from `createDialTimelineRoot()` | `timeline.values.card.current`, or `subscribe(callback)` for frame updates; `destroy()` to clean up |
+
+Mount one dock to display every registered timeline. Svelte's `DialRoot` injects styles; import the stylesheet yourself when using the Svelte dock without it.
+
+`useDialTimeline(name, config, options)` takes:
+
+| Option | Purpose | Default |
+| --- | --- | --- |
+| `id` | Stable ID that retains values across mounts | Generated |
+| `persist` | Save timing edits and presets; accepts the panel storage options (`key`, `storage`, `presets`) | `false` |
+| `autoplay` | Play on mount | `true` |
+| `loop` | Wrap to 0 with `true`, or to a time with `{ from: seconds }` | `false` |
+
+The result also carries `time`, `playing`, `duration`, `play()`, `pause()`, `replay()` (starts from 0) and `seek(seconds)`. Those seven names are reserved at the top level: a clip named `time` or `seek` is skipped with a console warning.
 
 ## Core model
 
@@ -47,7 +61,7 @@ Use the adapter that matches the project:
 - Give every clip a semantic name and an `at` start time, such as `enter`, `idle`, `cardReveal`, or `dismiss`.
 - Give discrete state boundaries semantic names such as `tuck`, `enableInput`, or `moveBehind`.
 - Use separate clips for separate behaviors even when one element combines their output.
-- Treat top-level `duration` as a minimum editing window. Omit it for an initially exact-fit window. Allow the timeline to extend when edited content, especially a physics spring, grows past the boundary.
+- Treat top-level `duration` as a minimum editing window. Omit it for an initially exact-fit window. The timeline grows when edited content, especially a physics spring, extends past the current end.
 - Keep loop behavior code-defined.
 - Use a stable `id` when persisting edits. In application projects, prefer development-only persistence unless the user explicitly wants authored overrides in production.
 - For a reusable configuration, declare it separately with `satisfies TimelineConfig` so TypeScript checks its shape without losing literal inference.
@@ -159,13 +173,32 @@ card: {
 }
 ```
 
+When a clip has no `duration`, DialKit takes the transition's duration or a spring's settling time. A clip with values but no transition uses `{ type: "spring", bounce: 0.2 }`. `from` and `to` become editable controls in the clip editor, and their numeric ranges widen to include the values you supply. A sequence's duration is the sum of its steps; each step may carry its own transition, otherwise it inherits the clip's. `props` cannot be combined with clip-level `from`, `to` or `steps`, and a property track may not use a reserved clip field name. `delay` on a property track offsets it from the clip's `at`, and a looping clip repeats each track at its own period.
+
 ### Markers
 
 - Use a clip with only `at` and optional `duration` as a timing marker. Read its `started`, `active`, or `progress`; it has no `current` values.
 
 ### Groups
 
-Nest clips one level inside a named object to create a presentational group. Grouping does not compose their animation values.
+Nest clips one level inside a named object to create a collapsible layer in the dock. The returned values nest the same way (`timeline.circle.enter.progress`). Grouping organizes the editor; it does not compose their animation values.
+
+### What a clip returns
+
+| Field | Meaning |
+| --- | --- |
+| `at`, `duration` | Current timing in seconds |
+| `loop` | `"off"` or `"repeat"` |
+| `started` | The playhead has reached the clip |
+| `active` | The playhead is inside a cycle of the clip |
+| `done` | The clip has ended; a looping clip ends with the timeline |
+| `progress` | 0 to 1 within the current cycle |
+| `step` | Current step index for a sequence |
+| `from`, `to` | Resolved endpoints; `to` of a sequence is its final merged state |
+| `current` | Values sampled at the playhead |
+| `animate` | `from` before the clip starts, then `to` |
+| `transition` | Effective transition of a single-curve clip |
+| `css` | CSS duration and timing function of a single-curve clip |
 
 ## Discrete timeline events
 
@@ -215,11 +248,27 @@ Follow these rules:
 ## Playback and loops
 
 - Use `autoplay: false` for event-driven UI and call `replay()` from the application's real trigger.
-- Use `loop: true` on a clip to repeat that clip's cycle.
-- Use the hook option `{ loop: { from: number } }` for a one-time intro followed by a looping region.
+- Use `loop: true` on a clip to repeat that clip's cycle until the timeline ends. To return to the starting state, end the sequence on it: there is no mirror mode.
+- Use the hook option `loop: true` to wrap the playhead to 0, or `{ loop: { from: number } }` for a one-time intro followed by a looping region. Looping clips keep their phase across wraps, and seeking returns to the first-pass state at that time.
 - Use `play()`, `pause()`, `replay()`, and `seek(time)` only as authoring transport or intentional application controls.
 - Keep the real application trigger wired to the timeline while authoring so replay behavior is tested in context.
 - Respect reduced-motion preferences. For an event-driven sequence, seek to the end and complete the application's state transition immediately instead of playing the choreography.
+
+## The dock
+
+The dock sits at the bottom of the viewport and works independently of the parameter panel; timeline controls never appear in `DialRoot`. When `DialRoot` is also mounted, its timeline button shows or hides the dock, and hiding the dock does not stop playback.
+
+| Prop | Default | Purpose |
+| --- | --- | --- |
+| `theme` | `"system"` | `"system"`, `"light"`, `"dark"` |
+| `defaultVisible` | `true` | Initial dock visibility |
+| `visible`, `onVisibilityChange` | Uncontrolled | Drive visibility from the host app (`@visibility-change` in Vue; `dock.setVisible(boolean)` or `dock.update({ visible, onVisibilityChange })` in vanilla) |
+| `defaultOpen` | `true` | Start timeline sections expanded |
+| `productionEnabled` | Development only; always on in vanilla | Render the editor in a production build |
+
+Gestures: drag the ruler or playhead to seek (playback pauses during the drag and resumes after); drag the collapsed overview to scrub the whole timeline; Alt/Option-drag the ruler, or Cmd/Ctrl-scroll over the timeline, to zoom; Shift-drag resets to the full timescale and seeks; scroll horizontally to pan when zoomed; drag a clip to change its start, drag clip edges or segment boundaries to change duration, click a clip or segment to edit its values and curve, click a composite bar to expand its property rows, and drag the dock's top edge to resize it. Time-based springs and easings are retimed by resizing the bar; physics springs show `~` on their bar and are edited through their physics. Keyboard: the playhead moves 1 ms with Left/Right and 0.1 s with Shift, Home/End jump to the ends; Enter or Space opens a clip's editor; Up/Down on the resize handle moves 20 px.
+
+The toolbar has play/pause, replay, presets, Copy and collapse. `formatClock(seconds, tenths?)` is exported from `dialkit`, `dialkit/vanilla` and `dialkit/timeline` for custom clock displays. Timelines use the version menu, not the thumbnail gallery.
 
 ## Rendering semantics
 
@@ -241,7 +290,7 @@ Treat the Timeline as an authoring system. Do not remove or convert it until the
 
 1. Generate the timeline with `clip.current` and the `TODO(production)` comment shown above.
 2. Tune and scrub the animation in its real interface context.
-3. Use Copy to bake the tuned values into the `useDialTimeline` configuration. Keep `clip.current` during authoring.
+3. Use Copy to bake the tuned values into the `useDialTimeline` configuration. Copy exports the tuned timings, transitions and values, keeps the `current` bindings while editing, and adds a production handoff comment. Keep `clip.current` during authoring.
 4. When explicitly asked to finalize, inspect both the timeline configuration and every consumer of its values.
 5. Inventory marker consumers such as `started`, `active`, and `progress`; zero-duration clips can be easy to miss because they have no `current` values.
 6. Translate the tuned choreography and every discrete marker boundary to the application's real Motion animation system or state sequence.
@@ -261,7 +310,7 @@ Use this mapping as a guide, not as a blind textual rewrite:
 - `replay()` or other transport calls → application state or Motion controls
 - Expressions combining multiple `current` values → equivalent composed production behavior
 
-Preserve behavior before removing DialKit. Do not assume that copying values alone performs this conversion.
+Preserve behavior before removing DialKit. Do not assume that copying values alone performs this conversion. DialKit samples springs and Bézier curves for scrubbing, so its spring preview is not guaranteed to match every frame of another animation runtime: check the converted animation in the real interface.
 
 ## Output rules
 

@@ -63,7 +63,7 @@ const params = useDialKit('Card', {
 
 See [dialkit.md](dialkit.md) for all control types and patterns.
 
-The DialKit guidance targets version 1.4.3. For clip timing, sequences, loops, replayable animations, timeline markers/events, or scrubbing, read and follow [dialkit-timeline.md](dialkit-timeline.md).
+The DialKit guidance targets version 2.2.1. For clip timing, sequences, loops, replayable animations, timeline markers/events, or scrubbing, read and follow [dialkit-timeline.md](dialkit-timeline.md).
 
 ## Sub-Skill Routing
 
