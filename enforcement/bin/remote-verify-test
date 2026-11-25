@@ -183,5 +183,67 @@ FAKE_GH=badssh run "${NOPROFILE[@]}"; expect_rc "h) an unreadable ssh origin exi
 has "h) ssh refusal names the ls-remote check" "$T/err" "ls-remote origin HEAD"
 FAKE_GH=ok run "${NOPROFILE[@]}"; expect_rc "h) a readable origin goes through" $? 0
 
+# A backend run with no TEST_DATABASE_URL on the mini makes its own neondb_test_rv_* database from
+# the tree's schema, hands it to bin/verify, and drops it and its slot copies when the run ends.
+unset TEST_DATABASE_URL DATABASE_URL
+g init -q --bare "$T/borigin.git"
+g clone -q "$T/borigin.git" "$T/blaptop" 2>/dev/null
+B="$T/blaptop"
+mkdir -p "$B/bin"
+echo 'source "https://rubygems.org"' > "$B/Gemfile"
+cat > "$B/bin/verify" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "${TEST_DATABASE_URL-unset}" > "$REMOTE_VERIFY_TEST_DIR/verify.db"
+echo THOVEN_VERIFY_BEGIN; echo '{}'; echo THOVEN_VERIFY_END
+SH
+cat > "$B/bin/rails" <<'SH'
+#!/usr/bin/env bash
+printf '%s %s %s %s\n' "$*" "$RAILS_ENV" "$DATABASE_URL" "$TEST_DATABASE_URL" > "$REMOTE_VERIFY_TEST_DIR/rails.args"
+[ -f "$REMOTE_VERIFY_TEST_DIR/PREP_FAIL" ] && exit 1
+exit 0
+SH
+chmod +x "$B/bin/verify" "$B/bin/rails"
+g -C "$B" add Gemfile bin/verify bin/rails
+g -C "$B" commit -q -m init
+g -C "$B" push -q origin main 2>/dev/null
+g clone -q "$T/borigin.git" "$T/mini/backend" 2>/dev/null
+cat > "$T/shim/psql" <<SH
+#!/usr/bin/env bash
+db=\$(printf '%s' "\$*" | sed -n 's/.*\^\(neondb_test_rv_[0-9a-z_]*\)(.*/\1/p')
+[ -n "\$db" ] && printf '%s\n%s_s2\n' "\$db" "\$db"
+exit 0
+SH
+cat > "$T/shim/dropdb" <<SH
+#!/usr/bin/env bash
+for last; do :; done
+echo "\$last" >> "$T/dropped"
+SH
+chmod +x "$T/shim/psql" "$T/shim/dropdb"
+brun() { (cd "$B" && "$TOOL" "$@") > "$T/out" 2> "$T/err"; }
+
+rm -f "$T/verify.db" "$T/rails.args" "$T/dropped"
+brun "${NOPROFILE[@]}"; expect_rc "i) backend run with no TEST_DATABASE_URL passes" $? 0
+db=$(sed -n 's|^postgresql://localhost/||p' "$T/verify.db" 2>/dev/null)
+case "$db" in neondb_test_rv_[0-9]*) pass "i) verify gets a neondb_test_rv_* database" ;;
+  *) fail "i) verify gets a neondb_test_rv_* database" "$(cat "$T/verify.db" 2>/dev/null)" ;; esac
+has "i) the schema is loaded with db:test:prepare" "$T/rails.args" "db:test:prepare test postgresql://localhost/$db postgresql://localhost/$db"
+has "i) the run's database is dropped" "$T/dropped" "$db"
+has "i) its slot copy is dropped" "$T/dropped" "${db}_s2"
+if [ "$(wc -l < "$T/dropped" | tr -d ' ')" = 2 ]; then pass "i) nothing else is dropped"; else fail "i) nothing else is dropped" "$(cat "$T/dropped")"; fi
+
+rm -f "$T/verify.db" "$T/rails.args" "$T/dropped"
+TEST_DATABASE_URL=postgresql://localhost/neondb_test_mini_own brun "${NOPROFILE[@]}"; expect_rc "j) a mini-set TEST_DATABASE_URL run passes" $? 0
+has "j) verify keeps the mini's database" "$T/verify.db" "postgresql://localhost/neondb_test_mini_own"
+if [ -e "$T/rails.args" ]; then fail "j) no schema load" "bin/rails ran"; else pass "j) no schema load"; fi
+if [ -e "$T/dropped" ]; then fail "j) nothing dropped" "$(cat "$T/dropped")"; else pass "j) nothing dropped"; fi
+
+rm -f "$T/verify.db" "$T/dropped"
+touch "$T/PREP_FAIL"
+brun "${NOPROFILE[@]}"; expect_rc "k) a failed schema load exits 4" $? 4
+has "k) the failure is named" "$T/err" "could not prepare test database"
+if [ -e "$T/verify.db" ]; then fail "k) verify does not run" "it ran"; else pass "k) verify does not run"; fi
+has "k) the half-made database is dropped" "$T/dropped" "neondb_test_rv_"
+rm -f "$T/PREP_FAIL"
+
 if [ "$failures" -eq 0 ]; then echo "all cases passed"; exit 0; fi
 echo "$failures case(s) failed"; exit 1
