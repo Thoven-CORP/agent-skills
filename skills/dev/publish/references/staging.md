@@ -101,6 +101,16 @@ SKIPS
 
 `render ssh` needs a TTY and a registered key, so it fails from an agent. Run Rails code on staging as a Render one-off job instead: base64 the script into `bin/rails runner`, start the job against `thoven-api-staging`, and read its output with `render logs -r <job id>`. Print no emails or secrets from the script.
 
+## Health check
+
+```bash
+~/thoven/agent-skills/skills/dev/publish/scripts/staging-health.sh [frontend sha]   # default: tip of origin/main
+```
+
+It reads staging from outside, the way a visitor's browser does, and prints a Checks table: the commit staging serves, noindex on the page and in robots.txt, the five public routes, two config redirects, the staging API named in the page (never `api.thoven.co`), and the staging API's health and CORS for the staging origin. It sits beside the step 5 harness and `deploy:smoke`, which exercise the backend and not what the browser gets.
+
+Exit 0 means every check passed. Exit 1 is a failed check. Exit 2 means nothing failed but the staging backend was asleep, so its check was skipped, because a skipped check is not a pass: wake it with `start-staging` and run it again. Its own test is `scripts/staging-health-test.sh`.
+
 ## Changelog
 
 Staging stamps no version. Release notes are GitHub Releases on each production `prod/` tag (`references/production.md`, "Changelog").
