@@ -1,0 +1,26 @@
+{
+  "name": "thoven-agent-skills",
+  "displayName": "Thoven agent skills",
+  "version": "0.1.0",
+  "description": "Thoven-custom agent skills. Installer discovers each skills/<category>/<name>/SKILL.md.",
+  "author": {
+    "name": "Thoven"
+  },
+  "homepage": "https://github.com/Thoven-CORP/agent-skills",
+  "repository": "https://github.com/Thoven-CORP/agent-skills",
+  "license": "UNLICENSED",
+  "keywords": [
+    "thoven",
+    "agent-skills",
+    "factory",
+    "verification"
+  ],
+  "category": "developer-tools",
+  "tags": [
+    "thoven",
+    "workflow",
+    "verification",
+    "factory"
+  ],
+  "skills": "./skills/"
+}

@@ -188,9 +188,10 @@ Retired bodies live in [`archive/`](./archive/README.md) as `SKILL.md.archived`.
 ## Layout
 
 ```
-skills/dev/    engineering + personal-dev workflows
-skills/exec/   executive assistant, outreach, CFO, fundraising
-archive/       retired skills — SKILL.md.archived only, never installable
+skills/dev/      engineering + personal-dev workflows
+skills/exec/     executive assistant, outreach, CFO, fundraising
+skills/factory/  bug-and-fix factory stations (catalog in skills/factory/INDEX.md)
+archive/         retired skills: SKILL.md.archived only, never installable
 ```
 
 Each skill is `skills/<bucket>/<name>/SKILL.md` plus optional `references/`, `scripts/`, `templates/`.
@@ -211,7 +212,7 @@ Frontend/backend still keep **lockfile** copies of Neon / GSAP where the product
 
 ## Adding or changing a skill
 
-1. Edit or add the folder under `skills/dev/` or `skills/exec/`.
+1. Edit or add the folder under `skills/dev/`, `skills/exec/`, or `skills/factory/`. Register factory skills in `INDEX.md` and `.cursor-plugin/plugin.json`.
 2. Frontmatter `name:` must match the folder name.
 3. Commit the exact paths in `git worktree add --detach <tmp> origin/main` and `git push origin HEAD:main`, with no PR: this repo is internal and runs no CI. Everyone then re-runs the install command above.
 
