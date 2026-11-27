@@ -5,6 +5,16 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-27 — a motion question comes with a playable comparison
+
+> learn-taste · 2026-11-27 · 6ae5f8da · correction · applied · seen 1
+
+**What happened.** Asked how fast a ThovenDialog should open, with three options described in numbers, Andres answered "can you show me an html compairson" instead of picking. He picked once a side-by-side page played all four entrances with slow motion.
+**Why.** "Show, then ask" named screenshots and grids, which cannot show timing, so a motion question went out as words.
+**What changed.** Replies, "Show, then ask" gained one sentence: a question about a motion value comes with a playable side-by-side page, opened in Dia before the question. No line removed; the sentence extends the existing rule to motion.
+
+---
+
 ## 2026-11-23 — a found defect is fixed, not filed
 
 > reflect · 2026-11-23 · e2ee8938 · broken-rule · applied · seen 2
