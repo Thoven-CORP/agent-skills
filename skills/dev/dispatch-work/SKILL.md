@@ -1,236 +1,95 @@
 ---
 name: dispatch-work
 description: >-
-  Dispatch a Linear ticket to a coding agent in a pane or subagent and bring it back verified. Use
-  when handing a ticket or slice to a builder, choosing which agent, model or CLI runs it, writing a
-  dispatch brief, answering a pane's question or alert, or verifying and closing a pane's work.
+  Hand a Linear ticket to a Claude Code builder subagent from main and bring it back reviewed. Use
+  when handing a ticket or slice to a builder, writing its brief, answering its question, or
+  reviewing, merging and closing its work.
 ---
 
 # Dispatch work
 
-Main hands one Linear ticket to a fresh builder pane, keeps working while it builds, then verifies
-the result and closes the pane. Builders talk to main by **peer message** (Claude's SendMessage to
-main's session name). Every report, question, answer, correction and alert is also an **entry** on
-the Project's **board**. A launchd job watches every dispatched pane and posts an alert entry only
-when something is wrong. Main never polls.
-
-**Source:** `~/thoven/agent-skills/skills/dev/dispatch-work/`. Home copies are installs.
-`scripts/dispatch` runs every pane action and detects Rex or herdr from the pane it runs in. Its
-usage text is the syntax authority. First time on a machine, for full pane dispatch only (not
-remote checks or plain Rex/SSH coding): `scripts/dispatch fleet install`. Every pane action also
-lands in an events log that `clean` keeps, and `scripts/dispatch stats` reads it per pane: reports,
-corrections, alerts and tokens.
+Main hands one Linear ticket, or one parent with its chain, to a fresh Claude Code subagent (the
+Agent tool), keeps working while it builds, reads its REPORT, runs the one review and closes the
+ticket. Main owns Linear, pushes and product calls; the builder owns the code on its branch.
 
 ## Pitfalls
 
-- Dispatch a Linear parent, or a chain of dependent tickets, as one pane with one branch and one PR per repo; append its tickets and fix rounds there instead of opening a PR per ticket, layer or fix. (LEARNINGS 2026-10-26)
-- Dispatch multi-file feature builds only. Make a small visual correction from Andres outside a live dispatch yourself, exactly as worded, and measure its computed style and geometry before you report. (LEARNINGS 2026-10-01)
-- Compare the ticket's flow wording with the board frames it names before you dispatch. The frame wins on what it shows, so fix the ruling and the ticket in Linear to match it first. (LEARNINGS 2026-10-09)
-- Scope every size or gate rule in a ticket to the code the pane writes, and exempt generated artifacts, manifests, routes.rb and files already over the limit. (LEARNINGS 2026-10-09)
-- Let `dispatch spawn` fill `{{MAIN_SESSION}}` from the live session. A name carried over from a summary goes stale. (LEARNINGS 2026-10-10)
-- Write each ruling Andres gave in chat into the spec before dispatch, as a rule in his words with its Log entry, and link it from the ticket's Build from. Your reading of his words goes in the Log entry's Reading line, labelled as yours. (LEARNINGS 2026-09-27; root LEARNINGS 2026-11-08)
-- Give a minor fix, fix round or review pass a clean existing tree. Run at most two heavy builders across every main session on this Mac and stagger the rest. Before each spawn, count them from the live process list and re-read `df -h /`, `memory_pressure` and load; when Andres's answer settles one of two risks you raised together, the standing rule still binds the other. (LEARNINGS 2026-10-25)
-- On a UI or copy ticket, put the changed behaviour on the work-session page at the builder's first DONE, so Andres's notes ride the one fix round and review runs once on the final diff. Retain required before/after evidence in the technical report; the finished-feature walkthrough shows current behaviour unless the comparison is needed for his decision. (LEARNINGS 2026-10-22)
-- Right before `gh pr merge`, list the ticket's Linear comments: a ruling newer than the last commit holds the merge until the diff applies it. After it, read back `gh pr view <n> --json state,mergeCommit`: a nonzero exit means unknown (`--delete-branch` fails after a good merge when a worktree holds the branch), and a PR already clean merges without `--auto`. (LEARNINGS 2026-10-03, 2026-10-22)
-- Before spawning parallel panes in one tree, fill each brief's Parallel panes slot from the plan and name one owning pane for each shared file (`globals.css`, `components/ui/*`, the colour tokens); every other pane leaves that file to its owner. (LEARNINGS 2026-11-23)
-- Sort every minor finding and `Noticed` line before the merge, as review.md "Handling findings" says; a standalone ticket waits for Andres's yes. (LEARNINGS 2026-11-23)
+- A Linear parent, or a chain of dependent tickets, is one builder with one branch and one PR per repo; append its tickets and fix rounds there. (LEARNINGS 2026-10-26)
+- Make a small visual correction from Andres yourself, exactly as worded, and measure its computed style before you report. Dispatch multi-file builds only. (LEARNINGS 2026-10-01)
+- Compare the ticket's flow wording with the frames it names before you dispatch. The frame wins on what it shows: fix the ticket in Linear first. (LEARNINGS 2026-10-09)
+- Write each ruling Andres gave in chat into the spec before dispatch, in his words with its Log entry, and link it from the ticket's Build from. (LEARNINGS 2026-09-27)
+- Builders in parallel in one tree each own named files; name one owner for each shared file (`globals.css`, `components/ui/*`, the colour tokens). (LEARNINGS 2026-11-23)
+- Right before `gh pr merge`, list the ticket's Linear comments: a ruling newer than the last commit holds the merge until the diff applies it. (LEARNINGS 2026-10-22)
 
-## Roles
+## 1. Ready, then pick the model
 
-| Main (this session) | Pane (the builder) |
-| -- | -- |
-| Picks the agent, snapshots the ticket, writes the brief, spawns the pane | Reads its brief and snapshot, builds the ticket as written |
-| Owns Linear: every status move and comment | Commits by exact path on the branch it was given |
-| Answers questions from Linear and its own context; product calls go to Andres | Asks main by peer message only when blocked on something only main or Andres can answer, and keeps building the unaffected parts |
-| Corrects a pane by editing the ticket; sends fix rounds | Posts one REPORT entry and messages main its status line |
-| Verifies in a fresh pane, then closes | Waits for main's answer; after DONE it takes no new work |
+A ticket is ready when every `Blocked by` issue has merged into `main` (Linear plus
+`git log origin/main`) and no session holds it (its status). A blocked ticket goes back to Andres
+with the blocker named.
 
-Linear writes, pushes and product calls stay with main. Code stays with the panes, except an easy
-fix main makes on the spot.
+Pick the subagent's `model` and `effort` from `~/.claude/pstack-models.md`, "Difficulty tiers".
 
-Main moves status with `node ~/.agents/skills/workspace/tools/set-status.js "<State>" THV-x`, which
-prints the state it read back. Each dispatch event applies its row in the workspace fixed-writes
-table in that turn. The reply is the read-back line.
+**Done when:** the blockers are merged, nobody holds the ticket, and you can name the model, the
+effort and why.
 
-## Layout
+## 2. Ticket, then brief
 
-- **Rex:** one session per Linear Project. Main lives in window 1, `Meta · <Project>`. Each
-  dispatched pane, verifier and sub-issue panes included, floats minimized in that window, labelled
-  `<Kind> · <issue title> (THV-x)`: `dispatch spawn` opens it, moves it into a floating layer and
-  minimizes it with Rex's own layer state, so main's layout never changes. `--tab` opens its own
-  window instead, only when Andres asks.
-- **herdr:** one space per Project. Main's tab is `Meta · <Project>`, and each dispatched pane is a
-  split beside main with the same label. `--tab` opens its own tab instead.
-- Kind names the ticket's work. Pick it by the rule in
-  [WORKFLOW.md §8](../workspace/references/WORKFLOW.md). `dispatch label --kinds` prints the
-  accepted words.
-- Panes of one issue run in parallel only when the architecture's Units table lists their units as
-  Alongside each other, in a shared tree too. Otherwise run them one after another in the same window.
-- The verifier gets its own pane beside the builder at step 5.
-- The board lives at `~/.local/state/thoven/dispatch/<project>/`: `briefs/`, `snapshots/`,
-  `board/` (one file per entry) and the rendered `board.md`. `<project>` is the Project's slug.
+The ticket is the builder's spec: Outcome, What to build, Build from, Exit criteria and Leave alone,
+as the workspace Build ticket template lays them out. Its exit criteria are the eval
+([WORKFLOW.md](../workspace/references/WORKFLOW.md), "Exit criteria"): what done is and how it is
+measured, never a list of steps.
 
-## Steps
+1. Read the ticket, the spec rules and architecture units it links, and the Project's latest
+   Update. A ruling the spec lacks goes in with `workspace` `update THV-n grill`.
+2. Fill [references/brief.md](references/brief.md).
 
-### 1. Check the ticket is ready, then pick the agent
+**Done when:** every ticket section is filled, each exit criterion says how it is measured, and the
+brief has no `<<…>>` slot left. A section you cannot fill means the ticket is not ready.
 
-A ticket is ready when every `Blocked by` issue has merged into `main`, and no pane already holds
-it. Check both: the blockers in Linear and `git log origin/main`, and `dispatch board <project>
---ticket THV-x` plus the ticket's status for a live dispatch. A blocked ticket goes back to Andres
-with the blocker named. A ticket already in a pane gets a handover, never a second pane on the same
-tree.
+## 3. Launch
 
-Then read [references/agents.md](references/agents.md). The ticket's complexity picks the tier,
-and `scripts/agents.py` says what that tier runs today. A Linear parent, or a chain of tickets that
-build on each other, goes to one pane as one dispatch: one agent in both repos (`--add-dir`), one
-branch and one PR per repo, each ticket committed there and every fix appended. The pane builds
-every child ticket, commits each one there, and reports once, when the last one is built. Several
-small same-shape tickets go the same way.
+1. Make the tree: `~/thoven/agent-skills/enforcement/bin/thoven-worktree create <fe|be> <area> <n> --project <P> --kind <K>`.
+   Exit 4 prints the Project's existing tree as the last line: work there. Record the base SHA.
+2. Launch one Agent call: `subagent_type: "general-purpose"`, the model and effort from step 1,
+   the filled brief as its prompt. A ticket across both repos is one builder whose brief names
+   both trees.
+3. `workspace` `update THV-x started`.
 
-Before dispatching onto an integration branch, compare its `lefthook.yml` and `bin/verify` with
-`origin/main`. When they differ, run `/modernize` on the branch for its verdict only.
-MODERNIZE: make the catch-up merge of `main` (a merge commit; a shared integration branch is never
-rebased) and note it on the work-session page. REWORK or CLOSE is a finding for Andres.
+**Done when:** the Agent call is running and the ticket reads In Progress.
 
-**Done when:** the blockers are merged and no pane holds the ticket, and you can state the CLI, the
-model, the tier, and one line on why this tier.
+## 4. Answer
 
-### 2. Put it in the ticket, then fill the brief
-
-The ticket is the pane's spec, so everything the builder needs is in it before dispatch: Outcome,
-What to build, Build from, Exit criteria and, where it applies, Leave alone, as the workspace
-Build ticket template lays them out. The brief adds only where and how the pane runs.
-
-1. Read the ticket, the spec rules and architecture units it links, the Project brief and its
-   latest Update. Find earlier rulings with one mem0 search (`search_memories`, query: the ticket
-   id, its title and the Project). A ruling the spec lacks becomes a spec rule in Andres's words
-   with its Log entry, and the ticket's Build from links it. Write what the ticket lacks with
-   `update THV-n grill`; a product brief Andres confirmed uses `update THV-n brief`.
-2. `scripts/dispatch snapshot <project> THV-x` saves the ticket as you read it.
-3. Copy [references/brief.md](references/brief.md) to the board's `briefs/THV-x.md` and fill its
-   slots. A remote coding tree sits outside every Mutagen test mirror.
-
-**Done when:** every section of the ticket is filled, each exit line carries its proof, each chat
-ruling is a spec rule the ticket links, and the brief has no slot left. A section you cannot fill
-means the ticket is not ready: fix it in Linear, then come back.
-
-### 3. Spawn
-
-1. Run each repo's
-   `~/thoven/agent-skills/enforcement/bin/thoven-worktree create <fe|be> <area> <n> --project <P> --kind <K>`.
-   The Project's integration tree is the unit, so tickets of one Project share a tree and a
-   read-only kind gets none. The decision table lives in the script's usage text and in
-   `enforcement/rules/branches-and-prs.md`. Read the exit code:
-   - Exit 3: no tree for this kind. Read the Project's tree or `git show`, or write at the issue's `Writes to:` path.
-   - Exit 4: the Project's tree exists, and the last stdout line is its path. Work there on the integration branch and end commits with the ticket id. Add `--new "<reason>"` only for overlap or risky long work.
-   - Success: the last stdout line is the path.
-
-   Record the base SHA there (`git -C <path> rev-parse HEAD`). Review diffs start there. Never let
-   herdr or Rex create the worktree.
-2. `scripts/dispatch spawn <project> THV-x --kind <K> --title "<title>" --cwd <path> --tier <n> --base <sha>`.
-   It re-applies the skill patches first (`enforcement/hooks/reapply-skill-patches.py`), so a pane never reads a
-   third-party skill a reinstall reverted, and says on stderr when that run is missing, failed or STALE.
-   It fills the `{{…}}` fields and `THV-<id>`, and refuses a brief with a `{{…}}` or `<<…>>` slot
-   left, or one that reads `{{SNAPSHOT}}` before the snapshot exists. When the agent fails to start,
-   the pane stays registered, so STARTUP or GONE reports it. A ticket that spans both repos gets one pane: spawn in the frontend tree and add `--add-dir <backend tree>`. The pane opens
-   floating and minimized. A sub-issue adds `--split-of <pane>` to open beside its parent's pane.
-   Add `--tab` only when Andres asks for a separate window. Add `--cli codex` only when Andres named Codex.
-3. On the first dispatch in this Project, label main's own pane (`$REX_BLOCK` in Rex, `$HERDR_PANE_ID` in herdr): `scripts/dispatch label <pane> Meta "<Project>" --tab`.
-4. Move the ticket to **In Progress** with `set-status.js`.
-
-**Subagent builder.** When Andres asks for a subagent instead of a pane, skip `dispatch spawn` and
-label nothing. Make the tree as in item 1, fill `{{…}}` by hand, and launch an Agent whose prompt
-is the filled brief from its first skill line: `general-purpose` with the Skill tool in Claude
-Code, a builder with file-read access in Codex. Its REPORT block is its final message. It asks main
-through the host's subagent channel only when it is blocked on something only main or Andres
-can answer, and keeps building the parts the question does not touch. Move the ticket to In
-Progress.
-
-**Done when:** `scripts/dispatch status <pane>` shows WORKING and the ticket reads In Progress. For a
-subagent builder: its transcript shows poteto-mode loaded, and the ticket reads In Progress.
-
-### 4. Watch
-
-Arm `scripts/dispatch watch <project>` once per session, with the Monitor tool. It prints one line
-per new ALERT entry, and per REPORT, QUESTION or HANDOFF entry from a Codex pane. Its cursor
-(`<project>/watch.cursor`) replays what landed while no watch ran, so a re-armed watch misses
-nothing. Peer messages from panes arrive on their own. Wait on those two wake-ups only, doing
-main's own work meanwhile. A wake that changed something updates the work-session page
-(andres-mode, Replies) and ends with one line to Andres pointing at it.
-
-A peer message from a pane carries a status line and its entry path:
+The builder's final message is its REPORT ([brief.md](references/brief.md)).
 
 | Status | Main does |
-| -- | -- |
-| `DONE THV-x` with a proof on each exit line | The ticket stays In Progress until main opens the PR; Linear then sets In Review. Go to step 5. |
-| `DONE THV-x` with an exit line that has no proof | Not done. Reply `Attach the proof for each exit line.` The ticket stays In Progress. |
-| `DONE_WITH_CONCERNS THV-x` | As `DONE`; its concerns join the review findings (review.md, "Handling findings"). |
-| `NEEDS_CONTEXT THV-x` | Answer from Linear and this conversation, by peer message plus an ANSWER entry. A product call goes to Andres word for word; relay his answer and add it to the Linear parent. |
-| `BLOCKED THV-x` | Context gap: answer it. Too hard: fresh pane one tier up. Too big: split the ticket. Product call: ask Andres. |
+|---|---|
+| `DONE`, each exit criterion measured | Step 5 |
+| `DONE` with a criterion unmeasured | Send it back: "Measure every exit criterion." |
+| `DONE_WITH_CONCERNS` | As `DONE`; the concerns join the review's findings |
+| `NEEDS_CONTEXT` | Answer from Linear and this session; a product call goes to Andres word for word, and his answer goes into the spec |
+| `BLOCKED` | Context gap: answer it. Too hard: a fresh builder one model tier up. Too big: split the ticket |
 
-An alert line names the pane and the cause:
+A correction is an edit to the ticket line in Linear, then one message to a running builder:
+`THV-x updated: <section>. Re-read the ticket.`
 
-| Alert | Main does |
-| -- | -- |
-| `STARTUP` | No status 90s after launch. Read `dispatch read <pane>` and answer the trust, update or login dialog with `dispatch key <pane> <key>` (`enter`, `down`, `1`, ...). The opening prompt rides in the launch line and starts once the dialog closes. |
-| `BLOCKED` (2 min or more) | Read `dispatch read <pane>`. Answer a dialog inside the brief's scope with `dispatch key <pane> <key>`; otherwise ask Andres. |
-| `FROZEN` | Read further back. A long test run or `waiting for verification lock` is fine. A hung tool: `dispatch interrupt <pane>`, then ask for status. |
-| `GONE` | The agent exited. Take it over (Takeover, below). |
-| `LIMIT` | Tell Andres the reset time in one line. After it, check `git -C <tree> status` for a half-done merge or rebase, then message the pane `continue`. When main's own limit resets, run `dispatch status` on every pane, re-arm `dispatch watch`, and `git status --short` in each tree. Re-apply only a path that status shows this pane changed. Re-dispatch a frozen pane. |
-| `SETTLED_NO_REPORT` | The pane ended a turn with no REPORT, QUESTION or HANDOFF entry of its own. Message it: `Post your REPORT entry and message me your status line.` The uncommitted files it lists may be other sessions' edits in a shared tree. `still running: …` means a background job kept it from reporting for 10 minutes: ask the pane whether it still needs that job, and to stop a server it forgot. |
-| `TICK_ERROR` | The watcher failed to read this pane for 4 ticks in a row (about 2 minutes) and names the last error. Run `dispatch status <pane>`. Several panes timing out together (`rex call timed out`) means the machine is overloaded: check load and memory, then prune or hold panes before anything else. A single pane's Rex or herdr error is the backend's to fix; tell Andres in one line. While the status read itself fails, no other alert fires for that pane. |
-| `SETTLED` (Codex) | Read the pane's REPORT entry with `dispatch board <project> --ticket THV-x`, then handle it as the status table says. |
+**Done when:** every builder has reported and each report is handled.
 
-When a UI fix round reports, read the parity grid in its REPORT, then push the pane's commits.
+## 5. Review
 
-**A correction is an edit to the ticket.** Change the line it corrects in Linear, in place, and
-delete what it replaces. Then message the pane `THV-x updated: <section>. Re-read the ticket.` and
-post the same line as a CORRECTION entry (`dispatch post ... --kind correction`), which is the board's record of it.
-A message reaches a busy pane between its tool calls. Use `dispatch interrupt` only to stop work
-going the wrong way. A Codex pane gets the message with `dispatch send <pane> <file>` once it is
-idle. Hold the verifier until the pane has answered the last correction.
+Push, open the PR (`workspace` `update THV-x pr <n>`), then follow
+[references/review.md](references/review.md): main's checks, one `review-change`, one fix round.
+Watch CI and the merge queue with `/babysit-pr`.
 
-**Takeover and fix round.** A fresh pane reads the same brief file, rewritten in place as
-[references/brief.md](references/brief.md), "Takeover and fix round", says.
+**Done when:** every exit criterion has a verdict with its measurement at the head SHA, and every
+finding is handled as review.md says.
 
-**Done when:** every pane has reported and main has handled it, or its alert is reported to Andres.
+## 6. Close
 
-### 5. Verify
+1. Arm auto-merge once the review passes; after the merge, `workspace` `update THV-x merged <n>`.
+   Comment where the work lives: "Merged on `<branch>`, reaches `main` when the branch lands", or
+   "Done on `main`, on staging".
+2. Every sub-issue opened for a finding is Done before this ticket closes.
+3. Remove the ticket's own tree with `thoven-worktree remove`, never a live integration tree.
 
-After main pushes and opens the ticket PR, arm one watcher for it with the Monitor tool
-(`timeout_ms: 3600000`): `~/.agents/skills/babysit-pr/scripts/pr-wait <n> --until green`. Run
-nothing else that polls the PR. Exit 1 on a red check is a finding (review.md, "Handling findings").
-On a PR into `main`, BEHIND needs nothing: the merge queue tests it on top of current `main`. Rebase
-only when it is DIRTY. On an integration branch, BEHIND or a base commit touching the PR's files
-means main brings it up to date first. Re-arm after every push. Auto-merge is armed once the PR
-review passes (review.md, "Every PR"); on a PR into `main`, green means queued: arm
-`~/thoven/agent-skills/enforcement/bin/pr-queue-wait <owner/repo> <n>`, which exits 0 on the merge and 1 when the merge queue rejects the PR.
-
-Follow [references/review.md](references/review.md): main's pass, then a verifier pane for a
-feature slice or a review subagent for cleanup and hardening.
-
-**Done when:** the one review has a verdict with evidence on every exit line and every spec rule
-they link (review.md).
-
-### 6. Close
-
-After the verifier passes and the PR merges on green, put the outcome on the canonical work-session page, with the current walkthrough and links to its evidence table and complete parity grid on a UI ticket, as review.md describes. Then, with no go to wait for:
-
-1. Read the ticket back: Linear moved it to **Merged** (PR into the Project's integration branch)
-   or **Done** (PR into `main`). Add one comment: the page's human-readable part for this ticket and
-   the merged SHA, saying where it lives: "Merged on `<branch>`, reaches `main` when the branch
-   lands", or "Done on `main`, on staging". A branch lands through the landing line
-   (`enforcement/rules/branches-and-prs.md`). A ticket still In Review after its merge was not linked
-   to the PR: link it and set the status. On a UI ticket, upload the parity images to the issue and
-   place them on the board beside their frames.
-2. Read back each sub-issue opened for a finding (review.md, "Handling findings"): every one is
-   Done before this ticket closes, and an open one is the next dispatch.
-3. `scripts/dispatch close <pane>` for every pane this dispatch opened. Remove the ticket's own tree
-   with `thoven-worktree remove`, never a live integration tree. It drops the tree's databases and
-   deletes every local branch whose PR merged; GitHub deletes the branch on origin at merge.
-4. Once Linear and the page carry the evidence, ensure the page embeds its media or owns durable copies of every referenced capture. Then `scripts/dispatch clean <project> --ticket THV-x` and
-   delete `~/.thoven-artifacts/THV-<id>/evidence/`. When the Project closes, `dispatch clean <project>`.
-
-**Done when:** `dispatch board <project> --ticket THV-x` prints nothing, `git worktree list` no
-longer shows the ticket's own tree, its merged branches are gone locally and on origin, and the
-ticket reads Merged or Done with the comment saying where the work lives.
+**Done when:** the ticket reads Merged or Done with that comment, and `git worktree list` no longer
+shows its own tree.

@@ -8,7 +8,7 @@ How work is tracked at Thoven. Linear holds current requirements, accepted decis
 No project file is a universal prerequisite. Retain existing technical and history material.
 Do not scaffold it to satisfy an example or require a bulk document sync.
 
-The rules on pointing at sources and on where a fact lives are in `~/thoven/agent-skills/enforcement/rules/thoven-law.md`, "Records and sources", and in `$feature-ledger`.
+The rules on pointing at sources and on where a fact lives are in `~/thoven/agent-skills/enforcement/rules/thoven-law.md`, "Records", and in `$feature-ledger`.
 
 ```
   Initiative      Thoven 2.0                  the release arc
@@ -67,7 +67,7 @@ or Work-tab names, not Issues.
 | **Triage** | The inbox: a report or a `Tech debt` ticket nobody has accepted yet. It cannot leave without a priority. |
 | **Backlog** | Parked by Andres in words ("park it", "later", "not this month"). |
 | **Todo** | The default. Every issue a session creates is born here. Any agent may claim it. |
-| **In Progress** | A builder is building: a pane, or the main session with Andres. Protos and `app/dev/` are in scope on a document issue. Shipped product code waits for a Build issue. |
+| **In Progress** | A builder is building: a subagent, or the main session with Andres. Protos and `app/dev/` are in scope on a document issue. Shipped product code waits for a Build issue. |
 | **In Review** | Its pull request is open. |
 | **Merged** | In the Project's integration branch, not yet in `main`. |
 | **Done** | In `main`. |
@@ -81,7 +81,7 @@ Claim is `In Progress`. A `Writes to:` line names the Linear record or deliberat
 A draft PR sets In Progress. An opened PR, a review request and ready-to-merge set In Review. A
 merge into a Project's integration branch sets Merged, into `main` Done. This is the main team
 (`THV`); Deployment and Lab keep their own rules. A ticket with no PR (a document, research) moves
-by hand: In Review when the work is at its path, Done when every exit line is shown true (main's
+by hand: In Review when the work is at its path, Done when every exit criterion is measured true (main's
 reading; the rulings cover pull requests).
 
 **Born in Todo.** Create an issue with `state` left out; the THV team default is Todo (read from
@@ -92,12 +92,12 @@ status. Linear's Active view hides Backlog, so an issue there drops out of sight
 issues landed there before this rule.
 
 **Backlog takes Andres's words.** An issue moves to Backlog only when Andres parks it in this
-session, and the move's comment quotes his line. A reconcile, a cleanup, or a pane leaves Todo as
+session, and the move's comment quotes his line. A reconcile, a cleanup, or a subagent leaves Todo as
 Todo.
 
 **Work moves the status the turn it starts.** Any session that starts work on an issue sets
 `In Progress` in that turn, the main session included: a design or spec session with Andres counts
-the same as a dispatched pane. When a sub-issue goes `In Progress`, its parent goes `In Progress` in
+the same as a dispatched subagent. When a sub-issue goes `In Progress`, its parent goes `In Progress` in
 the same write if the parent reads Todo or Backlog.
 
 ### Artifacts
@@ -205,51 +205,59 @@ The ticket is the builder's brief. A build ticket is written from the Build tick
 - **Outcome.** One or two sentences: what a person can do when this ships, and why it matters to them. It links the Spec's "Done for the product" line it serves.
 - **What to build.** The pieces, one line each, each linked to its row in the Architecture's Units table. The builder plans its own steps.
 - **Build from.** Links only, each to its exact heading: the Spec rules, the screens, the Architecture units, and the existing modules to extend, by path.
-- **Exit criteria.** Three to ten exit lines on a build ticket, one to five on other work.
+- **Exit criteria.** The ticket's eval: three to ten criteria on a build ticket, one to five on other work ("Exit criteria", below).
 - **Leave alone.** Optional. Neighbouring screens or code the builder must leave as they are.
 
-The whole ticket is 400 words at most. More than ten exit lines means two tickets. Project, milestone, assignee and blocking are native fields and relations; the body leaves them out. A subissue links its parent and holds only its own part.
+The whole ticket is 400 words at most. More than ten criteria means two tickets. Project, milestone, assignee and blocking are native fields and relations; the body leaves them out. A subissue links its parent and holds only its own part.
 
 A Linear destination resolves with Linear access, not filesystem existence; a URL alone does not prove access. A technical artifact may name an existing repository path, and a required local path that does not resolve is an error. A new top-level folder is Andres's call. Do not rewrite an existing task's destination merely to orient a session.
 
 ### Exit criteria
 
-Every ticket carries `## Exit criteria`: three to ten exit lines on a build ticket, one to five on
-other work, the one target for the builder and the reviewer. An exit line is one outcome a person can see or a caller can observe,
-then `Proof:` and the one check that cannot pass while the outcome is false. The outcome comes
-first, so a green check alone never counts as done.
+Every ticket carries `## Exit criteria`: three to ten on a build ticket, one to five on other work.
+They are the ticket's eval, the one target for the builder and the reviewer. Each criterion says
+what done is, then how it is measured. Done is one outcome a person sees or a caller observes.
+Measured is a number or a pass/fail a command returns (quantitative), a judgment against a named
+source (qualitative), or both. The outcome comes first, so a green check alone never counts as done.
+
+Never write a step as a criterion ("run lint", "record a video", "open a PR"): the law's "Check
+once" and the PR review already run those, and a step list says nothing about whether the work is
+right.
+
+| Kind of task | Done is | Quantitative | Qualitative |
+|---|---|---|---|
+| Screen or flow | A named user does X on the route they reach and sees Y, desktop and phone | An e2e test that fails on the old code | A `journey-map` persona completes the journey with production-shaped data (`qa-product`); each state matches its Paper frame or lab |
+| API or contract | A caller sends X and gets Y | A request spec on the response body | none |
+| Core mechanism: scheduling, money, student privacy, sign-in | The rule holds for every case of its class | A test at the agreed seam, red before the change | none |
+| Bug fix | The user who hit it no longer can | The repro, as a test at the class level, red before the fix | The original repro walked once |
+| Refactor | Same behaviour, less code | `git diff --stat` deletes more than it adds; `rg` for the old path finds 0; existing tests pass unchanged | Each screen looks as its own baseline |
+| Research, spec or doc | The question is answered at the `Writes to:` path | Each question listed has an answer with its source | Andres can act on it without asking a follow-up |
 
 - **Write the outcome from the user's side:** who does what, where, and what happens. For a
-  component or a button: what each action does, which states it shows, and what happens on a phone.
-- **Pick the proof at the highest point a person or caller reaches:** the unit's "Smallest proof"
-  in the architecture, a response body, a search that finds nothing, or the design capture beside
-  its frame. "A named spec is green" with no outcome before it proves nothing.
-- **Every behaviour the spec gives this ticket has a line,** linking its spec rule or frame. The
-  behaviour with no line is the one that ships missing: the stamp pack shipped silent because no
-  line said it plays the lab's sounds.
-- **Main and Andres edit exit lines,** when the Spec line a line serves changes. The builder never
+  component: what each action does, which states it shows, and what happens on a phone.
+- **Every behaviour the spec gives this ticket has a criterion,** linking its spec rule or frame.
+  The behaviour with none is the one that ships missing: the stamp pack shipped silent because no
+  criterion said it plays the lab's sounds.
+- **Main and Andres edit criteria,** when the Spec line one serves changes. The builder never
   edits them; a builder who thinks one is wrong asks main. A narrower build is fixed in the build,
-  never in the line.
-- **Done is every line shown true.** The builder runs each proof once and attaches it to its one
-  report. For a visual or user-facing change, verify the ticket attachment under Thoven law's
-  **User-facing evidence** before moving it to Done. Keep the branch and worktree until every line
-  has its proof, and finish any unproven line there.
-  (2026-11-08: the merge-queue ticket closed with its rejection proof still open, and the
-  leftovers became new trees, two sync PRs and a probe PR.)
+  never in the criterion.
+- **Done is every criterion measured true** at the head SHA, in the builder's one report. For a
+  visual or user-facing change, verify the ticket attachment under Thoven law's **User-facing
+  evidence** before moving it to Done. Keep the branch and worktree until every criterion is met.
 
 A screen with a design (ids are illustrative):
 
 ```
 ## Exit criteria
 - A parent on the passport page taps Edit on the goal, the genres, the stage name or the logo,
-  saves, and sees the new value on the passport and after a reload (S12). Proof: a Playwright
-  test that edits, reloads and reads each field.
-- The child redoes the logo from their own passport the same way (S14). Proof: the same test,
+  saves, and sees the new value on the passport and after a reload (S12). Measured: an e2e test
+  that edits, reloads and reads each field.
+- The child redoes the logo from their own passport the same way (S14). Measured: the same test,
   signed in as the child.
-- With the network off, Save shows the load-error card and keeps what was typed. Proof: a
+- With the network off, Save shows the load-error card and keeps what was typed. Measured: a
   component test with Save failing.
-- At each frame's width, desktop and phone, the passport shows what frames F3 and F3-phone show:
-  the same elements, states and order. Proof: the design capture beside both frames.
+- A parent with two kids finds and edits the right child's passport on a phone. Measured: the
+  parent persona's walk completes; each state matches frames F3 and F3-phone.
 ```
 
 An API change with no screen:
@@ -257,11 +265,11 @@ An API change with no screen:
 ```
 ## Exit criteria
 - POST /admin/credentials/:id/decide with outcome `rejected` and no note returns 422 naming
-  `note`. Proof: a request spec on the 422 body.
+  `note`. Measured: a request spec on the 422 body.
 - With a note, it saves both, and the credential GET returns `outcome` and `note` as keys (S7).
-  Proof: a request spec that finds both keys in the GET body.
+  Measured: a request spec that finds both keys in the GET body.
 - A client still sending the old body gets 200 until the frontend that sends `note` is on
-  staging. Proof: a request spec that posts the old body.
+  staging. Measured: a request spec that posts the old body.
 ```
 
 A refactor:
@@ -269,16 +277,16 @@ A refactor:
 ```
 ## Exit criteria
 - Retry after an upload whose reply was lost reads the class list first, through one module that
-  MaterialsWorkspace and the live-lesson stage both call. Proof: a unit test of that module that
+  MaterialsWorkspace and the live-lesson stage both call. Measured: a unit test of that module that
   loses the reply and sees the list read first.
-- No other copy of that rule is left in product code. Proof: `rg` for the old inline check finds
-  nothing.
-- Both screens behave and look as before. Proof: both screens' existing tests pass unchanged, and
-  each screen's design capture matches its own baseline.
+- No other copy of that rule is left, and the diff deletes more than it adds. Measured: `rg` for
+  the old inline check finds 0; `git diff --stat` against base.
+- Both screens behave and look as before. Measured: their existing tests pass unchanged, and each
+  screen matches its own baseline.
 ```
 
 **Claim only from Todo.** Anything past it is owned by another session. `In Progress` + assignee
-is the mutex across Cursor, Claude and Codex.
+is the mutex across sessions.
 
 **An assignee must resolve to a real user.** So must a `blocked-by` link. An owner that cannot be linked does not exist.
 
@@ -310,7 +318,7 @@ follow it (`$linear-project`).
 
 Keep the existing Git branches and PR route across hosts. Use a dedicated disposable test mirror
 for remote checks and separate worktrees for remote coding. See
-[handoff.md](handoff.md) and [remote-check](../../remote-check/SKILL.md).
+[handoff.md](handoff.md) and [run-on-mini](../../run-on-mini/SKILL.md).
 
 ### Pure skill boundary and synthesis
 
@@ -438,10 +446,10 @@ BRANCHES AND PULL REQUESTS
 - Open a PR, append the ticket's remaining known work to it, and arm auto-merge once its PR review passes, backend first, with no go from Andres, UI included (2026-11-05). The merge method follows the PR's role (`branches-and-prs.md`); name source, target and method in the report line.
 - Put `THV-<id>` in the commit message with no closing word. Linear moves the ticket with its PR: In Review when the PR opens, Merged when it lands in an integration branch, Done in `main`. The PR that lands an integration branch in `main` lists every ticket it carries as `Closes THV-<id>` (`branches-and-prs.md`, "Landing line").
 - A ticket that takes more than one PR: an id in the branch name or PR title links that PR as closing, so its first merge moves the ticket to Merged or Done. Keep the id out of both and write `Part of THV-<id>` in the PR body, which links without closing. (2026-10-25: the test-cadence ticket closed on its first of five PRs.)
-- After the merge, read the status back (Linear set it) and run `dispatch-work`'s close step: panes closed, its tree removed, its merged branches gone. UI merges on green `CI` too; Andres reviews it on staging.
+- After the merge, read the status back (Linear set it) and run `dispatch-work`'s close step: its tree removed, its merged branches gone. UI merges on green `CI` too; Andres reviews it on staging.
 - Watch a PR unattended with `/babysit-pr`, then for a PR into `main` with `enforcement/bin/pr-queue-wait <owner/repo> <n>` (`branches-and-prs.md`).
 - A PR or branch behind `main`: `/modernize` gives MODERNIZE, REWORK or CLOSE before any rebase. On a shared integration branch take the verdict only; the catch-up stays a merge commit.
-- Another person's or agent's PR, branch or dead pane: `/takeover` re-proves it and keeps their credit.
+- Another person's or agent's PR, branch or dead session: `/takeover` re-proves it and keeps their credit.
 - In the same comment, say what you did AND what you deliberately did not do.
 
 DEFERRING
@@ -451,84 +459,7 @@ DEFERRING
 
 ---
 
-## 8. Rex and herdr — the physical layout of sessions
-
-*Added 2026-08-24, from the Parent 2.0 Lane B/C/D orchestration. Linear stays the source of
-truth; the multiplexer makes parallelism visible. New Projects open in Rex (2026-10-22); Projects
-already in herdr finish there. The same names apply in both: a Rex **session** is a herdr
-**space**, a Rex **window** is a herdr **tab**, a Rex **block** is a herdr **pane**.*
-
-### The mapping
-
-| Linear | Rex / herdr | Rule |
-|---|---|---|
-| Feature / Linear **Project** | Rex **session** / herdr **space** (see Live spaces below) | One Project and one ledger. Meta is optional. An audience is several spaces, not one. |
-| (none required) | **Work tab** | A prose unit Meta or Andres named (`notifications`, `upcoming`, `payments`). Independent items get their own tab. A checkbox on the fat card does not. |
-| Issue, when one exists | **Pane**. Label = `<Kind> · <job> (THV-x)` | `Design · Messages panel (THV-149)`. Kind is the kind of job (`Plan` covers PRD and Architecture) and `Meta` is main. `dispatch-work/scripts/dispatch label --kinds` prints the list, and `dispatch label` refuses any other word. A pane can exist before a THV- does. Status words stay on Meta, not the pane name. |
-| Dispatched issue (`dispatch-work`) | **Window / tab** = the issue, **blocks / panes** = its sub-issues | Main creates them when it dispatches. Sub-issue panes run in parallel only when their Paths share no file. Andres ruling 2026-09-27. |
-| | Optional **Meta** tab in that space | An organizer for **this** Project when orchestration needs one. |
-
-A space may carry one **`Meta · <Project>`** tab. Meta is a convenience, not a prerequisite for
-Project work or a source of truth. When present, it consumes the same Project snapshot, reports to
-Andres, and proposes bounded panes; the main session still owns synthesis and shared writes.
-
-### Live spaces
-
-Derived, never hand-kept: `rex ls` lists Rex sessions and `herdr workspace list` lists herdr
-spaces. A session or space is named for its Linear Project, so the name is the mapping. One with no
-matching Project is a hotfix, scratch or repo-home room.
-
-### Two ladders, one board
-
-Do not collapse these. They answer different questions.
-
-| Ladder | Question | Lives |
-|---|---|---|
-| **Initiative → Project → Issue** | Which audience, which feature, which slice | Linear + the multiplexer (session or space = Project, pane = issue when one exists) |
-| **Milestone** | Which stage of the feature, one Andres can open on staging, does this slice belong to | Linear field on the issue. The pane label carries the kind, never the milestone. No tab named Design. |
-| **DESIGN_SKELETON L1–L6** | How far the **design walk** for a track has gone | Hash bars in the skeleton. Not a Linear milestone |
-
-A Dashboard `Build` issue can sit under an L3 wireframe bar. That is consistent: this slice is being coded while another track is still drawing.
-
-**Trust the multiplexer, not OpenCode chrome.** The pane label and the tab label are the room. OpenCode's session title (`OC | THV-178 Business Shell…`) is a leftover from whichever chat was last `/rename`d inside that process. If it disagrees with the pane, it is wrong. Fix it with `/rename` in that chat to the **same sentence as the pane label**. Route work by the pane label.
-
-### Meta vs Work panes — the scoping rule
-
-- **Meta, when used, organizes one Project.** It reads this space, the shared Project snapshot, this fat card, and this ledger. It writes only approved orchestration surfaces — this Project's Linear records and prompts into panes. It never writes feature code or another Project's folder.
-- **Work panes are narrow**: one room, one job, a ticket when one exists. They
-  do not run workspace or feature-ledger. They do not read each other or the plan
-  doc beyond their brief. Andres owns those chats. Meta pastes into them only after
-  explicit go.
-- Model tiering follows the tiers in `dispatch-work/references/agents.md`.
-
-### Lifecycle
-
-This lifecycle is for Work panes Andres drives. A dispatched issue follows the `dispatch-work`
-skill from spawn to close.
-
-1. Launch = paste-ready initiator from Meta (`Begin <id>` when an issue exists),
-   staggered ~5 min apart, and only after Andres says go. Spinning a room does
-   not mint a ticket. The Begin does not tell the pane to run workspace or
-   feature-ledger.
-2. Work **pane** titles itself **kind + job**, then the id:
-   `Design · Messages panel (THV-149)`. The **tab** stays the named room.
-   After a recycle-and-Begin in the same pane, rename the pane **and** `/rename` the
-   OpenCode session, or the next glance still says the old ticket.
-3. When Meta is present, it proposes the relevant Linear handoff or Project Update from the
-   current sources and snapshot. Main applies approved Project-scoped writes serially and reads
-   them back. Do not maintain required local state copies.
-4. A Work pane stays until Andres has seen the surface. Idle after work is a Meta
-   recap + how-to-proceed, not an auto-Begin and not a recycle. Unsatisfied → he
-   types in that pane, or Meta pastes his approved correction. Recycle only after
-   he is satisfied, or he confirms a leftover. Linear In Review is not a visual pass.
-5. The human owns the issue; agents receive bounded work units and exact path sets. Record starting
-   HEAD plus staged, unstaged, and untracked paths. Disjoint work units may proceed and commit
-   independently on one issue. Same-file work blocks until a named integration session serializes
-   it. Commit every coherent green unit by exact path even when unrelated files are dirty. Leave red
-   or incomplete work uncommitted only with an evidence receipt naming its paths and blocker. Never
-   use `-A`, stash, `checkout -f`, `reset --hard`, or `clean` on shared work.
-
-## 9. Gotchas
+## 8. Gotchas
 
 - **Count a branch's own commits with `main..HEAD`.** A bare `--since` counts commits the branch
   inherited and reports dormant branches as busy.

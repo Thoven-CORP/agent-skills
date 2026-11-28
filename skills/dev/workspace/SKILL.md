@@ -21,7 +21,7 @@ Board cleanup, which lines tickets up with their pull requests, branches and wor
 
 - When Andres describes a problem and asks for a ticket, write it with what is known and the candidates named as candidates; investigate or grill only when he asks. (LEARNINGS 2026-09-03)
 - Fix a finding in its round, or make it a sub-issue of its ticket when it is too big for one (law, "Own what you find"); a `Follow-up` or `Tech debt` ticket waits for Andres's yes (WORKFLOW.md, "Follow-ups"). Close a done or stale ticket with one evidence line instead of moving it. (LEARNINGS 2026-09-29, 2026-11-12, 2026-11-23)
-- After every merge or promote, check the Project's open tickets against the merged diff by id and file path, and put each one it fixed into the write set with its SHA in the same turn; say how each verifier finding was settled: fixed, a sub-issue, or asked. (LEARNINGS 2026-09-29)
+- After every merge or promote, check the Project's open tickets against the merged diff by id and file path, and put each one it fixed into the write set with its SHA in the same turn; say how each review finding was settled: fixed, a sub-issue, or asked. (LEARNINGS 2026-09-29)
 - Close a research ticket once its findings are build tickets, and cancel the tickets the research made stale. (LEARNINGS 2026-10-03)
 - When an issue has no `Writes to:` line, write the spec into its Linear description below Andres's text with `Writes to: this ticket`, through `save_issue` patch ops, then check its embeds survived. (LEARNINGS 2026-10-03)
 
@@ -73,7 +73,7 @@ The connector cannot apply a template. To make a Spec, Architecture or Log, read
 | Spec | 3,000 words |
 | Architecture | 3,000 words |
 | Log | 120 words an entry |
-| Build ticket | 400 words, 3 to 10 exit lines |
+| Build ticket | 400 words, 3 to 10 exit criteria |
 
 - **At the limit, consolidate, then add.** Merge the lines that state one decision. Cut what a frame or the code shows. Move reasoning to the Log. Then write the new line, and say in one line what you merged. A page that still cannot fit is two Projects or two milestones, and that is a question for Andres.
 - The size counter reports each page's count after a save.
@@ -82,7 +82,7 @@ The connector cannot apply a template. To make a Spec, Architecture or Log, read
 
 When Andres rules, or a grill or spec session ends, write the ruling before the next task. This pass does not wait for capture, close, or log.
 
-1. A design pick lands as the "Design exploration" row says. Any other ruling: edit the Spec or Architecture line it changes, in place, so it states the new current truth. Delete the sentences it replaces; Linear's version history keeps the old text. A rule that came from chat uses his words and links its Log entry. His name sits only on his quoted words, as the law's "Records and sources" has it.
+1. A design pick lands as the "Design exploration" row says. Any other ruling: edit the Spec or Architecture line it changes, in place, so it states the new current truth. Delete the sentences it replaces; Linear's version history keeps the old text. A rule that came from chat uses his words and links its Log entry. His name sits only on his quoted words, as the law's "Records" has it.
 2. Add one Log entry in the Log template's shape: Asked, Andres (verbatim), Changed, Turned down, Reading only when needed, and Chat, which says where the exchange is. An entry you write on your own says Asked "unprompted" and has no Andres line.
 3. Write no more than his words cover. A part of the question his answer skipped stays open: it goes under the page's Open questions with its default, and the next question asks it.
 4. Read back the edited line and the Log entry, with the size counter's line for each page when the counter prints one. Say the edited heading in one line.
@@ -123,9 +123,9 @@ When Andres rules, or a grill or spec session ends, write the ruling before the 
 
 | Event | Write |
 |---|---|
-| `started` | `node tools/set-status.js "In Progress" THV-n`, plus its parent when the parent reads Todo or Backlog. Fires for main-session work with Andres too, not only a dispatched pane |
+| `started` | `node tools/set-status.js "In Progress" THV-n`, plus its parent when the parent reads Todo or Backlog. Fires for main-session work with Andres too, not only a dispatched subagent |
 | `pr <number>` | Linear sets In Review when the PR opens. Read the status back; when it still reads In Progress, run `set-status.js "In Review" THV-n`. Then one comment: `PR #<number> opened` |
-| `report <STATUS>` | One comment: the report's status line and its Exit criteria rows, nothing else. Take them from the newest REPORT entry that `~/.agents/skills/dispatch-work/scripts/dispatch board <project> --ticket THV-n` prints |
+| `report <STATUS>` | One comment: the report's status line and its Eval rows, nothing else, copied from the builder subagent's final REPORT message |
 | `merged <number>` | Linear sets Merged (into an integration branch) or Done (into `main`). Read the status back, then one comment: `Merged #<number>`. List the open tickets the merge may close; moving them needs the Recipe |
 | `grill` | Ruling, steps 1–4. Comment on THV-n with links to the edited headings. |
 | `brief` | Ruling, steps 1–4, for each settled choice. A Project Update links the edited headings. The slot map stays on the design board the Spec section links. |
@@ -152,7 +152,7 @@ brainstorming; record accepted decisions in Linear. A design file becomes releva
 Linear task names it, not because every machine must have every board.
 
 For a cross-machine handoff, use [handoff.md](references/handoff.md). For a requested check on the
-mini from saved MacBook changes, use [remote-check](../remote-check/SKILL.md).
+mini from saved MacBook changes, use [run-on-mini](../run-on-mini/SKILL.md).
 
 For a reviewed remote-development release, read [remote-install.md](references/remote-install.md)
 before publishing or installing the selected skills.

@@ -24,7 +24,7 @@ it, read its `SKILL.md` in full. poteto-mode routes its own skills; this table a
 | Before designing a new API contract or redesigning one the ticket names | `/api-designer` |
 | Before writing or changing a migration | `/safe-migrate` |
 | A change to consent, VPC, activation gates or a parent-facing compliance surface | `/thoven-coppa-vpc-contracts` |
-| Writing, changing or auditing a test | `/test-audit` |
+| Writing, changing or auditing a test | `/write-tests` |
 | Before a requested test-first change, or a bug fix with an obvious cheap test target | `/tdd` |
-| Before reading Sentry, prod SQL, Mixpanel or SendGrid | `~/.agents/skills/investigate-thoven/references/vendor-access.md` for the org, project and tool to use |
+| Before reading Sentry, prod SQL, Mixpanel or SendGrid | `~/.agents/skills/debug/references/vendor-access.md` for the org, project and tool to use |
 | A change affects documented behaviour or setup, before handoff | `/doc-freshness`, scoped to the affected docs |

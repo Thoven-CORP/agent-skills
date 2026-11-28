@@ -45,8 +45,7 @@ the destination setup request; it does not authorize publication from the MacBoo
 5. Reconcile every `globalSkillsWithoutLock` entry. For vendor-installed skills, use the vendor's
    destination installer and compare its result. For custom skills, obtain reviewed skill assets
    separately from credentials. If provenance remains unknown, name the pending row and continue
-   independent installation. Herdr's service remains outside this setup per Andres's instruction.
-6. Restore `projectSkills` at their original scope when preparing the selected repositories.
+   independent installation.6. Restore `projectSkills` at their original scope when preparing the selected repositories.
    This includes root HyperFrames, frontend GSAP, and backend Neon. Preserve unlocked project
    skills and resolve their provenance. Project-local copies can shadow global names, so compare
    overlapping `prototype`, Neon, and design skills before declaring parity.
@@ -240,7 +239,7 @@ model-visible subset separately using the reviewed visibility procedure in the r
 4. Read `projectHandoff` in the manifest. A null selectedPair means the user has not chosen a pair.
    The candidate paths and HEADs are dated source snapshots, not transfer authorization.
    Configure Mutagen for the chosen frontend/backend pair. Use dedicated disposable test mirrors;
-   keep coding agents in separate Git worktrees. Follow [remote-check](../../remote-check/SKILL.md)
+   keep coding agents in separate Git worktrees. Follow [run-on-mini](../../run-on-mini/SKILL.md)
    for exclusions, a stable capture, targeted execution, artifacts, and reconnect proof.
 5. Return the installed-versus-expected report, pinned revisions, pending human sign-ins, host
    permissions, and a working remote-check example. Keep incomplete rows pending. Installing the

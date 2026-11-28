@@ -1,112 +1,49 @@
-# Review: main's verify pass
+# Review and fix round
 
-The builder's report is a claim. One review judges the whole work, once, when everything
-dispatched is built and reported: a fresh verifier pane for a feature, on the tier `agents.md`
-names, or an Opus (high) subagent of main for cleanup and hardening work. It reads each ticket's
-snapshot and exit lines, the spec rules they link, the architecture's four measures, the
-builder's REPORT entry and the whole diff against base. The builder's explanations are claims,
-never review instructions.
+The builder's REPORT is a claim. Main checks it, then one review judges the whole work once, on
+the dispatch's final diff, with [`/review-change`](../../review-change/SKILL.md). No verifier
+subagent runs by default.
 
-## What a review compares, in order
+## Main's checks
 
-1. **Exit criteria.** Each exit line is true on the build. Read its proof in the report: the
-   command and pass line, the test at file:line, or the capture. A test proof fails with the change
-   reverted, as the report's red run shows. Rerun a proof only when it looks wrong (it could pass
-   while the outcome is false, or its output does not match the line) or a finding needs it. A
-   line with no proof, or a proof that does not show its outcome, is a finding.
-2. **The spec.** Every behaviour the spec gives these tickets is built as its rule says. Quote the
-   spec rule, never a ticket's paraphrase. Name what the diff adds that no rule asks for, and what
-   it builds narrower. A narrower build is fixed in the build; the exit line and the rule stay.
-3. **The architecture's four measures, and the code around the change.** Judge the diff by the
-   architecture page's "Judged by" lines. For each module, hook, runner, component or test helper
-   the diff adds, search both repos and the open integration branches for one that already does
-   that job. For what the diff replaces, the old path is gone: no live caller, no test of dead
-   code. New tests follow how this repo already tests that kind of thing (`TESTING.md`, the
-   neighbouring tests).
-4. **Design**, on a ticket with a named frame. The builder made the capture once; you judge it
-   beside its frames, as the law's Design parity says. A state missing from the capture is a finding.
+Main runs each single-command check itself: lint and type-check on the touched files, and the
+narrowest test or command that measures an exit criterion. A check runs once per commit: one the
+REPORT shows passing at the head SHA is cited with its pass line, never rerun. A later commit
+reruns only the checks whose files it touched. Wider suites run once, when the branch lands (law,
+"Check once; the first failure is a finding"). The first failure is a finding, never a rerun to
+green.
 
-Commits sit on the named branch, each ending in the ticket id, and `git diff --stat <base>..HEAD`
-leaves each ticket's Leave alone untouched and gives a reason for any file its Build from does not
-name.
-
-## Severity
-
-- **Critical:** data loss, security, a broken core flow.
-- **Important:** an exit line not true; a bug a user hits in the normal flow; a design difference
-  built without a ruling; structural debt in code this work owns, such as a second copy of an
-  existing module or a replaced path still live (law, "Own what you find").
-- **Minor:** rare edge cases, test nits, style.
-
-## Main's pass
-
-1. On a UI ticket, put the journey and the builder's capture on the work-session page (`SKILL.md`
-   close step 6.1).
-2. For a visual or user-facing change, verify the PR and ticket attachments under Thoven law's
-   **User-facing evidence**.
-3. Merge backend first, and only a backward-compatible change (the law's required-field rule).
-4. Cite the builder's proofs and the PR's checks. Wider suites run when the branch lands (`verify`).
-
-## Verifier brief
-
-Write it to the board's `briefs/THV-x-verify.md` with every `<<…>>` slot filled, `<<head>>` being
-the SHA of the dispatch's final commit, fix commits included. Start it, or a capture pass, only
-once the builder has reported DONE on the whole dispatch and that commit is on the branch:
-`dispatch spawn <project> THV-x --kind Verify --brief <that file> --split-of <builder pane> ...`,
-with the other flags as in step 3.
-
-```text
-/poteto-mode Verify THV-<id> "<<ticket title>>"
-You are {{AGENT_NAME}}. Main is the Claude session {{MAIN_SESSION}}. Project board: {{BOARD}}.
-DISPATCH = ~/.agents/skills/dispatch-work/scripts/dispatch
-Spec: {{SNAPSHOT}}, <<each other ticket this dispatch built, or none>>, and the documents they
-link. The builder's claim: its REPORT entry in `$DISPATCH board {{PROJECT}} --ticket THV-<id>`.
-Repo <<path>>, branch <<branch>>, diff <<base>>..<<head>>, the whole dispatch.
-Review as ~/.agents/skills/dispatch-work/references/review.md "What a review compares" says, in
-its order and with its severities. Read the builder's proofs; rerun one only as step 1 says. Fix
-only an easy, cheap finding of your own and mark it fixed.
-Run /mattpocock-skills:code-review once over the whole diff, with the tickets and their spec
-documents as the spec, plus /thermo-nuclear-review only when the diff touches money, auth,
-personal data or a migration or passes ~300 lines, plus /interrogate only when the brief marks the
-design contested.
-After the fix round: read the fix diff and its proofs only, and check each finding it claims to
-fix. Rerun a proof only as step 1 says, and no review skill.
-Write findings into your reply and into `~/.thoven-artifacts/THV-<id>/evidence/`.
-Report with STATUS VERIFIED or FINDINGS:
-  $DISPATCH post {{PROJECT}} --ticket THV-<id> --kind report --status STATUS --from {{AGENT_NAME}} < REPORT_FILE
-  then SendMessage to {{MAIN_SESSION}}: "STATUS THV-<id>. Entry: ENTRY_PATH".
-The body opens with SPEC PARITY: one row per exit line and per spec rule, then the measures and
-design rows; each row has its verdict and evidence. A diff that changes a design decision (a D#
-comment, a token lock's expectation or title) gets a row naming the D# and the Andres ruling that
-allows it; with no ruling on record, the row is a finding. Each finding carries file:line and its severity.
-```
+**Done when:** every exit criterion has a verdict with its measurement at the head SHA.
 
 ## Every PR
 
-The one review is the PR review for the PR that carries the work. A hotfix, follow-up or CI-fix PR
-with no verifier pane gets it from main, once, on its final diff. Its brief asks the same design-decision row
-as SPEC PARITY above. (2026-11-12: PR #671 rewrote D24's lock on a bundled "yes" to a QA list, and
-the review checked that the new tick rendered, not whether a tick was allowed.) Once it passes, main arms
-auto-merge (`~/thoven/agent-skills/enforcement/rules/branches-and-prs.md`), and the work-session page says in one line what
-merged. /deslop, /no-comments, /thermo-nuclear-code-quality-review and /thermos run only when
-Andres asks.
+The one review is the PR review of the PR that carries the work. A hotfix, follow-up or CI-fix PR
+with no dispatch gets it from main, once, on its final diff. Once it passes, main arms auto-merge
+(`~/thoven/agent-skills/enforcement/rules/branches-and-prs.md`) and says in one line on the
+work-session page what merged. `/deslop` and `/no-comments` run only when Andres asks.
 
 ## Handling findings
 
-- **Check first.** Main reads the builder's concerns, the review findings and Andres's notes as one
-  set. The session holding the context makes each easy, cheap fix on the spot. Only real work left
-  opens a pane.
-- **One fix round carries every finding left**, critical, important and minor, owned structural debt
-  included: about five per pane, split by concern into panes whose files do not overlap. Each is a
-  fresh pane with the fix-round brief (`brief.md`). The reviewer then reads the fix diff and its
-  proofs. The ticket stays **In Review**.
-- **Gate repair, CI fixes and redesigns** go to Andres as one line with a choice.
-- **Each `Noticed` line,** main sorts into one of three (law, "Own what you find"): fix now, in the
-  fix round or as a sub-issue of the ticket; ask Andres through the question tool; or propose its
-  own spec or ADR.
-- **After the fix round,** main rules on each finding still open. Wrong or contestable: park it with
-  the reason in the Linear comment. Real: a sub-issue of the ticket, done before it closes. A
-  critical one still open goes to Andres as one line with a choice.
+Read the builder's concerns and Noticed lines, the review's findings, red CI and Andres's notes as
+one set. Diagnose each before fixing it: a bad seed, a stale import, or code already due for
+deletion is not a product bug.
 
-**Done when:** the verifier replied VERIFIED, or every finding is fixed, parked, a sub-issue,
-asked or proposed, and the work-session page shows the outcome.
+1. **Group by root cause.** Findings with one cause are one item, with every location.
+2. **Sort each item by its kind** (`review-change`, "Kind"):
+
+   | Kind | What happens |
+   |---|---|
+   | User bug, broken ruling | Fixed in the fix round with a check at the class level: the earliest rung of the law's "A rule carries its check" that catches every instance, never a guard for one test |
+   | Edge case, taste | One line each to Andres, with your default; nothing is built until he answers |
+   | Minor | One line in the PR's report; no fix round |
+
+3. **The fix round.** Main makes each easy fix on the spot. What is left goes to one fresh
+   subagent with the fix-round brief ([brief.md](brief.md), "Fix round"), split by
+   cause into subagents whose files do not overlap. Its proof per item is the class-level check
+   going green after failing on the old code. The ticket stays In Review.
+4. **After the round,** main reads the fix diff and its checks only; no second review. A fix too
+   big for the round is a sub-issue of the ticket, done before it closes (law, "Own what you
+   find"). Gate repair and redesigns go to Andres as one line with a choice.
+
+**Done when:** every item is fixed with its check, asked, a sub-issue, or a report line, and the
+work-session page shows the outcome.
