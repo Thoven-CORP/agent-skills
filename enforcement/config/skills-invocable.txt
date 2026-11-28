@@ -11,9 +11,9 @@
 # re-blocks anything a reinstall brings back open. enforcement/sync.sh --apply
 # copies this file to ~/.claude/skills-invocable.txt.
 
-verify-this
+prove-claim
 graphify
-qa-flow
+qa-product
 journey-map
 thoven-designer
 writing-for-agents
@@ -41,18 +41,17 @@ andres-mode
 dispatch-work
 doc-freshness
 grill-with-docs
-investigate-thoven
+debug
 orchestrate
 product-fundamentals
 prompt-generator
 publish
-qa
-remote-check
+run-on-mini
 state-audit
 state-brief
-test-audit
+write-tests
 thoven-branding
-verify
+check-build
 workspace
 workspace-sweep
 # Third-party skills the same steering files name (reflect 2026-11-05).

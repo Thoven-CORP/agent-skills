@@ -90,7 +90,7 @@ npx skills@latest add jakubkrehel/skills -g -y -a claude-code -a cursor \
 `teardown` is our own copy in `skills/dev/teardown` (MIT, from `jakubkrehel/skills` at its 2026-11-12 removal; upstream deleted it, so it gets no updates). It installs with step 1.
 
 **3. Put the local patches back.** Both commands overwrite the skill folders, which reverts our
-fixes (the `deslop` description, the `verify-this` rewrite, skill names, the model-invocation
+fixes (the `deslop` description, skill names, the model-invocation
 allowlist). This restores them. It also runs at the start of every new session, so a fresh `claude`
 session does the same, and it prints nothing unless it changed something.
 
@@ -118,7 +118,7 @@ After **any** `npx skills add` or update, run the script in step 4 above:
 bash ~/thoven/agent-skills/scripts/apply-skill-visibility.sh
 ```
 
-Every skill stays where `npx skills` installed it, so `npx skills update` and the Claude Code links keep working. The Pstack suite, `/qa-flow`, daily Thoven workflows, retained Better/Interface/Transitions/Emil design skills, and the Matt Pocock skills used routinely stay visible to Codex. The script switches the rest off for Codex only, with a managed block of `[[skills.config]] enabled = false` entries in `~/.codex/config.toml`, so they cannot exhaust its skills-context budget. Entries outside the block's markers are left alone. A skill installed since the last sync stays on: the script adds it to `~/.agents/.codex-activated-skills` and names it in its output. Switch it off with `deactivate <name>` if Codex does not need it.
+Every skill stays where `npx skills` installed it, so `npx skills update` and the Claude Code links keep working. The Pstack suite, `/qa-product`, daily Thoven workflows, retained Better/Interface/Transitions/Emil design skills, and the Matt Pocock skills used routinely stay visible to Codex. The script switches the rest off for Codex only, with a managed block of `[[skills.config]] enabled = false` entries in `~/.codex/config.toml`, so they cannot exhaust its skills-context budget. Entries outside the block's markers are left alone. A skill installed since the last sync stays on: the script adds it to `~/.agents/.codex-activated-skills` and names it in its output. Switch it off with `deactivate <name>` if Codex does not need it.
 
 To use one of those skills in Codex, switch it on and start a new Codex session:
 
@@ -133,17 +133,17 @@ bash ~/thoven/agent-skills/scripts/apply-skill-visibility.sh activate sentry-rub
 Pstack stays third-party and installs from its own source. Thoven skills compose with it rather than copying it here:
 
 - `/poteto-mode` frames nontrivial work; `/how`, `/why`, `/teach`, and `/recall` supply a grounded mental model.
-- `/qa-flow` is Thoven's product-verification loop: it chooses realistic state, drives the real user path, and leaves criterion-level evidence.
-- `/create-verification-skill` and `/maintain-verification-skill` create and keep a product-specific control surface and Feature Map. When one exists, `/qa-flow` uses it rather than inventing one-off browser scripts.
+- `/qa-product` is Thoven's product-verification loop: it chooses realistic state, drives the real user path, and leaves criterion-level evidence.
+- `/create-verification-skill` and `/maintain-verification-skill` create and keep a product-specific control surface and Feature Map. When one exists, `/qa-product` uses it rather than inventing one-off browser scripts.
 
 ## How to use them
 
 In Claude Code / Cursor, invoke by name:
 
 ```
-/qa-flow
+/qa-product
 /publish
-/verify
+/check-build
 /thoven-email-system
 /doc-freshness
 ```
@@ -163,19 +163,19 @@ These detect which repo you are in and load only that side:
 
 If detection is ambiguous, the skill asks once.
 
-`verify` works the same way in either repo: run the targeted checks the diff selects, paste each command and its pass line, and fix what fails. The full `bin/verify` runs when Andres asks or once at the parent, before the integration PR into `main`.
+`check-build` works the same way in either repo: run the targeted checks the diff selects, paste each command and its pass line, and fix what fails. The full `bin/verify` runs when Andres asks or once at the parent, before the integration PR into `main`.
 
 ### Renames (old → new)
 
 | Old | New |
 |---|---|
-| `/manual-qa` | `/qa-flow` |
+| `/manual-qa` | `/qa-product` |
 | `/email` (mailers) | `/thoven-email-system` |
 | `docs-freshness` | `doc-freshness` |
 | `/to-prd` | `/to-spec` |
 | `/to-issues` | `/to-tickets` |
 | `/brainstorm` | `/grill-with-docs` then `/architect` |
-| `/investigate` (generic) | `/investigate-thoven` |
+| `/investigate` (generic) | `/debug` |
 | `/dev` (GSD conductor) | retired — `/writing-plans` + `/to-tickets`. `app/dev/` proto routes stay |
 | `codebase-memory` (`codebase-memory-mcp`) | `/graphify` + the `graphify` CLI (2026-08-21) |
 | `dialkit` | `/interface-craft` — it absorbed dialkit whole (2026-09-03) |

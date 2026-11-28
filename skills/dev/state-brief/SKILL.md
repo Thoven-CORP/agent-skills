@@ -84,7 +84,7 @@ An invariant is a sentence that holds in every state, in product words, such as 
 | The `statechart` skill, fed by [references/statechart.md](references/statechart.md): a TLA+ model whose INVARIANTs are this step's sentences | Two or more actors, a retry, a timeout, or a race |
 | `/state-machine` renders each UI state once it is built. Its switcher list equals this brief's UI states | A component with four or more reachable states |
 
-The `test-audit` skill sets the bar for each test.
+The `write-tests` skill sets the bar for each test.
 
 Done when: every invariant has a check or names the type that enforces it, and every statechart bug path has a replay test.
 

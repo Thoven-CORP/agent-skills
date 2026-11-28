@@ -22,14 +22,11 @@ Set `since` to the resolved start date: the global checkpoint or seven days back
 ```bash
 out="$(mktemp -d "${TMPDIR:-/tmp}/thoven-reflect.XXXXXX")"
 bash ~/thoven/agent-skills/scripts/mine-transcripts.sh --since "$since" --out "$out"
-~/.agents/skills/dispatch-work/scripts/dispatch stats --since "$since" --md > "$out/dispatch.md"
 ```
 
 The mine takes several minutes, so run it with a 10-minute timeout or in the background. The broad window starts at the last recorded run, or seven days back; a focused run uses its independently resolved range. The digest is `<out>/corrections.md`, where `<out>` is the `--out` folder above. It holds correction candidates after the script's noise filter; validate authorship and context before counting a candidate as evidence. Each row carries the agent's text before it, the speaker's own words, the last skill loaded and every skill the session had loaded. Each session heading names its origin and raw transcript: `main` is Andres in a main session, `subagent` is main writing to a Claude or Codex subagent, `pane` is main or Andres inside a dispatched pane. `<out>/skills.tsv` lists every skill each session loaded, by origin, across Claude, Codex and Cursor; treat it as attribution leads.
 
-The second input is `<out>/dispatch.md`: one row per builder pane that ran in the window, from the dispatch events log, and a friction footer. It is empty when no pane ran.
-
-Done when you have counted the digest's rows (`grep -c '^- \*\*' <out>/corrections.md`), the panes in `dispatch.md` (`grep -c '^| [a-z0-9-]* | THV-' <out>/dispatch.md`) and the walk list below. A broad run ends with a one-line report only when all three are zero and Linear has no bug ticket created in the window (the query in `references/escaped-defect-reviewer.md`). In focused mode follow the reference to collect other relevant leads before deciding there are no findings.
+Done when you have counted the digest's rows (`grep -c '^- \*\*' <out>/corrections.md`) and the walk list below. A broad run ends with a one-line report only when both are zero and Linear has no bug ticket created in the window (the query in `references/escaped-defect-reviewer.md`). In focused mode follow the reference to collect other relevant leads before deciding there are no findings.
 
 ## 2. Reviewers in parallel
 
@@ -52,7 +49,7 @@ awk -F'\t' 'NR > 1 {n = $3; sub(/^\//, "", n); sub(/^[a-z0-9-]+:/, "", n); print
   | grep -Fx -f <(find ~/thoven/agent-skills/skills -name SKILL.md -exec dirname {} \; | xargs -n1 basename)
 ```
 
-For a broad run reviewers read `corrections.md` and `dispatch.md`; for a focused run substitute the focused digest for `<DIGEST_PATH>`, pass scoped dispatch context, and walk only the target skill. Open raw transcripts only around relevant leads and as needed to corroborate distinct sessions.
+For a broad run reviewers read `corrections.md`; for a focused run substitute the focused digest for `<DIGEST_PATH>`, and walk only the target skill. Open raw transcripts only around relevant leads and as needed to corroborate distinct sessions.
 
 Done when every call has returned a numbered list and every skill on the walk list has a verdict. A reviewer may return no supported findings; do not force a retry. Pass focused scope and coverage limitations when applicable.
 

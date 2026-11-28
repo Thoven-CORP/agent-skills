@@ -34,13 +34,13 @@ reference only for intent and rationale.
 | Type ramp, fonts, weights | `app/globals.css` type roles; `__tests__/type-roles.test.ts`; `lib/cn-type-roles.test.ts` | `design/typography.md` |
 | Existing content-title roles and `text-supporting` colour (muted is state-specific) | `app/globals.css` semantic colour aliases and existing type roles; `components/teacher/private-lessons/LessonsOverview.sheet.browser.test.tsx` computed browser paint | `design/typography.md` and `design/color.md` |
 | Buttons, ledges, variants | `thovenButtonTokens` in `lib/live-lesson-tokens.ts:53`; `components/ui/thoven-button.tsx`; `__tests__/design-system-doc.test.ts` | `design/buttons.md` |
-| Icons, the two tiers, K2 | `lib/icon-tokens.ts`; `__tests__/icon-tier-scan.test.ts`, `__tests__/icon-tokens.test.ts`, `__tests__/openmoji-icon-map.test.ts` | `design/icons.md` |
-| Motion, springs, reduced motion | `lib/motion-config.ts` | `design/motion.md` |
+| Icons, the two tiers, K2 | `lib/icon-tokens.ts`; `__tests__/icon-tier-scan.test.ts`, `__tests__/icon-tokens.test.ts`, `__tests__/openmoji-icon-map.test.ts` | `DESIGN.md#icons` |
+| Motion, springs, reduced motion | `lib/motion-config.ts` | `DESIGN.md#motion` |
 | Async loading, unavailable, degraded, action, field-error, and empty states | `lib/loading-tokens.ts`; `components/ui/shimmer-text.tsx`; `components/shared/RowSkeleton.tsx`; `Skeleton` from `skullet/react` for a page or section whose shape is known; `components/ui/thoven-button.tsx`; the owning feature component listed below. The loader for a waiting control outside `ThovenButton` is not ruled, and `components/ui/spinner.tsx` is not it | `docs/design/async-states.md` |
 | Layout, viewport, spacing | *(no token module)* | `design/layout.md` |
 | What a thing is **called** | *(no token module)* | frontend `design/lexicon/LEXICON.md` - LIVING, not frozen |
 | Does a component exist? | `design/components.md`: status (`current`, `deprecated` with its replacement or "none ruled yet", `unused`; `on Radix` marks the old stack), when to use it, options, slots | [Does it already exist](#does-it-already-exist) |
-| What a new part is built on, and when to build or take a library | *(no token module)* | frontend `design/STACK.md`: new parts on Base UI; a Radix part moves there in the change that next fixes it |
+| What a new part is built on, and when to build or take a library | *(no token module)* | frontend `DESIGN.md#primitives`: new parts on Base UI; a Radix part moves there in the change that next fixes it |
 | Which composite, and who draws its loading, empty and error | `design/blocks.md`, generated from `design/blocks.registry.json` | [Async-state ownership](#async-state-ownership) |
 | Which token module owns a value, and what locks it | `design/tokens.md` | the module's own header comment |
 
@@ -127,15 +127,15 @@ In order, and stop at the first hit:
    `motion` we already run) gives you a headless `useX()` hook that touches no class names - reach
    for it when what is missing is the interaction's *state machine* (abandonment paths, reserved
    space for async states, keyboard, reduced-motion) rather than its appearance. Fenced by
-   frontend `design/STACK.md` **rule 7** - gap-filler only; wherever base-ui has the primitive,
+   frontend `DESIGN.md#primitives` - gap-filler only; wherever base-ui has the primitive,
    base-ui wins and Interior is read for technique, never copied in.
 
-**Before any of the four, ask `STACK.md`'s question: could a user name it?** Point-and-name it -
+**Before any of the four, ask `DESIGN.md#build-or-take`'s question: could a user name it?** Point-and-name it -
 "the Thoven button", "the XP thing" - and you **build** it, because it is the product. Cannot name
 it, would only notice when it is *wrong* (skeleton timing, abort paths, focus return) and you
 **take** it - building that is not craft, it is tax. Brand-meaningful *and* a hard state machine is
 the middle case: machine from the library, face from us. The full rule, including why "we are
-inventing this" always means build, is in `STACK.md`.
+inventing this" always means build, is in `DESIGN.md#build-or-take`.
 4. **The lexicon** - if you cannot find it, you may be searching the wrong noun.
 
 Deleted components stay deleted for a reason: `components/ui/StatusPill.tsx` was removed

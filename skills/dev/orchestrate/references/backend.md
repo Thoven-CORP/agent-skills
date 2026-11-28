@@ -22,10 +22,10 @@ When two rows match equally, ask one question.
 | Audit a built flow for flag soup, hidden transitions or missing recovery | `/state-audit` |
 | Reconcile a large feature's Spec, Architecture and code | `/feature-ledger` |
 | Plan your own session's steps on one ticket | `/writing-plans` (scratch file) |
-| Something is broken at runtime in Thoven | `/investigate-thoven` |
+| Something is broken at runtime in Thoven | `/debug` |
 | A hard bug or perf regression anywhere | `/diagnosing-bugs` |
-| Claiming done, pre-commit | `/verify` |
-| Prove one specific claim with fresh evidence | `/verify-this` |
+| Claiming done, pre-commit | `/check-build` |
+| Prove one specific claim with fresh evidence | `/prove-claim` |
 | This repo has no control skill or Feature Map | `/create-verification-skill` |
 | An existing verify-app map is stale | `/maintain-verification-skill` |
 | Commit, deploy, release | `/publish` |
@@ -36,7 +36,7 @@ When two rows match equally, ask one question.
 | Pick up another person's or agent's PR, branch or dead pane | `/takeover` |
 | Take a ticket to ready-to-merge unattended | `/full-stop` |
 | Take a PR that changes nothing a user sees to merged, on "full send" | `/full-send` |
-| Run a heavy check on the mini against MacBook changes | `/remote-check` |
+| Run a heavy check on the mini against MacBook changes | `/run-on-mini` |
 | Set up or reshape a Linear Project | `/linear-project` |
 | What families are texting about, a feedback sweep | `/text-product-analysis` |
 | Brainstorm or grill a feature, journey or flow; what matters most | `/product-fundamentals` |
@@ -85,10 +85,10 @@ When two rows match equally, ask one question.
 | Pattern | Chain |
 |---|---|
 | Idea to shipped feature | `/grill-with-docs` → `/architect` → `/to-tickets`; `/feature-ledger` when documents and code may disagree |
-| Bug report | `/investigate-thoven` → `/verify` |
-| Schema change | `/safe-migrate` → `/verify` |
-| Before the PR merges | `/verify` → `/mattpocock-skills:code-review` once on the final diff |
-| Ship | `/verify` → `/publish` → `/babysit-pr` |
+| Bug report | `/debug` → `/check-build` |
+| Schema change | `/safe-migrate` → `/check-build` |
+| Before the PR merges | `/check-build` → `/mattpocock-skills:code-review` once on the final diff |
+| Ship | `/check-build` → `/publish` → `/babysit-pr` |
 
 ## Rules
 

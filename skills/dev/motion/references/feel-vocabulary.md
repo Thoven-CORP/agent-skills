@@ -42,7 +42,7 @@ Adapted from LottieFiles/motion-design-skill (MIT):
 button 100–160ms · tooltip 125–200ms · dropdown 150–250ms · modal/drawer 200–500ms (exit ~20% faster than entrance) · **UI ceiling < 300ms**.
 
 ## Verify by tracing, never by reading
-A timing in a class string is a claim, not a behaviour. Only a trace tells you the browser moved between the endpoints. Drive real input, sample computed style over time, assert intermediate states exist — `e2e/button-press-motion.spec.ts` is the pattern.
+A timing in a class string is a claim, not a behaviour. Only a trace tells you the browser moved between the endpoints. Drive real input, sample computed style over time, assert intermediate states exist.
 
 Two traps that read as correct:
 - **Tailwind v4** emits `translate`/`scale`/`rotate` as standalone properties and leaves `transform: none`. A transition list naming only `transform` animates nothing.

@@ -18,7 +18,7 @@ import { springs, staggers, cardHover, subtleHover, getTransition } from '@/lib/
 - **getTransition(springs.x)** → returns `{ duration: 0 }` under `prefers-reduced-motion`. Wrap transitions with it.
 
 **If none of them fit, do not invent a number in the component.** The route is
-frontend `design/STACK.md` → **REFERENCE** (transitions.dev) → `dialkit` on the real component →
+frontend `DESIGN.md#primitives` → **REFERENCE** (transitions.dev) → `dialkit` on the real component →
 a token module with a test → import it here like any other preset. A value that never makes that
 trip is a value the next person will guess at again.
 
@@ -75,7 +75,7 @@ Enter/exit → `ease-out`; movement → `ease-in-out`; hover/color → `ease`; n
 v3 compiled `translate-*`/`scale-*`/`rotate-*` into `transform`. **v4 emits them as standalone CSS properties and leaves `transform: none`.** A list naming only `transform` animates nothing — the element still moves, instantly, with no easing. Write `transition-[translate,scale,transform,…]`. Explicit lists are escape hatches, so no codemod fixed them at the v4 upgrade.
 
 ## Verify motion by tracing, never by reading
-A class string gives you two endpoints. Only a trace tells you whether the browser moved between them. Drive real input, sample computed style every ~4ms, assert intermediate states exist — see `e2e/button-press-motion.spec.ts`. Screenshots, source scans and jsdom unit tests are all blind to this: a teleporting element and a correct one produce identical stills and identical classes. Assert **movement**, not milliseconds; timings belong in the token module.
+A class string gives you two endpoints. Only a trace tells you whether the browser moved between them. Drive real input, sample computed style every ~4ms, assert intermediate states exist. Screenshots, source scans and jsdom unit tests are all blind to this: a teleporting element and a correct one produce identical stills and identical classes. Assert **movement**, not milliseconds; timings belong in the token module.
 
 ## Lottie / Rive
 - **Lottie**: `lottie-react` is available — for a pre-made file, render a minimal `<Lottie animationData={data} />`; see LottieFiles docs. Pointer only; don't build deep tooling.

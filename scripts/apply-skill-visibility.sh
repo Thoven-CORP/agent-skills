@@ -47,15 +47,15 @@ auto_skills=(
   principle-test-behavior-not-implementation principle-type-system-discipline
 
   # Product verification and daily Thoven work
-  qa-flow control-cli control-ui find-skills preflight publish verify workspace
-  feature-ledger investigate-thoven doc-freshness dispatch-work andres-mode
-  state-brief state-audit
+  qa-product control-cli control-ui find-skills publish check-build workspace
+  feature-ledger debug doc-freshness dispatch-work andres-mode
+  state-brief state-audit prove-claim
 
   # Official Cursor Team Kit (Cursor plugins, main)
   check-compiler-errors deslop fix-ci fix-merge-conflicts get-pr-comments
   loop-on-ci make-pr-easy-to-review new-branch-and-pr pr-review-canvas
   review-and-ship run-smoke-tests thermo-nuclear-code-quality-review
-  verify-this weekly-review what-did-i-get-done workflow-from-chats
+  weekly-review what-did-i-get-done workflow-from-chats
   # Retained from the retired Thoven Team Kit; no official equivalent exists.
   thermos thermo-nuclear-review
 

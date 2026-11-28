@@ -55,11 +55,11 @@
     {
       "id": 4,
       "prompt": "/thoven-reflect --since 2026-11-16. Stop at the approval question; do not apply anything.",
-      "expected_output": "The escaped-defect lens lists the bug tickets created since 11-16, reads each ticket and the session that fixed it, and traces THV-2003 (an adult signing up as Myself got the kid flow, found in production) to qa-flow: no run walked the adult seat before launch, and qa-flow first ran after the fix. The synthesis routes it to qa-flow and has no Backlog section.",
+      "expected_output": "The escaped-defect lens lists the bug tickets created since 11-16, reads each ticket and the session that fixed it, and traces THV-2003 (an adult signing up as Myself got the kid flow, found in production) to qa-product: no run walked the adult seat before launch, and qa-product first ran after the fix. The synthesis routes it to qa-product and has no Backlog section.",
       "files": [],
       "assertions": [
         "bugs-listed: the escaped-defect output lists bug tickets created in the window, including THV-2003",
-        "thv-2003-traced: THV-2003 is a skill-gap or broken-rule finding routed to qa-flow, naming the adult seat no journey walked",
+        "thv-2003-traced: THV-2003 is a skill-gap or broken-rule finding routed to qa-product, naming the adult seat no journey walked",
         "fixing-session-read: the THV-2003 finding cites the session that fixed it",
         "no-backlog: no synthesis section or row routes to Backlog; product defects sit in Ask with their ticket",
         "no-side-effects: no tracked file in ~/thoven/agent-skills, no memory file, no Linear issue and no last-run state file changed"

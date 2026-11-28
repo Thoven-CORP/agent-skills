@@ -32,18 +32,12 @@ fw(){ echo "{\"session_id\":\"fw-$$-$2\",\"cwd\":\"$CWD\",\"prompt\":$1}" | "$H/
 rm -rf /tmp/claude-thoven/fw-$$-*
 
 echo "== 4 THV-595 agents"
-for a in verifier ui-builder explorer; do [ -f "$HOME/.claude/agents/$a.md" ] && pass "agents/$a.md exists" || fail "agents/$a.md missing"; done
-grep -Eq '^disallowedTools:.*Edit' "$HOME/.claude/agents/verifier.md" 2>/dev/null && grep -Eq '^disallowedTools:.*Write' "$HOME/.claude/agents/verifier.md" && pass "verifier disallows Edit and Write" || fail "verifier can edit"
-grep -Eq '^skills:.*thoven-designer' "$HOME/.claude/agents/ui-builder.md" 2>/dev/null && pass "ui-builder loads thoven-designer" || fail "ui-builder lacks thoven-designer"
+for a in explorer; do [ -f "$HOME/.claude/agents/$a.md" ] && pass "agents/$a.md exists" || fail "agents/$a.md missing"; done
 
 echo "== 5 THV-598 rules"
 grep -lE '^paths:' "$HOME"/.claude/rules/*.md 2>/dev/null | grep -q . && pass "rules with paths: exist" || fail "no path-scoped rules"
 grep -qs 'components/\*\*' "$HOME/.claude/rules/thoven-ui.md" && grep -qs 'thoven-designer' "$HOME/.claude/rules/thoven-ui.md" && pass "thoven-ui rule scoped to components and points at designer" || fail "thoven-ui rule wrong"
 grep -qs 'graphify affected' "$HOME/.claude/rules/thoven-graph.md" && pass "thoven-graph rule names graphify affected" || fail "thoven-graph rule wrong"
-
-echo "== 1 THV-592 artifacts (reads the last run in $CWD)"
-[ -f "$CWD/test-results/results.json" ] && jq -e '[.. | .specs? // empty | .[] | .tests[].results[].status] | length > 0' "$CWD/test-results/results.json" >/dev/null 2>&1 && pass "results.json has per-test status" || fail "results.json missing or empty"
-find "$CWD/test-results" -name trace.zip 2>/dev/null | grep -q . && pass "trace.zip present" || fail "no trace.zip"
 
 echo "== 7 THV-640 router destinations"
 SD="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -64,11 +58,10 @@ else
   fail "orchestrate not installed at ~/.agents/skills-on-demand"
 fi
 
-echo "== 8 THV-640 evidence schema and verify-this"
+echo "== 8 THV-640 evidence schema"
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 EV="$REPO/evals/schemas/evidence.json"
 CL="$REPO/enforcement/bin/classify"
-VT="$REPO/enforcement/skill-overrides/verify-this.SKILL.md"
 if [ ! -f "$EV" ]; then fail "evals/schemas/evidence.json missing"
 elif ! jq -e '.id=="evidence" and .model and .questions.evidence.criteria.none' "$EV" >/dev/null; then fail "evidence schema lacks id, model, or none"
 else pass "evidence schema is well-formed"; fi
@@ -86,27 +79,14 @@ else
   [ "$(jq -r '.status + "/" + (.answers.evidence.value // "") + "/" + (.answers.evidence.binding|tostring)' <<<"$echo_out")" = "answered/type_check/true" ] \
     && pass "stub echo binds type_check on a types-only claim" || fail "stub echo: $echo_out"
 fi
-if [ ! -f "$VT" ]; then fail "verify-this override missing"
-else
-  grep -q 'classify ~/thoven/agent-skills/evals/schemas/evidence.json' "$VT" \
-    && pass "verify-this override calls classify" || fail "verify-this override has no classify invocation"
-  grep -q '## Fallback surfaces' "$VT" \
-    && pass "six-surface list is behind the undecided pointer" || fail "fallback heading missing"
-  awk '/^## Workflow$/,/^## /' "$VT" | grep -q 'CLI/TUI behavior' \
-    && fail "six-surface list still sits in the always-read workflow" \
-    || pass "workflow step does not contain the six-surface list"
-fi
 DS="$REPO/skills/dev/thoven-designer/SKILL.md"
 OS="$REPO/skills/dev/orchestrate/SKILL.md"
-IS="$REPO/skills/dev/investigate-thoven/SKILL.md"
 if [ -f "$DS" ] && grep -q 'evals/schemas/thoven-designer.json' "$DS"; then
   framing=0
-  for f in "$DS" "$OS" "$IS" "$VT"; do
+  for f in "$DS" "$OS"; do
     if grep -q 'classify ' "$f"; then pass "$(basename "$(dirname "$f")") calls classify"
     else fail "$(basename "$f") has no classify invocation"; framing=1; fi
   done
-  if grep -qE '^#### Dimension [123]:' "$IS"; then fail "investigate still has Dimension 1-3 tables in SKILL.md"; framing=1
-  else pass "investigate Dimension 1-3 tables are not in SKILL.md"; fi
   if grep -qE '^## The map$|^## When to use$|^## Not for$' "$DS"; then fail "designer still has the map or fork tables in SKILL.md"; framing=1
   else pass "designer map and fork tables are not in SKILL.md"; fi
   if grep -qE '^\| .* \| `?/' "$OS"; then fail "orchestrate SKILL.md still has the destination table"; framing=1

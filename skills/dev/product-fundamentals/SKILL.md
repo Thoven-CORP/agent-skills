@@ -76,4 +76,4 @@ Draw in ASCII; where each kind of diagram goes is andres-mode's "Documents defau
 
 ## Neighbours
 
-`product-advisor` owns scope modes and engineering edge cases. `wireframe` and `prototype` own screens and variants. `feature-ledger` reconciles the decision entries against the spec and the code. `qa-flow` proves the built path.
+`product-advisor` owns scope modes and engineering edge cases. `wireframe` and `prototype` own screens and variants. `feature-ledger` reconciles the decision entries against the spec and the code. `qa-product` proves the built path.

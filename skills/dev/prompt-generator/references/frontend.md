@@ -139,38 +139,38 @@ After classification, identify which existing skills the generated prompt should
 
 | Prompt Type | Pre-Work Skills | Post-Work Skills |
 |-------------|----------------|-----------------|
-| Implementation | `/architect` (if 3+ concerns), `/grill-with-docs` (if creative/new) | `/verify`, `/qa-flow` (if testable), `/publish` |
-| Architecture | `/grill-with-docs`, `/thoven-boardroom` (if strategic) | `/verify` (docs mode) |
+| Implementation | `/architect` (if 3+ concerns), `/grill-with-docs` (if creative/new) | `/check-build`, `/qa-product` (if testable), `/publish` |
+| Architecture | `/grill-with-docs`, `/thoven-boardroom` (if strategic) | `/check-build` (docs mode) |
 | Research | `/research-orchestration` (if multi-topic) | — |
-| Debugging/Bugfix | `/investigate-thoven` | `/verify`, `/qa-flow` |
+| Debugging/Bugfix | `/debug` | `/check-build`, `/qa-product` |
 | Audit | `/accessibility-check` (if a11y), `/mobile-audit` (if responsive) | — |
 | PRD/Spec | `/grill-with-docs`, `/product-strategy-brainstorming` | — |
-| Testing | `superpowers:test-driven-development` | `/verify` (quick mode) |
+| Testing | `superpowers:test-driven-development` | `/check-build` (quick mode) |
 | Creative/Brainstorming | `/grill-with-docs` | — |
 | Cross-Codebase Handoff | — | — |
-| Refactoring | `/simplify` | `/verify` |
-| SEO work | `/programmatic-seo` | `/verify` |
+| Refactoring | `/simplify` | `/check-build` |
+| SEO work | `/programmatic-seo` | `/check-build` |
 | New component or page | `/thoven-designer`, `/building-components` | `/accessibility-check`, `/mobile-audit` |
 | Interface polish | `/interface-craft`, `/better-ui` | `/accessibility-check` |
-| One quality dimension | the matching `better-*` skill | `/verify` |
-| Open, close, swap, page transition | `/transitions-dev` | `/verify` |
+| One quality dimension | the matching `better-*` skill | `/check-build` |
+| Open, close, swap, page transition | `/transitions-dev` | `/check-build` |
 | Motion audit across a surface | `/improve-animations`, `/find-animation-opportunities` | — |
 
 **Mapping Rules:**
 1. **Always check** — every prompt gets a skill scan, even Light tier
-2. **Pre-work skills** go at the top of the prompt ("Before implementing, invoke `/investigate-thoven` to confirm root cause")
-3. **Post-work skills** go at the bottom ("After completing, run `/verify` then `/qa-flow`")
+2. **Pre-work skills** go at the top of the prompt ("Before implementing, invoke `/debug` to confirm root cause")
+3. **Post-work skills** go at the bottom ("After completing, run `/check-build` then `/qa-product`")
 4. **Don't over-stack** — max 2 pre-work + 2 post-work skills per prompt. Pick the most relevant.
 5. **Conditional skills** — use "if" language when a skill only applies sometimes ("If this touches UI, run `/accessibility-check` after")
-6. **Skill chaining** — some skills naturally chain: `/investigate-thoven` → implement fix → `/verify` → `/qa-flow` → `/publish`
+6. **Skill chaining** — some skills naturally chain: `/debug` → implement fix → `/check-build` → `/qa-product` → `/publish`
 
 **Common Chains:**
 
 ```
-Bug workflow:     /investigate-thoven → [fix prompt] → /verify → /qa-flow → /publish
-Feature workflow: /grill-with-docs → /architect → /to-tickets → [implement prompt] → /verify
-Audit workflow:   /[audit skill] → [fix prompt from findings] → /verify
-Design workflow:  /thoven-designer → [implement prompt] → /accessibility-check → /mobile-audit → /verify
+Bug workflow:     /debug → [fix prompt] → /check-build → /qa-product → /publish
+Feature workflow: /grill-with-docs → /architect → /to-tickets → [implement prompt] → /check-build
+Audit workflow:   /[audit skill] → [fix prompt from findings] → /check-build
+Design workflow:  /thoven-designer → [implement prompt] → /accessibility-check → /mobile-audit → /check-build
 ```
 
 ### Phase 2e: Clarifying Questions

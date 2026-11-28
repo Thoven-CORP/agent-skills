@@ -50,7 +50,7 @@ the main workflow; use [sources.md](sources.md) for lookup owners and specialist
 | `layout` | `design/layout.md`; rhythm, type and alignment rules: [layout](layout.md) |
 | `lexicon` | frontend `design/lexicon/LEXICON.md` |
 | `components_ui` | `design/components.md`, and `design/blocks.md` for a composite, then [Does it already exist](sources.md#does-it-already-exist) |
-| `stack_md` | frontend `design/STACK.md` rule 7 |
+| `stack_md` | frontend `DESIGN.md#build-or-take` |
 | `design_md` | `DESIGN.md` |
 
 A token question the table does not name: `design/tokens.md` lists every token module, what it
@@ -79,7 +79,7 @@ After the file is open: say which lock tier the answer came from (token module p
 
 ## After `components_ui` binds
 
-Ask `STACK.md` rule 7. Could a user name it? Point-and-name it and **build**. Cannot name it, would
+Ask `DESIGN.md#build-or-take`: could a user name it? Point-and-name it and **build**. Cannot name it, would
 only notice when it is wrong, and **take**. Brand-meaningful and a hard state machine: machine from
 the library, face from us.
 

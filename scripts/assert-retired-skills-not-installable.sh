@@ -18,6 +18,16 @@ must_not_exist=(
   "skills/dev/design-workflow-outline/SKILL.md"
   "skills/dev/building-thoven-ui/SKILL.md"
   "skills/dev/future-improvements/SKILL.md"
+  "skills/dev/verify/SKILL.md"
+  "skills/dev/test-audit/SKILL.md"
+  "skills/dev/investigate-thoven/SKILL.md"
+  "skills/dev/remote-check/SKILL.md"
+  "skills/dev/verify-this/SKILL.md"
+  "skills/dev/qa-flow/SKILL.md"
+  "skills/dev/qa/SKILL.md"
+  "skills/dev/dogfood/SKILL.md"
+  "skills/dev/preflight/SKILL.md"
+  "skills/dev/no-mistakes/SKILL.md"
 )
 
 echo "assert-retired-skills-not-installable"

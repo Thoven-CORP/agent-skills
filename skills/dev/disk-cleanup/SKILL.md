@@ -7,7 +7,7 @@ description: Investigate and free macOS disk space, CPU, and memory. Scans for c
 
 Scan macOS for space hogs and guide safe cleanup. Also checks CPU and memory when the user reports heat, fan noise, sluggishness, or asks directly — these often ride along with disk investigations, and the same session usually needs both.
 
-This skill covers the laptop. The Mac mini is freed by remote-check's **Free mini space** step.
+This skill covers the laptop. The Mac mini is freed by run-on-mini's **Free mini space** step.
 
 ## Step 1: Scan disk
 

@@ -24,7 +24,7 @@
         "layout": "Layout, viewport, spacing. Open design/layout.md; consult the implementation reference for current Linear rulings.",
         "lexicon": "What a thing is called. Open design/lexicon/LEXICON.md in the frontend repo.",
         "components_ui": "Does a component already exist? Dialog, sheet, popover, primitive. Open components/ui/ (primitives only).",
-        "stack_md": "Could a user name it, build or take, Interior vs base-ui. Open design/STACK.md rule 7 in the frontend repo.",
+        "stack_md": "Could a user name it, build or take, Interior vs base-ui. Open DESIGN.md#build-or-take in the frontend repo.",
         "design_md": "A declared lock, a divergence row, or intent with no token module. Open DESIGN.md."
       }
     }

@@ -3,37 +3,23 @@
   "evals": [
     {
       "id": 1,
-      "name": "dispatch-fe-be-ticket-claude-main",
-      "prompt": "ok dispatch THV-862 into a pane, its the copy a catalog piece to a student slice for materials v3. you're main in claude code, I'm in herdr pane w18:p59. go",
-      "expected_output": "Tier 2, launched by scripts/dispatch spawn --tier 2 (CLI, model, effort and permission flag from agents.toml, none hand-typed), a filled brief pointing at the ticket with Thoven moment skills, tab labelled for the issue, the opening prompt sent by dispatch spawn (no hand-typed herdr agent prompt), Linear to In Progress, dispatch watch armed.",
+      "name": "dispatch-fe-be-ticket",
+      "prompt": "ok dispatch THV-862 to a builder, its the copy a catalog piece to a student slice for materials v3. you're main in claude code. go",
+      "expected_output": "Confirms every Blocked by issue is merged and nobody holds the ticket; names the model and effort from ~/.claude/pstack-models.md \"Difficulty tiers\" and why; fills references/brief.md from the ticket with each exit criterion saying how it is measured; makes the tree with thoven-worktree create; launches one Agent call (subagent_type general-purpose) whose prompt is the filled brief naming both trees; runs workspace update THV-862 started.",
       "files": []
     },
     {
       "id": 2,
-      "name": "stale-pane-overloaded",
-      "prompt": "the THV-862 pane went quiet like 20 min ago and nothing came back to you. what's going on, handle it. screen is in fixtures/stale-pane-screen.txt",
-      "expected_output": "Classifies as a provider overload error with the turn ended and no status line; waits then sends continue or restarts in same pane with last commit 4e1a9c2; asks for status line; one plain line to Andres; re-arms watcher; does not resend the whole brief blindly or mark anything done.",
-      "files": ["fixtures/stale-pane-screen.txt"]
-    },
-    {
-      "id": 3,
-      "name": "dispatch-hard-backend-codex-main",
-      "prompt": "you're running as main in codex cli this time. THV-859 needs to go out, catalog schema + mutopia import, it's gnarly. set it up",
-      "expected_output": "Tier 1 from agents.py launch-line 1 whatever CLI main runs in, that CLI's skill prefix in the brief, Rails and migration skills at their moments, brief filled from the ticket.",
+      "name": "dispatch-hard-backend",
+      "prompt": "THV-859 needs to go out, catalog schema + mutopia import, it's gnarly. set it up",
+      "expected_output": "Picks the hardest fitting difficulty tier from ~/.claude/pstack-models.md and says why; fills the brief from the ticket with the Rails and migration skills at their moments; one Agent call with that model and effort; no pane, CLI or launch script.",
       "files": []
     },
     {
-      "id": 4,
-      "name": "done-report-verify-and-close",
-      "prompt": "THV-862 pane just reported back, see fixtures/done-report.txt. take it from here",
-      "expected_output": "Leaves the ticket In Progress until the PR opens (Linear then sets In Review; not Done), runs working-if checks, opens a fresh tier-2 verifier pane (not the builder pane) with the verifier brief, flags the inferred acceptance line 3 for real evidence, waits for Andres before Done, files the StudentSelect empty state as a follow-up at close.",
-      "files": ["fixtures/done-report.txt"]
-    },
-    {
-      "id": 5,
-      "name": "labels-research-dispatch-and-main",
-      "prompt": "first dispatch in the COPPA space: send THV-1050 to a pane. it's a research ticket, compare how three vendors store consent evidence, no code. you're main in claude code, I'm in herdr pane w40:p1.",
-      "expected_output": "Labels main with scripts/dispatch label $HERDR_PANE_ID Meta \"COPPA and Data Compliance Audit\" --tab and spawns the new pane with dispatch spawn --kind Research, never Build for a research ticket. Brief carries the status line. No hand-typed herdr pane rename.",
+      "id": 3,
+      "name": "done-report-review-and-close",
+      "prompt": "THV-862 builder just reported: DONE. exit criteria 1 and 2 measured with test output, criterion 3 'inferred from the code'. it also noticed StudentSelect has no empty state. take it from here",
+      "expected_output": "Sends the builder back with \"Measure every exit criterion.\" for criterion 3 before review; then pushes, opens the PR (workspace update THV-862 pr <n>) and follows references/review.md: main's checks, one review-change, one fix round; leaves Done to Linear after the merge; files the StudentSelect empty state as a sub-issue that is Done before the ticket closes.",
       "files": []
     }
   ]

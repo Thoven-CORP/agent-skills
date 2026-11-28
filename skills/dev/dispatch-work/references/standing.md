@@ -18,7 +18,7 @@ it does not say.
 - Read by section: `rg -n` finds the spot, then read that line range. Route big logs and wide
   reads through a subagent and keep its summary.
 - Before any capture, temporary checkout, install or build, read
-  [check-build: Verification disk budget](../../check-build/SKILL.md#verification-disk-budget).
+  [check-build: disk budget](../../check-build/references/disk-budget.md).
 - When `bin/verify` comes back BLOCKED only because `origin/main` moved, merge main once and rerun
   once. If main moves again, report the block with every row and the base SHA you merged.
 - Dev server: it runs for the capture and stops after it, on your own port. Delete your `.next-*`

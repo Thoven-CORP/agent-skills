@@ -105,7 +105,7 @@ or once at the parent, and nothing runs on push.
 repo's graph is more than seven days behind its last commit, in which case it
 names the gap in days and the rebuild command.
 
-`reapply-skill-patches.py` runs at `SessionStart`, and `dispatch spawn` runs it before each pane starts. `npx skills update` overwrites
+`reapply-skill-patches.py` runs at `SessionStart`. `npx skills update` overwrites
 the skill trees, so this puts local fixes back: non-kebab frontmatter names,
 string patches across `SKILL.md` and its playbooks, whole-file overrides from
 `skill-overrides/`, and the model-invocation allowlist in
@@ -149,7 +149,7 @@ Cursor-specific orchestration line is rewritten.
 
 ## pstack and cursor-team-kit skills
 
-`deslop`, `verify-this`, `weekly-review`, `poteto-mode` and the three thermo
+`deslop`, `weekly-review`, `poteto-mode` and the three thermo
 skills come from cursor/plugins through `npx skills`, and nowhere else. The
 `thoven-dev` marketplace's `team-kit` plugin was a fork of these and is retired:
 it put a second copy of each in the slash menu as `team-kit:<name>`. Local

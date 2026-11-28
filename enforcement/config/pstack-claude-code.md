@@ -6,7 +6,7 @@ This is our copy of upstream `pstack/docs/harness/claude-code.md` (cursor/plugin
 
 ## Verification resources
 
-Before generating a verification plan or delegating a check, read `~/.agents/skills/verify/SKILL.md`, section "Verification disk budget", and carry it into the plan and every verifier brief. It applies to all pstack playbooks, including Autopilot-full, and to ad hoc baseline worktrees. A playbook perf step does not itself authorize repeated local production builds. Keep the required proof; move costly checks to CI or an already authorized remote host when they do not fit the local budget.
+Before generating a verification plan or delegating a check, read `~/.agents/skills/check-build/references/disk-budget.md` and carry it into the plan and every verifier brief. It applies to all pstack playbooks, including Autopilot-full, and to ad hoc baseline worktrees. A playbook perf step does not itself authorize repeated local production builds. Keep the required proof; move costly checks to CI or an already authorized remote host when they do not fit the local budget.
 
 ## Tools
 
@@ -20,7 +20,7 @@ Before generating a verification plan or delegating a check, read `~/.agents/ski
 | `/visualize` | The **visual-artifacts** skill, and the **dataviz** skill for a chart. |
 | A Mermaid diagram | One HTML page built with the **visual-artifacts** skill (where diagrams go: andres-mode, "Documents default to visual"). |
 | `Grep`, `Glob` | `Bash` with `rg` when the session has no `Grep` or `Glob`. |
-| A playbook step that writes or changes a spec in a Thoven repo | Load the **test-audit** skill first. Its own triggers did not fire inside a pstack playbook (2026-11-18: three specs written without it, each gate it holds caught one later). |
+| A playbook step that writes or changes a spec in a Thoven repo | Load the **write-tests** skill first. Its own triggers did not fire inside a pstack playbook (2026-11-18: three specs written without it, each gate it holds caught one later). |
 
 ## Subagent fields
 

@@ -118,15 +118,15 @@ After classification, identify which existing skills AND agents the generated pr
 
 | Prompt Type | Pre-Work Skills | Post-Work Skills | Conditional Skills |
 |---|---|---|---|
-| Implementation | `/grill-with-docs` (if Heavy tier), `/production-data-audit` (if touching existing models) | `/verify` (always), `/publish` (if deploying) | `/safe-migrate` (if migration needed), `/email` (if mailer work), `/security-review` (if touches auth/payments/student data) |
-| Architecture | `/grill-with-docs` → `/architect` (always — design before build) | `/verify` (validate design meets requirements) | `/security-review` (if COPPA/auth/payment implications) |
+| Implementation | `/grill-with-docs` (if Heavy tier), `/production-data-audit` (if touching existing models) | `/check-build` (always), `/publish` (if deploying) | `/safe-migrate` (if migration needed), `/email` (if mailer work), `/security-review` (if touches auth/payments/student data) |
+| Architecture | `/grill-with-docs` → `/architect` (always — design before build) | `/check-build` (validate design meets requirements) | `/security-review` (if COPPA/auth/payment implications) |
 | Research | — | — | Thoven law's "Own what you find" (if research reveals existing debt) |
-| Audit | `/production-data-audit` (audit real data first) | Thoven law's "Own what you find": fix each finding in the round, or make it a sub-issue of its ticket | `/security-review` (if security audit), `/investigate-thoven` (if audit reveals bugs) |
+| Audit | `/production-data-audit` (audit real data first) | Thoven law's "Own what you find": fix each finding in the round, or make it a sub-issue of its ticket | `/security-review` (if security audit), `/debug` (if audit reveals bugs) |
 | PRD/Spec | `/grill-with-docs` (validate design before specifying) | `/feature-ledger` (break spec into executable tasks) | — |
-| Testing | `/production-data-audit` (understand real data shapes) | `/verify` (confirm tests actually pass) | — |
-| Migration | `/safe-migrate` (always — pre-flight safety checks) | `/verify` (confirm migration succeeded in both envs), `/publish` (if deploying) | — |
+| Testing | `/production-data-audit` (understand real data shapes) | `/check-build` (confirm tests actually pass) | — |
+| Migration | `/safe-migrate` (always — pre-flight safety checks) | `/check-build` (confirm migration succeeded in both envs), `/publish` (if deploying) | — |
 | Cross-Codebase Handoff | — | `/frontend-handover` (orchestrates the full handoff) | — |
-| General | — | `/verify` (always) | Route through `/orchestrate` if type is ambiguous |
+| General | — | `/check-build` (always) | Route through `/orchestrate` if type is ambiguous |
 
 #### Prompt Type → Agent Mapping
 
@@ -163,10 +163,10 @@ These agents activate when the prompt touches specific domains, regardless of ty
 
 1. **Only use what exists** — all skills and agents listed above are verified to exist in `.claude/skills/` and `.claude/agents/`
 2. **Pre-work** goes at the TOP of the generated prompt: "Before implementing, invoke `/grill-with-docs`" or "Launch a `general-purpose` agent to analyze existing patterns"
-3. **Post-work** goes at the BOTTOM of the generated prompt: "After completing, run `/verify`" or "Use the `code-reviewer` agent to review changes"
+3. **Post-work** goes at the BOTTOM of the generated prompt: "After completing, run `/check-build`" or "Use the `code-reviewer` agent to review changes"
 4. **Max 2 pre + 2 post per category** (skills and agents each) — don't overwhelm the prompt
 5. **Conditional mappings** are included only when the domain trigger applies — add as "If this touches [domain], also invoke..."
-6. **Heavy tier gets more agents** — Light tier may only get post-work `/verify`; Heavy tier gets full pre/post orchestration
+6. **Heavy tier gets more agents** — Light tier may only get post-work `/check-build`; Heavy tier gets full pre/post orchestration
 7. **Update this table** as new skills and agents are added to the codebase
 
 #### How to Embed in the Generated Prompt
@@ -179,7 +179,7 @@ These agents activate when the prompt touches specific domains, regardless of ty
 - Launch a `general-purpose` agent to gather existing patterns for [domain]
 
 ### After Completing
-- Run `/verify` to confirm all tests pass and implementation is correct
+- Run `/check-build` to confirm all tests pass and implementation is correct
 - Launch `code-reviewer` agent to review changes before committing
 
 ### Conditional
@@ -356,7 +356,7 @@ Enhancement focus areas:
 | Embedding generic Rails examples instead of this codebase's patterns | Every pattern file reference must point to a real file in THIS repo |
 | Forgetting dual auth | If the prompt touches users OR students, specify WHICH auth system |
 | No skill/agent mapping in output | Every prompt should have a Workflow Integration section (Phase 2d) |
-| Over-mapping agents for Light tier | Light prompts need at most `/verify` post-work. Don't overwhelm |
+| Over-mapping agents for Light tier | Light prompts need at most `/check-build` post-work. Don't overwhelm |
 | Copying the frontend prompt generator's structure literally | Backend has different types (Migration, Audit) and different concerns (N+1, transactions) |
 | Generating migration prompts without referencing `/safe-migrate` | Migration prompts ALWAYS need `/safe-migrate` as pre-work |
 

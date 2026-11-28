@@ -10,7 +10,7 @@ because a file was written.
 | 1 | THV-592 | `THOVEN_AGENT=1 npx playwright test <spec>` on a passing spec leaves `test-results/results.json` with a per-test `status`, and at least one `trace.zip` under `test-results/`. Without `THOVEN_AGENT`, no trace on a pass. | no `results.json`, no `trace.zip` on a pass |
 | 2 | THV-593 | Piping a Stop payload whose last message claims done, with a source edit newer than any result file, exits 2. Same payload with a fresh result file exits 0. Same payload with no source edit this session exits 0. | no Stop hook that can exit 2 (the only Stop hook shows a notification) |
 | 3 | THV-594 | `npx vitest run --exclude foo` is denied. `npm test && git stash push` is denied. `git stash push -- <file edited this session>` is allowed. `git status` is allowed. The denial reason names the phantom-failure cause. | all four allowed |
-| 4 | THV-595 | `~/.claude/agents/{verifier,ui-builder,explorer}.md` parse, `verifier` lists `Edit` and `Write` in `disallowedTools`, `ui-builder` lists `thoven-designer` in `skills`. Live: a spawned `verifier` asked to edit a file reports it has no edit tool. | none of the three files exist |
+| 4 | THV-595 | `~/.claude/agents/explorer.md` parses. | the file does not exist |
 | 5 | THV-598 | `~/.claude/rules/*.md` exist with a `paths:` frontmatter that matches `components/**` and points at `thoven-designer` and `graphify affected`. Live: the mock session's transcript contains the rule text only after a `components/` file was touched. | no rules dir |
 
 ## Token cost predicate (applies to all five)

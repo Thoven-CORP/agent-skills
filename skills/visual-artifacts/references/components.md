@@ -179,7 +179,7 @@ Keep labels crisp and connectors unambiguous. Use a fixed nonzero rough.js seed 
 
 Use for: showing the actual mobile product. Place real captures inside a drawn phone frame, with enough width to read the UI and a short caption identifying environment and revision. Fit the capture proportionally; cropping must not conceal controls or outcomes. On narrow layouts, stack the phones in reading order.
 
-Place the playable journey beside or immediately after its phone sequence. Capture follows [QA capture](../../dev/qa-flow/references/flow-mapping-and-evidence.md#7-capture-screenshots-and-recorded-flows). Keep technical state coverage in the linked QA record.
+Place the playable journey beside or immediately after its phone sequence. Capture follows [QA recording](../../dev/qa-product/references/walk.md#each-journey). Keep technical state coverage in the linked QA record.
 
 ```html
 <figure class="stage-wrap">

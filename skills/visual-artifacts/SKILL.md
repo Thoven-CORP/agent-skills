@@ -15,7 +15,7 @@ An artifact is a reading view. Decisions move to Linear or tldraw. The default d
    - Layout, spatial relationship or human journey → Excalidraw-style drawing, including rough.js SVG.
    - Precise branches, ownership, dependencies or message order → Mermaid rendered by the bundled Pele finisher.
    - A path the reader should walk step by step, case by case (a state machine, a data flow between systems, a product journey, a failure path) → a live flow: that Mermaid diagram plus its cases, written per [references/live-flow.md](references/live-flow.md).
-   - Actual appearance → real screenshot; interaction → a recorded flow. For capture, read [QA capture](../dev/qa-flow/references/flow-mapping-and-evidence.md#7-capture-screenshots-and-recorded-flows).
+   - Actual appearance → real screenshot; interaction → a recorded flow. For capture, read [QA recording](../dev/qa-product/references/walk.md#each-journey).
    - Quantities, trends or distributions → [references/data-visualisation.md](references/data-visualisation.md).
    - Exact records or repeated fields → a compact table. Explanations use a diagram, short prose or a list.
 4. **Keep it current.** Use the latest approved decisions and existing evidence. Correct stale copy or media you notice; label illustrative or outdated content where it matters. Use [references/delivery.md](references/delivery.md) for freshness and live-session proposals.

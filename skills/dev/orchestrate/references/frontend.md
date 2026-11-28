@@ -33,11 +33,11 @@ domain row over a universal one. When two rows match equally, ask one question.
 | Audit a built flow for flag soup, hidden transitions or missing recovery | `/state-audit` |
 | Reconcile a large feature's Spec, Architecture and code | `/feature-ledger` |
 | Plan your own session's steps on one ticket | `/writing-plans` (scratch file) |
-| Something is broken at runtime in Thoven | `/investigate-thoven` |
+| Something is broken at runtime in Thoven | `/debug` |
 | A hard bug or perf regression anywhere | `/diagnosing-bugs` |
-| Claiming done, pre-commit | `/verify` |
-| Prove one specific claim with fresh evidence | `/verify-this` |
-| Product-level evidence on a real user path | `/qa-flow` |
+| Claiming done, pre-commit | `/check-build` |
+| Prove one specific claim with fresh evidence | `/prove-claim` |
+| Product-level evidence on a real user path | `/qa-product` |
 | This repo has no control skill or Feature Map | `/create-verification-skill` |
 | An existing verify-app map is stale | `/maintain-verification-skill` |
 | Commit, deploy, release | `/publish` |
@@ -47,7 +47,7 @@ domain row over a universal one. When two rows match equally, ask one question.
 | An old PR or branch is behind `main`, "rebase this" | `/modernize` |
 | Pick up another person's or agent's PR, branch or dead pane | `/takeover` |
 | Take a ticket to ready-to-merge unattended | `/full-stop` |
-| Run a heavy check on the mini against MacBook changes | `/remote-check` |
+| Run a heavy check on the mini against MacBook changes | `/run-on-mini` |
 | Set up or reshape a Linear Project | `/linear-project` |
 | What families are texting about, a feedback sweep | `/text-product-analysis` |
 | Where does this stand, log work, move a ticket | `/workspace` |
@@ -141,13 +141,13 @@ A chain is worth naming when the order matters and the wrong order wastes work.
 | Pattern | Chain |
 |---|---|
 | Idea to shipped feature | `/grill-with-docs` → `/architect` → `/to-tickets`; `/feature-ledger` when documents and code may disagree |
-| Bug report | `/investigate-thoven` → `/verify` |
-| New component | `/thoven-designer` → `/building-components` → `/verify` |
-| New component with motion | `/thoven-designer` → `/motion` → `/motion-react` → `/verify` |
-| Pre-ship quality pass | `/impeccable polish` → `/accessibility-check` → `/qa-flow` → `/publish` |
-| Before the PR merges | `/verify` → `/mattpocock-skills:code-review` once on the final diff |
-| Screen from a frame | `/thoven-designer` → `/build-design` → `/state-machine` → `/verify` |
-| Ship | `/verify` → `/publish` → `/babysit-pr` |
+| Bug report | `/debug` → `/check-build` |
+| New component | `/thoven-designer` → `/building-components` → `/check-build` |
+| New component with motion | `/thoven-designer` → `/motion` → `/motion-react` → `/check-build` |
+| Pre-ship quality pass | `/impeccable polish` → `/accessibility-check` → `/qa-product` → `/publish` |
+| Before the PR merges | `/check-build` → `/mattpocock-skills:code-review` once on the final diff |
+| Screen from a frame | `/thoven-designer` → `/build-design` → `/state-machine` → `/check-build` |
+| Ship | `/check-build` → `/publish` → `/babysit-pr` |
 
 ## Quality work, `/impeccable` or a `better-*` skill
 

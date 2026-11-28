@@ -321,7 +321,7 @@ RECURRING (every 2-4 weeks):
 WHEN IMPLEMENTING FIXES from the audit:
   grill-with-docs → architect → feature-ledger  → Spec and Architecture for the fix (for feature-level findings)
   /aikido:scan             → Verify fix doesn't introduce new SAST vulns
-  /verify                  → Confirm fix resolves the audit finding
+  /check-build                  → Confirm fix resolves the audit finding
 
 BEFORE EVERY PUBLISH:
   /aikido:scan             → Quick SAST check on changed files
