@@ -5,6 +5,14 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-28 — Persona and journey creator from a roster; the inert-test scan leaves
+
+> session · 2026-11-28 · THV-2197 · correction · applied · seen 1
+
+**What happened.** THV-2193 grill: journey-map is "a product flow QA creator skill ... it doesn't understand the context of our user base ... adult learners, teachers, parents, older teachers, younger teachers, a platform that's built for under 13 ... teens ... simulate real usage, try to simulate production cases".
+**Why.** Seats came only from the spec, so a persona the spec never named went unwalked, and seeds were not production-shaped. The inert-test scan was a check in a skill; checks live in code (the frontend's `vitest/no-disabled-tests` and `no-conditional-in-test` rules already cover skips).
+**What changed.** references/roster.md holds the personas and their staging seeds; the skill picks personas the change reaches, writes goal journeys with observables, and a seed line per persona. Deleted scripts/inert-tests.mjs and its test.
+
 ## 2026-11-23 — A QA run walks every seat the spec names, and a journey that cannot fail is not coverage
 
 > reflect · 2026-11-23 · e2ee8938 · skill-gap · applied · seen 1

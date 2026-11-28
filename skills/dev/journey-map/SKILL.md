@@ -1,49 +1,43 @@
 ---
 name: journey-map
-description: Seat storylines for a Project, from its spec, its grill Log and the live routes, with the screen each step shows and the spec rule it proves; flags seats no journey covers and e2e tests that can never fail. Use before a QA run (qa-flow runs it first), or to check which seats a feature's journeys cover.
+description: Pick the Thoven personas a change reaches from the user roster, write each one's journeys with the screen every step should show, and name the production-shaped seed each needs. Use before a qa-product walk, or to see which users a feature's journeys cover.
 ---
 
-# journey-map — every seat's storyline, from the spec
+# journey-map
 
-A QA run tests the paths its tester thinks of. This skill makes the spec choose them: each **seat** the spec names gets a **storyline**, and each step names the screen that person sees and the rule it proves. (THV-2003: an adult who signed up as "Myself" got the kid onboarding in production four days after the Music Passport launch. No QA run had mapped the adult seat, and the adult e2e journey's check sat in a `.catch(() => {})`, so it could never fail.)
+A QA run walks the paths its tester thinks of, and a tester who knows the code thinks like an engineer. This skill makes the run walk as Thoven's users: under-13 learners with a parent, teens, adult learners, parents of several children, younger and older teachers. (THV-2003: no run walked the adult who signs up as "Myself", and an adult got the kid onboarding in production.)
 
-The skill reads and writes one file. It changes no product code and no test; what it finds goes in the file's Gaps, and the run that reads the file handles each gap under Thoven law's **Own what you find**.
+It writes one file, `JOURNEYS.md`, and changes no product code and no test.
 
 ## Inputs
 
-- **The spec and the Log.** The Project's Spec document and its grill Log (the decisions log) in Linear, bodies read in full (`workspace`). Where the Linear MCP is missing, as in a subagent, query `https://api.linear.app/graphql` with the key in `~/.config/thoven-linear/api-key`.
-- **The live code, read-only.** The frontend at the deployed SHA: `git -C ~/thoven/frontend fetch origin main`, then `git grep <term> FETCH_HEAD -- app components lib` and `git show FETCH_HEAD:<path>`. To scan files, `git archive FETCH_HEAD <paths> | tar -x -C <run dir>`. Leave every checkout as it is.
-- **The e2e journeys** for the feature: `git grep -l` under `e2e/` for each seat's entry (its signup intent, route or persona).
+- **The roster**: [references/roster.md](references/roster.md), the personas from production's shape.
+- **The spec and its Log** in Linear, bodies read in full (`workspace`). With no Linear MCP, query `https://api.linear.app/graphql` with the key in `~/.config/thoven-linear/api-key`.
+- **The code at the SHA under test**, read-only: `git -C ~/thoven/frontend fetch origin`, then `git grep <term> <sha> -- app components lib` and `git show <sha>:<path>`.
 
 ## Steps
 
-1. **Seats.** List every seat the spec and the Log name: each "As a <role>" in the user stories, and each path the spec splits a role into. For the Music Passport that was the adult learner ("Myself"), each parent path (under 13, teen, siblings, invite link, family from before the launch), the child and the teacher. A role that never drives a screen, such as "a Thoven team member", is a row marked `not walked` with the steps that check its rules. Done when every role in the spec and the Log is a row.
-2. **Storylines.** For each seat write who, the entry point (the route and the control that starts it), each step with its expected screen or state as an exact observable (heading text, a `data-*` attribute, the route, a request body), and the end state, including the rows that must and must not exist. Each step cites the spec rule or Log row it proves (FG45, DD9, story 44). Read the expected values from the code at the SHA. Where the code and the spec disagree, write both and mark the step `CONFLICT`. Done when every step has an observable and a rule, or `no rule`.
-3. **Coverage.** Name the e2e journeys that walk each seat, then run the inert scan over them and the helpers they import:
+1. **Personas.** Take every roster persona whose path crosses the change: the ones the spec names, and the ones the diff never names but who pass the same screen (a parent-side change has a teacher-side twin; a signup change reaches the adult, the parent of one and the parent of three). A persona the spec adds that the roster lacks goes into the roster in this run. Done when every persona is in or out with a one-line reason.
+2. **Journeys.** For each persona, each journey is a goal the person has ("book a second child into the same teacher"), not a feature. Write its entry (route and the control that starts it), each step with what the screen should show as an exact observable (heading text, a button label, the route, a request body), and the end state, including the rows that must and must not exist. Read expected values from the code at the SHA; cite the spec rule or Log row a step proves. Where code and spec disagree, write both and mark the step `CONFLICT`. Add what this person would also try on the way (go back, switch child, retry, leave and return). Done when every step has an observable, and every journey has an end state.
+3. **Seed needs.** For each persona, the state its journeys start from, shaped like production: names of real length (the snapshot scrubber cuts every name to 17 characters, which hides layout bugs), past sessions and notes for an account that has history, the right consent band from a real date of birth. Name the staging account or the seed that provides it (the roster's Seeds). Done when every persona has a seed line a walker can act on.
+4. **Write `JOURNEYS.md`** into the caller's run folder in the shape below. Done when every chosen persona has its journeys and seed line, and Gaps lists every `CONFLICT`, every step with no rule, and every persona with no account or seed.
 
-   ```bash
-   node ~/.agents/skills/journey-map/scripts/inert-tests.mjs <spec files or directories>
-   ```
-
-   It lists each assertion a `.catch` or an empty `catch {}` swallows, each skipped or `fixme` test (a conditional skip included), and each spec file with no `expect`. Exit 1 means findings and exit 2 means it found no spec file to scan, which is never a clean result. Done when every journey named in this step went through the scan.
-4. **Write `JOURNEYS.md`** into the run directory (qa-flow's, beside `steps.jsonl`; on its own, a folder the caller names) in the shape below. Done when every seat has a storyline or a gap line, and the Gaps list holds every seat with no journey, every `CONFLICT`, every `no rule` step and every scan finding.
-
-## The file qa-flow reads
+## JOURNEYS.md
 
 ```markdown
-# Journeys — <Project> · spec <doc url> · code frontend@<sha> · <date>
+# Journeys — <change> · spec <url> · frontend@<sha> · <date>
 
-| Seat | Entry | End state | e2e journeys | Scan |
+| Persona | Device | Journeys | Seed |
+|---|---|---|---|
+
+## <persona> — <goal>
+Entry: <route, control>. End state: <screen; rows that exist and rows that must not>.
+
+| # | Step | Route | Screen shows (exact) | Proves |
 |---|---|---|---|---|
 
-## <seat-key> — <who>
-Entry: <route, control, request>. End state: <screen, rows that exist and rows that must not>.
-
-| # | Step | Route | Expected (exact) | Proves |
-|---|---|---|---|---|
+Also tries: <the two-way moves this person makes>
 
 ## Gaps
-- <seat or step>: <what is missing or inert>, <file:line or rule id>
+- <persona or step>: <what is missing>, <file:line or rule id>
 ```
-
-One seat is one qa-flow flow, and one step row is one criterion with its expected value.

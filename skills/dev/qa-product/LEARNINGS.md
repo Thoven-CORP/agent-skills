@@ -1,9 +1,17 @@
-# Learnings — qa-flow
+# Learnings — qa-product (was qa-flow)
 
 Running log of what went wrong in real use and what changed. **Read before editing SKILL.md.**
 New entries on top. Each one: what happened, why, what changed.
 
 ---
+
+## 2026-11-28 — Renamed to qa-product; dogfood and preflight folded in; design judgment moved to qa-design
+
+> session · 2026-11-28 · THV-2197 · correction · applied · seen 1
+
+**What happened.** THV-2193 grill: "agent browser does a good job at simulating users ... a parent running around the platform being confused and has two kids"; e2e is "a way to test and to build tests for functionality"; "what else can we do as a user in this journey ... two-way doors and one-way doors"; "diagnose ... we seeded the data like shit"; "things that one agent can handle as a fix should be batched together".
+**Why.** qa-flow had grown phases, parity rows, MATCH/NO verdicts, capture-everything evidence and REQUIRED tables; dogfood and preflight were second and third QA skills with their own households and Playwright spines.
+**What changed.** qa-product: personas from journey-map, every journey walked to its end with a recording, stop only at a one-way door, diagnose each finding before calling it a bug, group by cause sized for one agent, report and stop. Production smoke (dogfood's job) is references/production.md; deterministic proof (preflight's job) is the `e2e` skill. Deleted framing.md, execute-and-evaluate.md, flow-mapping-and-evidence.md, build-map.cjs, steps.example.jsonl, dogfood and preflight. Design judgment is qa-design.
 
 ## 2026-11-23 — Walk every seat the spec names, and route findings under Own what you find
 
