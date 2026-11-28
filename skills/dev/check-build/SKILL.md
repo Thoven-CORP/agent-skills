@@ -42,7 +42,9 @@ The first failure is a finding: fix its cause or raise it by name. A rerun to gr
 
 ## 5. Report
 
-Paste each command, its host and its result line, and name what you did not run. Then stop.
+Paste each command, its host and its result line, and name what you did not run.
+
+**Done when:** every command has its host and result line, and every check you skipped is named. Then stop.
 
 ## When the branch lands
 
@@ -53,6 +55,8 @@ Once per branch, before its PR into `main`:
 - **The user's view.** User-facing work is walked as a user by `qa-product` (law, "User-facing work is checked as a user").
 
 What CI runs: `TESTING.md`, "What CI runs". Local checks before `gh pr merge --auto`: `enforcement/rules/branches-and-prs.md`.
+
+**Done when:** the `THOVEN_VERIFY` block is pasted, and user-facing work has its `qa-product` report.
 
 ## Disk
 

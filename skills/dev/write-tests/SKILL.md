@@ -52,3 +52,5 @@ Write the test first and watch it fail for the intended reason, on the pre-fix c
 ### 4. Hand off
 
 Name each test added and the regression it catches ("added N tests" is not a handoff), and each test deleted and the proof that remains. Prove the change with `check-build`.
+
+**Done when:** every added or deleted test is named with what it catches or what proof remains.

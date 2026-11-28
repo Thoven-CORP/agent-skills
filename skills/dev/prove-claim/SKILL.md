@@ -50,7 +50,7 @@ Ask for a measurable claim first when the claim is vague ("the code is cleaner")
 
 Before capturing baseline or treatment, read [check-build: disk budget](../check-build/references/disk-budget.md): budget temporary runtime space, keep it separate from evidence, and clean up owned scratch on completion or failure. The layout below holds retained evidence only.
 
-When safe to write artifacts:
+Retained evidence goes here, unless the next rule keeps it inline:
 
 ```text
 /tmp/prove-claim/<claim-slug>/
@@ -66,7 +66,7 @@ If artifacts may contain sensitive code, prompts, screenshots, HTTP bodies, or h
 
 ## Verdict rules
 
-- `VERIFIED`. Baseline and treatment differ in the predicted direction, by the claimed threshold, with no obvious confound.
+- `VERIFIED`. Baseline and treatment differ in the predicted direction, by the claimed threshold, and nothing but the change differs between the runs (command, data, warmup, environment).
 - `NOT VERIFIED`. The behavior is unchanged, moves the wrong way, or misses the threshold.
 - `INCONCLUSIVE`. No valid baseline, noisy signal, failed measurement, or an environment difference invalidates the comparison.
 

@@ -31,10 +31,9 @@ Every run ends with [references/diagnose-and-report.md](references/diagnose-and-
 - **The production read is human-run.** You build the extract, the neutralisation and the harness; a person runs the `pg_dump` from production, because it copies real children's data (`prod-snapshot.md`).
 - **Ambiguous people stop the run.** Four parents share one display name, and one name belongs to a teacher and a parent. Follow the rows to the account you mean; when it is still ambiguous, name the candidates in the report and walk nothing on them.
 - **Writes stay inside test accounts.** Every snapshot load neutralises email, phone and tokens before it lands. `keri@thoven.co` teaches real children: never seed or write there; her test account is `kerimanerten@icloud.com`.
-- **Heavy runs go to the mini.** Recording browsers run there through `run-on-mini` ("browser work"); platform reads (Neon, Sentry, Mixpanel) run on the laptop.
+- **Heavy runs go to the mini.** Recording browsers run there through `run-on-mini` ("Any other test, build or browser check"); platform reads (Neon, Sentry, Mixpanel) run on the laptop.
 
 ## Pitfalls
 
-- Assert a toast that precedes a redirect with an `addInitScript` MutationObserver that records each toast to `sessionStorage`, and read it after the redirect settles; polling from the driver races the navigation. (LEARNINGS 2026-08-06)
 - Treat a Neon branch of production as a copy of production's PII: it carries production's role password, so reset the branch role's password before any agent sees its connection string. (LEARNINGS 2026-11-09)
 - Run a journey that locks, drains or spends an account on a seeded throwaway account, never on the accounts publish's smoke logs in with. (LEARNINGS 2026-11-09)

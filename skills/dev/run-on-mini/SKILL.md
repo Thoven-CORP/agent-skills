@@ -44,3 +44,5 @@ Wrap an `ssh <host> 'thoven/bin/remote-check …'` call the same way. macOS has 
 ## Report
 
 The exact command, the host, the source paths, branches, HEADs and dirty-input identity, the exit code, and the log or screenshot paths. A green mini run proves that captured input passed that command, not a causal fix (that is `prove-claim`), hosted CI or production behaviour.
+
+**Done when:** the report carries every field above, and a failed run says which field failed.

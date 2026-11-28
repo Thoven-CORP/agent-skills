@@ -23,8 +23,8 @@ it does not say.
   once. If main moves again, report the block with every row and the base SHA you merged.
 - Dev server: it runs for the capture and stops after it, on your own port. Delete your `.next-*`
   folder when you stop, and leave uncommitted the tsconfig.json include `next dev` adds.
-- Evidence: outside the repo you write only `~/.thoven-artifacts/THV-<id>/evidence/` (logs;
-  overwrite your earlier run of a check) and `~/.thoven-artifacts/<branch>/parity/` (captures).
+- Evidence: outside the repo you write only `~/.thoven-artifacts/THV-<id>/evidence/` (logs and
+  captures; overwrite your earlier run of a check).
 - A user-facing change is walked as its users with `qa-product`
   ([walk.md](../../qa-product/references/walk.md)) when its exit criteria ask for it.
 - Skills: [skills.md](skills.md) names the moment each Thoven skill fires. Load each one there.
