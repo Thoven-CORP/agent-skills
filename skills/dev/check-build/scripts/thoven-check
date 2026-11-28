@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# Runs the tests one commit's diff reaches, once per SHA, and saves the result under that SHA.
+set -uo pipefail
+
+usage() {
+  cat <<'USAGE'
+usage: thoven-check [--base REF]
+
+  Run from the root of a committed frontend or backend checkout.
+  --base REF   diff against REF instead of HEAD~1 (the whole branch: --base origin/main)
+
+  Frontend: pnpm exec vitest related --run <changed source files>.
+  Backend:  bundle exec rspec <bin/verify --print-draft-specs --base REF>.
+  The result is saved at <git common dir>/thoven-check/<sha>.log; a second run on that SHA prints
+  it and exits with its code, because a rerun to green is not a pass.
+  Exit codes: the test command's own, 2 refused (dirty tree, nothing to check, unknown repo).
+USAGE
+}
+
+refuse() { printf 'thoven-check: %s\n' "$*" >&2; exit 2; }
+
+base=HEAD~1
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --base) [ $# -ge 2 ] || refuse "--base needs a ref"; base="$2"; shift 2 ;;
+    -h | --help) usage; exit 0 ;;
+    *) usage >&2; exit 2 ;;
+  esac
+done
+
+root=$(git rev-parse --show-toplevel 2>/dev/null) || refuse "not inside a git checkout"
+cd "$root" || exit 2
+sha=$(git rev-parse HEAD 2>/dev/null) || refuse "no commit yet"
+[ -z "$(git status --porcelain --untracked-files=no)" ] || refuse "commit first: uncommitted changes would not match $sha"
+
+store="$(git rev-parse --git-common-dir)/thoven-check"
+saved="$store/$sha.log"
+if [ -f "$saved" ]; then
+  cat "$saved"
+  code=$(sed -n 's/^THOVEN_CHECK .* exit=\([0-9]*\).*/\1/p' "$saved" | tail -n 1)
+  exit "${code:-2}"
+fi
+
+changed=$(git diff --name-only --diff-filter=d "$base" HEAD 2>/dev/null) || refuse "cannot diff $base..HEAD"
+[ -n "$changed" ] || refuse "no changed files between $base and HEAD; nothing to check"
+
+if [ -f Gemfile ]; then
+  specs=$(bin/verify --print-draft-specs --base "$base") || refuse "bin/verify refused to map the diff to specs"
+  [ -n "$specs" ] || refuse "no spec maps to the diff; name one and run it with rspec"
+  # shellcheck disable=SC2206
+  cmd=(bundle exec rspec $specs)
+elif [ -f package.json ]; then
+  files=$(printf '%s\n' "$changed" | grep -E '\.(ts|tsx|js|jsx|mjs|cjs)$' || true)
+  [ -n "$files" ] || refuse "no source file changed; nothing for vitest related"
+  # shellcheck disable=SC2206
+  cmd=(pnpm exec vitest related --run $files)
+else
+  refuse "neither a Gemfile nor a package.json at $root"
+fi
+
+mkdir -p "$store"
+out=$(mktemp "$store/.run.XXXXXX")
+"${cmd[@]}" >"$out" 2>&1
+rc=$?
+verdict=pass; [ "$rc" -eq 0 ] || verdict=fail
+printf 'THOVEN_CHECK %s sha=%s base=%s exit=%s command=%s\n' "$verdict" "$sha" "$base" "$rc" "${cmd[*]}" >>"$out"
+mv "$out" "$saved"
+cat "$saved"
+exit "$rc"

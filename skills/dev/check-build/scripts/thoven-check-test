@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Feeds thoven-check an empty diff, a dirty tree and a saved result; expects refusal, refusal, replay.
+set -u
+here=$(cd "$(dirname "$0")" && pwd)
+check="$here/thoven-check"
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+fail=0
+expect() { if [ "$2" = "$3" ]; then echo "ok   $1"; else echo "FAIL $1: wanted $2, got $3"; fail=1; fi; }
+
+cd "$tmp" && git init -q . && git config user.email t@t && git config user.name t
+echo '{}' > package.json && git add package.json && git commit -qm one
+git commit -q --allow-empty -m empty
+"$check" >/dev/null 2>&1; expect "empty diff refused" 2 $?
+
+echo '{"a":1}' > package.json
+"$check" >/dev/null 2>&1; expect "dirty tree refused" 2 $?
+git checkout -q package.json
+
+store="$(git rev-parse --git-common-dir)/thoven-check"; mkdir -p "$store"
+printf 'saved\nTHOVEN_CHECK fail sha=x base=y exit=7 command=z\n' > "$store/$(git rev-parse HEAD).log"
+"$check" >/dev/null 2>&1; expect "saved result replayed, not rerun" 7 $?
+
+exit $fail

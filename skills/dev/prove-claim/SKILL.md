@@ -1,13 +1,13 @@
 ---
-name: verify-this
-description: "Verify a claim with fresh local evidence: restate it falsifiably, capture baseline and treatment, compare artifacts, and return VERIFIED, NOT VERIFIED, or INCONCLUSIVE."
+name: prove-claim
+description: "Prove or disprove one claim with fresh local evidence: restate it falsifiably, capture baseline and treatment, compare artifacts, and return VERIFIED, NOT VERIFIED, or INCONCLUSIVE."
 ---
 
-# Verify This
+# Prove claim
 
 Verification is not a recap. It proves or disproves a specific claim with repeatable evidence.
 
-> **Not the same as the `verify` skill.** `verify` runs pre-commit task-completion checks (type-check, lint, docs drift). `verify-this` falsifies one *specific claim* with baseline/treatment evidence and returns a single verdict.
+`check-build` is the builder's loop on its own change. `prove-claim` falsifies one specific claim with baseline and treatment evidence and returns one verdict.
 
 ## When to use
 
@@ -48,12 +48,12 @@ Ask for a measurable claim first when the claim is vague ("the code is cleaner")
 
 ## Artifact layout
 
-Before capturing baseline or treatment, read [Verify: Verification disk budget](../verify/SKILL.md#verification-disk-budget). It applies independently of the check list in that skill: budget temporary runtime space, keep it separate from evidence, and clean up owned scratch on completion or failure. The layout below holds retained evidence only.
+Before capturing baseline or treatment, read [check-build: disk budget](../check-build/references/disk-budget.md): budget temporary runtime space, keep it separate from evidence, and clean up owned scratch on completion or failure. The layout below holds retained evidence only.
 
 When safe to write artifacts:
 
 ```text
-/tmp/verify-this/<claim-slug>/
+/tmp/prove-claim/<claim-slug>/
 ├── claim.md
 ├── timeline.md
 ├── baseline/

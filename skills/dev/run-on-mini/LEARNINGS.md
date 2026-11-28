@@ -1,4 +1,4 @@
-# Learnings — remote-check
+# Learnings — run-on-mini (was remote-check)
 
 A running log of what went wrong in real use and what changed. **Read this before editing SKILL.md.**
 New entries go on top. Keep each one to: what happened, why, what changed.
