@@ -1,8 +1,6 @@
 ## Thoven law
 
-<!-- Generated from agent-skills/enforcement/rules/thoven-law.md by enforcement/sync.sh. Edit the source. -->
-
-These lines bind every agent in every Thoven repo. Each rule has one home, here or in the file it names. Everything here is written to agent-skills `AGENTS.md`, "How we write".
+<!-- Generated from agent-skills/enforcement/rules/thoven-law.md by enforcement/sync.sh. Edit the source, written to agent-skills AGENTS.md, "How we write". -->
 
 **Shared worktrees.** Other sessions share this tree. Stage exact paths, check `git diff --cached --name-only`, then commit. Leave scratch unstaged, undo only paths you edited, and leave a stash that is not yours and name it in your hand-off. `thoven-guard-bash` refuses whole-tree undo and says why.
 
@@ -26,6 +24,6 @@ These lines bind every agent in every Thoven repo. Each rule has one home, here 
 
 **Own what you find.** Make the edit the ticket asks for, then fix every problem in or touching that work on its branch in the same round. A product call, or an edge case real users will hit, goes to Andres. Work bigger than the brief stops and reports. A fix too big for the round is a sub-issue of its ticket, and a standalone ticket waits for his yes. Before scoping a data fix, name one real record (environment, id) that shows it. Done means a user can reach it.
 
-**Platform actions run on the laptop**, where Render, Vercel, Neon, Stripe, Mixpanel, Linear and Sentry are signed in. Nobody asks Andres to copy a key to the mini.
+**Platform actions run on the laptop**, where Render, Vercel, Neon, Stripe, Mixpanel, Linear and Sentry are signed in. Keys stay on the laptop.
 
 **A named skill always loads.** When the Skill tool refuses a skill a doc names, read `~/.agents/skills/<name>/SKILL.md` and follow it.

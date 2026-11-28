@@ -5,6 +5,16 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-27 — writing-for-agents and automate-me audit
+
+> THV-2201 · 2026-11-27 · audit · applied
+
+**What happened.** Andres asked for a writing-for-agents and automate-me audit of this file, the law and both repo CLAUDE.md files, with the fixes applied.
+**Why.** Lines restated the law ("Linear is the record") and the always-loaded root CLAUDE.md ("Lead with the finding"); the work-session page was scattered over three sections; Replies mixed scope rules with reply format; the Audiences line was narrower than the journey-map roster.
+**What changed.** Removed: "Linear is the record", "Lead with the finding or the next step", the Audiences list (now the roster), and the separate visual-explainer bullet (merged into the work-session page with "Show, then claim"). Scope and ask rules moved to their own section. New line "A check is as light as the change", from Andres, 2026-11-27, "LETS NOT OVER VERIFY THIS", and the lab-prototype rule in memory; no existing line covered it. Kept "he" and his name over automate-me's generic "the user", because every Thoven record quotes "Andres ruled".
+
+---
+
 ## 2026-11-28 — cut to the law-cut budget (THV-2195)
 
 > THV-2193 · 2026-11-28 · law-cut lever · applied
