@@ -35,6 +35,9 @@ merge or watch a PR. A dispatched pane commits only; its main session pushes and
   queue can take the PR (THV-1751). Before `gh pr merge --auto`, run the changed tests, lint
   (oxlint and ESLint on the frontend) and type-check locally: the queue is the first CI run, and
   a failure there re-runs every PR behind it (#707 passed ESLint and failed oxlint in the queue).
+  The lint and type-check part is one command in each repo, run from the PR's tree on its committed
+  HEAD: frontend `scripts/ci/pre-enqueue.sh`, backend `bin/pre-enqueue` (THV-2192). Exit 0 is the
+  go, 1 a failed step, 2 a refusal (no diff against `origin/main`, or uncommitted tracked files).
   On the backend the changed tests are the set the queue will run, `bin/verify --print-merge-specs`
   (mapped specs plus the protected list), not only the PR's own spec files: a change that adds a job
   or broadcast at a lifecycle point moves the delivery-oracle goldens in the protected list (#556

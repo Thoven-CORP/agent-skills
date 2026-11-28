@@ -110,6 +110,13 @@ only when the PR is DIRTY.
 If an overlapping PR makes this one obsolete, stop monitoring, report it to the
 user, and ask before closing the PR unless closure was explicitly authorized.
 
+Before you arm auto-merge on a Thoven repo, run the PR tree's pre-enqueue check on its committed
+HEAD: `scripts/ci/pre-enqueue.sh` (frontend) or `bin/pre-enqueue` (backend). Exit 0 means arm it.
+Exit 1 means a step failed: fix it, push, and run it again. Exit 2 is a refusal: commit the tracked
+changes, or fix the base, then run it again. A tree without the script has not merged THV-2192 yet:
+run the changed tests, lint and type-check by hand, as `branches-and-prs.md` says. Never arm on a
+failed or refused run.
+
 If nothing has changed, stay quiet rather than posting filler comments. Stop
 when `pr-wait` exits 0, or in T3 Code when the merge gate passes on the latest
 head. On a merge-queue base, green PR checks only mean queued: then wait with
