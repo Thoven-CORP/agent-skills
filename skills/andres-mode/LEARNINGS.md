@@ -5,6 +5,16 @@ New entries on top. Each one: what happened, why, what changed.
 
 ---
 
+## 2026-11-28 — cut to the law-cut budget (THV-2195)
+
+> THV-2193 · 2026-11-28 · law-cut lever · applied
+
+**What happened.** Andres, 2026-11-28: "reduce complexity subtract before you add", "we don't use herder anymore", "Not codex. We should use claude code". The law-cut lever measured this file at 3,301 words, loaded every main turn, with lines that restated the law.
+**Why.** Hard rules restated the law's design, verify and platform lines; Records carried the retired User-facing evidence pointer; the flake definition ("passes on rerun") contradicted the law's "a rerun to green is not a pass"; Delegation still named panes, Rex and load-gate slots.
+**What changed.** Removed: "Verify small" and "Build the designed thing" (the law's "Check once" and "Build the design"), the "Local evidence stays" line, the flake definition (now the law's "Check once"), the audit work-session sentence, the herdr, Rex and pane wording, and the load-gate and pane-close lines. Delegation now runs Claude Code subagents from main through `dispatch-work`; Codex only by name. Skill names follow the rename: `check-build`, `prove-claim`, `debug`. `enforcement/bin/doc-budget` now fails this file past 2,300 words.
+
+---
+
 ## 2026-11-27 — a motion question comes with a playable comparison
 
 > learn-taste · 2026-11-27 · 6ae5f8da · correction · applied · seen 1

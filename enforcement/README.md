@@ -26,7 +26,11 @@ harness that was not running it.
 
 ## Verification contract
 
-No Stop hook validates evidence (retired 2026-10-07, below). A done-claim carries each targeted check's command and pass line per `skills/andres-mode/SKILL.md`, "Check your own work".
+No Stop hook validates evidence (retired 2026-10-07, below). A done-claim carries each check's command and result per the law's "Check once".
+
+## Word budget
+
+`check.sh` runs `bin/doc-budget` first. It fails when an always-loaded file passes its word budget (law 800, frontend CLAUDE.md 2,200, backend 2,500, root 600, andres-mode 2,300) or when one sentence appears word for word in two of them, because every session pays for these files each turn and a copied sentence drifts into two meanings. It refuses an empty or missing file. `bin/doc-budget-test` feeds it each case. Point it at worktrees with `THOVEN_LAW_REPOS`, as for `sync.sh`.
 
 JSON reports under the workspace's exact `~/thoven/archive/` document boundary do not count as code edits. Application JSON, workspace configuration, archived scripts and symlinks crossing that boundary still require verification.
 
@@ -62,7 +66,7 @@ It also holds the host rule. Each call reads `~/.config/thoven/host.json` once. 
 `pnpm build`, `next build`, `playwright test`, `pnpm test:e2e` and any run it treats as
 a whole suite. The denial for `bin/verify` names `remote-verify` with the same arguments,
 `heavy work runs on the mini: remote-verify --base main`, and the rest name the
-`remote-check` skill. `THOVEN_LOCAL_HEAVY=1` in front of one command runs it here. A
+`run-on-mini` skill. `THOVEN_LOCAL_HEAVY=1` in front of one command runs it here. A
 missing profile, or any other role, changes nothing. A profile that does not parse
 prints one warning line and changes nothing, so a broken profile never blocks work.
 `remote-verify` and `ssh thoven-mini-ssh ...` stay allowed.
@@ -134,9 +138,8 @@ restore.
 
 ## Agents
 
-`agents/` holds `verifier`, which has no write tools at all, `poteto-agent`,
-which `poteto-mode` dispatches throughout its playbooks, plus `explorer` and
-`ui-builder`.
+`agents/` holds `poteto-agent`, which `poteto-mode` dispatches throughout its
+playbooks, and `explorer`.
 
 `thermo-nuclear-review-subagent` and `thermo-nuclear-code-quality-review-subagent`
 are cursor/plugins' `thermos/agents/` files, kept under upstream's names so the
@@ -197,8 +200,8 @@ and only after `git worktree remove` succeeds. `orphan-dbs` lists the local Thov
 worktree's `.env` names, and drops nothing.
 
 `thoven-worktree post-checkout` is each repo's lefthook `post-checkout` step. It
-fires after `git worktree add` from any tool, including a herdr create that did not
-go through `thoven-worktree`, and warns when the new HEAD is behind `origin/main`
+fires after `git worktree add` from any tool, including one that did not go through
+`thoven-worktree`, and warns when the new HEAD is behind `origin/main`
 with no commits of its own. A hook at that point cannot block.
 
 `bin/thoven-load-gate [--profile FILE] [--slots N] [--weight N] [--min-free PCT] [--max-load N] [--wait SECS] -- <cmd>`
@@ -229,7 +232,7 @@ default). HEAD must be on an origin branch, or it refuses with exit 3 and names 
 branch. It sends HEAD's SHA, `git diff --binary HEAD` and a tar of the untracked files
 in one `ssh -o BatchMode=yes` call, together with its own copy, so the mini needs no
 install of it. Secret and generated paths (`.env*`, keys, `master.key`, credentials,
-`.git`, `node_modules`, build output, the remote-check skill's Mutagen exclusions) are
+`.git`, `node_modules`, build output, the run-on-mini skill's Mutagen exclusions) are
 dropped on the MacBook and each one is named on stderr. On the mini it fetches the SHA
 into `~/thoven/<repo>`, adds a detached worktree under `~/thoven/runs/remote-verify-<id>/`,
 applies the patch, installs from the lockfile and runs `bin/verify` with
@@ -279,7 +282,7 @@ unless a dev server (`next`, `vite`) works in that tree or in a worktree whose
 is never committed on, so it only ever fast-forwards. It lists worktrees with
 uncommitted files in `~/.thoven/sync.log` and never touches them. A session-start
 trigger was rejected: it fires in every session in any directory, and none fires
-before herdr or the Codex app pick their base. `install/gitconfig.py` sets
+before the Codex app picks its base. `install/gitconfig.py` sets
 `fetch.prune`, `push.autoSetupRemote` and `branch.autoSetupMerge=simple` in both
 main checkouts. `git maintenance` was left out because its prefetch never moves
 `origin/*`.

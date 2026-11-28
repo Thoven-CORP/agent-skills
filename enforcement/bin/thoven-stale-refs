@@ -19,9 +19,8 @@ ROOTS=(
   "$WORKSPACE_ROOT/frontend"
   "$WORKSPACE_ROOT/backend"
   "$SCRIPT_ROOT"
-  # The rest of .workspace is session history (THV-1038 inventory). These three are live law.
+  # The rest of .workspace is session history (THV-1038 inventory). These two are live law.
   "$WORKSPACE_ROOT/.workspace/CLAUDE-root.md"
-  "$WORKSPACE_ROOT/.workspace/AGENTS-root.md"
   "$WORKSPACE_ROOT/.workspace/CONTEXT-MAP.md"
   "$WORKSPACE_ROOT/CI_CD.md"
 )

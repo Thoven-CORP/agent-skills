@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+"""Fails when an always-loaded instruction file passes its word budget, or when one sentence
+appears word for word in two of them. Every session pays for these files on every turn, and a
+sentence copied into two of them drifts into two meanings (2026-11-08: "Paper is the build
+source" sat in 11 files and was briefed with both).
+
+    doc-budget                 check the defaults
+    doc-budget NAME=PATH ...   check only these (NAME picks the budget: law, fe, be, root, andres)
+
+Defaults: the law and andres-mode in this repo, ~/thoven/.workspace/CLAUDE-root.md, and the
+CLAUDE.md of each repo in $THOVEN_LAW_REPOS (frontend first, then backend), else ~/thoven/frontend
+and ~/thoven/backend. A repo CLAUDE.md counts its generated law block toward its budget; the
+repeat check skips that block, since it is a copy by design.
+
+Exit 0 within budget, 1 over budget or a repeat, 2 refused: no file or no words to measure.
+"""
+import os
+import re
+import sys
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parent.parent.parent
+HOME = Path.home()
+BUDGET = {"law": 800, "fe": 2200, "be": 2500, "root": 600, "andres": 2300}
+LAW_BLOCK = re.compile(r"<!-- thoven-law:start.*?<!-- thoven-law:end -->", re.S)
+FRONTMATTER = re.compile(r"\A---\n.*?\n---\n", re.S)
+MIN_WORDS = 8
+
+
+def defaults():
+    repos = os.environ.get("THOVEN_LAW_REPOS", "").split() or [HOME / "thoven/frontend", HOME / "thoven/backend"]
+    pairs = [("law", REPO / "enforcement/rules/thoven-law.md"),
+             ("andres", REPO / "skills/andres-mode/SKILL.md"),
+             ("root", HOME / "thoven/.workspace/CLAUDE-root.md")]
+    for name, repo in zip(("fe", "be"), repos):
+        pairs.append((name, Path(repo).expanduser() / "CLAUDE.md"))
+    return pairs
+
+
+def sentences(text):
+    text = re.sub(r"<[^>]*>|[`*_>|#]", " ", text)
+    for raw in re.split(r"(?<=[.!?])\s+|\n\s*[-|]\s|\n\n", text):
+        words = re.findall(r"[a-z0-9]+", raw.lower())
+        if len(words) >= MIN_WORDS:
+            yield " ".join(words)
+
+
+def main(argv):
+    pairs = [tuple(a.split("=", 1)) for a in argv] if argv else defaults()
+    bad, seen, total = [], {}, 0
+    for name, path in pairs:
+        path = Path(path)
+        if name not in BUDGET:
+            print(f"REFUSE: unknown budget name {name!r}; use one of {', '.join(BUDGET)}")
+            return 2
+        if not path.is_file():
+            print(f"REFUSE: {name} file missing: {path}")
+            return 2
+        text = FRONTMATTER.sub("", path.read_text())
+        words = len(text.split())
+        total += words
+        print(f"{name:7} {words:5} / {BUDGET[name]}  {path}")
+        if words > BUDGET[name]:
+            bad.append(f"{name}: {words} words, budget {BUDGET[name]}")
+        for s in set(sentences(LAW_BLOCK.sub("", text))):
+            if s in seen and seen[s] != name:
+                bad.append(f"repeat in {seen[s]} and {name}: {s[:100]}")
+            seen.setdefault(s, name)
+    if total == 0:
+        print("REFUSE: no words measured")
+        return 2
+    print("\n".join(bad) or "within budget")
+    return 1 if bad else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

@@ -70,11 +70,11 @@ fi
 # refuses. THOVEN_LOCAL_HEAVY=1 in front of one command runs it here.
 heavy_table=(
   "bin/verify|remote-verify"
-  "pnpm build|remote-check"
-  "next build|remote-check"
-  "playwright test|remote-check"
-  "pnpm test:e2e|remote-check"
-  "whole suite|remote-check"
+  "pnpm build|run-on-mini"
+  "next build|run-on-mini"
+  "playwright test|run-on-mini"
+  "pnpm test:e2e|run-on-mini"
+  "whole suite|run-on-mini"
 )
 
 # Split a command into its subcommands, one line each: S, the VAR=val words in front of the command,
@@ -524,7 +524,7 @@ for entry in "${subcommands[@]}"; do
         vargs="${hw[*]:1}"
         deny "heavy work runs on the mini: remote-verify${vargs:+ $vargs}"
       fi
-      deny "heavy work runs on the mini: remote-check \`${fwords[*]}\` (the remote-check skill runs it there on your saved changes)"
+      deny "heavy work runs on the mini: run-on-mini \`${fwords[*]}\` (the run-on-mini skill runs it there on your saved changes)"
     done
   fi
 

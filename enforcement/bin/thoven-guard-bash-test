@@ -307,7 +307,7 @@ printf '{ "role": "laptop", "heavyHost": "thoven-mini-ssh" }\n' >"$PROFILE"
 expect "laptop: bin/verify --base main names remote-verify" "$(hreason "bin/verify --base main")" "heavy work runs on the mini: remote-verify --base main"
 expect "laptop: cd frontend && bin/verify names remote-verify" "$(hreason "cd frontend && bin/verify")" "heavy work runs on the mini: remote-verify"
 for c in "${heavy[@]}"; do
-  case "$c" in *bin/verify*) want="remote-verify" ;; *) want="remote-check" ;; esac
+  case "$c" in *bin/verify*) want="remote-verify" ;; *) want="run-on-mini" ;; esac
   case "$(hreason "$c")" in "heavy work runs on the mini: $want"*) ok "laptop denies $c with $want" ;; *) fail "laptop denies $c with $want" "$(hreason "$c")" ;; esac
 done
 for c in "${light[@]}"; do expect "laptop allows $c" "$(decision claude "$c" "$WT")" "allow"; done

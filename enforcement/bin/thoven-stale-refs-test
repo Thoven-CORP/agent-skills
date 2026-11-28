@@ -10,7 +10,7 @@ mkdir -p "$workspace"/{frontend,backend,.workspace,agent-skills/enforcement/bin,
 cp "$source_script" "$workspace/agent-skills/enforcement/bin/thoven-stale-refs"
 cp "$source_helper" "$workspace/agent-skills/enforcement/bin/thoven-stale-ref-calls.py"
 chmod +x "$workspace/agent-skills/enforcement/bin/thoven-stale-ref-calls.py"
-touch "$workspace/.workspace/CLAUDE-root.md" "$workspace/.workspace/AGENTS-root.md" \
+touch "$workspace/.workspace/CLAUDE-root.md" \
   "$workspace/.workspace/CONTEXT-MAP.md" "$workspace/CI_CD.md"
 scanner="$workspace/agent-skills/enforcement/bin/thoven-stale-refs"
 

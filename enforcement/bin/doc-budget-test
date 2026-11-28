@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Feeds doc-budget empty, over-budget and repeated input and checks each exit code.
+set -u
+TOOL="$(cd "$(dirname "$0")" && pwd)/doc-budget"
+T=$(mktemp -d "${TMPDIR:-/tmp}/doc-budget-test.XXXXXX") || exit 1
+trap 'rm -rf "$T"' EXIT
+red=0
+expect() { if [ "$2" = "$3" ]; then printf 'PASS  %s\n' "$1"; else printf 'FAIL  %s (exit %s, want %s)\n' "$1" "$2" "$3"; red=1; fi; }
+
+: >"$T/empty.md"
+"$TOOL" law="$T/empty.md" >/dev/null; expect "empty file is refused" $? 2
+"$TOOL" law="$T/missing.md" >/dev/null; expect "missing file is refused" $? 2
+"$TOOL" nope="$T/empty.md" >/dev/null; expect "unknown budget name is refused" $? 2
+
+printf 'Stage exact paths and check the staged list before you commit anything.\n' >"$T/a.md"
+printf 'Other words here.\n\nStage exact paths and check the staged list before you commit anything.\n' >"$T/b.md"
+"$TOOL" law="$T/a.md" root="$T/b.md" >/dev/null; expect "a sentence in two files fails" $? 1
+
+printf 'Stage exact paths and check the staged list before you commit anything.\n' >"$T/c.md"
+"$TOOL" law="$T/a.md" root="$T/c.md" >/dev/null; expect "a repeat across two files fails" $? 1
+
+yes word | head -n 900 | tr '\n' ' ' >"$T/long.md"
+"$TOOL" law="$T/long.md" >/dev/null; expect "900 words in the law fails" $? 1
+
+"$TOOL" law="$T/a.md" >/dev/null; expect "a short file passes" $? 0
+exit $red

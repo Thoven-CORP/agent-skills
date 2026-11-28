@@ -30,7 +30,7 @@ USAGE
 
 say() { printf 'remote-verify: %s\n' "$*" >&2; }
 
-# The ignore list from the remote-check skill's Mutagen exclusions. Prints nothing for a path that
+# The ignore list from the run-on-mini skill's Mutagen exclusions. Prints nothing for a path that
 # may travel, else the reason.
 blocked_path() {
   local p="$1" base="${1##*/}" part

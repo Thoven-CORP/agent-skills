@@ -23,7 +23,7 @@ HOOKS_DIR = CURSOR_DIR / "hooks"
 HOOKS_JSON = CURSOR_DIR / "hooks.json"
 CLI_CONFIG = CURSOR_DIR / "cli-config.json"
 
-AGENT_FILES = ["verifier.md", "ui-builder.md", "explorer.md", "poteto-agent.md"]
+AGENT_FILES = ["explorer.md", "poteto-agent.md"]
 
 # (script name, event, timeout, extra args); each runs as `<hooks dir>/<script> --dialect cursor<extra args>`
 HOOK_ENTRIES = [

@@ -47,7 +47,7 @@ merge or watch a PR. A dispatched pane commits only; its main session pushes and
   whole suite. Green PR checks are not a merge: a
   queue failure takes the PR out of the queue unmerged, and `main` does not move. A PR into an
   integration branch has no queue and starts no `CI` run: a ticket PR there merges
-  on its targeted test lines and the verifier's pass (Andres, 2026-11-08). `CI` runs once, when the
+  on its targeted test lines and its `review-change` pass (Andres, 2026-11-08). `CI` runs once, when the
   integration branch lands in `main`, through that PR's merge queue. A nightly or manual full run
   audits what selection skips.
   The method follows the PR's role:
@@ -55,7 +55,7 @@ merge or watch a PR. A dispatched pane commits only; its main session pushes and
   | PR | Merge |
   |---|---|
   | A ticket into `main` | `gh pr merge --auto`; the queue lands it as a merge commit |
-  | A ticket into an integration branch | `gh pr merge --squash` on its targeted test lines and the verifier's pass; no CI run |
+  | A ticket into an integration branch | `gh pr merge --squash` on its targeted test lines and its `review-change` pass; no CI run |
   | Docs only (no code, config or tests) | squash in the same pass |
   | A catch-up of `main` into an integration branch | `--merge`, so `main` stays an ancestor |
   | An integration branch landing in `main` | `gh pr merge --auto`; the queue's merge commit keeps each ticket's commit and THV id for later conflict resolution |
@@ -100,22 +100,19 @@ merge or watch a PR. A dispatched pane commits only; its main session pushes and
 
 ## Review and merge order
 
-A builder's DONE is a claim. A fresh verifier pane reviews feature slices; an Opus (high) subagent
-of main reviews cleanup and hardening work. Both open with spec parity. Main reads the review and
-the builder's proofs before it merges. When filing or reviewing a PR for a visual or user-facing
-change, check the PR and Linear evidence against Thoven law's **User-facing evidence**. Evidence
-also goes on the work-session page (andres-mode, Replies). Procedure: `dispatch-work/references/review.md`.
+A builder's DONE is a claim. Once the whole change is built, main runs `review-change` on it once,
+reads the review and the builder's proofs, and then merges.
 
 ## Skills for PR work
 
 Watch a PR unattended: `/babysit-pr`, with `pr-wait --until green`. A PR into `main` that is only
 behind needs nothing, since the queue tests it on the latest `main`; `/modernize` is for a DIRTY PR
-or a shared integration branch (its verdict only). Inherited work or a dead pane: `/takeover`.
+or a shared integration branch (its verdict only). Inherited work or a dead session: `/takeover`.
 Unattended ticket to ready-to-merge: `/full-stop`. Routing tables: each repo's
 `.claude/docs/SKILL_AND_AGENT_ROUTING.md` and `orchestrate`.
 
 ## What a PR runs, and before a feature merges into main
 
 - **Contract gate:** nothing runs on `git push` (THV-1433). CI's `checks` job runs `pnpm run contract-check` on every PR; locally only `bin/verify --full` runs it. `pnpm run contract-manifest:check` is a manual, non-blocking heads-up that `~/thoven/backend` has drifted from the committed manifest; `.github/workflows/contract-manifest-sync.yml` checks the same drift weekly. What the required `CI` check runs on a PR, and the independent audits, are in `TESTING.md` → "What blocks a merge".
-- **Gate the ship:** before a feature merges into `main`, run `/qa-flow` and/or `/verify-this` (`/qa` is backup), and CI on the integration PR, then the feature's `WALKTHROUGH_V*.md`. Skip only for single-line typo or copy fixes. Production proof lives in `/publish`.
+- **Gate the ship:** before a parent merges into `main`, an agent walks it with `qa-product` (law, "User-facing work is checked as a user") and CI runs on the integration PR. Skip only for single-line typo or copy fixes. Production proof lives in `/publish`.
 - **Ship order:** when a change touches both repos, merge the backend PR first. Backend-first holds only for a backward-compatible change: the law's required-field rule. `promote.sh` orders production itself.
