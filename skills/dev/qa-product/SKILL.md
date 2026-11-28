@@ -22,7 +22,7 @@ Every run ends with [references/diagnose-and-report.md](references/diagnose-and-
 ## Steps
 
 1. **Personas and journeys.** Run `journey-map` for the change. Its `JOURNEYS.md` names each persona the change reaches, every journey to walk, and the seed each one needs. Done when `JOURNEYS.md` sits in this run's folder and every journey in it has a seed line.
-2. **Seed.** Build the data each journey needs, production-shaped: real-length names, history, several children where the persona has them. Done when every persona can log in and stands at its journey's entry with the state `JOURNEYS.md` names.
+2. **Seed.** Build the production-shaped data each journey needs (`journey-map`, step 3). Done when every persona can log in and stands at its journey's entry with the state `JOURNEYS.md` names.
 3. **Walk.** Follow the run's reference. Complete every journey. A finding that leaves the way forward open is logged, and the walk goes on; only a one-way door stops a journey: the page will not load, the next step cannot be undone on real data, or the seed is wrong in a way that makes the rest meaningless. Done when every journey is walked to its end or stopped at a named one-way door, and each has its recording.
 4. **Diagnose, group, report.** Follow [references/diagnose-and-report.md](references/diagnose-and-report.md). Done when every finding has a cause, every group fits one agent's round, and the report is delivered. Then stop.
 

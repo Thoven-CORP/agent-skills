@@ -1,11 +1,11 @@
 ---
 name: debug
-description: Diagnoses a bug, error, crash, regression or slow path by building a red feedback loop first, testing falsifiable hypotheses, and fixing at the cause with a regression test at the right seam. Use when something is broken, throwing, failing or slow.
+description: Diagnoses a bug or a slow path, from a red loop to a fix at its cause. Use when something is broken, throwing or failing, or when it is slow.
 ---
 
 # Debug
 
-Build the loop first; everything after it is mechanical. Adapted from mattpocock's `diagnosing-bugs`; the Thoven parts are the known patterns, the production sources and the users.
+Build the loop first; everything after it is mechanical.
 
 ## Pitfalls
 
@@ -22,7 +22,7 @@ Read the section of [references/common-errors.md](references/common-errors.md) t
 
 ## 2. Build a red loop
 
-Name one command that drives the real code path and asserts the user's exact symptom, and run it. In order of preference: a failing test at the seam that reaches the bug, a curl against the local backend, a headless Playwright script, a replayed production payload, a `git bisect run` harness, an old-versus-new differential. For a production-only bug, start from the real record (law, "Own what you find": name one environment and id). Tighten it until it runs in seconds and gives the same verdict every run; for an intermittent bug, raise the reproduction rate until it is debuggable.
+Name one command that drives the real code path and asserts the user's exact symptom, and run it. In order of preference: a failing test at the seam that reaches the bug, a curl against the local backend, an `agent-browser` walk, a replayed production payload, a `git bisect run` harness, an old-versus-new differential. For a production-only bug, start from the real record (law, "Own what you find": name one environment and id). Tighten it until it runs in seconds and gives the same verdict every run; for an intermittent bug, raise the reproduction rate until it is debuggable.
 
 When no loop is possible, stop, list what you tried, and ask for access, a captured artifact or temporary instrumentation. Reading code to build a theory before the loop exists is the failure this step prevents.
 
@@ -48,7 +48,7 @@ Confirm the finding is a product bug. A bad seed, a stale import, a stale server
 
 ## 6. Fix with a regression test
 
-At the correct seam (`write-tests`, step 2), turn the minimised repro into a failing test, watch it fail, fix the cause, watch it pass, then rerun the original loop. A one-off failure gets the fix at its cause, not a guard for that instance.
+At the correct seam (`write-tests`, step 2), turn the minimised repro into a failing test, watch it fail, fix the cause, watch it pass, then rerun the original loop.
 
 **Done when:** the regression test went red then green, the original loop is green, and `rg '\[DEBUG-'` finds nothing.
 

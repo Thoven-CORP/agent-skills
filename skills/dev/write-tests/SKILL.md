@@ -5,7 +5,7 @@ description: Decides whether a test earns its place, writes it first at an agree
 
 # Write tests
 
-A test exists to catch a credible regression in a core mechanism or a repeated failure (law, "Tests come from decisions"). Product flows are QA's (`qa-product`), because a flow changes and a unit test that restates it breaks with it. The value bar is adapted from OpenClaw's `test-audit` (MIT); the examples are Thoven's. The repo's `TESTING.md` owns layers and commands.
+A test exists to catch a credible regression in a core mechanism or a repeated failure (law, "Tests come from decisions"). Product flows are QA's (`qa-product`), because a flow changes and a unit test that restates it breaks with it. The repo's `TESTING.md` owns layers and commands.
 
 ## Pitfalls
 
@@ -33,7 +33,7 @@ Answer all four; a missing answer means no test yet:
 3. Why does existing coverage miss that regression? Each contract has one owner test at the strongest boundary; extend its table or fixture before adding a near-duplicate.
 4. Does it need a production seam (export, flag, injection hook) no production caller needs? Then test at the real boundary instead.
 
-Then check it against every junk pattern. A one-off failure gets a fix at its cause, not a guard for that instance.
+Then check it against every junk pattern.
 
 **Done when:** the four answers are written, or you have decided no test, and named the check you ran instead (a script, a curl, a browser path).
 

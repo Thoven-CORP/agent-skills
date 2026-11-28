@@ -1,10 +1,9 @@
 ---
 name: review-change
 description: >-
-  Review a branch or PR diff once, before it merges, on separate axes run by parallel fresh
-  subagents: Standards (Thoven law, the repo's CLAUDE.md and TESTING.md), Spec (the ticket's exit
-  criteria) and, on demand, Code quality. Use for the one review of a dispatched ticket's final
-  diff, for any PR before auto-merge is armed, or when Andres asks to review a change.
+  Review a branch or PR diff once before it merges, on parallel Standards, Spec and optional Code
+  axes. Use for the one review of a dispatched ticket's final diff, for any PR before auto-merge is
+  armed, or when Andres asks for a review.
 ---
 
 # Review change

@@ -14,7 +14,6 @@ ticket. Main owns Linear, pushes and product calls; the builder owns the code on
 
 ## Pitfalls
 
-- A Linear parent, or a chain of dependent tickets, is one builder with one branch and one PR per repo; append its tickets and fix rounds there. (LEARNINGS 2026-10-26)
 - Make a small visual correction from Andres yourself, exactly as worded, and measure its computed style before you report. Dispatch multi-file builds only. (LEARNINGS 2026-10-01)
 - Compare the ticket's flow wording with the frames it names before you dispatch. The frame wins on what it shows: fix the ticket in Linear first. (LEARNINGS 2026-10-09)
 - Write each ruling Andres gave in chat into the spec before dispatch, in his words with its Log entry, and link it from the ticket's Build from. (LEARNINGS 2026-09-27)

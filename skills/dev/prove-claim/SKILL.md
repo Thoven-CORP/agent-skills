@@ -1,26 +1,15 @@
 ---
 name: prove-claim
-description: "Prove or disprove one claim with fresh local evidence: restate it falsifiably, capture baseline and treatment, compare artifacts, and return VERIFIED, NOT VERIFIED, or INCONCLUSIVE."
+description: "Prove or disprove one claim with baseline and treatment evidence, returning VERIFIED, NOT VERIFIED or INCONCLUSIVE. Use when asked to verify, prove it works or show the evidence, when a fix needs a before-and-after repro, or when a UI, API, performance or memory claim needs measuring."
 ---
 
 # Prove claim
 
-Verification is not a recap. It proves or disproves a specific claim with repeatable evidence.
-
 `check-build` is the builder's loop on its own change. `prove-claim` falsifies one specific claim with baseline and treatment evidence and returns one verdict.
-
-## When to use
-
-- The user asks "verify this", "prove it works", "did this fix it", or "show me the evidence".
-- A bug fix needs a before/after repro.
-- A UI, CLI, API, performance, or memory claim needs measurement.
-- A test passes but the user-visible behavior still needs confirmation.
-
-Ask for a measurable claim first when the claim is vague ("the code is cleaner").
 
 ## Workflow
 
-1. Restate the claim in falsifiable form. Condition, metric, and threshold. Done when those three are written.
+1. Restate the claim in falsifiable form: condition, metric and threshold. A vague claim ("the code is cleaner") goes back to the asker for a measurable one. Done when those three are written.
 
 2. Classify the surface.
 
@@ -36,33 +25,15 @@ Ask for a measurable claim first when the claim is vague ("the code is cleaner")
    - `browser_screenshot` or `recording` → UI behavior (one frame, or a sequence)
    - `none` → no local surface. State what changed and why no check covers it. Skip to the verdict as `INCONCLUSIVE` only if a check was required.
 
-   If `status` is `undecided` or binding is false, read [Fallback surfaces](#fallback-surfaces) and pick from that list.
+   If `status` is `undecided` or binding is false, read [references/fallback-surfaces.md](references/fallback-surfaces.md) and pick from that list.
 
-3. Capture a baseline from the old state. Merge base, parent commit, failing branch, or current broken repro. Take it from a detached copy (`git archive <base> | tar -x -C <scratch>/base-<sha>`), never by restoring tracked files in a tree that holds uncommitted work: a killed run would leave the only copy of the treatment in scratch, and sibling sessions would see the old code. Copy the spec files in, and export the pane's own database variables, since the archive has no `.env`. A spec for code that does not exist on the base aborts the whole run on load, so run it alone or drop it from the baseline set, and delete the copy by exact path afterwards. Done when the baseline artifact exists.
+3. Read [references/artifacts.md](references/artifacts.md) for where evidence and scratch go. Capture a baseline from the old state. Merge base, parent commit, failing branch, or current broken repro. Take it from a detached copy (`git archive <base> | tar -x -C <scratch>/base-<sha>`), never by restoring tracked files in a tree that holds uncommitted work: a killed run would leave the only copy of the treatment in scratch, and sibling sessions would see the old code. Copy the spec files in, and export the pane's own database variables, since the archive has no `.env`. A spec for code that does not exist on the base aborts the whole run on load, so run it alone or drop it from the baseline set, and delete the copy by exact path afterwards. Done when the baseline artifact exists.
 
 4. Capture treatment from the changed state with the same command, data, warmup, and environment. Done when the treatment artifact exists.
 
 5. Compare raw artifacts. Numbers, screenshots, terminal transcripts, HTTP responses, profiles, heap snapshots, or test output. Done when the delta is written.
 
 6. Return exactly one verdict. `VERIFIED`, `NOT VERIFIED`, or `INCONCLUSIVE`. Done when the output block below is complete.
-
-## Artifact layout
-
-Before capturing baseline or treatment, read [check-build: disk budget](../check-build/references/disk-budget.md): budget temporary runtime space, keep it separate from evidence, and clean up owned scratch on completion or failure. The layout below holds retained evidence only.
-
-Retained evidence goes here, unless the next rule keeps it inline:
-
-```text
-/tmp/prove-claim/<claim-slug>/
-├── claim.md
-├── timeline.md
-├── baseline/
-├── treatment/
-├── diff/
-└── verdict.md
-```
-
-If artifacts may contain sensitive code, prompts, screenshots, HTTP bodies, or heap data, keep only the minimal inline evidence unless the user agrees to disk storage.
 
 ## Verdict rules
 
@@ -83,15 +54,4 @@ Reasoning:
 <one tight paragraph naming the evidence and any confounds>
 ```
 
-Do not soften a negative result. A clear `NOT VERIFIED` is useful.
-
-## Fallback surfaces
-
-Read this section only when step 2 returned `undecided` or a non-binding answer. Pick the smallest surface that can disprove the claim.
-
-- Code behavior. Focused unit or integration tests, or a minimal repro script.
-- CLI/TUI behavior. `control-cli`, a terminal transcript, or a demo recording.
-- UI behavior. `control-ui`, screenshots, accessibility snapshots, or browser traces.
-- API behavior. Local HTTP or RPC request and response diff.
-- Performance. Same-machine baseline and treatment timings or CPU profiles.
-- Memory. Heap snapshots before and after the suspected operation.
+Report `NOT VERIFIED` plainly; it is a useful result.

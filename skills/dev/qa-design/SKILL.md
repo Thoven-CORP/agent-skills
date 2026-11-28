@@ -9,7 +9,7 @@ A visual read of a built screen, the way a designer looks at it: does it feel li
 
 ## Steps
 
-1. **Open the screen as its user reaches it.** On the route, with production-shaped data (long names, several children, real history), at the persona's device: 390 wide for a parent or teen on a phone, a 1280×720 window for a teacher at a desk. Take one `agent-browser screenshot` per state you judge (loaded, empty, error, the busiest real data). Done when you hold a screenshot of each state the change touches.
+1. **Open the screen as its user reaches it.** On the route, with production-shaped data (`journey-map`, step 3), at the persona's device: 390 wide for a parent or teen on a phone, a 1280×720 window for a teacher at a desk. Take one `agent-browser screenshot` per state you judge (loaded, empty, error, the busiest real data). Done when you hold a screenshot of each state the change touches.
 2. **Read each lens.** For each heading below, read that section of the frontend `DESIGN.md`, look at the screenshots through it, and write what reads wrong, or "reads right". Done when every lens has a line.
 3. **Report, then stop.** One finding per cause, with every screen and state it shows on. Each finding names the lens, what the eye sees, the `DESIGN.md` section it departs from, and its screenshot path. Where an approved Paper frame or main lab shows the screen, a departure from it is a finding and the frame wins over the section. Done when the report is on the ticket.
 
